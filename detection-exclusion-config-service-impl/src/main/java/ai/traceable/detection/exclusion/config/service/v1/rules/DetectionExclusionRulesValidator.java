@@ -5,6 +5,8 @@ import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget
 import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_THREAT_ACTOR_CREATION;
 import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_THREAT_SCORE_CONTRIBUTION;
 import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_UNSPECIFIED;
+import static ai.traceable.detection.exclusion.config.service.v1.RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE;
+import static ai.traceable.detection.exclusion.config.service.v1.RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT;
 import static ai.traceable.detection.exclusion.config.service.v1.RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM;
 import static ai.traceable.detection.exclusion.config.service.v1.RuleIntent.RULE_INTENT_UNSPECIFIED;
 import static ai.traceable.detection.exclusion.config.service.v1.RuleSource.RULE_SOURCE_DEFAULT;
@@ -27,9 +29,12 @@ import ai.traceable.detection.exclusion.config.service.v1.GetDetectionExclusionE
 import ai.traceable.detection.exclusion.config.service.v1.GetDetectionExclusionRulesRequest;
 import ai.traceable.detection.exclusion.config.service.v1.GetExclusionModsecRulesRequest;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
+import ai.traceable.detection.exclusion.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.detection.exclusion.config.service.v1.RuleSource;
 import ai.traceable.detection.exclusion.config.service.v1.UpdateDetectionExclusionRuleRequest;
 import ai.traceable.detection.exclusion.config.service.v1.UpsertDetectionExclusionRuleData;
+import ai.traceable.detection.exclusion.config.service.v1.rules.edge.decision.ExclusionEdgeDecisionRulesSupportChecker;
+import ai.traceable.detection.exclusion.config.service.v1.rules.modsec.ExclusionModsecRulesSupportChecker;
 import com.google.common.annotations.VisibleForTesting;
 import io.grpc.Status;
 import jakarta.inject.Inject;
@@ -170,6 +175,11 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
     for (DetectionExclusionCondition condition : ruleInfo.getConditionsList()) {
       conditionValidator.validateRuleCondition(ruleInfo.getExclusionTargetsList(), condition);
     }
+
+    validateRuleEvaluationPoints(
+        ruleInfo.getRuleEvaluationPointsList(),
+        ruleInfo.getExclusionTargetsList(),
+        ruleInfo.getConditionsList());
   }
 
   @Override
@@ -270,5 +280,77 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
           .withDescription("Cannot filter for UNSPECIFIED rule intent")
           .asRuntimeException();
     }
+  }
+
+  private void validateRuleEvaluationPoints(
+      List<RuleEvaluationPoint> ruleEvaluationPoints,
+      List<ExclusionTarget> exclusionTargets,
+      List<DetectionExclusionCondition> conditions) {
+    if (ruleEvaluationPoints.isEmpty()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("The list of RuleEvaluationPoints cannot be empty.")
+          .asRuntimeException();
+    }
+
+    // not checking for the case of RULE_EVALUATION_POINT_PLATFORM since that gets added by default
+    // in migration
+
+    if (ruleEvaluationPoints.contains(RULE_EVALUATION_POINT_EDGE)) {
+      if (!checkForEdgeDecisionSupportedConditionsAndTargets(exclusionTargets, conditions)) {
+        throw Status.INVALID_ARGUMENT
+            .withDescription(
+                "RULE_EVALUATION_POINT_EDGE cannot be one of the rule evaluation points as either exclusionTargets or conditions is unsupported.")
+            .asRuntimeException();
+      }
+    }
+
+    if (ruleEvaluationPoints.contains(RULE_EVALUATION_POINT_INLINE_TRACING_AGENT)) {
+      if (!checkForModsecSupportedConditionsAndTargets(exclusionTargets, conditions)) {
+        throw Status.INVALID_ARGUMENT
+            .withDescription(
+                "RULE_EVALUATION_POINT_INLINE_TRACING_AGENT cannot be one of the rule evaluation points as either exclusionTargets or conditions is unsupported")
+            .asRuntimeException();
+      }
+    }
+  }
+
+  public static boolean checkForEdgeDecisionSupportedConditionsAndTargets(
+      List<ExclusionTarget> exclusionTargets,
+      List<DetectionExclusionCondition> detectionExclusionConditions) {
+    if (exclusionTargets.isEmpty() || detectionExclusionConditions.isEmpty()) {
+      return false;
+    }
+
+    boolean hasSupportedEdgeDecisionConditions =
+        detectionExclusionConditions.stream()
+            .allMatch(ExclusionEdgeDecisionRulesSupportChecker::isEdgeDecisionConditionSupported);
+
+    boolean hasSupportedEdgeDecisionExclusionTargets =
+        exclusionTargets.stream()
+            .allMatch(ExclusionEdgeDecisionRulesSupportChecker::isEdgeDecisionTargetSupported);
+
+    return hasSupportedEdgeDecisionConditions && hasSupportedEdgeDecisionExclusionTargets;
+  }
+
+  public static boolean checkForModsecSupportedConditionsAndTargets(
+      List<ExclusionTarget> exclusionTargets,
+      List<DetectionExclusionCondition> detectionExclusionConditions) {
+    if (exclusionTargets.isEmpty() || detectionExclusionConditions.isEmpty()) {
+      return false;
+    }
+
+    /*
+     * The presence of an OR logical operator here as the 1st level list of DetectionExclusionConditions is
+     * implicitly ANDed, and the nested LogicalConditionalExpression is anyway checked against in
+     * ExclusionModsecRulesSupportChecker.isModsecConditionSupported.
+     */
+    boolean hasSupportedModsecConditions =
+        detectionExclusionConditions.stream()
+            .allMatch(ExclusionModsecRulesSupportChecker::isModsecConditionSupported);
+
+    boolean hasSupportedModsecExclusionTargets =
+        exclusionTargets.stream()
+            .allMatch(ExclusionModsecRulesSupportChecker::isModsecExclusionTargetSupported);
+    return hasSupportedModsecConditions && hasSupportedModsecExclusionTargets;
   }
 }

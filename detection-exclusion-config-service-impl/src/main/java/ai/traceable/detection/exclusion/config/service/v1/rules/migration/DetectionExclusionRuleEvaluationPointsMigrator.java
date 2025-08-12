@@ -2,12 +2,13 @@ package ai.traceable.detection.exclusion.config.service.v1.rules.migration;
 
 import ai.traceable.detection.exclusion.config.service.v1.BulkUpsertDetectionExclusionRulesRequest;
 import ai.traceable.detection.exclusion.config.service.v1.CreateDetectionExclusionRuleRequest;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleInfo;
+import ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget;
 import ai.traceable.detection.exclusion.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.detection.exclusion.config.service.v1.UpdateDetectionExclusionRuleRequest;
 import ai.traceable.detection.exclusion.config.service.v1.UpsertDetectionExclusionRuleData;
-import ai.traceable.detection.exclusion.config.service.v1.rules.edge.decision.ExclusionEdgeDecisionRulesSupportChecker;
-import ai.traceable.detection.exclusion.config.service.v1.rules.modsec.ExclusionModsecRulesSupportChecker;
+import ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionRulesValidator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -73,32 +74,21 @@ public class DetectionExclusionRuleEvaluationPointsMigrator {
   List<RuleEvaluationPoint> getRuleEvaluationPoints(DetectionExclusionRuleInfo ruleInfo) {
     List<RuleEvaluationPoint> ruleEvaluationPoints = new ArrayList<>();
     ruleEvaluationPoints.add(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM); // by default
+    List<ExclusionTarget> exclusionTargets = ruleInfo.getExclusionTargetsList();
+    List<DetectionExclusionCondition> detectionExclusionConditions = ruleInfo.getConditionsList();
 
     // check for edge
-    if (!ruleInfo.getExclusionTargetsList().isEmpty()) {
-      boolean hasSupportedEdgeDecisionConditions =
-          ruleInfo.getConditionsList().stream()
-              .allMatch(ExclusionEdgeDecisionRulesSupportChecker::isEdgeDecisionConditionSupported);
-      boolean hasSupportedEdgeDecisionExclusionTargets =
-          ruleInfo.getExclusionTargetsList().stream()
-              .allMatch(ExclusionEdgeDecisionRulesSupportChecker::isEdgeDecisionTargetSupported);
-      if (hasSupportedEdgeDecisionConditions && hasSupportedEdgeDecisionExclusionTargets) {
-        ruleEvaluationPoints.add(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE);
-      }
+    if (DetectionExclusionRulesValidator.checkForEdgeDecisionSupportedConditionsAndTargets(
+        exclusionTargets, detectionExclusionConditions)) {
+      ruleEvaluationPoints.add(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE);
     }
 
     // check for agent
-    if (!ruleInfo.getConditionsList().isEmpty() && !ruleInfo.getExclusionTargetsList().isEmpty()) {
-      boolean hasSupportedModsecConditions =
-          ruleInfo.getConditionsList().stream()
-              .allMatch(ExclusionModsecRulesSupportChecker::isModsecConditionSupported);
-      boolean hasSupportedModsecExclusionTargets =
-          ruleInfo.getExclusionTargetsList().stream()
-              .allMatch(ExclusionModsecRulesSupportChecker::isModsecExclusionTargetSupported);
-      if (hasSupportedModsecConditions && hasSupportedModsecExclusionTargets) {
-        ruleEvaluationPoints.add(RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT);
-      }
+    if (DetectionExclusionRulesValidator.checkForModsecSupportedConditionsAndTargets(
+        exclusionTargets, detectionExclusionConditions)) {
+      ruleEvaluationPoints.add(RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT);
     }
+
     return ruleEvaluationPoints;
   }
 }
