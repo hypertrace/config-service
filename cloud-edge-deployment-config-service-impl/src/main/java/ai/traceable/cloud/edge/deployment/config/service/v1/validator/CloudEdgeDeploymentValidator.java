@@ -4,6 +4,7 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDef
 
 import ai.traceable.cloud.edge.deployment.config.service.v1.Action;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CancelCloudEdgeDeploymentConfigActionRequest;
+import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentConfigActionRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentInputConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigAccessType;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigPermission;
@@ -39,6 +40,7 @@ import lombok.extern.slf4j.Slf4j;
 public class CloudEdgeDeploymentValidator {
   private final SharedConfigMetadataRegistry sharedConfigMetadataRegistry;
   private final StateTransitionsRegistry stateTransitionsRegistry;
+  private static final String EMPTY_ID_ERROR = "Cloud edge deployment config ID cannot be empty";
 
   public Status validate(CreateCloudEdgeDeploymentConfigRequest request) {
     if (!request.hasCloudEdgeDeploymentInputConfig()) {
@@ -61,8 +63,7 @@ public class CloudEdgeDeploymentValidator {
 
   public Status validate(UpdateCloudEdgeDeploymentConfigRequest request) {
     if (request.getId().isEmpty()) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "Cloud edge deployment config ID cannot be empty");
+      return Status.INVALID_ARGUMENT.withDescription(EMPTY_ID_ERROR);
     }
 
     if (!request.hasConfigPermission()) {
@@ -89,41 +90,62 @@ public class CloudEdgeDeploymentValidator {
 
   public Status validate(CancelCloudEdgeDeploymentConfigActionRequest request) {
     if (request.getId().isEmpty()) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "Cloud edge deployment config ID cannot be empty");
+      return Status.INVALID_ARGUMENT.withDescription(EMPTY_ID_ERROR);
     }
     return Status.OK;
   }
 
   public Status validate(DeleteCloudEdgeDeploymentConfigRequest request) {
     if (request.getId().isEmpty()) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "Cloud edge deployment config ID cannot be empty");
+      return Status.INVALID_ARGUMENT.withDescription(EMPTY_ID_ERROR);
     }
     return Status.OK;
   }
 
   public Status validate(RemoveCloudEdgeDeploymentConfigRequest request) {
     if (request.getId().isEmpty()) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "Cloud edge deployment config ID cannot be empty");
+      return Status.INVALID_ARGUMENT.withDescription(EMPTY_ID_ERROR);
     }
     return Status.OK;
   }
 
   public Status validate(HoldCloudEdgeDeploymentConfigRequest request) {
     if (request.getId().isEmpty()) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "Cloud edge deployment config ID cannot be empty");
+      return Status.INVALID_ARGUMENT.withDescription(EMPTY_ID_ERROR);
     }
     return Status.OK;
   }
 
   public Status validate(DeployCloudEdgeDeploymentConfigRequest request) {
     if (request.getId().isEmpty()) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "Cloud edge deployment config ID cannot be empty");
+      return Status.INVALID_ARGUMENT.withDescription(EMPTY_ID_ERROR);
     }
+    return Status.OK;
+  }
+
+  public Status validate(CloudEdgeDeploymentConfigActionRequest request) {
+    if (request.getId().isEmpty()) {
+      return Status.INVALID_ARGUMENT.withDescription(EMPTY_ID_ERROR);
+    }
+
+    if (request.getAction() == Action.ACTION_UNSPECIFIED) {
+      return Status.INVALID_ARGUMENT.withDescription("Action cannot be unspecified");
+    }
+
+    if (!List.of(
+            Action.ACTION_DEPLOY,
+            Action.ACTION_HOLD,
+            Action.ACTION_REQUEST_REMOVAL,
+            Action.ACTION_CANCEL_CHANGE_REQUEST,
+            Action.ACTION_CANCEL_REMOVAL_REQUEST)
+        .contains(request.getAction())) {
+      return Status.INVALID_ARGUMENT.withDescription("Invalid action: " + request.getAction());
+    }
+
+    if (request.getAccessType() == ConfigAccessType.CONFIG_ACCESS_TYPE_UNSPECIFIED) {
+      return Status.INVALID_ARGUMENT.withDescription("Access type cannot be unspecified");
+    }
+
     return Status.OK;
   }
 

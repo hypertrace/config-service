@@ -3,6 +3,7 @@ package ai.traceable.cloud.edge.deployment.config.service.v1.manager;
 import ai.traceable.cloud.edge.deployment.config.service.v1.Action;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CancelCloudEdgeDeploymentConfigActionRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentConfig;
+import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentConfigActionRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentConfigWithActions;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentOutputConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigAccessType;
@@ -142,12 +143,7 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
     }
 
     // Check if config with the given ID exists
-    CloudEdgeDeploymentConfig existingConfig = store.getCloudEdgeDeploymentConfig(ctx, id);
-    if (existingConfig == null) {
-      throw new StatusRuntimeException(
-          Status.NOT_FOUND.withDescription("Cloud edge deployment config not found"));
-    }
-
+    CloudEdgeDeploymentConfig existingConfig = getExistingConfigOrThrow(ctx, id);
     DeploymentStatus currentStatus = existingConfig.getCloudEdgeDeployedOutputConfig().getStatus();
     DeploymentStatus updatedStatus = null;
 
@@ -208,14 +204,7 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
     }
 
     // Check if config exists and delete it
-    CloudEdgeDeploymentConfig config = store.getCloudEdgeDeploymentConfig(ctx, id);
-    if (config == null) {
-      throw Status.NOT_FOUND
-          .withDescription("Cloud edge deployment config not found with id: " + id)
-          .asRuntimeException();
-    }
-
-    // TODO: Add access type field in delete request
+    CloudEdgeDeploymentConfig config = getExistingConfigOrThrow(ctx, id);
     validator.validateActionAndGetNextStates(
         config.getCloudEdgeDeployedOutputConfig().getStatus(),
         ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE,
@@ -239,14 +228,7 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
     }
 
     // Check if config exists
-    CloudEdgeDeploymentConfig existingConfig =
-        store.getCloudEdgeDeploymentConfig(ctx, request.getId());
-    if (existingConfig == null) {
-      throw Status.NOT_FOUND
-          .withDescription("Cloud edge deployment config not found with id: " + request.getId())
-          .asRuntimeException();
-    }
-
+    CloudEdgeDeploymentConfig existingConfig = getExistingConfigOrThrow(ctx, request.getId());
     DeploymentStatus currentStatus = existingConfig.getCloudEdgeDeployedOutputConfig().getStatus();
     Action action =
         DeploymentStatus.DEPLOYMENT_STATUS_CHANGE_REQUESTED.equals(currentStatus)
@@ -280,14 +262,7 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
     }
 
     // Check if config exists
-    CloudEdgeDeploymentConfig existingConfig =
-        store.getCloudEdgeDeploymentConfig(ctx, request.getId());
-    if (existingConfig == null) {
-      throw Status.NOT_FOUND
-          .withDescription("Cloud edge deployment config not found with id: " + request.getId())
-          .asRuntimeException();
-    }
-
+    CloudEdgeDeploymentConfig existingConfig = getExistingConfigOrThrow(ctx, request.getId());
     DeploymentStatus updatedStatus =
         validator
             .validateActionAndGetNextStates(
@@ -312,14 +287,7 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
     }
 
     // Check if config exists
-    CloudEdgeDeploymentConfig existingConfig =
-        store.getCloudEdgeDeploymentConfig(ctx, request.getId());
-    if (existingConfig == null) {
-      throw Status.NOT_FOUND
-          .withDescription("Cloud edge deployment config not found with id: " + request.getId())
-          .asRuntimeException();
-    }
-
+    CloudEdgeDeploymentConfig existingConfig = getExistingConfigOrThrow(ctx, request.getId());
     DeploymentStatus updatedStatus =
         validator
             .validateActionAndGetNextStates(
@@ -344,14 +312,7 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
     }
 
     // Check if config exists
-    CloudEdgeDeploymentConfig existingConfig =
-        store.getCloudEdgeDeploymentConfig(ctx, request.getId());
-    if (existingConfig == null) {
-      throw Status.NOT_FOUND
-          .withDescription("Cloud edge deployment config not found with id: " + request.getId())
-          .asRuntimeException();
-    }
-
+    CloudEdgeDeploymentConfig existingConfig = getExistingConfigOrThrow(ctx, request.getId());
     DeploymentStatus updatedStatus =
         validator
             .validateActionAndGetNextStates(
@@ -362,6 +323,36 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
 
     CloudEdgeDeploymentConfig.Builder updatedConfigBuilder = existingConfig.toBuilder();
     updatedConfigBuilder.getCloudEdgeDeployedOutputConfigBuilder().setStatus(updatedStatus).build();
+
+    CloudEdgeDeploymentConfig updatedConfig = updatedConfigBuilder.build();
+    store.upsertCloudEdgeDeploymentConfig(ctx, updatedConfig);
+  }
+
+  @Override
+  public void performCloudEdgeDeploymentConfigAction(
+      RequestContext ctx, CloudEdgeDeploymentConfigActionRequest request) {
+    Status validationStatus = validator.validate(request);
+    if (!validationStatus.isOk()) {
+      throw validationStatus.asRuntimeException();
+    }
+
+    // Check if config exists
+    CloudEdgeDeploymentConfig existingConfig = getExistingConfigOrThrow(ctx, request.getId());
+    DeploymentStatus updatedStatus =
+        validator
+            .validateActionAndGetNextStates(
+                existingConfig.getCloudEdgeDeployedOutputConfig().getStatus(),
+                request.getAccessType(),
+                request.getAction())
+            .get(0);
+
+    CloudEdgeDeploymentConfig.Builder updatedConfigBuilder = existingConfig.toBuilder();
+    updatedConfigBuilder.getCloudEdgeDeployedOutputConfigBuilder().setStatus(updatedStatus);
+
+    if (request.getAction() == Action.ACTION_CANCEL_CHANGE_REQUEST) {
+      updatedConfigBuilder.setCloudEdgeDeploymentInputConfig(
+          existingConfig.getLastAppliedInputConfig());
+    }
 
     CloudEdgeDeploymentConfig updatedConfig = updatedConfigBuilder.build();
     store.upsertCloudEdgeDeploymentConfig(ctx, updatedConfig);
@@ -383,5 +374,15 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
             PlatformMetricsRegistry.registerTimer(
                 CLOUD_EDGE_DEPLOYMENT_STATUS_ACTION_TIMER,
                 metricTags.stream().collect(Collectors.toMap(Tag::getKey, Tag::getValue))));
+  }
+
+  private CloudEdgeDeploymentConfig getExistingConfigOrThrow(RequestContext ctx, String id) {
+    CloudEdgeDeploymentConfig existingConfig = store.getCloudEdgeDeploymentConfig(ctx, id);
+    if (existingConfig == null) {
+      throw Status.NOT_FOUND
+          .withDescription("Cloud edge deployment config not found with id: " + id)
+          .asRuntimeException();
+    }
+    return existingConfig;
   }
 }

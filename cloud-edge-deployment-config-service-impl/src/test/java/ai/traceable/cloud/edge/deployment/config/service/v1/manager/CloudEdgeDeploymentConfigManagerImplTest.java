@@ -14,6 +14,7 @@ import static org.mockito.Mockito.when;
 import ai.traceable.cloud.edge.deployment.config.service.v1.Action;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CancelCloudEdgeDeploymentConfigActionRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentConfig;
+import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentConfigActionRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentConfigWithActions;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentInputConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentOutputConfig;
@@ -880,5 +881,157 @@ class CloudEdgeDeploymentConfigManagerImplTest {
     assertTrue(configWithActions2.getAllowedActionsList().contains(Action.ACTION_HOLD));
     assertTrue(configWithActions2.getAllowedActionsList().contains(Action.ACTION_VIEW));
     assertEquals(0, configWithActions2.getAllowedStatusesCount());
+  }
+
+  @Test
+  void testPerformCloudEdgeDeploymentConfigAction() {
+    // Setup
+    String id = "test-id";
+    requestContext = RequestContext.forTenantId("tenant-id");
+    CloudEdgeDeploymentConfigActionRequest request =
+        CloudEdgeDeploymentConfigActionRequest.newBuilder()
+            .setId(id)
+            .setAccessType(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+            .setAction(Action.ACTION_CANCEL_CHANGE_REQUEST)
+            .build();
+
+    // Test case 1: Validation fails
+    when(validator.validate(request))
+        .thenReturn(Status.INVALID_ARGUMENT.withDescription("Invalid input"));
+
+    StatusRuntimeException exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> manager.performCloudEdgeDeploymentConfigAction(requestContext, request));
+    assertEquals(Status.Code.INVALID_ARGUMENT, exception.getStatus().getCode());
+
+    // Test case 2: Config not found
+    when(validator.validate(request)).thenReturn(Status.OK);
+    when(store.getCloudEdgeDeploymentConfig(requestContext, id)).thenReturn(null);
+
+    exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> manager.performCloudEdgeDeploymentConfigAction(requestContext, request));
+    assertEquals(Status.Code.NOT_FOUND, exception.getStatus().getCode());
+
+    // Test case 3: Action not allowed by validator
+    CloudEdgeDeploymentConfig configNotActionable =
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setId(id)
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY)
+                    .build())
+            .build();
+
+    when(validator.validate(request)).thenReturn(Status.OK);
+    when(store.getCloudEdgeDeploymentConfig(requestContext, id)).thenReturn(configNotActionable);
+    when(validator.validateActionAndGetNextStates(
+            DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY,
+            ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL,
+            Action.ACTION_CANCEL_CHANGE_REQUEST))
+        .thenThrow(
+            Status.PERMISSION_DENIED
+                .withDescription("This operation is not permitted")
+                .asRuntimeException());
+
+    exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> manager.performCloudEdgeDeploymentConfigAction(requestContext, request));
+    assertEquals(Status.Code.PERMISSION_DENIED, exception.getStatus().getCode());
+    assertTrue(exception.getStatus().getDescription().contains("not permitted"));
+
+    // Test case 4: Successful action - CANCEL_CHANGE_REQUEST with last applied input config
+    CloudEdgeDeploymentInputConfig originalInputConfig =
+        CloudEdgeDeploymentInputConfig.newBuilder()
+            .setClusterConfig(ClusterConfig.newBuilder().setClusterName("original-cluster").build())
+            .build();
+
+    CloudEdgeDeploymentInputConfig changedInputConfig =
+        CloudEdgeDeploymentInputConfig.newBuilder()
+            .setClusterConfig(ClusterConfig.newBuilder().setClusterName("changed-cluster").build())
+            .build();
+
+    CloudEdgeDeploymentConfig configChangeRequested =
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setId(id)
+            .setCloudEdgeDeploymentInputConfig(changedInputConfig)
+            .setLastAppliedInputConfig(originalInputConfig)
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_CHANGE_REQUESTED)
+                    .build())
+            .build();
+
+    // Expected config after cancellation - status reverted and input config restored from last
+    // applied
+    CloudEdgeDeploymentConfig expectedUpdatedConfig =
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setId(id)
+            .setCloudEdgeDeploymentInputConfig(originalInputConfig)
+            .setLastAppliedInputConfig(originalInputConfig)
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY)
+                    .build())
+            .build();
+
+    when(validator.validate(request)).thenReturn(Status.OK);
+    when(store.getCloudEdgeDeploymentConfig(requestContext, id)).thenReturn(configChangeRequested);
+    when(validator.validateActionAndGetNextStates(
+            DeploymentStatus.DEPLOYMENT_STATUS_CHANGE_REQUESTED,
+            ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL,
+            Action.ACTION_CANCEL_CHANGE_REQUEST))
+        .thenReturn(List.of(DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY));
+
+    // Execute
+    manager.performCloudEdgeDeploymentConfigAction(requestContext, request);
+
+    // Verify that store was called with the correct updated config
+    verify(store).upsertCloudEdgeDeploymentConfig(requestContext, expectedUpdatedConfig);
+
+    // Test case 5: Successful action - non-CANCEL_CHANGE_REQUEST action
+    CloudEdgeDeploymentConfigActionRequest holdRequest =
+        CloudEdgeDeploymentConfigActionRequest.newBuilder()
+            .setId(id)
+            .setAccessType(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+            .setAction(Action.ACTION_HOLD)
+            .build();
+
+    CloudEdgeDeploymentConfig deployedConfig =
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setId(id)
+            .setCloudEdgeDeploymentInputConfig(originalInputConfig)
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY)
+                    .build())
+            .build();
+
+    CloudEdgeDeploymentConfig expectedHeldConfig =
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setId(id)
+            .setCloudEdgeDeploymentInputConfig(originalInputConfig)
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_ON_HOLD)
+                    .build())
+            .build();
+
+    when(validator.validate(holdRequest)).thenReturn(Status.OK);
+    when(store.getCloudEdgeDeploymentConfig(requestContext, id)).thenReturn(deployedConfig);
+    when(validator.validateActionAndGetNextStates(
+            DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY,
+            ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL,
+            Action.ACTION_HOLD))
+        .thenReturn(List.of(DeploymentStatus.DEPLOYMENT_STATUS_ON_HOLD));
+
+    // Execute
+    manager.performCloudEdgeDeploymentConfigAction(requestContext, holdRequest);
+
+    // Verify that store was called with the correct updated config
+    verify(store).upsertCloudEdgeDeploymentConfig(requestContext, expectedHeldConfig);
   }
 }

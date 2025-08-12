@@ -33,4 +33,7 @@ public interface CloudEdgeDeploymentConfigManager {
 
   void deployCloudEdgeDeploymentConfig(
       RequestContext ctx, DeployCloudEdgeDeploymentConfigRequest request);
+
+  void performCloudEdgeDeploymentConfigAction(
+      RequestContext ctx, CloudEdgeDeploymentConfigActionRequest request);
 }

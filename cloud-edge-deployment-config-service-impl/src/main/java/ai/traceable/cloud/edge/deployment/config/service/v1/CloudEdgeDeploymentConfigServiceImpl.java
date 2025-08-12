@@ -215,4 +215,24 @@ public class CloudEdgeDeploymentConfigServiceImpl extends CloudEdgeDeploymentCon
       responseObserver.onError(e);
     }
   }
+
+  @Override
+  public void cloudEdgeDeploymentConfigAction(
+      CloudEdgeDeploymentConfigActionRequest request,
+      StreamObserver<CloudEdgeDeploymentConfigActionResponse> responseObserver) {
+    RequestContext ctx = RequestContext.CURRENT.get();
+    try {
+      cloudEdgeDeploymentConfigManager.performCloudEdgeDeploymentConfigAction(ctx, request);
+
+      responseObserver.onNext(CloudEdgeDeploymentConfigActionResponse.getDefaultInstance());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error(
+          "Cloud edge deployment config action failed with request: {} and context: {}",
+          request,
+          ctx,
+          e);
+      responseObserver.onError(e);
+    }
+  }
 }
