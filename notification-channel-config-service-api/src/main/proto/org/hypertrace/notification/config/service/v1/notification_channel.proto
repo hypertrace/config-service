@@ -17,6 +17,11 @@ message NotificationChannelMutableData {
   repeated SplunkIntegrationChannelConfig splunk_integration_channel_config = 5;
   repeated SyslogIntegrationChannelConfig syslog_integration_channel_config = 6;
   repeated HttpEventCollectorChannelConfig http_event_collector_channel_config = 7;
+  repeated GoogleSecopsIntegrationChannelConfig google_secops_integration_channel_config = 8;
+}
+
+message GoogleSecopsIntegrationChannelConfig {
+  string google_secops_integration_id = 1;
 }
 
 message HttpEventCollectorChannelConfig {

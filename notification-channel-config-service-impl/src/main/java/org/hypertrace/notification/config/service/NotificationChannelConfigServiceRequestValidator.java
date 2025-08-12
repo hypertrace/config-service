@@ -18,6 +18,7 @@ import org.hypertrace.notification.config.service.v1.DeleteNotificationChannelRe
 import org.hypertrace.notification.config.service.v1.EmailChannelConfig;
 import org.hypertrace.notification.config.service.v1.GetAllNotificationChannelsRequest;
 import org.hypertrace.notification.config.service.v1.GetNotificationChannelRequest;
+import org.hypertrace.notification.config.service.v1.GoogleSecopsIntegrationChannelConfig;
 import org.hypertrace.notification.config.service.v1.HttpEventCollectorChannelConfig;
 import org.hypertrace.notification.config.service.v1.NotificationChannel;
 import org.hypertrace.notification.config.service.v1.NotificationChannelMutableData;
@@ -131,7 +132,8 @@ public class NotificationChannelConfigServiceRequestValidator {
         && data.getS3BucketChannelConfigCount() == 0
         && data.getSplunkIntegrationChannelConfigCount() == 0
         && data.getSyslogIntegrationChannelConfigCount() == 0
-        && data.getHttpEventCollectorChannelConfigCount() == 0) {
+        && data.getHttpEventCollectorChannelConfigCount() == 0
+        && data.getGoogleSecopsIntegrationChannelConfigCount() == 0) {
       throw Status.INVALID_ARGUMENT.withDescription("No config present").asRuntimeException();
     }
     data.getEmailChannelConfigList().forEach(this::validateEmailChannelConfig);
@@ -143,6 +145,8 @@ public class NotificationChannelConfigServiceRequestValidator {
         .forEach(this::validateSyslogIntegrationChannelConfig);
     data.getHttpEventCollectorChannelConfigList()
         .forEach(this::validateHttpEventCollectorChannelConfig);
+    data.getGoogleSecopsIntegrationChannelConfigList()
+        .forEach(this::validateGoogleSecopsIntegrationChannelConfig);
   }
 
   public void validateGetAllNotificationChannelsRequest(
@@ -232,6 +236,13 @@ public class NotificationChannelConfigServiceRequestValidator {
     validateNonDefaultPresenceOrThrow(
         syslogIntegrationChannelConfig,
         SyslogIntegrationChannelConfig.SYSLOG_SERVER_INTEGRATION_ID_FIELD_NUMBER);
+  }
+
+  private void validateGoogleSecopsIntegrationChannelConfig(
+      GoogleSecopsIntegrationChannelConfig googleSecopsIntegrationChannelConfig) {
+    validateNonDefaultPresenceOrThrow(
+        googleSecopsIntegrationChannelConfig,
+        GoogleSecopsIntegrationChannelConfig.GOOGLE_SECOPS_INTEGRATION_ID_FIELD_NUMBER);
   }
 
   private void validateNonDuplicateNotificationChannelOrThrow(
