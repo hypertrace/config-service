@@ -598,12 +598,19 @@ class RuleVersionManagerImplTest {
                             .addUpdates(
                                 ThreatRuleUpdate.newBuilder().setSignatureUpdated(true).build()))
                     .build())
+            .addThreatTypeChanges(
+                WebAppThreatTypeChange.newBuilder()
+                    .setThreatTypeIdsAdded(StringList.newBuilder().addValues("crs_972").build()))
             .build();
 
     WebAppVersionedRules webAppVersionedRule =
         WebAppVersionedRules.newBuilder()
             .setRulesData(
                 WebAppRulesData.newBuilder()
+                    .addThreatTypes(
+                        WebAppThreatType.newBuilder()
+                            .setTypeId("crs_972")
+                            .setTypeName("Type Name 2"))
                     .addThreatTypes(
                         WebAppThreatType.newBuilder().setTypeId("crs_123").setTypeName("Type Name"))
                     .addThreatRules(

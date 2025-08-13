@@ -764,9 +764,11 @@ public class RuleVersionManagerImpl implements RuleVersionManager {
         webAppVersionedRule.getRulesData().getThreatTypesList().stream()
             .collect(Collectors.toMap(WebAppThreatType::getTypeId, Function.identity()));
 
-    Builder addedRuleTableBuilder = getTableBuilder();
-    Builder removedRuleTableBuilder = getTableBuilder();
-    Builder updatedRuleTableBuilder = getTableBuilder();
+    Builder addedRuleTableBuilder = getRuleTableBuilder();
+    Builder removedRuleTableBuilder = getRuleTableBuilder();
+    Builder updatedRuleTableBuilder = getRuleTableBuilder();
+    Builder addedThreatTypeTableBuilder = getThreatTypeTableBuilder();
+    Builder removedThreatTypeTableBuilder = getThreatTypeTableBuilder();
 
     for (WebAppThreatRuleChange threatRuleChange : webAppRulesChangeLog.getRuleChangesList()) {
       ChangeLogRow.Builder rowBuilder = ChangeLogRow.newBuilder();
@@ -876,19 +878,45 @@ public class RuleVersionManagerImpl implements RuleVersionManager {
       }
     }
 
+    for (WebAppThreatTypeChange threatTypeChange :
+        webAppRulesChangeLog.getThreatTypeChangesList()) {
+      ChangeLogRow.Builder rowBuilder = ChangeLogRow.newBuilder();
+
+      switch (threatTypeChange.getChangeCase()) {
+        case THREAT_TYPE_IDS_REMOVED:
+          for (String id : threatTypeChange.getThreatTypeIdsRemoved().getValuesList()) {
+            rowBuilder.putValues(THREAT_TYPE, threatTypeIdToRuleMap.get(id).getTypeName());
+            removedThreatTypeTableBuilder.addRows(rowBuilder.build());
+          }
+          break;
+        case THREAT_TYPE_IDS_ADDED:
+          for (String id : threatTypeChange.getThreatTypeIdsAdded().getValuesList()) {
+            rowBuilder.putValues(THREAT_TYPE, threatTypeIdToRuleMap.get(id).getTypeName());
+            addedThreatTypeTableBuilder.addRows(rowBuilder.build());
+          }
+          break;
+      }
+    }
+
     return builder
         .setAddedRulesTable(addedRuleTableBuilder)
         .setRemovedRulesTable(removedRuleTableBuilder)
         .setUpdatedRulesTable(updatedRuleTableBuilder)
+        .setAddedThreatTypesTable(addedThreatTypeTableBuilder)
+        .setRemovedThreatTypesTable(removedThreatTypeTableBuilder)
         .build();
   }
 
-  private static Builder getTableBuilder() {
+  private static Builder getRuleTableBuilder() {
     return ChangeLogTable.newBuilder()
-        .addColumnNames(THREAT_TYPE)
         .addColumnNames(THREAT_RULE)
+        .addColumnNames(THREAT_TYPE)
         .addColumnNames(IS_AGGRESSIVE)
         .addColumnNames(SEVERITY);
+  }
+
+  private static Builder getThreatTypeTableBuilder() {
+    return ChangeLogTable.newBuilder().addColumnNames(THREAT_TYPE);
   }
 
   private ChangeLog populateChangeLogTables(
@@ -904,9 +932,11 @@ public class RuleVersionManagerImpl implements RuleVersionManager {
         apiProtectVersionedRules.getRulesData().getThreatTypesList().stream()
             .collect(Collectors.toMap(ApiProtectThreatType::getTypeId, Function.identity()));
 
-    Builder addedRuleTableBuilder = getTableBuilder();
-    Builder removedRuleTableBuilder = getTableBuilder();
-    Builder updatedRuleTableBuilder = getTableBuilder();
+    Builder addedRuleTableBuilder = getRuleTableBuilder();
+    Builder removedRuleTableBuilder = getRuleTableBuilder();
+    Builder updatedRuleTableBuilder = getRuleTableBuilder();
+    Builder addedThreatTypeTableBuilder = getThreatTypeTableBuilder();
+    Builder removedThreatTypeTableBuilder = getThreatTypeTableBuilder();
 
     for (ApiProtectThreatRuleChange threatRuleChange :
         apiProtectRulesChangeLog.getRuleChangesList()) {
@@ -1020,10 +1050,32 @@ public class RuleVersionManagerImpl implements RuleVersionManager {
       }
     }
 
+    for (ApiProtectThreatTypeChange threatTypeChange :
+        apiProtectRulesChangeLog.getThreatTypeChangesList()) {
+      ChangeLogRow.Builder rowBuilder = ChangeLogRow.newBuilder();
+
+      switch (threatTypeChange.getChangeCase()) {
+        case THREAT_TYPE_IDS_REMOVED:
+          for (String id : threatTypeChange.getThreatTypeIdsRemoved().getValuesList()) {
+            rowBuilder.putValues(THREAT_TYPE, threatTypeIdToRuleMap.get(id).getTypeName());
+            removedThreatTypeTableBuilder.addRows(rowBuilder.build());
+          }
+          break;
+        case THREAT_TYPE_IDS_ADDED:
+          for (String id : threatTypeChange.getThreatTypeIdsAdded().getValuesList()) {
+            rowBuilder.putValues(THREAT_TYPE, threatTypeIdToRuleMap.get(id).getTypeName());
+            addedThreatTypeTableBuilder.addRows(rowBuilder.build());
+          }
+          break;
+      }
+    }
+
     return builder
         .setAddedRulesTable(addedRuleTableBuilder)
         .setRemovedRulesTable(removedRuleTableBuilder)
         .setUpdatedRulesTable(updatedRuleTableBuilder)
+        .setAddedThreatTypesTable(addedThreatTypeTableBuilder)
+        .setRemovedThreatTypesTable(removedThreatTypeTableBuilder)
         .build();
   }
 

@@ -255,6 +255,8 @@ message ChangeLog {
   ChangeLogTable added_rules_table = 5;
   ChangeLogTable updated_rules_table = 6;
   ChangeLogTable removed_rules_table = 7;
+  ChangeLogTable added_threat_types_table = 8;
+  ChangeLogTable removed_threat_types_table = 9;
 }
 
 message ChangeLogTable {
