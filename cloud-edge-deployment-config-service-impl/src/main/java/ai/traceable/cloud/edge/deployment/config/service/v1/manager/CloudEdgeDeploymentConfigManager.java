@@ -1,6 +1,13 @@
 package ai.traceable.cloud.edge.deployment.config.service.v1.manager;
 
-import ai.traceable.cloud.edge.deployment.config.service.v1.*;
+import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentConfig;
+import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentConfigActionRequest;
+import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigAccessType;
+import ai.traceable.cloud.edge.deployment.config.service.v1.CreateCloudEdgeDeploymentConfigRequest;
+import ai.traceable.cloud.edge.deployment.config.service.v1.GetCloudEdgeDeploymentConfigsFilter;
+import ai.traceable.cloud.edge.deployment.config.service.v1.GetCloudEdgeDeploymentConfigsResponse;
+import ai.traceable.cloud.edge.deployment.config.service.v1.SharedConfigMetadata;
+import ai.traceable.cloud.edge.deployment.config.service.v1.UpdateCloudEdgeDeploymentConfigRequest;
 import java.util.List;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -20,19 +27,7 @@ public interface CloudEdgeDeploymentConfigManager {
 
   void deleteCloudEdgeDeploymentConfig(RequestContext ctx, String id);
 
-  void cancelCloudEdgeDeploymentConfigAction(
-      RequestContext ctx, CancelCloudEdgeDeploymentConfigActionRequest request);
-
   SharedConfigMetadata getSharedConfigMetadata(RequestContext ctx, ConfigAccessType accessType);
-
-  void removeCloudEdgeDeploymentConfig(
-      RequestContext ctx, RemoveCloudEdgeDeploymentConfigRequest request);
-
-  void holdCloudEdgeDeploymentConfig(
-      RequestContext ctx, HoldCloudEdgeDeploymentConfigRequest request);
-
-  void deployCloudEdgeDeploymentConfig(
-      RequestContext ctx, DeployCloudEdgeDeploymentConfigRequest request);
 
   void performCloudEdgeDeploymentConfigAction(
       RequestContext ctx, CloudEdgeDeploymentConfigActionRequest request);

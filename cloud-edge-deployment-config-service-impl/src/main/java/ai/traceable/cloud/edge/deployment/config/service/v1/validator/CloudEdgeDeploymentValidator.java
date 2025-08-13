@@ -3,7 +3,6 @@ package ai.traceable.cloud.edge.deployment.config.service.v1.validator;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 
 import ai.traceable.cloud.edge.deployment.config.service.v1.Action;
-import ai.traceable.cloud.edge.deployment.config.service.v1.CancelCloudEdgeDeploymentConfigActionRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentConfigActionRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentInputConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigAccessType;
@@ -11,15 +10,12 @@ import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigPermission;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigValueDescriptor;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CreateCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DeleteCloudEdgeDeploymentConfigRequest;
-import ai.traceable.cloud.edge.deployment.config.service.v1.DeployCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DeploymentStatus;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DomainConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.HealthCheckDetails;
 import ai.traceable.cloud.edge.deployment.config.service.v1.HealthCheckSettings;
-import ai.traceable.cloud.edge.deployment.config.service.v1.HoldCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.OriginConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.Protocol;
-import ai.traceable.cloud.edge.deployment.config.service.v1.RemoveCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ServiceConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.SharedConfigMetadata;
 import ai.traceable.cloud.edge.deployment.config.service.v1.UpdateCloudEdgeDeploymentConfigRequest;
@@ -88,35 +84,7 @@ public class CloudEdgeDeploymentValidator {
     return Status.OK;
   }
 
-  public Status validate(CancelCloudEdgeDeploymentConfigActionRequest request) {
-    if (request.getId().isEmpty()) {
-      return Status.INVALID_ARGUMENT.withDescription(EMPTY_ID_ERROR);
-    }
-    return Status.OK;
-  }
-
   public Status validate(DeleteCloudEdgeDeploymentConfigRequest request) {
-    if (request.getId().isEmpty()) {
-      return Status.INVALID_ARGUMENT.withDescription(EMPTY_ID_ERROR);
-    }
-    return Status.OK;
-  }
-
-  public Status validate(RemoveCloudEdgeDeploymentConfigRequest request) {
-    if (request.getId().isEmpty()) {
-      return Status.INVALID_ARGUMENT.withDescription(EMPTY_ID_ERROR);
-    }
-    return Status.OK;
-  }
-
-  public Status validate(HoldCloudEdgeDeploymentConfigRequest request) {
-    if (request.getId().isEmpty()) {
-      return Status.INVALID_ARGUMENT.withDescription(EMPTY_ID_ERROR);
-    }
-    return Status.OK;
-  }
-
-  public Status validate(DeployCloudEdgeDeploymentConfigRequest request) {
     if (request.getId().isEmpty()) {
       return Status.INVALID_ARGUMENT.withDescription(EMPTY_ID_ERROR);
     }
