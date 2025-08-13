@@ -66,3 +66,6 @@ data-protection-config-service-api @singhalprerana @avinashkolluru @bhubam
 data-protection-config-service-impl @singhalprerana @avinashkolluru @bhubam
 threat-management-config-service-api @singhalprerana @avinashkolluru @bhubam
 threat-scoring-config-service-impl @singhalprerana @avinashkolluru @bhubam
+
+# No owners for lock changes
+**/gradle.lockfile
