@@ -249,12 +249,12 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
                 validKeys.add(tokenExtractionRule.getKey());
               }
             });
-    Pattern pattern = Pattern.compile("\\{(\\\\}|[^}])*}");
+    Pattern pattern = Pattern.compile("\\$\\{(\\\\}|[^}])*}");
     Matcher matcher = pattern.matcher(labelExpression);
     int startOffset = 0;
     while (startOffset < labelExpression.length() && matcher.find(startOffset)) {
       String match = matcher.group();
-      String key = match.substring(1, match.length() - 1);
+      String key = match.substring(2, match.length() - 1);
       startOffset = startOffset + matcher.end();
       if (!validKeys.contains(key)) {
         throwInvalidArgumentException("Invalid key name in label expression");
