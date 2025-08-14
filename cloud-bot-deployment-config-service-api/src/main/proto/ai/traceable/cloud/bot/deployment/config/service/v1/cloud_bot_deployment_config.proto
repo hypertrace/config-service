@@ -80,7 +80,13 @@ message IpWhitelistConfig {
 }
 
 message CloudBotDeploymentStatus {
-  ClusterStatus cluster_status = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Current status of the deployment cluster"];
+  ClusterStatus cluster_status = 1 [
+    (ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Current status of the deployment cluster",
+    deprecated = true,
+    (ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_deprecated) = true
+  ];
+  DeploymentStatus deployment_status = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Current status of the deployment for the bot cluster"];
+  optional string message = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Optional message associated with the deployment status, mandatory for blocked state and would be displayed to customers"];
 }
 
 message CaptchaProviderDetails {
@@ -139,10 +145,25 @@ enum DeploymentMode {
 }
 
 enum ClusterStatus {
+  option deprecated = true;
+
   CLUSTER_STATUS_UNSPECIFIED = 0;
   CLUSTER_STATUS_PROVISIONING = 1;
   CLUSTER_STATUS_READY = 2;
   CLUSTER_STATUS_ERROR = 3;
+}
+
+enum DeploymentStatus {
+  DEPLOYMENT_STATUS_UNSPECIFIED = 0;
+  DEPLOYMENT_STATUS_REQUESTED = 1;
+  DEPLOYMENT_STATUS_IN_PROGRESS = 2;
+  DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY = 3;
+  DEPLOYMENT_STATUS_BLOCKED = 4;
+  DEPLOYMENT_STATUS_CHANGE_REQUESTED = 5;
+  DEPLOYMENT_STATUS_CHANGE_IN_PROGRESS = 6;
+  DEPLOYMENT_STATUS_CHANGE_BLOCKED = 7;
+  DEPLOYMENT_STATUS_REMOVAL_IN_PROGRESS = 8;
+  DEPLOYMENT_STATUS_DEPLOYMENT_DELETED = 9;
 }
 
 message StringMap {
