@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.4.2683=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.2689=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.7.0=runtimeClasspath,testRuntimeClasspath
 ai.traceable.license.metering.service:license-metering-service-api:0.1.79=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:api-utils:0.8.110=runtimeClasspath,testRuntimeClasspath
@@ -118,16 +118,16 @@ io.micrometer:micrometer-commons:1.14.4=compileClasspath,runtimeClasspath,testCo
 io.micrometer:micrometer-core:1.14.4=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 io.micrometer:micrometer-observation:1.14.4=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 io.micrometer:micrometer-registry-prometheus-simpleclient:1.14.4=runtimeClasspath,testRuntimeClasspath
-io.netty:netty-bom:4.1.118.Final=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-io.netty:netty-buffer:4.1.118.Final=runtimeClasspath,testRuntimeClasspath
-io.netty:netty-codec:4.1.118.Final=runtimeClasspath,testRuntimeClasspath
-io.netty:netty-common:4.1.118.Final=runtimeClasspath,testRuntimeClasspath
-io.netty:netty-handler:4.1.118.Final=runtimeClasspath,testRuntimeClasspath
-io.netty:netty-resolver:4.1.118.Final=runtimeClasspath,testRuntimeClasspath
-io.netty:netty-transport-classes-epoll:4.1.118.Final=runtimeClasspath,testRuntimeClasspath
-io.netty:netty-transport-native-epoll:4.1.118.Final=runtimeClasspath,testRuntimeClasspath
-io.netty:netty-transport-native-unix-common:4.1.118.Final=runtimeClasspath,testRuntimeClasspath
-io.netty:netty-transport:4.1.118.Final=runtimeClasspath,testRuntimeClasspath
+io.netty:netty-bom:4.1.124.Final=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+io.netty:netty-buffer:4.1.124.Final=runtimeClasspath,testRuntimeClasspath
+io.netty:netty-codec:4.1.124.Final=runtimeClasspath,testRuntimeClasspath
+io.netty:netty-common:4.1.124.Final=runtimeClasspath,testRuntimeClasspath
+io.netty:netty-handler:4.1.124.Final=runtimeClasspath,testRuntimeClasspath
+io.netty:netty-resolver:4.1.124.Final=runtimeClasspath,testRuntimeClasspath
+io.netty:netty-transport-classes-epoll:4.1.124.Final=runtimeClasspath,testRuntimeClasspath
+io.netty:netty-transport-native-epoll:4.1.124.Final=runtimeClasspath,testRuntimeClasspath
+io.netty:netty-transport-native-unix-common:4.1.124.Final=runtimeClasspath,testRuntimeClasspath
+io.netty:netty-transport:4.1.124.Final=runtimeClasspath,testRuntimeClasspath
 io.opencensus:opencensus-api:0.31.1=runtimeClasspath,testRuntimeClasspath
 io.opencensus:opencensus-contrib-exemplar-util:0.31.0=runtimeClasspath,testRuntimeClasspath
 io.opencensus:opencensus-contrib-grpc-metrics:0.31.1=runtimeClasspath,testRuntimeClasspath
