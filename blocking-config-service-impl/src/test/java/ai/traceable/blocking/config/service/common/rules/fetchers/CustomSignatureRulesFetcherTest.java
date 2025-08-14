@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
+import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesTarget;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureInlineRule;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
@@ -41,8 +42,7 @@ public class CustomSignatureRulesFetcherTest {
                 .setModsecRulesBlob("testblob")
                 .addInlineRules(
                     CustomSignatureInlineRule.newBuilder()
-                        .setRule(CustomSignatureRule.newBuilder().setId("ruleId1"))
-                        .build())
+                        .setRule(CustomSignatureRule.newBuilder().setId("ruleId1")))
                 .build())
         .when(customSignatureConfigServiceBlockingStub)
         .getCustomSignatureModsecRules(
@@ -52,7 +52,8 @@ public class CustomSignatureRulesFetcherTest {
                         .setDisabled(false)
                         .setRuleScope(
                             RuleScope.newBuilder()
-                                .setEnvironmentScope(EnvironmentScope.newBuilder())))
+                                .setEnvironmentScope(EnvironmentScope.getDefaultInstance())))
+                .setModsecCrsRulesTarget(ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING)
                 .setRuleVersion(CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS)
                 .build());
 
@@ -61,8 +62,7 @@ public class CustomSignatureRulesFetcherTest {
                 .setModsecRulesBlob("testblob-env-scoped")
                 .addInlineRules(
                     CustomSignatureInlineRule.newBuilder()
-                        .setRule(CustomSignatureRule.newBuilder().setId("ruleId1-env"))
-                        .build())
+                        .setRule(CustomSignatureRule.newBuilder().setId("ruleId1-env")))
                 .build())
         .when(customSignatureConfigServiceBlockingStub)
         .getCustomSignatureModsecRules(
@@ -75,6 +75,7 @@ public class CustomSignatureRulesFetcherTest {
                                 .setEnvironmentScope(
                                     EnvironmentScope.newBuilder()
                                         .addEnvironmentIds(ENVIRONMENT_ID.get()))))
+                .setModsecCrsRulesTarget(ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING)
                 .setRuleVersion(CUSTOM_MODSEC_RULE_VERSION_V3)
                 .build());
   }

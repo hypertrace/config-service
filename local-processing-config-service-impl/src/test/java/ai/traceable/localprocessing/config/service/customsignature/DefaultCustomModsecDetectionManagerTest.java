@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesTarget;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
@@ -99,10 +100,9 @@ class DefaultCustomModsecDetectionManagerTest {
                             RuleScope.newBuilder()
                                 .setEnvironmentScope(
                                     EnvironmentScope.newBuilder()
-                                        .addEnvironmentIds("environmentId"))
-                                .build())
-                        .build())
+                                        .addEnvironmentIds("environmentId"))))
                 .setRuleVersion(CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_CORAZA_V3)
+                .setModsecCrsRulesTarget(ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TPA_DETECTION)
                 .build()))
         .thenReturn(stubResponse);
 

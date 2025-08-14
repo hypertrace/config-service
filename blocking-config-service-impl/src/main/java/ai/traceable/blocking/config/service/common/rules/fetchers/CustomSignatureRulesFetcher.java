@@ -1,5 +1,6 @@
 package ai.traceable.blocking.config.service.common.rules.fetchers;
 
+import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesTarget;
 import ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
 import ai.traceable.customsignature.config.service.v1.EnvironmentScope;
@@ -44,6 +45,7 @@ public class CustomSignatureRulesFetcher implements RulesFetcher {
                                     .map(id -> EnvironmentScope.newBuilder().addEnvironmentIds(id))
                                     .orElse(EnvironmentScope.newBuilder())))
                     .build())
+            .setModsecCrsRulesTarget(ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING)
             .build();
 
     return requestContext.call(

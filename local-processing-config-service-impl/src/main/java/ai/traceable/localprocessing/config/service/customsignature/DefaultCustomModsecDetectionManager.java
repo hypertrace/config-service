@@ -1,5 +1,6 @@
 package ai.traceable.localprocessing.config.service.customsignature;
 
+import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesTarget;
 import ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
 import ai.traceable.customsignature.config.service.v1.EnvironmentScope;
@@ -62,6 +63,8 @@ public class DefaultCustomModsecDetectionManager implements CustomModsecDetectio
                                                         .addEnvironmentIds(environmentId))
                                                 .build())
                                     .build())
+                            .setModsecCrsRulesTarget(
+                                ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TPA_DETECTION)
                             .setRuleVersion(
                                 shouldUseCoraza
                                     ? CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_CORAZA_V3
