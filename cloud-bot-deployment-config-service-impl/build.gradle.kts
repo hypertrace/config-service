@@ -20,6 +20,8 @@ dependencies {
 
   implementation(commonLibs.hypertrace.grpcutils.context)
   implementation(commonLibs.hypertrace.grpcutils.client)
+  implementation(commonLibs.jackson.yaml)
+
   implementation(localLibs.hypertrace.configservice.protoconverter)
   implementation(localLibs.domain.validation)
 

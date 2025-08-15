@@ -10,10 +10,10 @@ import ai.traceable.cloud.bot.deployment.config.service.v1.CaptchaType;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CloudBotDeploymentConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CloudBotDeploymentConfigInput;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CloudBotDeploymentStatus;
-import ai.traceable.cloud.bot.deployment.config.service.v1.ClusterStatus;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CreateCloudBotDeploymentConfigRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentDetails;
 import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentMode;
+import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentStatus;
 import ai.traceable.cloud.bot.deployment.config.service.v1.EdgeDeploymentConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.IpWhitelistConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.MTCaptchaDetails;
@@ -46,7 +46,7 @@ class CloudBotDeploymentConfigValidatorTest {
                             SiteConfig.newBuilder()
                                 .setSiteName("Test Site")
                                 .setSiteKey("test-site-key")
-                                .addDomains("example.com")
+                                .addDomains("agent.traceableai.com")
                                 .setCaptchaConfig(
                                     CaptchaConfig.newBuilder()
                                         .setEnabled(true)
@@ -283,6 +283,9 @@ class CloudBotDeploymentConfigValidatorTest {
             .setEnabled(true)
             .setSiteConfig(createValidSiteConfig())
             .setDeploymentDetails(createValidDeploymentDetails())
+            .setCloudBotDeploymentStatus(
+                CloudBotDeploymentStatus.newBuilder()
+                    .setDeploymentStatus(DeploymentStatus.DEPLOYMENT_STATUS_CHANGE_REQUESTED))
             .build();
 
     Status status =
@@ -291,7 +294,8 @@ class CloudBotDeploymentConfigValidatorTest {
                 .setId("config-123")
                 .setCloudBotDeploymentStatus(
                     CloudBotDeploymentStatus.newBuilder()
-                        .setClusterStatus(ClusterStatus.CLUSTER_STATUS_READY))
+                        .setDeploymentStatus(
+                            DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY))
                 .setCaptchaProviderDetails(
                     CaptchaProviderDetails.newBuilder()
                         .setMtCaptcha(MTCaptchaDetails.newBuilder().setSiteKey("mt-site-key")))
@@ -302,7 +306,7 @@ class CloudBotDeploymentConfigValidatorTest {
   }
 
   @Test
-  void testValidateUpdateCloudBotDeploymentStatusRequest_EmptyId() {
+  void testValidateUpdateCloudBotDeploymentStatusRequest_Unspecified() {
     // Create an existing config with edge deployment mode
     CloudBotDeploymentConfig existingConfig =
         CloudBotDeploymentConfig.newBuilder()
@@ -310,29 +314,9 @@ class CloudBotDeploymentConfigValidatorTest {
             .setEnabled(true)
             .setSiteConfig(createValidSiteConfig())
             .setDeploymentDetails(createValidDeploymentDetails())
-            .build();
-
-    Status status =
-        validator.validate(
-            UpdateCloudBotDeploymentStatusRequest.newBuilder()
-                .setCloudBotDeploymentStatus(
-                    CloudBotDeploymentStatus.newBuilder()
-                        .setClusterStatus(ClusterStatus.CLUSTER_STATUS_READY))
-                .build(),
-            existingConfig);
-    assertFalse(status.isOk(), "Empty ID should fail validation");
-    assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
-  }
-
-  @Test
-  void testValidateUpdateCloudBotDeploymentStatusRequest_UnspecifiedClusterStatus() {
-    // Create an existing config with edge deployment mode
-    CloudBotDeploymentConfig existingConfig =
-        CloudBotDeploymentConfig.newBuilder()
-            .setId("config-123")
-            .setEnabled(true)
-            .setSiteConfig(createValidSiteConfig())
-            .setDeploymentDetails(createValidDeploymentDetails())
+            .setCloudBotDeploymentStatus(
+                CloudBotDeploymentStatus.newBuilder()
+                    .setDeploymentStatus(DeploymentStatus.DEPLOYMENT_STATUS_REQUESTED))
             .build();
 
     Status status =
@@ -341,11 +325,65 @@ class CloudBotDeploymentConfigValidatorTest {
                 .setId("config-123")
                 .setCloudBotDeploymentStatus(
                     CloudBotDeploymentStatus.newBuilder()
-                        .setClusterStatus(ClusterStatus.CLUSTER_STATUS_UNSPECIFIED))
+                        .setDeploymentStatus(DeploymentStatus.DEPLOYMENT_STATUS_UNSPECIFIED))
                 .build(),
             existingConfig);
-    assertFalse(status.isOk(), "Unspecified cluster status should fail validation");
+    assertFalse(status.isOk(), "Unspecified deployment status should fail validation");
     assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
+  }
+
+  @Test
+  void testValidateUpdateCloudBotDeploymentStatusRequest_BlockedWithoutMessage() {
+    // Create an existing config with edge deployment mode
+    CloudBotDeploymentConfig existingConfig =
+        CloudBotDeploymentConfig.newBuilder()
+            .setId("config-123")
+            .setEnabled(true)
+            .setSiteConfig(createValidSiteConfig())
+            .setDeploymentDetails(createValidDeploymentDetails())
+            .setCloudBotDeploymentStatus(
+                CloudBotDeploymentStatus.newBuilder()
+                    .setDeploymentStatus(DeploymentStatus.DEPLOYMENT_STATUS_REQUESTED))
+            .build();
+
+    Status status =
+        validator.validate(
+            UpdateCloudBotDeploymentStatusRequest.newBuilder()
+                .setId("config-123")
+                .setCloudBotDeploymentStatus(
+                    CloudBotDeploymentStatus.newBuilder()
+                        .setDeploymentStatus(DeploymentStatus.DEPLOYMENT_STATUS_BLOCKED))
+                .build(),
+            existingConfig);
+    assertFalse(status.isOk(), "Blocked status without message should fail validation");
+    assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
+  }
+
+  @Test
+  void testValidateUpdateCloudBotDeploymentStatusRequest_BlockedWithMessage() {
+    // Create an existing config with edge deployment mode
+    CloudBotDeploymentConfig existingConfig =
+        CloudBotDeploymentConfig.newBuilder()
+            .setId("config-123")
+            .setEnabled(true)
+            .setSiteConfig(createValidSiteConfig())
+            .setDeploymentDetails(createValidDeploymentDetails())
+            .setCloudBotDeploymentStatus(
+                CloudBotDeploymentStatus.newBuilder()
+                    .setDeploymentStatus(DeploymentStatus.DEPLOYMENT_STATUS_REQUESTED))
+            .build();
+
+    Status status =
+        validator.validate(
+            UpdateCloudBotDeploymentStatusRequest.newBuilder()
+                .setId("config-123")
+                .setCloudBotDeploymentStatus(
+                    CloudBotDeploymentStatus.newBuilder()
+                        .setDeploymentStatus(DeploymentStatus.DEPLOYMENT_STATUS_BLOCKED)
+                        .setMessage("Blocked due to security concerns"))
+                .build(),
+            existingConfig);
+    assertTrue(status.isOk(), "Blocked status with message should pass validation");
   }
 
   @Test
@@ -357,6 +395,9 @@ class CloudBotDeploymentConfigValidatorTest {
             .setEnabled(true)
             .setSiteConfig(createValidSiteConfig())
             .setDeploymentDetails(createValidDeploymentDetails())
+            .setCloudBotDeploymentStatus(
+                CloudBotDeploymentStatus.newBuilder()
+                    .setDeploymentStatus(DeploymentStatus.DEPLOYMENT_STATUS_REQUESTED))
             .build();
 
     Status status =
@@ -365,7 +406,8 @@ class CloudBotDeploymentConfigValidatorTest {
                 .setId("config-123")
                 .setCloudBotDeploymentStatus(
                     CloudBotDeploymentStatus.newBuilder()
-                        .setClusterStatus(ClusterStatus.CLUSTER_STATUS_READY))
+                        .setDeploymentStatus(
+                            DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY))
                 .setCaptchaProviderDetails(
                     CaptchaProviderDetails.newBuilder().setMtCaptcha(MTCaptchaDetails.newBuilder()))
                 .build(),
@@ -392,8 +434,10 @@ class CloudBotDeploymentConfigValidatorTest {
                 DeploymentDetails.newBuilder()
                     .setEnvironment("production")
                     .setDeploymentMode(DeploymentMode.DEPLOYMENT_MODE_OUT_OF_BAND)
-                    .setOobDeploymentConfig(OobDeploymentConfig.newBuilder())
-                    .build())
+                    .setOobDeploymentConfig(OobDeploymentConfig.newBuilder()))
+            .setCloudBotDeploymentStatus(
+                CloudBotDeploymentStatus.newBuilder()
+                    .setDeploymentStatus(DeploymentStatus.DEPLOYMENT_STATUS_REQUESTED))
             .build();
 
     Status status =
@@ -402,7 +446,8 @@ class CloudBotDeploymentConfigValidatorTest {
                 .setId("config-123")
                 .setCloudBotDeploymentStatus(
                     CloudBotDeploymentStatus.newBuilder()
-                        .setClusterStatus(ClusterStatus.CLUSTER_STATUS_READY))
+                        .setDeploymentStatus(
+                            DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY))
                 .build(),
             existingConfig);
     assertFalse(
@@ -443,8 +488,7 @@ class CloudBotDeploymentConfigValidatorTest {
   }
 
   @Test
-  void
-      testValidateUpdateCloudBotDeploymentStatusRequest_WithOobDeploymentAndTraceableCaptchaDomain() {
+  void testValidateUpdateCloudBotDeploymentStatusRequest_WithOobDeploymentAndCaptchaDomain() {
     // Create an existing config with OOB deployment mode
     CloudBotDeploymentConfig existingConfig =
         CloudBotDeploymentConfig.newBuilder()
@@ -452,6 +496,9 @@ class CloudBotDeploymentConfigValidatorTest {
             .setEnabled(true)
             .setSiteConfig(createValidSiteConfig())
             .setDeploymentDetails(createValidOobDeploymentDetails())
+            .setCloudBotDeploymentStatus(
+                CloudBotDeploymentStatus.newBuilder()
+                    .setDeploymentStatus(DeploymentStatus.DEPLOYMENT_STATUS_REQUESTED))
             .build();
 
     Status status =
@@ -460,7 +507,8 @@ class CloudBotDeploymentConfigValidatorTest {
                 .setId("config-123")
                 .setCloudBotDeploymentStatus(
                     CloudBotDeploymentStatus.newBuilder()
-                        .setClusterStatus(ClusterStatus.CLUSTER_STATUS_READY))
+                        .setDeploymentStatus(
+                            DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY))
                 .setTraceableCaptchaDomain("captcha.traceable.ai")
                 .build(),
             existingConfig);

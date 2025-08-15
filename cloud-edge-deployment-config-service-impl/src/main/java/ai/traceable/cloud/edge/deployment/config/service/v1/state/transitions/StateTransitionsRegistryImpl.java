@@ -96,7 +96,7 @@ public class StateTransitionsRegistryImpl implements StateTransitionsRegistry {
   }
 
   @Value
-  class DeploymentStatusTuple {
+  static class DeploymentStatusTuple {
     DeploymentStatus deploymentStatus;
     ConfigAccessType configAccessType;
   }

@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -19,11 +20,10 @@ import ai.traceable.cloud.bot.deployment.config.service.v1.CaptchaType;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CloudBotDeploymentConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CloudBotDeploymentConfigInput;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CloudBotDeploymentStatus;
-import ai.traceable.cloud.bot.deployment.config.service.v1.ClusterStatus;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CreateCloudBotDeploymentConfigRequest;
-import ai.traceable.cloud.bot.deployment.config.service.v1.DeleteCloudBotDeploymentConfigRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentDetails;
 import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentMode;
+import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentStatus;
 import ai.traceable.cloud.bot.deployment.config.service.v1.EdgeDeploymentConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.EnableCloudBotDeploymentRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.IpWhitelistConfig;
@@ -35,10 +35,13 @@ import ai.traceable.cloud.bot.deployment.config.service.v1.StringMap;
 import ai.traceable.cloud.bot.deployment.config.service.v1.UpdateCloudBotDeploymentConfigRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.UpdateCloudBotDeploymentStatusRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.encryption.KeyPairGenerator;
+import ai.traceable.cloud.bot.deployment.config.service.v1.state.transitions.StateTransitionsRegistry;
+import ai.traceable.cloud.bot.deployment.config.service.v1.state.transitions.StateTransitionsRegistryImpl;
 import ai.traceable.cloud.bot.deployment.config.service.v1.store.CloudBotDeploymentConfigStore;
 import ai.traceable.config.utils.UuidGenerator;
 import com.google.protobuf.Timestamp;
 import io.grpc.Status;
+import io.grpc.Status.Code;
 import io.grpc.StatusRuntimeException;
 import java.time.Clock;
 import java.util.Arrays;
@@ -55,6 +58,8 @@ class CloudBotDeploymentConfigManagerImplTest {
 
   @Mock private CloudBotDeploymentConfigStore store;
   @Mock private CloudBotDeploymentConfigValidator validator;
+  private final StateTransitionsRegistry stateTransitionsRegistry =
+      new StateTransitionsRegistryImpl();
   @Mock private UuidGenerator uuidGenerator;
   @Mock private KeyPairGenerator keyPairGenerator;
   @Mock private RequestContext requestContext;
@@ -67,7 +72,7 @@ class CloudBotDeploymentConfigManagerImplTest {
     MockitoAnnotations.openMocks(this);
     manager =
         new CloudBotDeploymentConfigManagerImpl(
-            store, validator, uuidGenerator, keyPairGenerator, clock);
+            store, validator, stateTransitionsRegistry, uuidGenerator, keyPairGenerator, clock);
   }
 
   @Test
@@ -106,7 +111,7 @@ class CloudBotDeploymentConfigManagerImplTest {
             .setDeploymentDetails(createValidOOBDeploymentDetails("api-token-apple"))
             .setCloudBotDeploymentStatus(
                 CloudBotDeploymentStatus.newBuilder()
-                    .setClusterStatus(ClusterStatus.CLUSTER_STATUS_PROVISIONING))
+                    .setDeploymentStatus(DeploymentStatus.DEPLOYMENT_STATUS_REQUESTED))
             .setLastUpdatedTimestamp(Timestamp.newBuilder().setSeconds(123456))
             .build();
 
@@ -176,7 +181,7 @@ class CloudBotDeploymentConfigManagerImplTest {
                 createValidEdgeDeploymentDetails().toBuilder().setEnvironment("mango-env"))
             .setCloudBotDeploymentStatus(
                 CloudBotDeploymentStatus.newBuilder()
-                    .setClusterStatus(ClusterStatus.CLUSTER_STATUS_READY))
+                    .setDeploymentStatus(DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY))
             .build();
 
     CloudBotDeploymentConfig expectedUpdatedConfig =
@@ -193,7 +198,7 @@ class CloudBotDeploymentConfigManagerImplTest {
             .setDeploymentDetails(createValidEdgeDeploymentDetails())
             .setCloudBotDeploymentStatus(
                 CloudBotDeploymentStatus.newBuilder()
-                    .setClusterStatus(ClusterStatus.CLUSTER_STATUS_READY))
+                    .setDeploymentStatus(DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY))
             .setLastUpdatedTimestamp(Timestamp.newBuilder().setSeconds(123456))
             .build();
 
@@ -203,6 +208,7 @@ class CloudBotDeploymentConfigManagerImplTest {
     when(store.updateCloudBotDeploymentConfig(eq(requestContext), eq(expectedUpdatedConfig)))
         .thenReturn(expectedUpdatedConfig);
     when(clock.millis()).thenReturn(123456000L);
+    when(validator.validateId(id)).thenReturn(Status.OK);
 
     CloudBotDeploymentConfig result =
         manager.updateCloudBotDeploymentConfig(requestContext, id, request);
@@ -235,6 +241,7 @@ class CloudBotDeploymentConfigManagerImplTest {
     when(validator.validate(eq(request), any(CloudBotDeploymentConfig.class)))
         .thenReturn(Status.OK);
     when(store.getCloudBotDeploymentConfig(requestContext, id)).thenReturn(null);
+    when(validator.validateId(id)).thenReturn(Status.OK);
 
     StatusRuntimeException exception =
         assertThrows(
@@ -250,7 +257,7 @@ class CloudBotDeploymentConfigManagerImplTest {
 
     CloudBotDeploymentStatus status =
         CloudBotDeploymentStatus.newBuilder()
-            .setClusterStatus(ClusterStatus.CLUSTER_STATUS_READY)
+            .setDeploymentStatus(DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY)
             .build();
 
     CaptchaProviderDetails captchaProviderDetails =
@@ -275,7 +282,7 @@ class CloudBotDeploymentConfigManagerImplTest {
             .setDeploymentDetails(createValidOOBDeploymentDetails("abc"))
             .setCloudBotDeploymentStatus(
                 CloudBotDeploymentStatus.newBuilder()
-                    .setClusterStatus(ClusterStatus.CLUSTER_STATUS_PROVISIONING))
+                    .setDeploymentStatus(DeploymentStatus.DEPLOYMENT_STATUS_IN_PROGRESS))
             .build();
 
     // Create expected updated config
@@ -297,21 +304,106 @@ class CloudBotDeploymentConfigManagerImplTest {
     when(validator.validate(eq(request), any(CloudBotDeploymentConfig.class)))
         .thenReturn(Status.OK);
     when(store.getCloudBotDeploymentConfig(requestContext, id)).thenReturn(existingConfig);
-    when(store.updateCloudBotDeploymentConfig(eq(requestContext), eq(expectedUpdatedConfig)))
+    when(store.updateCloudBotDeploymentConfig(requestContext, expectedUpdatedConfig))
         .thenReturn(expectedUpdatedConfig);
+    when(validator.validateId(id)).thenReturn(Status.OK);
 
     CloudBotDeploymentConfig result =
         manager.updateCloudBotDeploymentStatus(requestContext, id, request);
 
     assertEquals(result, expectedUpdatedConfig);
+    verify(store, never()).deleteCloudBotDeploymentConfig(requestContext, id);
   }
 
   @Test
-  void testDeleteCloudBotDeploymentConfig() {
+  void testUpdateCloudBotDeploymentStatus_InvalidTransition() {
     String id = "config-123";
 
-    DeleteCloudBotDeploymentConfigRequest request =
-        DeleteCloudBotDeploymentConfigRequest.newBuilder().setId(id).build();
+    CloudBotDeploymentStatus status =
+        CloudBotDeploymentStatus.newBuilder()
+            .setDeploymentStatus(DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY)
+            .build();
+
+    UpdateCloudBotDeploymentStatusRequest request =
+        UpdateCloudBotDeploymentStatusRequest.newBuilder()
+            .setId(id)
+            .setCloudBotDeploymentStatus(status)
+            .build();
+
+    // Create existing config
+    CloudBotDeploymentConfig existingConfig =
+        CloudBotDeploymentConfig.newBuilder()
+            .setId(id)
+            .setSiteConfig(createValidSiteConfig())
+            .setDeploymentDetails(createValidOOBDeploymentDetails("abc"))
+            .setCloudBotDeploymentStatus(
+                CloudBotDeploymentStatus.newBuilder()
+                    .setDeploymentStatus(DeploymentStatus.DEPLOYMENT_STATUS_REMOVAL_IN_PROGRESS))
+            .build();
+
+    when(validator.validate(eq(request), any(CloudBotDeploymentConfig.class)))
+        .thenReturn(Status.OK);
+    when(store.getCloudBotDeploymentConfig(requestContext, id)).thenReturn(existingConfig);
+    when(validator.validateId(id)).thenReturn(Status.OK);
+
+    StatusRuntimeException exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> manager.updateCloudBotDeploymentStatus(requestContext, id, request));
+
+    assertEquals(Code.INTERNAL, exception.getStatus().getCode());
+    String description = exception.getStatus().getDescription();
+    assertNotNull(description);
+    assertTrue(description.contains("PERMISSION_DENIED"));
+  }
+
+  @Test
+  void testUpdateCloudBotDeploymentStatus_Delete() {
+    String id = "config-123";
+
+    UpdateCloudBotDeploymentStatusRequest request =
+        UpdateCloudBotDeploymentStatusRequest.newBuilder()
+            .setId(id)
+            .setCloudBotDeploymentStatus(
+                CloudBotDeploymentStatus.newBuilder()
+                    .setDeploymentStatus(DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYMENT_DELETED))
+            .build();
+
+    // Create existing config
+    CloudBotDeploymentConfig existingConfig =
+        CloudBotDeploymentConfig.newBuilder()
+            .setId(id)
+            .setSiteConfig(createValidSiteConfig())
+            .setDeploymentDetails(createValidOOBDeploymentDetails("abc"))
+            .setCloudBotDeploymentStatus(
+                CloudBotDeploymentStatus.newBuilder()
+                    .setDeploymentStatus(DeploymentStatus.DEPLOYMENT_STATUS_REMOVAL_IN_PROGRESS))
+            .build();
+
+    when(validator.validate(eq(request), any(CloudBotDeploymentConfig.class)))
+        .thenReturn(Status.OK);
+    when(store.getCloudBotDeploymentConfig(requestContext, id)).thenReturn(existingConfig);
+    when(validator.validateId(id)).thenReturn(Status.OK);
+
+    CloudBotDeploymentConfig result =
+        manager.updateCloudBotDeploymentStatus(requestContext, id, request);
+
+    // Verify the result
+    assertNotNull(result);
+    assertEquals(id, result.getId());
+    assertEquals(
+        DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYMENT_DELETED,
+        result.getCloudBotDeploymentStatus().getDeploymentStatus());
+
+    // Verify that deleteCloudBotDeploymentConfig was called instead of
+    // updateCloudBotDeploymentConfig
+    verify(store).deleteCloudBotDeploymentConfig(requestContext, id);
+    verify(store, never()).updateCloudBotDeploymentConfig(eq(requestContext), any());
+  }
+
+  @Test
+  void testDeleteCloudBotDeploymentConfig_hard() {
+    String id = "config-123";
 
     // Create existing config
     CloudBotDeploymentConfig existingConfig =
@@ -319,6 +411,9 @@ class CloudBotDeploymentConfigManagerImplTest {
             .setId(id)
             .setSiteConfig(createValidSiteConfig())
             .setDeploymentDetails(createValidEdgeDeploymentDetails())
+            .setCloudBotDeploymentStatus(
+                CloudBotDeploymentStatus.newBuilder()
+                    .setDeploymentStatus(DeploymentStatus.DEPLOYMENT_STATUS_REQUESTED))
             .build();
 
     when(validator.validateId(id)).thenReturn(Status.OK);
@@ -328,6 +423,40 @@ class CloudBotDeploymentConfigManagerImplTest {
 
     verify(store).getCloudBotDeploymentConfig(requestContext, id);
     verify(store).deleteCloudBotDeploymentConfig(requestContext, id);
+    verify(store, never()).updateCloudBotDeploymentConfig(eq(requestContext), any());
+  }
+
+  @Test
+  void testDeleteCloudBotDeploymentConfig_soft() {
+    String id = "config-123";
+
+    // Create existing config
+    CloudBotDeploymentConfig existingConfig =
+        CloudBotDeploymentConfig.newBuilder()
+            .setId(id)
+            .setSiteConfig(createValidSiteConfig())
+            .setDeploymentDetails(createValidEdgeDeploymentDetails())
+            .setCloudBotDeploymentStatus(
+                CloudBotDeploymentStatus.newBuilder()
+                    .setDeploymentStatus(DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY))
+            .build();
+
+    when(validator.validateId(id)).thenReturn(Status.OK);
+    when(store.getCloudBotDeploymentConfig(requestContext, id)).thenReturn(existingConfig);
+
+    manager.deleteCloudBotDeploymentConfig(requestContext, id);
+
+    verify(store).getCloudBotDeploymentConfig(requestContext, id);
+    verify(store, never()).deleteCloudBotDeploymentConfig(eq(requestContext), any());
+    verify(store)
+        .updateCloudBotDeploymentConfig(
+            requestContext,
+            existingConfig.toBuilder()
+                .setCloudBotDeploymentStatus(
+                    CloudBotDeploymentStatus.newBuilder()
+                        .setDeploymentStatus(
+                            DeploymentStatus.DEPLOYMENT_STATUS_REMOVAL_IN_PROGRESS))
+                .build());
   }
 
   @Test
@@ -366,6 +495,7 @@ class CloudBotDeploymentConfigManagerImplTest {
 
     when(store.getCloudBotDeploymentConfig(requestContext, "config-1")).thenReturn(config1);
     when(store.getCloudBotDeploymentConfig(requestContext, "config-2")).thenReturn(config2);
+    when(validator.validateId(any())).thenReturn(Status.OK);
 
     List<CloudBotDeploymentConfig> result =
         manager.getCloudBotDeploymentConfigs(requestContext, ids);
@@ -419,7 +549,7 @@ class CloudBotDeploymentConfigManagerImplTest {
             .setDeploymentDetails(deploymentDetails)
             .setCloudBotDeploymentStatus(
                 CloudBotDeploymentStatus.newBuilder()
-                    .setClusterStatus(ClusterStatus.CLUSTER_STATUS_READY))
+                    .setDeploymentStatus(DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY))
             .build();
 
     when(validator.validateId(id)).thenReturn(Status.OK);

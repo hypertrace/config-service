@@ -8,10 +8,10 @@ import ai.traceable.cloud.bot.deployment.config.service.v1.CaptchaType;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CloudBotDeploymentConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CloudBotDeploymentConfigInput;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CloudBotDeploymentStatus;
-import ai.traceable.cloud.bot.deployment.config.service.v1.ClusterStatus;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CreateCloudBotDeploymentConfigRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentDetails;
 import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentMode;
+import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentStatus;
 import ai.traceable.cloud.bot.deployment.config.service.v1.EdgeDeploymentConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.IpWhitelistConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.RuleType;
@@ -109,30 +109,17 @@ public class CloudBotDeploymentConfigValidator {
 
   public Status validate(
       UpdateCloudBotDeploymentStatusRequest request, CloudBotDeploymentConfig existingConfig) {
-    if (request.getId().isEmpty()) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "Cloud bot deployment config ID cannot be empty");
+    Status status = validateCloudBotDeploymentStatus(request.getCloudBotDeploymentStatus());
+    if (!status.isOk()) {
+      return status;
     }
 
-    if (request.hasCloudBotDeploymentStatus()) {
-      Status status = validateCloudBotDeploymentStatus(request.getCloudBotDeploymentStatus());
-      if (!status.isOk()) {
-        return status;
-      }
-    }
-
-    if (request.hasCaptchaProviderDetails()) {
-      Status status = validateCaptchaProviderDetails(request.getCaptchaProviderDetails());
-      if (!status.isOk()) {
-        return status;
-      }
-    }
-
-    if (existingConfig.getDeploymentDetails().getDeploymentMode()
-            == DeploymentMode.DEPLOYMENT_MODE_OUT_OF_BAND
-        && !request.hasTraceableCaptchaDomain()) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "Traceable bot deployment cluster domain cannot be empty for OOB deployment");
+    // If cluster is being provisioned for the first time, ensure all details are provided
+    if (request.getCloudBotDeploymentStatus().getDeploymentStatus()
+            == DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY
+        && existingConfig.getCloudBotDeploymentStatus().getDeploymentStatus()
+            == DeploymentStatus.DEPLOYMENT_STATUS_REQUESTED) {
+      return validateDeploymentDetailsForClusterCreation(request, existingConfig);
     }
 
     return Status.OK;
@@ -255,10 +242,33 @@ public class CloudBotDeploymentConfigValidator {
   }
 
   private static Status validateCloudBotDeploymentStatus(CloudBotDeploymentStatus status) {
-    if (status.getClusterStatus() == ClusterStatus.CLUSTER_STATUS_UNSPECIFIED) {
-      return Status.INVALID_ARGUMENT.withDescription("Cluster status cannot be UNSPECIFIED");
+    if (status.getDeploymentStatus() == DeploymentStatus.DEPLOYMENT_STATUS_UNSPECIFIED) {
+      return Status.INVALID_ARGUMENT.withDescription("Deployment status cannot be UNSPECIFIED");
+    }
+    if (status.getDeploymentStatus() == DeploymentStatus.DEPLOYMENT_STATUS_BLOCKED
+        && !status.hasMessage()
+        && status.getMessage().isEmpty()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Blocked deployment status should have a reason for being blocked, which will be shown to customers");
+    }
+    return Status.OK;
+  }
+
+  private static Status validateDeploymentDetailsForClusterCreation(
+      UpdateCloudBotDeploymentStatusRequest request, CloudBotDeploymentConfig existingConfig) {
+    if (request.hasCaptchaProviderDetails()) {
+      Status status = validateCaptchaProviderDetails(request.getCaptchaProviderDetails());
+      if (!status.isOk()) {
+        return status;
+      }
     }
 
+    if (existingConfig.getDeploymentDetails().getDeploymentMode()
+            == DeploymentMode.DEPLOYMENT_MODE_OUT_OF_BAND
+        && !request.hasTraceableCaptchaDomain()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Traceable bot deployment cluster domain cannot be empty for OOB deployment");
+    }
     return Status.OK;
   }
 

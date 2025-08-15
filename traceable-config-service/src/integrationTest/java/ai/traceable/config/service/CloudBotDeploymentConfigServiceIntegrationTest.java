@@ -14,11 +14,11 @@ import ai.traceable.cloud.bot.deployment.config.service.v1.CloudBotDeploymentCon
 import ai.traceable.cloud.bot.deployment.config.service.v1.CloudBotDeploymentConfigServiceGrpc;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CloudBotDeploymentConfigServiceGrpc.CloudBotDeploymentConfigServiceBlockingStub;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CloudBotDeploymentStatus;
-import ai.traceable.cloud.bot.deployment.config.service.v1.ClusterStatus;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CreateCloudBotDeploymentConfigRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.DeleteCloudBotDeploymentConfigRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentDetails;
 import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentMode;
+import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentStatus;
 import ai.traceable.cloud.bot.deployment.config.service.v1.EdgeDeploymentConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.EnableCloudBotDeploymentRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.GetCloudBotDeploymentConfigsRequest;
@@ -64,8 +64,8 @@ class CloudBotDeploymentConfigServiceIntegrationTest
     assertNotNull(createdConfig.getId());
     assertEquals("Test Site", createdConfig.getSiteConfig().getSiteName());
     assertEquals(
-        ClusterStatus.CLUSTER_STATUS_PROVISIONING,
-        createdConfig.getCloudBotDeploymentStatus().getClusterStatus());
+        DeploymentStatus.DEPLOYMENT_STATUS_REQUESTED,
+        createdConfig.getCloudBotDeploymentStatus().getDeploymentStatus());
 
     // Get the created config
     List<CloudBotDeploymentConfig> configs =
@@ -160,17 +160,23 @@ class CloudBotDeploymentConfigServiceIntegrationTest
                                 .build())
                         .getCloudBotDeployment());
 
-    // Update the deployment status
-    CloudBotDeploymentStatus updatedStatus =
-        CloudBotDeploymentStatus.newBuilder()
-            .setClusterStatus(ClusterStatus.CLUSTER_STATUS_READY)
-            .build();
+    // Update the deployment status to in progress first
+    CloudBotDeploymentConfig statusUpdatedConfig_pre =
+        RequestContext.forTenantId(TENANT_ID)
+            .call(
+                () ->
+                    cloudBotDeploymentConfigServiceStub
+                        .updateCloudBotDeploymentStatus(
+                            UpdateCloudBotDeploymentStatusRequest.newBuilder()
+                                .setId(createdConfig.getId())
+                                .setCloudBotDeploymentStatus(
+                                    CloudBotDeploymentStatus.newBuilder()
+                                        .setDeploymentStatus(
+                                            DeploymentStatus.DEPLOYMENT_STATUS_IN_PROGRESS))
+                                .build())
+                        .getCloudBotDeployment());
 
-    CaptchaProviderDetails captchaProviderDetails =
-        CaptchaProviderDetails.newBuilder()
-            .setMtCaptcha(MTCaptchaDetails.newBuilder().setSiteKey("mt-captcha-key").build())
-            .build();
-
+    // Update the deployment status to in deployed successfully
     CloudBotDeploymentConfig statusUpdatedConfig =
         RequestContext.forTenantId(TENANT_ID)
             .call(
@@ -179,16 +185,24 @@ class CloudBotDeploymentConfigServiceIntegrationTest
                         .updateCloudBotDeploymentStatus(
                             UpdateCloudBotDeploymentStatusRequest.newBuilder()
                                 .setId(createdConfig.getId())
-                                .setCloudBotDeploymentStatus(updatedStatus)
-                                .setCaptchaProviderDetails(captchaProviderDetails)
+                                .setCloudBotDeploymentStatus(
+                                    CloudBotDeploymentStatus.newBuilder()
+                                        .setDeploymentStatus(
+                                            DeploymentStatus
+                                                .DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY))
+                                .setCaptchaProviderDetails(
+                                    CaptchaProviderDetails.newBuilder()
+                                        .setMtCaptcha(
+                                            MTCaptchaDetails.newBuilder()
+                                                .setSiteKey("mt-captcha-key")))
                                 .build())
                         .getCloudBotDeployment());
 
     // Verify the updated status
     assertEquals(createdConfig.getId(), statusUpdatedConfig.getId());
     assertEquals(
-        ClusterStatus.CLUSTER_STATUS_READY,
-        statusUpdatedConfig.getCloudBotDeploymentStatus().getClusterStatus());
+        DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY,
+        statusUpdatedConfig.getCloudBotDeploymentStatus().getDeploymentStatus());
     assertEquals(
         "mt-captcha-key",
         statusUpdatedConfig

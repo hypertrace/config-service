@@ -2,6 +2,8 @@ package ai.traceable.cloud.bot.deployment.config.service.v1;
 
 import ai.traceable.cloud.bot.deployment.config.service.v1.manager.CloudBotDeploymentConfigManager;
 import ai.traceable.cloud.bot.deployment.config.service.v1.manager.CloudBotDeploymentConfigManagerImpl;
+import ai.traceable.cloud.bot.deployment.config.service.v1.state.transitions.StateTransitionsRegistry;
+import ai.traceable.cloud.bot.deployment.config.service.v1.state.transitions.StateTransitionsRegistryImpl;
 import ai.traceable.config.utils.UuidGenerator;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
@@ -36,6 +38,7 @@ public class CloudBotDeploymentConfigServiceModule extends AbstractModule {
     bind(CloudBotDeploymentConfigManager.class).to(CloudBotDeploymentConfigManagerImpl.class);
     bind(UuidGenerator.class).toInstance(new UuidGenerator());
     bind(Config.class).toInstance(config);
+    bind(StateTransitionsRegistry.class).to(StateTransitionsRegistryImpl.class);
   }
 
   @Provides

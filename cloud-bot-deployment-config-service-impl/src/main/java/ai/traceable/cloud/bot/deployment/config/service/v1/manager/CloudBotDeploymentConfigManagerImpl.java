@@ -4,10 +4,10 @@ import ai.traceable.cloud.bot.deployment.config.service.v1.ApiToken;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CloudBotDeploymentConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CloudBotDeploymentConfigInput;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CloudBotDeploymentStatus;
-import ai.traceable.cloud.bot.deployment.config.service.v1.ClusterStatus;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CreateCloudBotDeploymentConfigRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentDetails;
 import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentMode;
+import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentStatus;
 import ai.traceable.cloud.bot.deployment.config.service.v1.EnableCloudBotDeploymentRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.IpWhitelistConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.OobDeploymentConfig;
@@ -16,6 +16,8 @@ import ai.traceable.cloud.bot.deployment.config.service.v1.SiteConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.UpdateCloudBotDeploymentConfigRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.UpdateCloudBotDeploymentStatusRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.encryption.KeyPairGenerator;
+import ai.traceable.cloud.bot.deployment.config.service.v1.state.transitions.Action;
+import ai.traceable.cloud.bot.deployment.config.service.v1.state.transitions.StateTransitionsRegistry;
 import ai.traceable.cloud.bot.deployment.config.service.v1.store.CloudBotDeploymentConfigStore;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.platform.utils.ip.IpAddressParsingUtils;
@@ -24,6 +26,7 @@ import com.google.protobuf.Timestamp;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import jakarta.inject.Inject;
+import java.nio.file.AccessDeniedException;
 import java.time.Clock;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,6 +41,7 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
 
   private final CloudBotDeploymentConfigStore store;
   private final CloudBotDeploymentConfigValidator validator;
+  private final StateTransitionsRegistry stateTransitionsRegistry;
   private final UuidGenerator uuidGenerator;
   private final KeyPairGenerator keyPairGenerator;
   private final Clock clock;
@@ -83,16 +87,19 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
       input = input.toBuilder().setDeploymentDetails(updatedDeploymentDetails).build();
     }
 
-    // Create a new config with provisioning status
+    // Get the next state for the creation action
+    CloudBotDeploymentStatus nextState =
+        checkAndSetDeploymentState(
+            id, DeploymentStatus.DEPLOYMENT_STATUS_UNSPECIFIED, Action.ACTION_CREATE);
+
+    // Create a new config with the appropriate status
     CloudBotDeploymentConfig config =
         CloudBotDeploymentConfig.newBuilder()
             .setEnabled(input.getEnabled())
             .setId(id)
             .setSiteConfig(siteConfigBuilder)
             .setDeploymentDetails(input.getDeploymentDetails())
-            .setCloudBotDeploymentStatus(
-                CloudBotDeploymentStatus.newBuilder()
-                    .setClusterStatus(ClusterStatus.CLUSTER_STATUS_PROVISIONING))
+            .setCloudBotDeploymentStatus(nextState)
             .setLastUpdatedTimestamp(Timestamp.newBuilder().setSeconds(this.clock.millis() / 1000))
             .build();
 
@@ -112,6 +119,14 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
     try {
       CloudBotDeploymentConfigInput requestedInput = request.getCloudBotDeploymentConfigInput();
 
+      CloudBotDeploymentStatus nextState =
+          isBreakingChange(existingConfig, requestedInput)
+              ? checkAndSetDeploymentState(
+                  id,
+                  existingConfig.getCloudBotDeploymentStatus().getDeploymentStatus(),
+                  Action.ACTION_EDIT_BREAKING)
+              : existingConfig.getCloudBotDeploymentStatus();
+
       // Start with existing config and update only what's needed
       CloudBotDeploymentConfig.Builder updatedConfigBuilder = existingConfig.toBuilder();
 
@@ -126,6 +141,7 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
 
       updatedConfigBuilder
           .setEnabled(requestedInput.getEnabled())
+          .setCloudBotDeploymentStatus(nextState)
           .setLastUpdatedTimestamp(Timestamp.newBuilder().setSeconds(this.clock.millis() / 1000));
 
       // Save and return updated config
@@ -139,36 +155,6 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
     }
   }
 
-  private SiteConfig getUpdatedSiteConfig(
-      SiteConfig existingSiteConfig, SiteConfig requestedSiteConfig) {
-    // Start with existing changes
-    SiteConfig.Builder updatedSiteConfig = existingSiteConfig.toBuilder();
-
-    updatedSiteConfig.setSiteName(requestedSiteConfig.getSiteName());
-    if (requestedSiteConfig.getCaptchaConfig() != updatedSiteConfig.getCaptchaConfig()) {
-      updatedSiteConfig.setCaptchaConfig(requestedSiteConfig.getCaptchaConfig());
-    }
-    if (requestedSiteConfig.getIpWhitelistConfig() != updatedSiteConfig.getIpWhitelistConfig()) {
-      updatedSiteConfig.setIpWhitelistConfig(requestedSiteConfig.getIpWhitelistConfig());
-    }
-
-    return updatedSiteConfig.build();
-  }
-
-  private DeploymentDetails updateDeploymentDetails(
-      DeploymentDetails existingDetails, DeploymentDetails requestedDetails) {
-    // Start with existing changes
-    DeploymentDetails.Builder updatedDetails = existingDetails.toBuilder();
-    updatedDetails.setEnvironment(requestedDetails.getEnvironment());
-
-    // Not updating OOB as tokens cannot be updated by users
-    if (existingDetails.getDeploymentMode() == DeploymentMode.DEPLOYMENT_MODE_EDGE) {
-      updatedDetails.setEdgeDeploymentConfig(requestedDetails.getEdgeDeploymentConfig());
-    }
-
-    return updatedDetails.build();
-  }
-
   @Override
   public CloudBotDeploymentConfig updateCloudBotDeploymentStatus(
       RequestContext ctx, String id, UpdateCloudBotDeploymentStatusRequest request) {
@@ -180,11 +166,41 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
     }
 
     try {
-      // Update status
       CloudBotDeploymentConfig.Builder updatedConfigBuilder = existingConfig.toBuilder();
 
-      // Update deployment status
+      // Set the next state from state transitions
       if (request.hasCloudBotDeploymentStatus()) {
+        // Check and set deployment state using state transitions registry
+        CloudBotDeploymentStatus nextState =
+            checkAndSetDeploymentState(
+                id,
+                existingConfig.getCloudBotDeploymentStatus().getDeploymentStatus(),
+                request.getCloudBotDeploymentStatus().getDeploymentStatus()
+                        == DeploymentStatus.DEPLOYMENT_STATUS_BLOCKED
+                    ? Action.ACTION_BLOCK
+                    : Action.ACTION_UPDATE_STATUS);
+
+        if (nextState.getDeploymentStatus()
+            != request.getCloudBotDeploymentStatus().getDeploymentStatus()) {
+          throw new StatusRuntimeException(
+              Status.PERMISSION_DENIED.withDescription(
+                  "Cannot transition from "
+                      + existingConfig.getCloudBotDeploymentStatus().getDeploymentStatus()
+                      + " to "
+                      + request.getCloudBotDeploymentStatus().getDeploymentStatus()
+                      + ". Invalid state transition."));
+        }
+
+        // If the requested status is DEPLOYMENT_DELETED, delete the config instead of updating
+        if (request.getCloudBotDeploymentStatus().getDeploymentStatus()
+            == DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYMENT_DELETED) {
+          store.deleteCloudBotDeploymentConfig(ctx, id);
+          // Return the config with updated status before deletion for confirmation
+          return existingConfig.toBuilder()
+              .setCloudBotDeploymentStatus(request.getCloudBotDeploymentStatus())
+              .build();
+        }
+
         updatedConfigBuilder.setCloudBotDeploymentStatus(request.getCloudBotDeploymentStatus());
       }
 
@@ -224,16 +240,26 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
 
   @Override
   public void deleteCloudBotDeploymentConfig(RequestContext ctx, String id) {
-    Status validationStatus = validator.validateId(id);
-    if (!validationStatus.isOk()) {
-      throw validationStatus.asRuntimeException();
-    }
-
     // Check if config exists
-    this.getCloudBotDeploymentConfig(ctx, id);
+    CloudBotDeploymentConfig existingConfig = this.getCloudBotDeploymentConfig(ctx, id);
+
+    CloudBotDeploymentStatus nextState =
+        checkAndSetDeploymentState(
+            id,
+            existingConfig.getCloudBotDeploymentStatus().getDeploymentStatus(),
+            Action.ACTION_DELETE);
 
     try {
-      store.deleteCloudBotDeploymentConfig(ctx, id);
+      // If it's an explicit delete only then delete the config
+      if (nextState.getDeploymentStatus()
+          == DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYMENT_DELETED) {
+        store.deleteCloudBotDeploymentConfig(ctx, id);
+      } else {
+        // Just update the state of the config
+        CloudBotDeploymentConfig updatedConfig =
+            existingConfig.toBuilder().setCloudBotDeploymentStatus(nextState).build();
+        store.updateCloudBotDeploymentConfig(ctx, updatedConfig);
+      }
     } catch (Exception e) {
       throw new StatusRuntimeException(
           Status.INTERNAL.withDescription(
@@ -243,11 +269,6 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
 
   @Override
   public CloudBotDeploymentConfig rotateApiToken(RequestContext ctx, String id) {
-    Status validationStatus = validator.validateId(id);
-    if (!validationStatus.isOk()) {
-      throw validationStatus.asRuntimeException();
-    }
-
     try {
       CloudBotDeploymentConfig existingConfig = this.getCloudBotDeploymentConfig(ctx, id);
 
@@ -308,11 +329,6 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
   @Override
   public void enableCloudBotDeployment(
       RequestContext ctx, EnableCloudBotDeploymentRequest request) {
-    Status validationStatus = validator.validateId(request.getId());
-    if (!validationStatus.isOk()) {
-      throw validationStatus.asRuntimeException();
-    }
-
     // Check if config exists
     CloudBotDeploymentConfig existingConfig =
         this.getCloudBotDeploymentConfig(ctx, request.getId());
@@ -329,6 +345,11 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
   }
 
   private CloudBotDeploymentConfig getCloudBotDeploymentConfig(RequestContext ctx, String id) {
+    Status validationStatus = validator.validateId(id);
+    if (!validationStatus.isOk()) {
+      throw validationStatus.asRuntimeException();
+    }
+
     // Get the existing config
     CloudBotDeploymentConfig existingConfig = store.getCloudBotDeploymentConfig(ctx, id);
     if (existingConfig == null) {
@@ -336,6 +357,30 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
           Status.NOT_FOUND.withDescription("Cloud bot deployment config not found: " + id));
     }
     return existingConfig;
+  }
+
+  private CloudBotDeploymentStatus checkAndSetDeploymentState(
+      String id, DeploymentStatus currentState, Action action) {
+    try {
+      return CloudBotDeploymentStatus.newBuilder()
+          .setDeploymentStatus(stateTransitionsRegistry.checkAndGetNextState(currentState, action))
+          .build();
+    } catch (AccessDeniedException exception) {
+      throw new StatusRuntimeException(
+          Status.PERMISSION_DENIED.withDescription(
+              String.format(
+                  "%s is not allowed for %s for cloud bot deployment: %s",
+                  action, currentState, id)));
+    }
+  }
+
+  private static boolean isBreakingChange(
+      CloudBotDeploymentConfig currentConfig, CloudBotDeploymentConfigInput requestInput) {
+    // Domain name addition is a breaking change as it would require us to add domain in MT captcha
+
+    // If requestedDomains contains any domain not in currentDomains, it's a breaking change
+    return requestInput.getSiteConfig().getDomainsList().stream()
+        .anyMatch(domain -> !currentConfig.getSiteConfig().getDomainsList().contains(domain));
   }
 
   private static IpWhitelistConfig standardizeIps(IpWhitelistConfig ipWhitelistConfig) {
@@ -349,5 +394,46 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
         .addAllIpAddresses(ipParsingResults.getIpAddresses())
         .addAllIpRanges(ipParsingResults.getIpRanges())
         .build();
+  }
+
+  private static SiteConfig getUpdatedSiteConfig(
+      SiteConfig existingSiteConfig, SiteConfig requestedSiteConfig) {
+    // Start with existing changes
+    SiteConfig.Builder updatedSiteConfig = existingSiteConfig.toBuilder();
+
+    updatedSiteConfig.setSiteName(requestedSiteConfig.getSiteName());
+
+    // Compare captcha config by checking if it exists in the request
+    if (requestedSiteConfig.hasCaptchaConfig()) {
+      updatedSiteConfig.setCaptchaConfig(requestedSiteConfig.getCaptchaConfig());
+    }
+
+    // Compare IP whitelist config by checking if it exists in the request
+    if (requestedSiteConfig.hasIpWhitelistConfig()) {
+      updatedSiteConfig.setIpWhitelistConfig(
+          standardizeIps(requestedSiteConfig.getIpWhitelistConfig()));
+    }
+
+    if (requestedSiteConfig.getDomainsCount() != 0) {
+      // Clear existing domains and add all requested domains
+      updatedSiteConfig.clearDomains();
+      updatedSiteConfig.addAllDomains(requestedSiteConfig.getDomainsList());
+    }
+
+    return updatedSiteConfig.build();
+  }
+
+  private static DeploymentDetails updateDeploymentDetails(
+      DeploymentDetails existingDetails, DeploymentDetails requestedDetails) {
+    // Start with existing changes
+    DeploymentDetails.Builder updatedDetails = existingDetails.toBuilder();
+    updatedDetails.setEnvironment(requestedDetails.getEnvironment());
+
+    // Not updating OOB as tokens cannot be updated by users
+    if (existingDetails.getDeploymentMode() == DeploymentMode.DEPLOYMENT_MODE_EDGE) {
+      updatedDetails.setEdgeDeploymentConfig(requestedDetails.getEdgeDeploymentConfig());
+    }
+
+    return updatedDetails.build();
   }
 }
