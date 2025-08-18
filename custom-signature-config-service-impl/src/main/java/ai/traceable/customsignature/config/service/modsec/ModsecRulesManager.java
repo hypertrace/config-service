@@ -1,5 +1,6 @@
 package ai.traceable.customsignature.config.service.modsec;
 
+import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesTarget;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
@@ -16,7 +17,8 @@ public interface ModsecRulesManager {
       List<CustomSignatureRule> customSignatureRules,
       CustomModsecRuleVersion customModsecRuleVersion,
       boolean includeAllPartialModsecRules,
-      List<String> serviceNames);
+      List<String> serviceNames,
+      ModsecCrsRulesTarget modsecCrsRulesTarget);
 
   Status validateModsecRule(String ruleName, RuleDefinition ruleDefinition);
 

@@ -197,7 +197,8 @@ public class CustomSignatureConfigServiceImpl
               rules,
               request.getRuleVersion(),
               request.getIncludeAllPartialModsecRules(),
-              request.getServiceNamesList());
+              request.getServiceNamesList(),
+              request.getModsecCrsRulesTarget());
       responseObserver.onNext(response);
       responseObserver.onCompleted();
     } catch (Exception e) {

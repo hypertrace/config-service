@@ -1,6 +1,7 @@
 package ai.traceable.customsignature.config.service.modsec;
 
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
+import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesTarget;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import ai.traceable.customsignature.config.service.modsec.directives.ModsecDirectivesManager;
 import ai.traceable.customsignature.config.service.v1.Clause;
@@ -16,6 +17,7 @@ import ai.traceable.customsignature.config.service.v1.ScopeExpression;
 import io.grpc.Status;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +34,12 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
   private static final long MODSEC_ID_SEED = 10000000;
   private static final String RANDOM_RULE_ID = UUID.randomUUID().toString();
   private static final String NEW_LINES_DELIMITER = "\n\n";
+  private static final EnumSet<Clause.ClauseCase> NON_SOURCE_OR_TARGET_BASED_CLAUSES =
+      EnumSet.of(
+          Clause.ClauseCase.MATCH_EXPRESSION,
+          Clause.ClauseCase.KEY_VALUE_EXPRESSION,
+          Clause.ClauseCase.ATTRIBUTE_KEY_VALUE_EXPRESSION,
+          Clause.ClauseCase.CUSTOM_SEC_RULE);
 
   private final CustomModsecRuleConverter customModsecRuleConverter;
   private final ModsecDirectivesManager modsecDirectivesManager;
@@ -56,7 +64,23 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
       List<CustomSignatureRule> customSignatureRules,
       CustomModsecRuleVersion customModsecRuleVersion,
       boolean includeAllPartialModsecRules,
-      List<String> serviceNames) {
+      List<String> serviceNames,
+      ModsecCrsRulesTarget modsecCrsRulesTarget) {
+    /**
+     * This filters out rules with source-based or target-based clauses. These rules are excluded
+     * because TPA doesn't have information about them.
+     */
+    List<CustomSignatureRule> rulesHavingNoSourceOrTargetBasedClauses =
+        modsecCrsRulesTarget == ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TPA_DETECTION
+            ? customSignatureRules.stream()
+                .filter(
+                    rule ->
+                        rule.getDefinition().getClauseGroup().getClausesList().stream()
+                            .map(Clause::getClauseCase)
+                            .allMatch(NON_SOURCE_OR_TARGET_BASED_CLAUSES::contains))
+                .collect(Collectors.toUnmodifiableList())
+            : customSignatureRules;
+
     List<CustomSignatureInlineRule> inlineRuleList = new ArrayList<>();
     List<String> allowModsecRules = new ArrayList<>();
     List<String> violationModsecRules = new ArrayList<>();
@@ -74,7 +98,7 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
         serviceName ->
             serviceToModsecBlobDataMap.computeIfAbsent(serviceName, k -> new ArrayList<>()));
 
-    for (CustomSignatureRule rule : customSignatureRules) {
+    for (CustomSignatureRule rule : rulesHavingNoSourceOrTargetBasedClauses) {
       if (!includeAllPartialModsecRules
           && !ModsecRulesSupportChecker.isInlineRuleMappingSupported(
               rule.getDefinition().getClauseGroup())) {

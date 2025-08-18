@@ -59,7 +59,7 @@ class DefaultCustomModsecDetectionManagerTest {
 
     when(configServiceBlockingStub.getCustomSignatureModsecRules(any())).thenReturn(stubResponse);
 
-    // When hash does not match we expect the blob
+    // When hash does not match, we expect the blob
     assertEquals(
         expectedModsecDetectionRules,
         customModsecDetectionManager.getEnabledRules(

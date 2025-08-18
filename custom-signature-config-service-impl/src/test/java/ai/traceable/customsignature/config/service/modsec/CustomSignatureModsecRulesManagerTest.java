@@ -14,6 +14,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
+import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesTarget;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import ai.traceable.customsignature.config.service.modsec.directives.ModsecDirectivesManager;
 import ai.traceable.customsignature.config.service.v1.AttributeKeyValueExpression;
@@ -121,7 +122,8 @@ class CustomSignatureModsecRulesManagerTest {
             List.of(ruleWithModsecConvertibleClause),
             CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_UNSPECIFIED,
             false,
-            List.of());
+            List.of(),
+            ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING);
     assertTrue(response.getModsecRulesBlob().isEmpty());
     assertTrue(response.getInlineRulesList().isEmpty());
 
@@ -131,7 +133,8 @@ class CustomSignatureModsecRulesManagerTest {
             List.of(ruleWithModsecConvertibleClause),
             CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3,
             false,
-            List.of());
+            List.of(),
+            ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING);
     assertTrue(response.getModsecRulesBlob().isEmpty());
     assertTrue(response.getInlineRulesList().isEmpty());
 
@@ -144,7 +147,8 @@ class CustomSignatureModsecRulesManagerTest {
             List.of(ruleWithModsecConvertibleClause),
             CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3,
             false,
-            List.of());
+            List.of(),
+            ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING);
     assertTrue(response.getModsecRulesBlob().isEmpty());
     assertTrue(response.getInlineRulesList().isEmpty());
     verify(customModsecRuleConverter, times(3))
@@ -422,7 +426,8 @@ class CustomSignatureModsecRulesManagerTest {
               rules,
               CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS,
               false,
-              List.of());
+              List.of(),
+              ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING);
       assertEquals(
           rules.size()
               + 4
@@ -529,7 +534,8 @@ class CustomSignatureModsecRulesManagerTest {
             rules,
             CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS,
             true,
-            List.of());
+            List.of(),
+            ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING);
     assertEquals(2, response.getInlineRulesList().size());
 
     response =
@@ -537,8 +543,19 @@ class CustomSignatureModsecRulesManagerTest {
             RequestContext.forTenantId(TENANT_ID),
             rules,
             CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS,
+            true,
+            List.of(),
+            ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TPA_DETECTION);
+    assertEquals(1, response.getInlineRulesList().size());
+
+    response =
+        modsecRulesManager.getModsecRules(
+            RequestContext.forTenantId(TENANT_ID),
+            rules,
+            CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS,
             false,
-            List.of());
+            List.of(),
+            ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING);
     assertEquals(1, response.getInlineRulesList().size());
   }
 

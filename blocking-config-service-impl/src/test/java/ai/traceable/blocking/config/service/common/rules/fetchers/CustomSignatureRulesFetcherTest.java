@@ -77,6 +77,7 @@ public class CustomSignatureRulesFetcherTest {
                                         .addEnvironmentIds(ENVIRONMENT_ID.get()))))
                 .setModsecCrsRulesTarget(ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING)
                 .setRuleVersion(CUSTOM_MODSEC_RULE_VERSION_V3)
+                .setModsecCrsRulesTarget(ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING)
                 .build());
   }
 
