@@ -18,6 +18,7 @@ import ai.traceable.cloud.edge.deployment.config.service.v1.OriginConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.Protocol;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ServiceConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.SharedConfigMetadata;
+import ai.traceable.cloud.edge.deployment.config.service.v1.SuccessCodeRange;
 import ai.traceable.cloud.edge.deployment.config.service.v1.UpdateCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.shared.config.SharedConfigMetadataRegistry;
 import ai.traceable.cloud.edge.deployment.config.service.v1.state.transitions.StateTransitionsRegistry;
@@ -215,7 +216,6 @@ public class CloudEdgeDeploymentValidator {
   }
 
   private void validateHealthCheckDetails(HealthCheckDetails healthCheckDetails) {
-    validateNonDefaultPresenceOrThrow(healthCheckDetails, HealthCheckDetails.PROTOCOL_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
         healthCheckDetails, HealthCheckDetails.HEALTH_CHECK_PATH_FIELD_NUMBER);
     validateHealthCheckSettings(healthCheckDetails.getHealthCheckSettings());
@@ -226,13 +226,26 @@ public class CloudEdgeDeploymentValidator {
         healthCheckSettings, HealthCheckSettings.HEALTHY_THRESHOLD_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
         healthCheckSettings, HealthCheckSettings.UNHEALTHY_THRESHOLD_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(
-        healthCheckSettings, HealthCheckSettings.SUCCESS_CODES_FIELD_NUMBER);
+    validateSuccessCodeRanges(healthCheckSettings.getSuccessCodeRangesList());
     if (healthCheckSettings.getInterval().equals(Duration.getDefaultInstance())) {
       throw Status.INVALID_ARGUMENT.withDescription("invalid interval").asRuntimeException();
     }
     if (healthCheckSettings.getTimeout().equals(Duration.getDefaultInstance())) {
       throw Status.INVALID_ARGUMENT.withDescription("invalid timeout").asRuntimeException();
+    }
+  }
+
+  private void validateSuccessCodeRanges(List<SuccessCodeRange> successCodeRanges) {
+    if (successCodeRanges.isEmpty()) {
+      throw Status.INVALID_ARGUMENT.withDescription("invalid success code").asRuntimeException();
+    }
+
+    for (SuccessCodeRange successCodeRange : successCodeRanges) {
+      if (successCodeRange.getStart() < 100
+          || successCodeRange.getEnd() >= 600
+          || successCodeRange.getStart() > successCodeRange.getEnd()) {
+        throw Status.INVALID_ARGUMENT.withDescription("invalid success code").asRuntimeException();
+      }
     }
   }
 
