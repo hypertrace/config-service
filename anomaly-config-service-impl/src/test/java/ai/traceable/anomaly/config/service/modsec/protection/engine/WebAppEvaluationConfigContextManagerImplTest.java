@@ -120,6 +120,7 @@ class WebAppEvaluationConfigContextManagerImplTest {
   private CachedServiceMappingProvider serviceMappingProvider;
   private FeatureCachingClient featureCachingClient;
   private WebAppRuleInfoProvider webAppRuleInfoProvider;
+  private AnomalyDetectionConfigManager anomalyDetectionConfigManager;
 
   @BeforeEach
   void setUp() {
@@ -139,8 +140,7 @@ class WebAppEvaluationConfigContextManagerImplTest {
     requestContext = RequestContext.forTenantId(TENANT_ID);
     ModsecManager modsecManager = mock(ModsecManager.class);
     ModsecRulesRegistry modsecRulesRegistry = mock(ModsecRulesRegistry.class);
-    AnomalyDetectionConfigManager anomalyDetectionConfigManager =
-        mock(AnomalyDetectionConfigManager.class);
+    anomalyDetectionConfigManager = mock(AnomalyDetectionConfigManager.class);
     GlobalAnomalyConfigStatusManager globalAnomalyConfigStatusManager =
         mock(GlobalAnomalyConfigStatusManager.class);
 
@@ -434,5 +434,79 @@ class WebAppEvaluationConfigContextManagerImplTest {
     WebAppEvaluationRulesContext rulesContext2 = result.getWebAppEvaluationRulesContexts(1);
     assertEquals(ENVIRONMENT_SCOPE_CONTEXT, rulesContext2.getScopeContext());
     assertEquals("onlyAggressiveRulesBlob", rulesContext2.getCrsRulesBlob());
+  }
+
+  @Test
+  void testWebAppConfigContextForOrdering() {
+    // testing ordering of lists in WebAppEvaluationConfigContext
+    // we expect following sorted order for all lists:
+    // api > service > environment > customer
+
+    // setup
+    String testEnv2 = "test-env-2";
+    ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig =
+        ScopedAnomalyDetectionConfig.newBuilder()
+            .setConfigScope(
+                AnomalyConfigScope.newBuilder()
+                    .setEnvironmentScope(
+                        AnomalyEnvironmentScope.newBuilder().setEnvironmentId(testEnv2)))
+            .addAnomalyDetectionConfigs(
+                AnomalyDetectionConfig.newBuilder()
+                    .setModsecurityAnomalyDetectionConfig(
+                        ModsecurityAnomalyDetectionConfig.newBuilder()
+                            .setModsecAnomalyRule(
+                                ModsecurityAnomalyRuleConfig.newBuilder()
+                                    .setAnomalyRuleId("rule1")
+                                    .addSubRuleConfigs(
+                                        AnomalySubRuleConfig.newBuilder()
+                                            .setSubRuleId("subRule1")
+                                            .setAnomalyRuleAction(
+                                                AnomalyRuleAction.ANOMALY_RULE_ACTION_BLOCK))
+                                    .addSubRuleConfigs(
+                                        AnomalySubRuleConfig.newBuilder()
+                                            .setSubRuleId("subRule2")
+                                            .setAnomalyRuleAction(
+                                                AnomalyRuleAction.ANOMALY_RULE_ACTION_MONITOR)))))
+            .build();
+    ScopeContext SECOND_ENVIRONMENT_SCOPE_CONTEXT =
+        ScopeContext.newBuilder()
+            .addScopes(
+                Scope.newBuilder()
+                    .setEntityScope(
+                        EntityScope.newBuilder()
+                            .setEntityType(EntityType.ENTITY_TYPE_ENVIRONMENT)
+                            .addEntities(
+                                Entity.newBuilder().setId(testEnv2).setName(testEnv2).build())))
+            .addScopes(Scope.newBuilder().setCustomerScope(CustomerScope.getDefaultInstance()))
+            .build();
+    when(anomalyDetectionConfigManager.getAllGlobalResolvedScopedAnomalyDetectionConfigs(
+            eq(requestContext), any()))
+        .thenReturn(
+            List.of(
+                getApiScopedAnomalyDetectionConfig(),
+                getEnvScopedAnomalyDetectionConfig(),
+                scopedAnomalyDetectionConfig));
+    // action
+    WebAppEvaluationConfigContext result =
+        configContextManager.getWebAppEvaluationConfigContext(
+            requestContext,
+            GetWebAppEvaluationConfigContextRequest.newBuilder()
+                .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+                .build());
+    // verify
+    assertEquals(3, result.getEvaluationConfigsList().size());
+
+    WebAppEvaluationConfig evaluationConfig1 = result.getEvaluationConfigs(0);
+    assertEquals(API_SCOPE_CONTEXT, evaluationConfig1.getScopeContext());
+    assertEquals(List.of("subRule2", "subRule3"), evaluationConfig1.getDisabledSecRuleIdsList());
+
+    WebAppEvaluationConfig evaluationConfig2 = result.getEvaluationConfigs(1);
+    assertEquals(ENVIRONMENT_SCOPE_CONTEXT, evaluationConfig2.getScopeContext());
+    assertEquals(
+        List.of("subRule1", "subRule2", "subRule3"), evaluationConfig2.getDisabledSecRuleIdsList());
+
+    WebAppEvaluationConfig evaluationConfig3 = result.getEvaluationConfigs(2);
+    assertEquals(SECOND_ENVIRONMENT_SCOPE_CONTEXT, evaluationConfig3.getScopeContext());
+    assertEquals(List.of("subRule2", "subRule3"), evaluationConfig3.getDisabledSecRuleIdsList());
   }
 }

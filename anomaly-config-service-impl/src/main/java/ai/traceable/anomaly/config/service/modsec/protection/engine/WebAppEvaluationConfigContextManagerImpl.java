@@ -60,11 +60,12 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
+@Slf4j
 public class WebAppEvaluationConfigContextManagerImpl
     implements WebAppEvaluationConfigContextManager {
-
   private static final GetAnomalyDetectionConfigsFilter ANOMALY_DETECTION_CONFIGS_FILTER =
       GetAnomalyDetectionConfigsFilter.newBuilder()
           .addAnomalyDetectionConfigTypes(
@@ -121,25 +122,56 @@ public class WebAppEvaluationConfigContextManagerImpl
   @Override
   public WebAppEvaluationConfigContext getWebAppEvaluationConfigContext(
       RequestContext requestContext, GetWebAppEvaluationConfigContextRequest request) {
+    log.debug(
+        "Starting getWebAppEvaluationConfigContext with request: ruleEvaluationPoint={}, subRuleTypes={}",
+        request.getRuleEvaluationPoint(),
+        request.getSubRuleTypesList());
 
     Map<AnomalyConfigScope, ScopedAnomalyDetectionConfig> scopedAnomalyDetectionConfigMap =
         getScopedAnomalyDetectionConfigMap(requestContext);
+    log.debug(
+        "Retrieved scopedAnomalyDetectionConfigMap with {} entries",
+        scopedAnomalyDetectionConfigMap.size());
+
     Map<AnomalyConfigScope, ScopedAnomalyConfigStatus> scopedAnomalyConfigStatusMap =
         getScopedAnomalyConfigStatusMap(requestContext);
+    log.debug(
+        "Retrieved scopedAnomalyConfigStatusMap with {} entries",
+        scopedAnomalyConfigStatusMap.size());
 
-    Set<AnomalyConfigScope> configScopes =
+    TreeSet<AnomalyConfigScope> configScopes =
         new TreeSet<>(
             Comparator.comparing(
-                scope -> SCOPE_ORDER.getOrDefault(scope.getScopeCase(), Integer.MAX_VALUE)));
+                    (AnomalyConfigScope scope) ->
+                        SCOPE_ORDER.getOrDefault(scope.getScopeCase(), Integer.MAX_VALUE))
+                .thenComparing(
+                    scope -> {
+                      switch (scope.getScopeCase()) {
+                        case API_SCOPE:
+                          return scope.getApiScope().getId();
+                        case SERVICE_SCOPE:
+                          return scope.getServiceScope().getId();
+                        case ENVIRONMENT_SCOPE:
+                          return scope.getEnvironmentScope().getEnvironmentId();
+                        default:
+                          return "";
+                      }
+                    }));
     configScopes.addAll(scopedAnomalyDetectionConfigMap.keySet());
     configScopes.addAll(scopedAnomalyConfigStatusMap.keySet());
+    log.debug("Combined config scopes: {} total scopes", configScopes.size());
+    log.debug("Sorted config scopes by priority: {}", configScopes);
 
     List<WebAppEvaluationConfig> webAppEvaluationConfigs = new ArrayList<>();
     List<SecRuleProcessorConfig> secRuleProcessorConfigs = new ArrayList<>();
     List<WebAppEvaluationRulesContext> webAppEvaluationRulesContextList = new ArrayList<>();
     Map<AnomalyConfigScope, ScopeContext> scopeContextMap =
         getScopeContextMap(requestContext, configScopes);
+    log.debug("Retrieved scope context map with {} entries", scopeContextMap.size());
+
     for (AnomalyConfigScope configScope : configScopes) {
+      log.debug("Processing config scope: {}", configScope.getScopeCase());
+
       ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig =
           scopedAnomalyDetectionConfigMap.getOrDefault(
               configScope, ScopedAnomalyDetectionConfig.getDefaultInstance());
@@ -148,25 +180,42 @@ public class WebAppEvaluationConfigContextManagerImpl
               configScope, ScopedAnomalyConfigStatus.getDefaultInstance());
 
       ModsecRuleVersion modsecRuleVersion = getModsecRuleVersion(scopedAnomalyDetectionConfig);
+      log.debug("Using modsec rule version: {}", modsecRuleVersion);
 
       RuleVersionData ruleVersionData =
           scopedAnomalyConfigStatus.getGlobalModsecConfig().getRuleVersionData();
       RuleVersion ruleVersion = getRuleVersion(ruleVersionData, requestContext);
+      log.debug("Using rule version: {}", ruleVersion);
+
       List<AnomalySubRuleType> anomalySubRuleTypes =
           getAnomalySubRuleTypes(
               scopedAnomalyConfigStatus,
               request.getRuleEvaluationPoint(),
               request.getSubRuleTypesList());
-      // skip if no sub rules
+      log.debug("Filtered anomaly sub rule types: {}", anomalySubRuleTypes);
+
+      // No sub-rules - this can only happen if only REGULAR rules are requested for
+      // RULE_EVALUATION_POINT_EDGE & as per
+      // scopedAnomalyConfigStatus - blocking is disabled for regular rules
+      // In this case we should send an empty blob because we need to relay this information to the
+      // client so that if a span/request matching this scope comes in, we can correctly perform
+      // scope matching and just perform no-op blocking evaluations for it.
       if (anomalySubRuleTypes.isEmpty()) {
+        log.debug("No anomaly sub rule types found, adding empty WebAppEvaluationRulesContext");
+        webAppEvaluationRulesContextList.add(
+            WebAppEvaluationRulesContext.newBuilder()
+                .setScopeContext(scopeContextMap.get(configScope))
+                .build());
         continue;
       }
       if (!scopedAnomalyConfigStatus.equals(ScopedAnomalyConfigStatus.getDefaultInstance())) {
+        log.debug("Adding SecRuleProcessorConfig for non-default scopedAnomalyConfigStatus");
         secRuleProcessorConfigs.add(
             getSecRuleProcessorConfig(
                 scopedAnomalyConfigStatus, modsecRuleVersion, scopeContextMap.get(configScope)));
       }
       if (!scopedAnomalyDetectionConfig.equals(ScopedAnomalyDetectionConfig.getDefaultInstance())) {
+        log.debug("Processing non-default scopedAnomalyDetectionConfig");
         Optional<WebAppEvaluationConfig> webAppEvaluationConfig =
             getWebAppEvaluationConfig(
                 scopedAnomalyDetectionConfig,
@@ -175,7 +224,12 @@ public class WebAppEvaluationConfigContextManagerImpl
                 scopeContextMap.get(configScope),
                 ruleVersion);
 
-        webAppEvaluationConfig.ifPresent(webAppEvaluationConfigs::add);
+        if (webAppEvaluationConfig.isPresent()) {
+          log.debug("Adding WebAppEvaluationConfig");
+          webAppEvaluationConfigs.add(webAppEvaluationConfig.get());
+        } else {
+          log.debug("WebAppEvaluationConfig not present, skipping");
+        }
 
         webAppEvaluationRulesContextList.add(
             getWebAppEvaluationRulesContext(
@@ -183,25 +237,41 @@ public class WebAppEvaluationConfigContextManagerImpl
                 anomalySubRuleTypes,
                 ruleVersion,
                 scopeContextMap.get(configScope)));
+        log.debug("Added WebAppEvaluationRulesContext");
       }
     }
 
-    return WebAppEvaluationConfigContext.newBuilder()
-        .addAllEvaluationConfigs(webAppEvaluationConfigs)
-        .addAllSecRuleProcessorConfigs(secRuleProcessorConfigs)
-        .addAllWebAppEvaluationRulesContexts(webAppEvaluationRulesContextList)
-        .build();
+    WebAppEvaluationConfigContext result =
+        WebAppEvaluationConfigContext.newBuilder()
+            .addAllEvaluationConfigs(webAppEvaluationConfigs)
+            .addAllSecRuleProcessorConfigs(secRuleProcessorConfigs)
+            .addAllWebAppEvaluationRulesContexts(webAppEvaluationRulesContextList)
+            .build();
+
+    log.debug(
+        "Completed getWebAppEvaluationConfigContext: {} evaluation configs, {} sec rule processor configs, {} rules contexts",
+        webAppEvaluationConfigs.size(),
+        secRuleProcessorConfigs.size(),
+        webAppEvaluationRulesContextList.size());
+
+    return result;
   }
 
   private List<AnomalySubRuleType> getAnomalySubRuleTypes(
       ScopedAnomalyConfigStatus scopedAnomalyConfigStatus,
       RuleEvaluationPoint ruleEvaluationPoint,
       List<AnomalySubRuleType> subRuleTypes) {
+    log.debug(
+        "getAnomalySubRuleTypes called with ruleEvaluationPoint={}, subRuleTypes={}",
+        ruleEvaluationPoint,
+        subRuleTypes);
+
     switch (ruleEvaluationPoint) {
       case RULE_EVALUATION_POINT_EDGE:
-        if (!scopedAnomalyConfigStatus
-            .getGlobalModsecConfig()
-            .getBlockingAvailableForRegularRules()) {
+        boolean blockingAvailable =
+            scopedAnomalyConfigStatus.getGlobalModsecConfig().getBlockingAvailableForRegularRules();
+        log.debug("EDGE evaluation point: blockingAvailableForRegularRules={}", blockingAvailable);
+        if (!blockingAvailable) {
           return filterSubRuleTypes(
               subRuleTypes,
               List.of(
@@ -212,6 +282,7 @@ public class WebAppEvaluationConfigContextManagerImpl
       case RULE_EVALUATION_POINT_PLATFORM:
         return filterSubRuleTypes(subRuleTypes, ALL_SUB_RULE_TYPES);
       default:
+        log.error("Unsupported rule evaluation point: {}", ruleEvaluationPoint);
         throw new IllegalArgumentException(
             "Unsupported rule evaluation point: " + ruleEvaluationPoint);
     }
@@ -219,6 +290,10 @@ public class WebAppEvaluationConfigContextManagerImpl
 
   private List<AnomalySubRuleType> filterSubRuleTypes(
       List<AnomalySubRuleType> subRuleTypes, List<AnomalySubRuleType> allowedTypes) {
+    log.debug(
+        "filterSubRuleTypes called with subRuleTypes={}, allowedTypes={}",
+        subRuleTypes,
+        allowedTypes);
     return subRuleTypes.isEmpty()
         ? allowedTypes
         : subRuleTypes.stream().filter(allowedTypes::contains).collect(Collectors.toList());
@@ -229,14 +304,19 @@ public class WebAppEvaluationConfigContextManagerImpl
       List<AnomalySubRuleType> anomalySubRuleTypes,
       RuleVersion ruleVersion,
       ScopeContext scopeContext) {
+    log.debug(
+        "getWebAppEvaluationRulesContext called with modsecRuleVersion={}, anomalySubRuleTypes={}, ruleVersion={}",
+        modsecRuleVersion,
+        anomalySubRuleTypes,
+        ruleVersion);
 
+    String crsRulesBlob =
+        modsecManager
+            .getModsecCrsRules(anomalySubRuleTypes, modsecRuleVersion, false, ruleVersion, false)
+            .getAggregatedModsecBlob();
     return WebAppEvaluationRulesContext.newBuilder()
         .setScopeContext(scopeContext)
-        .setCrsRulesBlob(
-            modsecManager
-                .getModsecCrsRules(
-                    anomalySubRuleTypes, modsecRuleVersion, false, ruleVersion, false)
-                .getAggregatedModsecBlob())
+        .setCrsRulesBlob(crsRulesBlob)
         .build();
   }
 
@@ -246,9 +326,15 @@ public class WebAppEvaluationConfigContextManagerImpl
       RuleEvaluationPoint ruleEvaluationPoint,
       ScopeContext scopeContext,
       RuleVersion ruleVersion) {
+    log.debug(
+        "getWebAppEvaluationConfig called with modsecRuleVersion={}, ruleEvaluationPoint={}, ruleVersion={}",
+        modsecRuleVersion,
+        ruleEvaluationPoint,
+        ruleVersion);
     Set<String> disabledRuleIds =
         getDisabledModsecRuleIds(
             scopedAnomalyDetectionConfig, modsecRuleVersion, ruleEvaluationPoint, ruleVersion);
+    log.debug("Retrieved {} disabled rule IDs", disabledRuleIds.size());
     if (disabledRuleIds.isEmpty()) {
       return Optional.empty();
     }
@@ -307,9 +393,6 @@ public class WebAppEvaluationConfigContextManagerImpl
     switch (ruleEvaluationPoint) {
       case RULE_EVALUATION_POINT_EDGE:
         return detectionConfig.getConfigStatus().getDisabled()
-            || subRuleConfig
-                .getAnomalyRuleAction()
-                .equals(AnomalyRuleAction.ANOMALY_RULE_ACTION_DISABLE)
             || !subRuleConfig
                 .getAnomalyRuleAction()
                 .equals(AnomalyRuleAction.ANOMALY_RULE_ACTION_BLOCK);
@@ -319,6 +402,7 @@ public class WebAppEvaluationConfigContextManagerImpl
                 .getAnomalyRuleAction()
                 .equals(AnomalyRuleAction.ANOMALY_RULE_ACTION_DISABLE);
       default:
+        log.error("Unsupported rule evaluation point: {}", ruleEvaluationPoint);
         throw new IllegalArgumentException(
             "Unsupported rule evaluation point: " + ruleEvaluationPoint);
     }
@@ -387,6 +471,7 @@ public class WebAppEvaluationConfigContextManagerImpl
                         CorazaRuleDirectivesType.CORAZA_RULE_DIRECTIVES_TYPE_DETECTION_ONLY))
             .build();
       default:
+        log.error("Unsupported ModsecRuleVersion: {}", ruleVersion.name());
         throw new IllegalArgumentException("Unsupported ModsecRuleVersion: " + ruleVersion.name());
     }
   }
@@ -420,6 +505,7 @@ public class WebAppEvaluationConfigContextManagerImpl
         case CUSTOMER_SCOPE:
           break;
         default:
+          log.error("Unsupported scope type: {}", configScope.getScopeCase());
           throw new IllegalArgumentException(
               "Unsupported scope type: " + configScope.getScopeCase());
       }
@@ -557,6 +643,7 @@ public class WebAppEvaluationConfigContextManagerImpl
                   .build());
           break;
         default:
+          log.error("Unsupported scope type: {}", scope.getScopeCase());
           throw new IllegalArgumentException("Unsupported scope type: " + scope.getScopeCase());
       }
     }
