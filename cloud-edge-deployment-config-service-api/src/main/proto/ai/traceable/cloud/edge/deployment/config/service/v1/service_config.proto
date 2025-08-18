@@ -38,7 +38,7 @@ message ServiceAdvancedConfig {
 }
 
 message HealthCheckDetails {
-  Protocol protocol = 1;
+  Protocol protocol = 1 [deprecated = true];
   string health_check_path = 2;
   HealthCheckSettings health_check_settings = 3;
 }
@@ -48,7 +48,13 @@ message HealthCheckSettings {
   int32 unhealthy_threshold = 2;
   google.protobuf.Duration timeout = 3;
   google.protobuf.Duration interval = 4;
-  repeated int32 success_codes = 5;
+  repeated int32 success_codes = 5 [deprecated = true];
+  repeated SuccessCodeRange success_code_ranges = 6;
+}
+
+message SuccessCodeRange {
+  int32 start = 1;
+  int32 end = 2;
 }
 
 enum Protocol {
