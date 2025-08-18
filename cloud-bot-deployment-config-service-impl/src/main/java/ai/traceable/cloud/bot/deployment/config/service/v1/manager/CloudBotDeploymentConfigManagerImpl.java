@@ -9,6 +9,7 @@ import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentDetails;
 import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentMode;
 import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentStatus;
 import ai.traceable.cloud.bot.deployment.config.service.v1.EnableCloudBotDeploymentRequest;
+import ai.traceable.cloud.bot.deployment.config.service.v1.GetCloudBotDeploymentConfigsRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.IpWhitelistConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.OobDeploymentConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.OobDeploymentConfig.Builder;
@@ -316,14 +317,28 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
 
   @Override
   public List<CloudBotDeploymentConfig> getCloudBotDeploymentConfigs(
-      RequestContext ctx, List<String> ids) {
-    if (ids.isEmpty()) {
-      return store.getAllCloudBotDeploymentConfigs(ctx);
+      RequestContext ctx, GetCloudBotDeploymentConfigsRequest request) {
+    List<CloudBotDeploymentConfig> cloudBotDeploymentConfigs;
+    if (request.getIdsList().isEmpty()) {
+      cloudBotDeploymentConfigs = store.getAllCloudBotDeploymentConfigs(ctx);
+    } else {
+      cloudBotDeploymentConfigs =
+          request.getIdsList().stream()
+              .map(id -> this.getCloudBotDeploymentConfig(ctx, id))
+              .collect(Collectors.toList());
     }
 
-    return ids.stream()
-        .map(id -> this.getCloudBotDeploymentConfig(ctx, id))
-        .collect(Collectors.toList());
+    if (request.hasEdgeDeploymentId()) {
+      cloudBotDeploymentConfigs =
+          cloudBotDeploymentConfigs.stream()
+              .filter(
+                  cloudBotDeploymentConfig ->
+                      hasEdgeDeploymentReference(
+                          cloudBotDeploymentConfig, request.getEdgeDeploymentId()))
+              .collect(Collectors.toUnmodifiableList());
+    }
+
+    return cloudBotDeploymentConfigs;
   }
 
   @Override
@@ -435,5 +450,21 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
     }
 
     return updatedDetails.build();
+  }
+
+  private static boolean hasEdgeDeploymentReference(
+      CloudBotDeploymentConfig config, String edgeDeploymentId) {
+    // Check if the config has a reference to the edge deployment ID
+    if (!config.hasDeploymentDetails()
+        || !config.getDeploymentDetails().hasEdgeDeploymentConfig()) {
+      return false;
+    }
+
+    // Check if the edge deployment ID matches
+    return config
+        .getDeploymentDetails()
+        .getEdgeDeploymentConfig()
+        .getCloudEdgeDeploymentId()
+        .equals(edgeDeploymentId);
   }
 }

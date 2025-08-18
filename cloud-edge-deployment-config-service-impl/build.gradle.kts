@@ -8,6 +8,7 @@ dependencies {
   api(commonLibs.typesafe.config)
   api(commonLibs.grpc.api)
   implementation(projects.cloudEdgeDeploymentConfigServiceApi)
+  implementation(projects.cloudBotDeploymentConfigServiceApi)
   implementation(projects.configUtils)
   implementation(localLibs.hypertrace.configservice.api)
   implementation(localLibs.hypertrace.configservice.objectstore)

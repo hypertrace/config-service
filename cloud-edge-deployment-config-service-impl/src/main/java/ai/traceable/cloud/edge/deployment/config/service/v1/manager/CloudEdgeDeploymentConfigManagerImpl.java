@@ -17,6 +17,7 @@ import ai.traceable.cloud.edge.deployment.config.service.v1.shared.config.Shared
 import ai.traceable.cloud.edge.deployment.config.service.v1.state.transitions.StateTransitionsRegistry;
 import ai.traceable.cloud.edge.deployment.config.service.v1.store.CloudEdgeDeploymentConfigStore;
 import ai.traceable.cloud.edge.deployment.config.service.v1.validator.CloudEdgeDeploymentValidator;
+import ai.traceable.cloud.edge.deployment.config.service.v1.validator.EdgeDeploymentUsageValidator;
 import ai.traceable.config.utils.UuidGenerator;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -49,6 +50,7 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
   private final CloudEdgeDeploymentValidator validator;
   private final UuidGenerator uuidGenerator;
   private final StateTransitionsRegistry stateTransitionsRegistry;
+  private final EdgeDeploymentUsageValidator edgeDeploymentUsageValidator;
 
   private static final List<DeploymentStatus> notifiableDeploymentStatuses =
       List.of(
@@ -199,13 +201,21 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
       throw validationStatus.asRuntimeException();
     }
 
-    // Check if config exists and delete it
+    // Check if config exists
     CloudEdgeDeploymentConfig config = getExistingConfigOrThrow(ctx, id);
     validator.validateActionAndGetNextStates(
         config.getCloudEdgeDeployedOutputConfig().getStatus(),
         ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE,
         Action.ACTION_DELETE);
 
+    // Validate that the edge deployment is not in use by any bot configuration
+    Status usageValidationStatus =
+        edgeDeploymentUsageValidator.validateEdgeDeploymentNotInUse(ctx, id);
+    if (!usageValidationStatus.isOk()) {
+      throw usageValidationStatus.asRuntimeException();
+    }
+
+    // Delete the edge deployment config
     try {
       store.deleteCloudEdgeDeploymentConfig(ctx, id);
     } catch (Exception e) {

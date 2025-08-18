@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -33,6 +34,7 @@ import ai.traceable.cloud.edge.deployment.config.service.v1.shared.config.Shared
 import ai.traceable.cloud.edge.deployment.config.service.v1.state.transitions.StateTransitionsRegistry;
 import ai.traceable.cloud.edge.deployment.config.service.v1.store.CloudEdgeDeploymentConfigStore;
 import ai.traceable.cloud.edge.deployment.config.service.v1.validator.CloudEdgeDeploymentValidator;
+import ai.traceable.cloud.edge.deployment.config.service.v1.validator.EdgeDeploymentUsageValidator;
 import ai.traceable.config.utils.UuidGenerator;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -56,6 +58,7 @@ class CloudEdgeDeploymentConfigManagerImplTest {
   @Mock private UuidGenerator uuidGenerator;
   @Mock private RequestContext requestContext;
   @Mock private StateTransitionsRegistry stateTransitionsRegistry;
+  @Mock private EdgeDeploymentUsageValidator edgeDeploymentUsageValidator;
 
   private CloudEdgeDeploymentConfigManagerImpl manager;
 
@@ -67,7 +70,8 @@ class CloudEdgeDeploymentConfigManagerImplTest {
             store,
             validator,
             uuidGenerator,
-            stateTransitionsRegistry);
+            stateTransitionsRegistry,
+            edgeDeploymentUsageValidator);
   }
 
   @Test
@@ -248,9 +252,23 @@ class CloudEdgeDeploymentConfigManagerImplTest {
             Action.ACTION_DELETE))
         .thenReturn(List.of(DeploymentStatus.DEPLOYMENT_STATUS_UNSPECIFIED));
 
-    manager.deleteCloudEdgeDeploymentConfig(requestContext, id);
+    {
+      // Throw error if bot deployment is using edge
+      when(edgeDeploymentUsageValidator.validateEdgeDeploymentNotInUse(requestContext, id))
+          .thenReturn(Status.FAILED_PRECONDITION);
+      assertThrows(
+          StatusRuntimeException.class,
+          () -> manager.deleteCloudEdgeDeploymentConfig(requestContext, id));
+      verify(store, never()).deleteCloudEdgeDeploymentConfig(requestContext, id);
+    }
 
-    verify(store).deleteCloudEdgeDeploymentConfig(requestContext, id);
+    {
+      // If no bot deployment is using edge allow deletion
+      when(edgeDeploymentUsageValidator.validateEdgeDeploymentNotInUse(requestContext, id))
+          .thenReturn(Status.OK);
+      manager.deleteCloudEdgeDeploymentConfig(requestContext, id);
+      verify(store).deleteCloudEdgeDeploymentConfig(requestContext, id);
+    }
   }
 
   @Test

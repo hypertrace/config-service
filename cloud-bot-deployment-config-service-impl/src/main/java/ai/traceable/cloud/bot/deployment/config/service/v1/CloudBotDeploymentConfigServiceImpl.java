@@ -130,7 +130,7 @@ public class CloudBotDeploymentConfigServiceImpl extends CloudBotDeploymentConfi
     RequestContext ctx = RequestContext.CURRENT.get();
     try {
       java.util.List<CloudBotDeploymentConfig> configs =
-          cloudBotDeploymentConfigManager.getCloudBotDeploymentConfigs(ctx, request.getIdsList());
+          cloudBotDeploymentConfigManager.getCloudBotDeploymentConfigs(ctx, request);
 
       responseObserver.onNext(
           GetCloudBotDeploymentConfigsResponse.newBuilder()

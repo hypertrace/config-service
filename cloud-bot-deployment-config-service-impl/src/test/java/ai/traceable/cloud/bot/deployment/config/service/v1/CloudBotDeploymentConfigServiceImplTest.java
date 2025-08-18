@@ -167,7 +167,7 @@ class CloudBotDeploymentConfigServiceImplTest {
     GetCloudBotDeploymentConfigsRequest request =
         GetCloudBotDeploymentConfigsRequest.newBuilder().addAllIds(ids).build();
 
-    when(cloudBotDeploymentConfigManager.getCloudBotDeploymentConfigs(any(), eq(ids)))
+    when(cloudBotDeploymentConfigManager.getCloudBotDeploymentConfigs(any(), eq(request)))
         .thenReturn(configs);
 
     StreamObserver<GetCloudBotDeploymentConfigsResponse> responseStreamObserver =

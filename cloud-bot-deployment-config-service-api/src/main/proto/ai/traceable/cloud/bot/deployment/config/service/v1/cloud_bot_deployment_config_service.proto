@@ -64,6 +64,7 @@ message UpdateCloudBotDeploymentStatusResponse {
 
 message GetCloudBotDeploymentConfigsRequest {
   repeated string ids = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of unique identifiers for the requested configurations"];
+  optional string edge_deployment_id = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Filter configurations by edge deployment ID"];
 }
 
 message GetCloudBotDeploymentConfigsResponse {

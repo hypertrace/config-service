@@ -26,6 +26,7 @@ import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentMode;
 import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentStatus;
 import ai.traceable.cloud.bot.deployment.config.service.v1.EdgeDeploymentConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.EnableCloudBotDeploymentRequest;
+import ai.traceable.cloud.bot.deployment.config.service.v1.GetCloudBotDeploymentConfigsRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.IpWhitelistConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.JWTSigningKeyDetails;
 import ai.traceable.cloud.bot.deployment.config.service.v1.MTCaptchaDetails;
@@ -45,7 +46,6 @@ import io.grpc.Status.Code;
 import io.grpc.StatusRuntimeException;
 import java.time.Clock;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -161,7 +161,7 @@ class CloudBotDeploymentConfigManagerImplTest {
                                 CaptchaConfig.newBuilder()
                                     .setCaptchaType(CaptchaType.CAPTCHA_TYPE_PROOF_SHIELD))
                             .setIpWhitelistConfig(IpWhitelistConfig.getDefaultInstance()))
-                    .setDeploymentDetails(createValidEdgeDeploymentDetails()))
+                    .setDeploymentDetails(createValidEdgeDeploymentDetails("edge-123")))
             .build();
 
     // Create existing config with additional fields that should be preserved
@@ -178,7 +178,8 @@ class CloudBotDeploymentConfigManagerImplTest {
             .setId(id)
             .setSiteConfig(existingSiteConfig)
             .setDeploymentDetails(
-                createValidEdgeDeploymentDetails().toBuilder().setEnvironment("mango-env"))
+                createValidEdgeDeploymentDetails("edge-123").toBuilder()
+                    .setEnvironment("mango-env"))
             .setCloudBotDeploymentStatus(
                 CloudBotDeploymentStatus.newBuilder()
                     .setDeploymentStatus(DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY))
@@ -195,7 +196,7 @@ class CloudBotDeploymentConfigManagerImplTest {
                         CaptchaConfig.newBuilder()
                             .setCaptchaType(CaptchaType.CAPTCHA_TYPE_PROOF_SHIELD))
                     .setIpWhitelistConfig(IpWhitelistConfig.getDefaultInstance()))
-            .setDeploymentDetails(createValidEdgeDeploymentDetails())
+            .setDeploymentDetails(createValidEdgeDeploymentDetails("edge-123"))
             .setCloudBotDeploymentStatus(
                 CloudBotDeploymentStatus.newBuilder()
                     .setDeploymentStatus(DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY))
@@ -229,7 +230,7 @@ class CloudBotDeploymentConfigManagerImplTest {
     CloudBotDeploymentConfigInput input =
         CloudBotDeploymentConfigInput.newBuilder()
             .setSiteConfig(createValidSiteConfig())
-            .setDeploymentDetails(createValidEdgeDeploymentDetails())
+            .setDeploymentDetails(createValidEdgeDeploymentDetails("edge-123"))
             .build();
 
     UpdateCloudBotDeploymentConfigRequest request =
@@ -410,7 +411,7 @@ class CloudBotDeploymentConfigManagerImplTest {
         CloudBotDeploymentConfig.newBuilder()
             .setId(id)
             .setSiteConfig(createValidSiteConfig())
-            .setDeploymentDetails(createValidEdgeDeploymentDetails())
+            .setDeploymentDetails(createValidEdgeDeploymentDetails("edge-123"))
             .setCloudBotDeploymentStatus(
                 CloudBotDeploymentStatus.newBuilder()
                     .setDeploymentStatus(DeploymentStatus.DEPLOYMENT_STATUS_REQUESTED))
@@ -435,7 +436,7 @@ class CloudBotDeploymentConfigManagerImplTest {
         CloudBotDeploymentConfig.newBuilder()
             .setId(id)
             .setSiteConfig(createValidSiteConfig())
-            .setDeploymentDetails(createValidEdgeDeploymentDetails())
+            .setDeploymentDetails(createValidEdgeDeploymentDetails("edge-123"))
             .setCloudBotDeploymentStatus(
                 CloudBotDeploymentStatus.newBuilder()
                     .setDeploymentStatus(DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY))
@@ -483,14 +484,14 @@ class CloudBotDeploymentConfigManagerImplTest {
         CloudBotDeploymentConfig.newBuilder()
             .setId("config-1")
             .setSiteConfig(createValidSiteConfig())
-            .setDeploymentDetails(createValidEdgeDeploymentDetails())
+            .setDeploymentDetails(createValidEdgeDeploymentDetails("edge-123"))
             .build();
 
     CloudBotDeploymentConfig config2 =
         CloudBotDeploymentConfig.newBuilder()
             .setId("config-2")
             .setSiteConfig(createValidSiteConfig())
-            .setDeploymentDetails(createValidEdgeDeploymentDetails())
+            .setDeploymentDetails(createValidEdgeDeploymentDetails("edge-567"))
             .build();
 
     when(store.getCloudBotDeploymentConfig(requestContext, "config-1")).thenReturn(config1);
@@ -498,12 +499,31 @@ class CloudBotDeploymentConfigManagerImplTest {
     when(validator.validateId(any())).thenReturn(Status.OK);
 
     List<CloudBotDeploymentConfig> result =
-        manager.getCloudBotDeploymentConfigs(requestContext, ids);
+        manager.getCloudBotDeploymentConfigs(
+            requestContext,
+            GetCloudBotDeploymentConfigsRequest.newBuilder().addAllIds(ids).build());
 
-    assertNotNull(result);
     assertEquals(2, result.size());
     assertEquals("config-1", result.get(0).getId());
     assertEquals("config-2", result.get(1).getId());
+
+    result =
+        manager.getCloudBotDeploymentConfigs(
+            requestContext,
+            GetCloudBotDeploymentConfigsRequest.newBuilder()
+                .addAllIds(ids)
+                .setEdgeDeploymentId("edge-123")
+                .build());
+    assertEquals(1, result.size());
+
+    result =
+        manager.getCloudBotDeploymentConfigs(
+            requestContext,
+            GetCloudBotDeploymentConfigsRequest.newBuilder()
+                .addAllIds(ids)
+                .setEdgeDeploymentId("random")
+                .build());
+    assertEquals(0, result.size());
   }
 
   @Test
@@ -513,14 +533,14 @@ class CloudBotDeploymentConfigManagerImplTest {
         CloudBotDeploymentConfig.newBuilder()
             .setId("config-1")
             .setSiteConfig(createValidSiteConfig())
-            .setDeploymentDetails(createValidEdgeDeploymentDetails())
+            .setDeploymentDetails(createValidEdgeDeploymentDetails("edge-123"))
             .build();
 
     CloudBotDeploymentConfig config2 =
         CloudBotDeploymentConfig.newBuilder()
             .setId("config-2")
             .setSiteConfig(createValidSiteConfig())
-            .setDeploymentDetails(createValidEdgeDeploymentDetails())
+            .setDeploymentDetails(createValidEdgeDeploymentDetails("edge-123"))
             .build();
 
     List<CloudBotDeploymentConfig> expectedConfigs = Arrays.asList(config1, config2);
@@ -529,7 +549,8 @@ class CloudBotDeploymentConfigManagerImplTest {
 
     // Test with empty list (should return all configs)
     List<CloudBotDeploymentConfig> result =
-        manager.getCloudBotDeploymentConfigs(requestContext, Collections.emptyList());
+        manager.getCloudBotDeploymentConfigs(
+            requestContext, GetCloudBotDeploymentConfigsRequest.getDefaultInstance());
 
     assertNotNull(result);
     assertEquals(2, result.size());
@@ -601,7 +622,7 @@ class CloudBotDeploymentConfigManagerImplTest {
             .setId(id)
             .setEnabled(false) // Initially disabled
             .setSiteConfig(createValidSiteConfig())
-            .setDeploymentDetails(createValidEdgeDeploymentDetails())
+            .setDeploymentDetails(createValidEdgeDeploymentDetails("edge-123"))
             .build();
 
     // Create the expected updated config
@@ -637,12 +658,11 @@ class CloudBotDeploymentConfigManagerImplTest {
         .build();
   }
 
-  private DeploymentDetails createValidEdgeDeploymentDetails() {
+  private DeploymentDetails createValidEdgeDeploymentDetails(String edgeId) {
     return DeploymentDetails.newBuilder()
         .setEnvironment("production")
         .setDeploymentMode(DeploymentMode.DEPLOYMENT_MODE_EDGE)
-        .setEdgeDeploymentConfig(
-            EdgeDeploymentConfig.newBuilder().setCloudEdgeDeploymentId("edge-123"))
+        .setEdgeDeploymentConfig(EdgeDeploymentConfig.newBuilder().setCloudEdgeDeploymentId(edgeId))
         .build();
   }
 
