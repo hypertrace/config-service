@@ -21,6 +21,7 @@ import ai.traceable.cloud.edge.deployment.config.service.v1.SharedConfigMetadata
 import ai.traceable.cloud.edge.deployment.config.service.v1.UpdateCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.shared.config.SharedConfigMetadataRegistry;
 import ai.traceable.cloud.edge.deployment.config.service.v1.state.transitions.StateTransitionsRegistry;
+import com.google.protobuf.Duration;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import jakarta.inject.Inject;
@@ -227,10 +228,12 @@ public class CloudEdgeDeploymentValidator {
         healthCheckSettings, HealthCheckSettings.UNHEALTHY_THRESHOLD_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
         healthCheckSettings, HealthCheckSettings.SUCCESS_CODES_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(
-        healthCheckSettings, HealthCheckSettings.INTERVAL_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(
-        healthCheckSettings, HealthCheckSettings.TIMEOUT_FIELD_NUMBER);
+    if (healthCheckSettings.getInterval().equals(Duration.getDefaultInstance())) {
+      throw Status.INVALID_ARGUMENT.withDescription("invalid interval").asRuntimeException();
+    }
+    if (healthCheckSettings.getTimeout().equals(Duration.getDefaultInstance())) {
+      throw Status.INVALID_ARGUMENT.withDescription("invalid timeout").asRuntimeException();
+    }
   }
 
   public List<DeploymentStatus> validateActionAndGetNextStates(
