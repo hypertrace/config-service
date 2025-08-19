@@ -7,6 +7,7 @@ plugins {
 dependencies {
   api(commonLibs.typesafe.config)
   api(commonLibs.grpc.api)
+  implementation(projects.configServiceCommons)
   implementation(projects.cloudBotDeploymentConfigServiceApi)
   implementation(projects.configUtils)
   implementation(localLibs.hypertrace.configservice.api)

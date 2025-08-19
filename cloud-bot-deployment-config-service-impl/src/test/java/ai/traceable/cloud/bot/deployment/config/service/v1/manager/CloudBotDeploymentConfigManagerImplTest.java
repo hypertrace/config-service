@@ -39,6 +39,7 @@ import ai.traceable.cloud.bot.deployment.config.service.v1.encryption.KeyPairGen
 import ai.traceable.cloud.bot.deployment.config.service.v1.state.transitions.StateTransitionsRegistry;
 import ai.traceable.cloud.bot.deployment.config.service.v1.state.transitions.StateTransitionsRegistryImpl;
 import ai.traceable.cloud.bot.deployment.config.service.v1.store.CloudBotDeploymentConfigStore;
+import ai.traceable.cloud.bot.deployment.config.service.v1.utils.CloudBotDeploymentMetricsUtil;
 import ai.traceable.config.utils.UuidGenerator;
 import com.google.protobuf.Timestamp;
 import io.grpc.Status;
@@ -58,6 +59,7 @@ class CloudBotDeploymentConfigManagerImplTest {
 
   @Mock private CloudBotDeploymentConfigStore store;
   @Mock private CloudBotDeploymentConfigValidator validator;
+  @Mock private CloudBotDeploymentMetricsUtil cloudBotDeploymentMetricsUtil;
   private final StateTransitionsRegistry stateTransitionsRegistry =
       new StateTransitionsRegistryImpl();
   @Mock private UuidGenerator uuidGenerator;
@@ -72,7 +74,13 @@ class CloudBotDeploymentConfigManagerImplTest {
     MockitoAnnotations.openMocks(this);
     manager =
         new CloudBotDeploymentConfigManagerImpl(
-            store, validator, stateTransitionsRegistry, uuidGenerator, keyPairGenerator, clock);
+            store,
+            cloudBotDeploymentMetricsUtil,
+            validator,
+            stateTransitionsRegistry,
+            uuidGenerator,
+            keyPairGenerator,
+            clock);
   }
 
   @Test

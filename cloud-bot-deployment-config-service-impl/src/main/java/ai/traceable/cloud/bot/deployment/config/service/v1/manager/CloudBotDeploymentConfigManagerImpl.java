@@ -20,6 +20,7 @@ import ai.traceable.cloud.bot.deployment.config.service.v1.encryption.KeyPairGen
 import ai.traceable.cloud.bot.deployment.config.service.v1.state.transitions.Action;
 import ai.traceable.cloud.bot.deployment.config.service.v1.state.transitions.StateTransitionsRegistry;
 import ai.traceable.cloud.bot.deployment.config.service.v1.store.CloudBotDeploymentConfigStore;
+import ai.traceable.cloud.bot.deployment.config.service.v1.utils.CloudBotDeploymentMetricsUtil;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.platform.utils.ip.IpAddressParsingUtils;
 import ai.traceable.platform.utils.ip.IpAddressParsingUtils.IpParsingResults;
@@ -40,7 +41,9 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 @AllArgsConstructor(onConstructor_ = {@Inject})
 public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentConfigManager {
 
+  public static final String UNKNOWN_TENANT = "UNKNOWN_TENANT";
   private final CloudBotDeploymentConfigStore store;
+  private final CloudBotDeploymentMetricsUtil cloudBotDeploymentMetricsUtil;
   private final CloudBotDeploymentConfigValidator validator;
   private final StateTransitionsRegistry stateTransitionsRegistry;
   private final UuidGenerator uuidGenerator;
@@ -104,7 +107,13 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
             .setLastUpdatedTimestamp(Timestamp.newBuilder().setSeconds(this.clock.millis() / 1000))
             .build();
 
-    return store.createCloudBotDeploymentConfig(ctx, config);
+    final CloudBotDeploymentConfig cloudBotDeploymentConfig =
+        store.createCloudBotDeploymentConfig(ctx, config);
+    cloudBotDeploymentMetricsUtil.incrementCloudBotDeploymentConfigStatusUpdateCount(
+        ctx.getTenantId().orElse(UNKNOWN_TENANT),
+        cloudBotDeploymentConfig.getCloudBotDeploymentStatus().getDeploymentStatus(),
+        cloudBotDeploymentConfig.getId());
+    return cloudBotDeploymentConfig;
   }
 
   @Override
@@ -120,8 +129,9 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
     try {
       CloudBotDeploymentConfigInput requestedInput = request.getCloudBotDeploymentConfigInput();
 
-      CloudBotDeploymentStatus nextState =
-          isBreakingChange(existingConfig, requestedInput)
+      final boolean breakingChange = isBreakingChange(existingConfig, requestedInput);
+      final CloudBotDeploymentStatus nextState =
+          breakingChange
               ? checkAndSetDeploymentState(
                   id,
                   existingConfig.getCloudBotDeploymentStatus().getDeploymentStatus(),
@@ -129,7 +139,7 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
               : existingConfig.getCloudBotDeploymentStatus();
 
       // Start with existing config and update only what's needed
-      CloudBotDeploymentConfig.Builder updatedConfigBuilder = existingConfig.toBuilder();
+      final CloudBotDeploymentConfig.Builder updatedConfigBuilder = existingConfig.toBuilder();
 
       // Update deployment details
       updatedConfigBuilder.setDeploymentDetails(
@@ -146,7 +156,18 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
           .setLastUpdatedTimestamp(Timestamp.newBuilder().setSeconds(this.clock.millis() / 1000));
 
       // Save and return updated config
-      return store.updateCloudBotDeploymentConfig(ctx, updatedConfigBuilder.build());
+      final CloudBotDeploymentConfig cloudBotDeploymentConfig =
+          store.updateCloudBotDeploymentConfig(ctx, updatedConfigBuilder.build());
+      // If there is a breaking change, update the metrics
+      // this is used to notify the devops to make this change or the tenant
+      // for non-blocking change there is no change of status
+      if (breakingChange) {
+        cloudBotDeploymentMetricsUtil.incrementCloudBotDeploymentConfigStatusUpdateCount(
+            ctx.getTenantId().orElse(UNKNOWN_TENANT),
+            cloudBotDeploymentConfig.getCloudBotDeploymentStatus().getDeploymentStatus(),
+            cloudBotDeploymentConfig.getId());
+      }
+      return cloudBotDeploymentConfig;
     } catch (StatusRuntimeException e) {
       throw e; // Re-throw status exceptions as-is
     } catch (Exception e) {
@@ -259,6 +280,10 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
         // Just update the state of the config
         CloudBotDeploymentConfig updatedConfig =
             existingConfig.toBuilder().setCloudBotDeploymentStatus(nextState).build();
+        cloudBotDeploymentMetricsUtil.incrementCloudBotDeploymentConfigStatusUpdateCount(
+            ctx.getTenantId().orElse(UNKNOWN_TENANT),
+            updatedConfig.getCloudBotDeploymentStatus().getDeploymentStatus(),
+            updatedConfig.getId());
         store.updateCloudBotDeploymentConfig(ctx, updatedConfig);
       }
     } catch (Exception e) {

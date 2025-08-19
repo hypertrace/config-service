@@ -10,11 +10,13 @@ import com.google.inject.Provides;
 import com.typesafe.config.Config;
 import io.grpc.BindableService;
 import io.grpc.Channel;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Clock;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
+import org.hypertrace.core.serviceframework.metrics.PlatformMetricsRegistry;
 
 public class CloudBotDeploymentConfigServiceModule extends AbstractModule {
 
@@ -46,5 +48,10 @@ public class CloudBotDeploymentConfigServiceModule extends AbstractModule {
     return ConfigServiceGrpc.newBlockingStub(this.channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  MeterRegistry provideMeterRegistry() {
+    return PlatformMetricsRegistry.getMeterRegistry();
   }
 }
