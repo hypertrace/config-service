@@ -2,11 +2,14 @@ package ai.traceable.anomaly.config.service.detector.anomalydetection.handler;
 
 import static ai.traceable.anomaly.config.service.common.AnomalyConfigServiceUtils.mergeConfigs;
 
+import ai.traceable.anomaly.config.service.common.AnomalySubRuleConfigUtils;
 import ai.traceable.anomaly.config.service.registry.genai.GenAiRulesRegistry;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.GenAiAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -72,7 +75,9 @@ public class GenAiDetectionConfigHandler {
               }
             });
 
-    return new ArrayList<>(configCaseMap.values());
+    return new ArrayList<>(
+        populateNewFields(
+            configCaseMap.values(), preferredConfig.getAnomalyDetectionConfigsList()));
   }
 
   List<AnomalyDetectionConfig> deleteWholeAnomalyDetectionConfig(
@@ -117,6 +122,81 @@ public class GenAiDetectionConfigHandler {
       List<AnomalyDetectionConfig> detectionConfigs) {
     return detectionConfigs.stream()
         .filter(AnomalyDetectionConfig::hasGenAiAnomalyDetectionConfig)
+        .collect(Collectors.toList());
+  }
+
+  private List<AnomalyDetectionConfig> populateNewFields(
+      Collection<AnomalyDetectionConfig> mergedConfigs,
+      List<AnomalyDetectionConfig> preferredConfigs) {
+    if (mergedConfigs.isEmpty() || preferredConfigs.isEmpty()) {
+      return new ArrayList<>(mergedConfigs);
+    }
+
+    Map<String, AnomalySubRuleConfig> preferredSubRuleConfigs =
+        preferredConfigs.stream()
+            .flatMap(
+                config ->
+                    config
+                        .getGenAiAnomalyDetectionConfig()
+                        .getSubRuleConfigs()
+                        .getSubRuleConfigsMap()
+                        .values()
+                        .stream())
+            .collect(Collectors.toMap(AnomalySubRuleConfig::getSubRuleId, Function.identity()));
+
+    Map<String, AnomalySubRuleConfig> mergedSubRuleConfigs =
+        mergedConfigs.stream()
+            .flatMap(
+                config ->
+                    config
+                        .getGenAiAnomalyDetectionConfig()
+                        .getSubRuleConfigs()
+                        .getSubRuleConfigsMap()
+                        .values()
+                        .stream())
+            .collect(Collectors.toMap(AnomalySubRuleConfig::getSubRuleId, Function.identity()));
+    Map<String, AnomalySubRuleConfig> resultMap = new HashMap<>();
+    for (AnomalySubRuleConfig mergedConfig : mergedSubRuleConfigs.values()) {
+      if (preferredSubRuleConfigs.get(mergedConfig.getSubRuleId()) != null) {
+        AnomalySubRuleConfig preferredConfig =
+            preferredSubRuleConfigs.get(mergedConfig.getSubRuleId());
+        resultMap.put(
+            mergedConfig.getSubRuleId(),
+            AnomalySubRuleConfigUtils.handleMergedConfigChange(mergedConfig, preferredConfig));
+      } else {
+        resultMap.put(
+            mergedConfig.getSubRuleId(), AnomalySubRuleConfigUtils.populateNewFields(mergedConfig));
+      }
+    }
+    if (resultMap.isEmpty()) {
+      return new ArrayList<>(mergedConfigs);
+    }
+
+    return mergedConfigs.stream()
+        .map(
+            config -> {
+              String ruleId = config.getGenAiAnomalyDetectionConfig().getAnomalyRuleId();
+              Map<String, AnomalySubRuleConfig> ruleSpecificSubRules =
+                  resultMap.entrySet().stream()
+                      .filter(entry -> entry.getKey().startsWith(ruleId + "_"))
+                      .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+              if (ruleSpecificSubRules.isEmpty()) {
+                return config;
+              }
+
+              return AnomalyDetectionConfig.newBuilder(config)
+                  .setGenAiAnomalyDetectionConfig(
+                      config.getGenAiAnomalyDetectionConfig().toBuilder()
+                          .setSubRuleConfigs(
+                              config
+                                  .getGenAiAnomalyDetectionConfig()
+                                  .getSubRuleConfigs()
+                                  .toBuilder()
+                                  .clearSubRuleConfigs()
+                                  .putAllSubRuleConfigs(ruleSpecificSubRules))
+                          .build())
+                  .build();
+            })
         .collect(Collectors.toList());
   }
 }

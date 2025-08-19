@@ -15,6 +15,7 @@ import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils;
 import ai.traceable.anomaly.config.service.common.AnomalySubRuleConfigUtils;
 import ai.traceable.anomaly.config.service.detector.DetectorConfigServiceConfig;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.AnomalyDetectionConfigHandler;
+import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.AnomalyDetectionConfigUtils;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.GlobalTestingModeResolver;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.ModsecConfigHandler;
 import ai.traceable.anomaly.config.service.global.ruleinfo.RuleInfoManager;
@@ -51,11 +52,10 @@ import io.grpc.Server;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
@@ -768,18 +768,7 @@ public class AnomalyDetectionConfigManagerTest {
   }
 
   @Test
-  void testPopulateNewFields()
-      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-    AnomalyDetectionConfigManagerImpl manager =
-        new AnomalyDetectionConfigManagerImpl(
-            configServiceBlockingStub,
-            detectionConfigConverter,
-            anomalyConfigScopeUtils,
-            getDefaultConfig(),
-            mock(ConfigChangeEventGenerator.class),
-            globalAnomalyConfigStatusManager,
-            wafConfigResolver,
-            globalTestingModeResolver);
+  void testPopulateNewFields() {
     AnomalySubRuleConfig oldStyleConfig =
         AnomalySubRuleConfig.newBuilder()
             .setSubRuleId("old-style-config")
@@ -807,13 +796,8 @@ public class AnomalyDetectionConfigManagerTest {
                                     .build())
                             .build()))
             .build();
-    ScopedAnomalyDetectionConfig processedConfig;
-    Method populateNewFieldsMethod =
-        AnomalyDetectionConfigManagerImpl.class.getDeclaredMethod(
-            "populateNewFields", ScopedAnomalyDetectionConfig.class);
-    populateNewFieldsMethod.setAccessible(true);
-    processedConfig =
-        (ScopedAnomalyDetectionConfig) populateNewFieldsMethod.invoke(manager, inputConfig);
+    ScopedAnomalyDetectionConfig processedConfig =
+        AnomalyDetectionConfigUtils.populateNewFields(inputConfig);
     AnomalyDetectionConfig detectionConfig = processedConfig.getAnomalyDetectionConfigs(0);
     ModsecurityAnomalyRuleConfig ruleConfig =
         detectionConfig.getModsecurityAnomalyDetectionConfig().getModsecAnomalyRule();
@@ -836,6 +820,39 @@ public class AnomalyDetectionConfigManagerTest {
     assertEquals(
         AnomalyRuleAction.ANOMALY_RULE_ACTION_BLOCK,
         processedBlockingConfig.getAnomalyRuleAction());
+
+    inputConfig =
+        ScopedAnomalyDetectionConfig.newBuilder()
+            .setConfigScope(customerConfigScope)
+            .addAnomalyDetectionConfigs(
+                AnomalyDetectionConfig.newBuilder()
+                    .setGenAiAnomalyDetectionConfig(
+                        GenAiAnomalyDetectionConfig.newBuilder()
+                            .setAnomalyRuleId("genAi-rule")
+                            .setSubRuleConfigs(
+                                AnomalySubRuleConfigMap.newBuilder()
+                                    .putAllSubRuleConfigs(
+                                        Map.of(
+                                            "genAi_subrule1",
+                                            AnomalySubRuleConfig.newBuilder()
+                                                .setSubRuleId("genAi_subrule1")
+                                                .setConfigStatus(
+                                                    AnomalyConfigStatusChange.newBuilder()
+                                                        .setDisabled(true)
+                                                        .build())
+                                                .setAnomalyRuleAction(
+                                                    AnomalyRuleAction.ANOMALY_RULE_ACTION_DISABLE)
+                                                .build(),
+                                            "genAi_subrule2",
+                                            AnomalySubRuleConfig.newBuilder()
+                                                .setSubRuleId("genAi_subrule2")
+                                                .setBlockingEnabled(true)
+                                                .build()))))
+                    .build())
+            .build();
+
+    processedConfig = AnomalyDetectionConfigUtils.populateNewFields(inputConfig);
+    assertEquals(1, processedConfig.getAnomalyDetectionConfigsCount());
   }
 
   @Test
@@ -1367,19 +1384,20 @@ public class AnomalyDetectionConfigManagerTest {
                 GetAnomalyDetectionConfigsFilter.getDefaultInstance()));
 
     ScopedAnomalyDetectionConfig customerScopedAnomalyDetectionConfig =
-        getScopedAnomalyDetectionConfig(scopedDetectionConfigs.getConfig(CUSTOMER_SCOPE_CONFIG));
+        getScopedAnomalyDetectionConfig(resolvedDetectionConfigs.getConfig(CUSTOMER_SCOPE_CONFIG));
     updateScopedAnomalyDetectionConfig(requestContext, customerScopedAnomalyDetectionConfig);
 
     ScopedAnomalyDetectionConfig serviceScopedAnomalyDetectionConfig =
-        getScopedAnomalyDetectionConfig(scopedDetectionConfigs.getConfig(SERVICE_SCOPE_CONFIG));
+        getScopedAnomalyDetectionConfig(resolvedDetectionConfigs.getConfig(SERVICE_SCOPE_CONFIG));
     updateScopedAnomalyDetectionConfig(requestContext, serviceScopedAnomalyDetectionConfig);
 
     ScopedAnomalyDetectionConfig environmentScopedAnomalyDetectionConfig =
-        getScopedAnomalyDetectionConfig(scopedDetectionConfigs.getConfig(ENVIRONMENT_SCOPE_CONFIG));
+        getScopedAnomalyDetectionConfig(
+            resolvedDetectionConfigs.getConfig(ENVIRONMENT_SCOPE_CONFIG));
     updateScopedAnomalyDetectionConfig(requestContext, environmentScopedAnomalyDetectionConfig);
 
     ScopedAnomalyDetectionConfig apiScopedAnomalyDetectionConfig =
-        getScopedAnomalyDetectionConfig(scopedDetectionConfigs.getConfig(API_SCOPE_CONFIG));
+        getScopedAnomalyDetectionConfig(resolvedDetectionConfigs.getConfig(API_SCOPE_CONFIG));
     updateScopedAnomalyDetectionConfig(requestContext, apiScopedAnomalyDetectionConfig);
 
     scopedAnomalyDetectionConfig =
@@ -1433,15 +1451,16 @@ public class AnomalyDetectionConfigManagerTest {
     assertEquals(customerConfigScope, scopedAnomalyDetectionConfigs.get(0).getConfigScope());
 
     ScopedAnomalyDetectionConfig environmentScopedAnomalyDetectionConfig =
-        getScopedAnomalyDetectionConfig(scopedDetectionConfigs.getConfig(ENVIRONMENT_SCOPE_CONFIG));
+        getScopedAnomalyDetectionConfig(
+            resolvedDetectionConfigs.getConfig(ENVIRONMENT_SCOPE_CONFIG));
     updateScopedAnomalyDetectionConfig(requestContext, environmentScopedAnomalyDetectionConfig);
 
     ScopedAnomalyDetectionConfig serviceScopedAnomalyDetectionConfig =
-        getScopedAnomalyDetectionConfig(scopedDetectionConfigs.getConfig(SERVICE_SCOPE_CONFIG));
+        getScopedAnomalyDetectionConfig(resolvedDetectionConfigs.getConfig(SERVICE_SCOPE_CONFIG));
     updateScopedAnomalyDetectionConfig(requestContext, serviceScopedAnomalyDetectionConfig);
 
     ScopedAnomalyDetectionConfig apiScopedAnomalyDetectionConfig =
-        getScopedAnomalyDetectionConfig(scopedDetectionConfigs.getConfig(API_SCOPE_CONFIG));
+        getScopedAnomalyDetectionConfig(resolvedDetectionConfigs.getConfig(API_SCOPE_CONFIG));
     updateScopedAnomalyDetectionConfig(requestContext, apiScopedAnomalyDetectionConfig);
 
     scopedAnomalyDetectionConfigs =
@@ -1455,7 +1474,7 @@ public class AnomalyDetectionConfigManagerTest {
     assertTrue(configScopes.contains(customerConfigScope));
 
     ScopedAnomalyDetectionConfig customerScopedAnomalyDetectionConfig =
-        getScopedAnomalyDetectionConfig(scopedDetectionConfigs.getConfig(CUSTOMER_SCOPE_CONFIG));
+        getScopedAnomalyDetectionConfig(resolvedDetectionConfigs.getConfig(CUSTOMER_SCOPE_CONFIG));
     updateScopedAnomalyDetectionConfig(requestContext, customerScopedAnomalyDetectionConfig);
 
     scopedAnomalyDetectionConfigs =
@@ -1496,7 +1515,7 @@ public class AnomalyDetectionConfigManagerTest {
                 DeleteAnomalyConfigOption.DELETE_ANOMALY_CONFIG_OPTION_WHOLE_DETECTION_CONFIG));
 
     scopedAnomalyDetectionConfig =
-        getScopedAnomalyDetectionConfig(scopedDetectionConfigs.getConfig(CUSTOMER_SCOPE_CONFIG));
+        getScopedAnomalyDetectionConfig(resolvedDetectionConfigs.getConfig(CUSTOMER_SCOPE_CONFIG));
     updateScopedAnomalyDetectionConfig(requestContext, scopedAnomalyDetectionConfig);
 
     AnomalyDetectionConfig detectionConfig1 =
@@ -1712,12 +1731,14 @@ public class AnomalyDetectionConfigManagerTest {
                 + "            categoryConfig = {\n"
                 + "              eventScoreCategory = ANOMALY_EVENT_SCORE_CATEGORY_MEDIUM\n"
                 + "            }\n"
+                + "            anomalyRuleAction: ANOMALY_RULE_ACTION_MONITOR\n"
                 + "          }\n"
                 + "          crs_942 = {\n"
                 + "            subRuleId = \"crs_942\"\n"
                 + "            categoryConfig = {\n"
                 + "              eventScoreCategory = ANOMALY_EVENT_SCORE_CATEGORY_MEDIUM\n"
                 + "            }\n"
+                + "            anomalyRuleAction: ANOMALY_RULE_ACTION_MONITOR\n"
                 + "          }\n"
                 + "        }\n"
                 + "      }"

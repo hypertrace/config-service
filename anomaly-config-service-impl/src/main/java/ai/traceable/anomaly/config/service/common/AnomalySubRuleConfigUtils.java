@@ -95,27 +95,26 @@ public class AnomalySubRuleConfigUtils {
   private static void populateOldFields(AnomalySubRuleConfig.Builder builder) {
     AnomalyConfigStatusChange.Builder anomalyConfigStatusChangeBuilder =
         AnomalyConfigStatusChange.newBuilder();
-    boolean hasConfigStatusUpdate = false;
     if (builder.hasInternal()) {
       anomalyConfigStatusChangeBuilder.setInternal(builder.getInternal());
-      hasConfigStatusUpdate = true;
     }
     switch (builder.getAnomalyRuleAction()) {
       case ANOMALY_RULE_ACTION_DISABLE:
         anomalyConfigStatusChangeBuilder.setDisabled(true);
-        hasConfigStatusUpdate = true;
         break;
       case ANOMALY_RULE_ACTION_BLOCK:
         builder.setBlockingEnabled(true);
+        anomalyConfigStatusChangeBuilder.setDisabled(false);
         break;
       case ANOMALY_RULE_ACTION_MONITOR:
       case ANOMALY_RULE_ACTION_TESTING:
+        builder.setBlockingEnabled(false);
+        anomalyConfigStatusChangeBuilder.setDisabled(false);
+        break;
       default:
         break;
     }
-    if (hasConfigStatusUpdate) {
-      builder.setConfigStatus(anomalyConfigStatusChangeBuilder.build());
-    }
+    builder.setConfigStatus(anomalyConfigStatusChangeBuilder.build());
   }
 
   private static void populateNewFields(AnomalySubRuleConfig.Builder builder) {

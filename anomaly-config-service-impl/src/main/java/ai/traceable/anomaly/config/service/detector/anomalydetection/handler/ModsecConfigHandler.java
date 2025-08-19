@@ -229,6 +229,16 @@ public class ModsecConfigHandler {
                     ModsecurityAnomalyRuleConfig::getAnomalyRuleId,
                     this::getModsecSubRuleConfigMap));
 
+    if (fallbackConfigs.isEmpty()) {
+      modsecSubRuleConfigMap.forEach(
+          (anomalyRuleId, subRuleConfigMap) ->
+              subRuleConfigMap.replaceAll(
+                  (subRuleId, anomalySubRuleConfig) ->
+                      AnomalySubRuleConfigUtils.mergeAndPopulateNewFields(
+                          AnomalySubRuleConfig.getDefaultInstance(), anomalySubRuleConfig)));
+      return modsecSubRuleConfigMap;
+    }
+
     fallbackConfigs.forEach(
         modsecConfig -> {
           String anomalyRuleId = modsecConfig.getAnomalyRuleId();

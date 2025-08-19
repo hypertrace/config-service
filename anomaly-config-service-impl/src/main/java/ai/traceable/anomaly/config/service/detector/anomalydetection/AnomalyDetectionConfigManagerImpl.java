@@ -4,20 +4,17 @@ import static ai.traceable.anomaly.config.service.detector.anomalydetection.Anom
 import static ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigConstants.ANOMALY_DETECTION_CONFIG_RESOURCE_NAME;
 
 import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils;
-import ai.traceable.anomaly.config.service.common.AnomalySubRuleConfigUtils;
 import ai.traceable.anomaly.config.service.detector.DetectorConfigServiceConfig;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.AnomalyDetectionConfigHandler;
+import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.AnomalyDetectionConfigUtils;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.GlobalTestingModeResolver;
 import ai.traceable.anomaly.config.service.global.status.GlobalAnomalyConfigStatusManager;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
-import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.DeleteAnomalyConfigOption;
 import ai.traceable.anomaly.config.service.v1.detector.GetAnomalyDetectionConfigsFilter;
-import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetectionConfig;
-import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.global.ApiDefaultConfigsType;
 import ai.traceable.anomaly.config.service.v1.global.ModsecDefaultConfigsType;
@@ -543,48 +540,11 @@ public class AnomalyDetectionConfigManagerImpl
         .collect(Collectors.toList());
   }
 
-  private ScopedAnomalyDetectionConfig populateNewFields(
-      ScopedAnomalyDetectionConfig scopedConfig) {
-    if (scopedConfig == null) {
-      return null;
-    }
-
-    ScopedAnomalyDetectionConfig.Builder builder =
-        scopedConfig.toBuilder().clearAnomalyDetectionConfigs();
-    for (AnomalyDetectionConfig config : scopedConfig.getAnomalyDetectionConfigsList()) {
-      AnomalyDetectionConfig processedConfig = config;
-      if (processedConfig.hasModsecurityAnomalyDetectionConfig()
-          && processedConfig.getModsecurityAnomalyDetectionConfig().hasModsecAnomalyRule()) {
-
-        ModsecurityAnomalyDetectionConfig modsecConfig =
-            processedConfig.getModsecurityAnomalyDetectionConfig();
-        ModsecurityAnomalyRuleConfig ruleConfig = modsecConfig.getModsecAnomalyRule();
-        List<AnomalySubRuleConfig> processedSubRules =
-            ruleConfig.getSubRuleConfigsList().stream()
-                .map(AnomalySubRuleConfigUtils::populateNewFields)
-                .collect(Collectors.toList());
-        ModsecurityAnomalyRuleConfig processedRuleConfig =
-            ruleConfig.toBuilder()
-                .clearSubRuleConfigs()
-                .addAllSubRuleConfigs(processedSubRules)
-                .build();
-        ModsecurityAnomalyDetectionConfig processedModsecConfig =
-            modsecConfig.toBuilder().setModsecAnomalyRule(processedRuleConfig).build();
-
-        processedConfig =
-            config.toBuilder().setModsecurityAnomalyDetectionConfig(processedModsecConfig).build();
-      }
-
-      builder.addAnomalyDetectionConfigs(processedConfig);
-    }
-
-    return builder.build();
-  }
-
   private ScopedAnomalyDetectionConfig filterConfigs(
       ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig,
       GetAnomalyDetectionConfigsFilter filter) {
-    scopedAnomalyDetectionConfig = populateNewFields(scopedAnomalyDetectionConfig);
+    scopedAnomalyDetectionConfig =
+        AnomalyDetectionConfigUtils.populateNewFields(scopedAnomalyDetectionConfig);
     Set<AnomalyDetectionConfig.AnomalyDetectionConfigCase> configCases =
         anomalyDetectionConfigHandler.convert(filter);
     if (configCases.isEmpty()) {
