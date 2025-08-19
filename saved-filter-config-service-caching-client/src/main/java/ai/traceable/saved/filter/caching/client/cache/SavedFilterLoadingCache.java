@@ -12,11 +12,11 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.protobuf.InvalidProtocolBufferException;
-import io.grpc.Status;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
@@ -38,7 +38,7 @@ public class SavedFilterLoadingCache implements SavedFilterCache {
   private static final String SAVED_FILTER = "SavedFilter";
   private static final String SAVED_FILTER_CACHE_NAME = "savedFilterCache";
 
-  private final LoadingCache<ContextualKey<SavedFilterKey>, SavedFilter> savedFilterCache;
+  private final LoadingCache<ContextualKey<SavedFilterKey>, Optional<SavedFilter>> savedFilterCache;
   private final SavedFilterServiceClient savedFilterServiceClient;
 
   public SavedFilterLoadingCache(
@@ -68,7 +68,12 @@ public class SavedFilterLoadingCache implements SavedFilterCache {
 
     for (final SavedFilterKey key : keys) {
       try {
-        savedFilterMap.put(key, savedFilterCache.get(context.buildInternalContextualKey(key)));
+        Optional<SavedFilter> maybeSavedFilter =
+            savedFilterCache.get(context.buildInternalContextualKey(key));
+        if (maybeSavedFilter.isEmpty()) {
+          continue;
+        }
+        savedFilterMap.put(key, maybeSavedFilter.get());
       } catch (ExecutionException e) {
         log.error("Error while fetching saved filters for key {}", key, e);
       }
@@ -101,7 +106,7 @@ public class SavedFilterLoadingCache implements SavedFilterCache {
 
   @SuppressWarnings("Convert2Diamond")
   @NotNull
-  private LoadingCache<ContextualKey<SavedFilterKey>, SavedFilter> buildSavedFilterCache(
+  private LoadingCache<ContextualKey<SavedFilterKey>, Optional<SavedFilter>> buildSavedFilterCache(
       SavedFilterCacheConfig savedFilterCacheConfig) {
     return CacheBuilder.newBuilder()
         .expireAfterAccess(
@@ -109,34 +114,35 @@ public class SavedFilterLoadingCache implements SavedFilterCache {
         .maximumSize(savedFilterCacheConfig.getMaxCacheSize())
         .recordStats()
         .build(
-            new CacheLoader<ContextualKey<SavedFilterKey>, SavedFilter>() {
+            new CacheLoader<ContextualKey<SavedFilterKey>, Optional<SavedFilter>>() {
               @Nonnull
               @Override
-              public SavedFilter load(@Nonnull ContextualKey<SavedFilterKey> key) {
+              public Optional<SavedFilter> load(@Nonnull ContextualKey<SavedFilterKey> key) {
                 return loadSavedFilterFromSource(key);
               }
             });
   }
 
-  private SavedFilter loadSavedFilterFromSource(ContextualKey<SavedFilterKey> contextualKey) {
+  private Optional<SavedFilter> loadSavedFilterFromSource(
+      ContextualKey<SavedFilterKey> contextualKey) {
 
     List<SavedFilter> savedFilterSet =
         savedFilterServiceClient.getSavedFilter(
             contextualKey.getContext(), contextualKey.getData());
 
     if (savedFilterSet.isEmpty()) {
-      throw Status.NOT_FOUND
-          .withDescription(String.format("No saved filters found for key %s", contextualKey))
-          .asRuntimeException();
+      log.warn("No saved filters found for key {}", contextualKey);
+      return Optional.empty();
     }
     if (savedFilterSet.size() > 1) {
-      throw new IllegalStateException(
-          String.format(
-              "Identifying attributes must produce only one saved filter but for key %s we have %s saved filters in total",
-              contextualKey, savedFilterSet.size()));
+      log.error(
+          "Identifying attributes must produce only one saved filter but for key {} we have {} saved filters in total",
+          contextualKey,
+          savedFilterSet.size());
+      return Optional.empty();
     }
 
-    return savedFilterSet.get(0);
+    return Optional.of(savedFilterSet.get(0));
   }
 
   private void updateCacheValues(String tenantId, ConfigCreateEvent createdConfig) {
@@ -146,7 +152,7 @@ public class SavedFilterLoadingCache implements SavedFilterCache {
 
     ContextualKey<SavedFilterKey> contextualKey =
         RequestContext.forTenantId(tenantId).buildInternalContextualKey(savedFilterKey);
-    savedFilterCache.put(contextualKey, savedFilter);
+    savedFilterCache.put(contextualKey, Optional.of(savedFilter));
   }
 
   private void updateCacheValues(String tenantId, ConfigUpdateEvent updatedConfig) {
@@ -158,7 +164,7 @@ public class SavedFilterLoadingCache implements SavedFilterCache {
     ContextualKey<SavedFilterKey> contextualKey =
         RequestContext.forTenantId(tenantId).buildInternalContextualKey(savedFilterKey);
     if (savedFilterCache.getIfPresent(contextualKey) != null) {
-      savedFilterCache.put(contextualKey, latestSavedFilter);
+      savedFilterCache.put(contextualKey, Optional.of(latestSavedFilter));
     }
   }
 
