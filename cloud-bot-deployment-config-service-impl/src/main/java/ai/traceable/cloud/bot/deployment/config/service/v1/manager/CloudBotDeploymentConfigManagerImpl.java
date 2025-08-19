@@ -311,11 +311,11 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
 
       // Set current token as previous token for 7 days
       if (updatedOobConfigBuilder.hasApiToken()) {
-        long expiryTimeMillis = System.currentTimeMillis() + (7 * 24 * 60 * 60 * 1000); // 7 days
+        long expiryTimeSeconds = System.currentTimeMillis() / 1000 + (7 * 24 * 60 * 60); // 7 days
         updatedOobConfigBuilder.setPreviousApiToken(
             ApiToken.newBuilder()
                 .setKeyValue(updatedOobConfigBuilder.getApiToken().getKeyValue())
-                .setExpiryTimestampMillis(expiryTimeMillis)
+                .setExpiryTimestamp(Timestamp.newBuilder().setSeconds(expiryTimeSeconds))
                 .build());
       }
 

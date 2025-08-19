@@ -60,7 +60,7 @@ message OobDeploymentConfig {
 
 message ApiToken {
   string key_value = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Value of the API token"];
-  optional int64 expiry_timestamp_millis = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Expiration time of the token in milliseconds"];
+  optional google.protobuf.Timestamp expiry_timestamp = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Expiration time of the token"];
 }
 
 message CaptchaConfig {
@@ -80,11 +80,6 @@ message IpWhitelistConfig {
 }
 
 message CloudBotDeploymentStatus {
-  ClusterStatus cluster_status = 1 [
-    (ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Current status of the deployment cluster",
-    deprecated = true,
-    (ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_deprecated) = true
-  ];
   DeploymentStatus deployment_status = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Current status of the deployment for the bot cluster"];
   optional string message = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Optional message associated with the deployment status, mandatory for blocked state and would be displayed to customers"];
 }

@@ -307,8 +307,9 @@ class CloudBotDeploymentConfigServiceIntegrationTest
                 .getDeploymentDetails()
                 .getOobDeploymentConfig()
                 .getPreviousApiToken()
-                .getExpiryTimestampMillis()
-            > System.currentTimeMillis(),
+                .getExpiryTimestamp()
+                .getSeconds()
+            > System.currentTimeMillis() / 1000,
         "Previous token should have an expiry timestamp");
   }
 

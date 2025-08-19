@@ -609,8 +609,9 @@ class CloudBotDeploymentConfigManagerImplTest {
                 .getDeploymentDetails()
                 .getOobDeploymentConfig()
                 .getPreviousApiToken()
-                .getExpiryTimestampMillis()
-            > System.currentTimeMillis());
+                .getExpiryTimestamp()
+                .getSeconds()
+            > System.currentTimeMillis() / 1000);
     assertEquals("production", result.getDeploymentDetails().getEnvironment());
     assertEquals("Test Site", result.getSiteConfig().getSiteName());
   }
