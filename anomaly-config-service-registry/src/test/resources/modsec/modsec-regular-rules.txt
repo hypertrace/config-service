@@ -26,6 +26,7 @@ crs_942140 :: SQL Injection Attack: Common DB Names
 crs_942170 :: SQL benchmark and sleep injection attempts including conditional queries
 crs_942190 :: SQL code execution and information gathering attempts
 crs_942230 :: Conditional SQL injection attempts (230)
+crs_9420230 :: Conditional SQL injection attempts (T230)
 crs_942320 :: MySQL and PostgreSQL stored procedure/function injections
 crs_942350 :: MySQL UDF injection and other data/structure manipulation attempts
 crs_943120 :: Possible Session Fixation Attack: SessionID Parameter Name with No Referer

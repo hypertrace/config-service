@@ -69,7 +69,6 @@ crs_9320070 :: ServiceNow RCE: CVE-2024-4879 And CVE-2024-5217
 crs_9410170 :: NoScript XSS InjectionChecker: Attribute Injection (T170)
 crs_941260 :: IE XSS Filters - Attack (Meta charset)
 crs_9420190 :: DB code execution and information gathering attempts
-crs_9420230 :: Conditional SQL injection attempts (T230)
 crs_9420291 :: Basic MongoDB SQL injection attempts (Nested JSON)
 crs_942240 :: MySQL charset switch and MSSQL DoS attempts
 crs_942250 :: MATCH AGAINST, MERGE and EXECUTE IMMEDIATE injections
