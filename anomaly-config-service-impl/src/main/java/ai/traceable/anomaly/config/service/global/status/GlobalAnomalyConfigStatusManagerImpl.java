@@ -10,13 +10,18 @@ import ai.traceable.anomaly.config.service.v1.AnomalyConfidenceLevel;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
+import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
+import ai.traceable.anomaly.config.service.v1.NotificationConfig;
 import ai.traceable.anomaly.config.service.v1.RuleTestingMode;
 import ai.traceable.anomaly.config.service.v1.RuleType;
+import ai.traceable.anomaly.config.service.v1.RuleVersion;
 import ai.traceable.anomaly.config.service.v1.RuleVersionConfigType;
 import ai.traceable.anomaly.config.service.v1.RuleVersionData;
+import ai.traceable.anomaly.config.service.v1.RuleVersionType;
 import ai.traceable.anomaly.config.service.v1.global.ApiGlobalConfig;
 import ai.traceable.anomaly.config.service.v1.global.GlobalGenAiConfig;
 import ai.traceable.anomaly.config.service.v1.global.GlobalModsecConfig;
+import ai.traceable.anomaly.config.service.v1.global.GlobalModsecConfigChange;
 import ai.traceable.anomaly.config.service.v1.global.ModsecDefaultConfigsType;
 import ai.traceable.anomaly.config.service.v1.global.ModsecGlobalConfig;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
@@ -28,6 +33,8 @@ import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import jakarta.inject.Inject;
+import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -300,7 +307,21 @@ public class GlobalAnomalyConfigStatusManagerImpl
                 config,
                 configConverter.merge(configStatusChange, getDefaultTierConfig(requestContext)))
             .toBuilder();
-    // default profile should not fallback to tenant level for an env, it should always use env
+    if (canSendNotification(requestContext, builder.getGlobalModsecConfig().getRuleVersionData())) {
+      checkAndUpsertNotificationConfig(
+          requestContext,
+          builder.getGlobalModsecConfig().getRuleVersionData().getCurrentVersion(),
+          RuleType.RULE_TYPE_WEB_APPLICATION,
+          configMap.getOrDefault(
+              requestContext.getTenantId().orElseThrow(),
+              ScopedAnomalyConfigStatusChange.newBuilder()
+                  .setConfigScope(
+                      AnomalyConfigScope.newBuilder()
+                          .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
+                          .build())
+                  .build()));
+    }
+    // default profile should not fall back to tenant level for an env, it should always use env
     // level value if present or the default value
     if (configScope.hasEnvironmentScope()
         && Optional.ofNullable(configMap.get(configScope.getEnvironmentScope().getEnvironmentId()))
@@ -391,7 +412,7 @@ public class GlobalAnomalyConfigStatusManagerImpl
     }
   }
 
-  private final String getTenantId(RequestContext requestContext) {
+  private String getTenantId(RequestContext requestContext) {
     return requestContext
         .getTenantId()
         .orElseThrow(
@@ -510,5 +531,108 @@ public class GlobalAnomalyConfigStatusManagerImpl
       return true;
     }
     return false;
+  }
+
+  private void checkAndUpsertNotificationConfig(
+      RequestContext requestContext,
+      RuleVersion ruleVersion,
+      RuleType ruleType,
+      ScopedAnomalyConfigStatusChange scopedAnomalyConfigStatusChange) {
+    if (ruleVersion.equals(RuleVersion.getDefaultInstance())
+        || ruleVersion.getPublishedDate().isEmpty()
+        || !scopedAnomalyConfigStatusChange.getConfigScope().hasCustomerScope()) {
+      return;
+    }
+    try {
+      ZonedDateTime publishedDate = ZonedDateTime.parse(ruleVersion.getPublishedDate());
+      ZonedDateTime currentDate = ZonedDateTime.now();
+      long daysOld = Duration.between(publishedDate, currentDate).toDays();
+      NotificationConfig.Builder builder = NotificationConfig.newBuilder();
+      NotificationConfig oldNotificationConfig =
+          scopedAnomalyConfigStatusChange
+              .getGlobalModsecConfigChange()
+              .getRuleVersionDataChange()
+              .getNotificationConfig();
+      boolean updated = false;
+      if (daysOld == 0 && !oldNotificationConfig.getReleaseNotified()) {
+        builder.setReleaseNotified(true);
+        builder.setExpiryNotified(false);
+        builder.setExpiryWarningNotified(false);
+        updated = true;
+      } else if (daysOld == config.getWebAppRuleTestingModeRetentionDays() - 1
+          && !oldNotificationConfig.getExpiryWarningNotified()) {
+        builder.setExpiryWarningNotified(true);
+        builder.setReleaseNotified(false);
+        builder.setExpiryNotified(false);
+        updated = true;
+      } else if (daysOld >= config.getWebAppRuleTestingModeRetentionDays()
+          && !oldNotificationConfig.getExpiryNotified()) {
+        builder.setExpiryNotified(true);
+        builder.setReleaseNotified(false);
+        builder.setExpiryWarningNotified(false);
+        updated = true;
+      }
+      if (updated) {
+        updateVersionInConfig(
+            requestContext, scopedAnomalyConfigStatusChange, builder.build(), ruleType);
+      }
+    } catch (Exception e) {
+      log.error(
+          "Error while checking and updating notification config for rule version: {}, rule type: {}, scoped anomaly config status change: {} for tenantId: {}",
+          ruleVersion,
+          ruleType,
+          scopedAnomalyConfigStatusChange,
+          getTenantId(requestContext),
+          e);
+    }
+  }
+
+  private void updateVersionInConfig(
+      RequestContext requestContext,
+      ScopedAnomalyConfigStatusChange scopedAnomalyConfigStatusChange,
+      NotificationConfig notificationConfig,
+      RuleType ruleType) {
+    ScopedAnomalyConfigStatusChange.Builder configBuilder =
+        scopedAnomalyConfigStatusChange.toBuilder();
+    if (ruleType.equals(RuleType.RULE_TYPE_WEB_APPLICATION)) {
+      GlobalModsecConfigChange.Builder globalModsecConfigBuilder =
+          configBuilder.getGlobalModsecConfigChangeBuilder();
+      globalModsecConfigBuilder
+          .getRuleVersionDataChangeBuilder()
+          .setNotificationConfig(notificationConfig);
+      configBuilder.setGlobalModsecConfigChange(globalModsecConfigBuilder.build());
+    }
+    updateScopedAnomalyConfigStatus(requestContext, configBuilder.build());
+  }
+
+  private boolean canSendNotification(
+      RequestContext requestContext, RuleVersionData globalModsecRuleVersionData) {
+    try {
+      return globalModsecRuleVersionData.hasCurrentVersion()
+          && globalModsecRuleVersionData.hasPreviousVersion()
+          && globalModsecRuleVersionData
+              .getCurrentVersion()
+              .getVersionType()
+              .equals(RuleVersionType.RULE_VERSION_TYPE_STABLE)
+          && isDateAfter(
+              globalModsecRuleVersionData.getCurrentVersion().getPublishedDate(),
+              globalModsecRuleVersionData.getPreviousVersion().getPublishedDate());
+    } catch (Exception e) {
+      log.error(
+          "Error while checking if notification can be sent for globalModsecRuleVersionData: {} for tenantId: {}",
+          globalModsecRuleVersionData,
+          getTenantId(requestContext),
+          e);
+      return false;
+    }
+  }
+
+  private boolean isDateAfter(String date1, String date2) {
+    if (date1.isEmpty() || date2.isEmpty()) {
+      return false;
+    }
+    ZonedDateTime dateTime1 = ZonedDateTime.parse(date1);
+    ZonedDateTime dateTime2 = ZonedDateTime.parse(date2);
+    return dateTime1.isAfter(dateTime2);
   }
 }

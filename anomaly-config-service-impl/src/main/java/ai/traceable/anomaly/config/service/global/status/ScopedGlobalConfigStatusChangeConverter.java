@@ -132,6 +132,7 @@ public class ScopedGlobalConfigStatusChangeConverter {
         getRuleVersions(
             defaultConfig.getNewWebAppStableVersion(),
             defaultConfig.getOldWebAppStableVersion(),
+            defaultConfig.getWebAppRuleTestingModeRetentionDays(),
             globalModsecConfigChange.getRuleVersionDataChange().getOverrideVersion(),
             globalModsecConfigChange.getRuleVersionDataChange().getStableVersion());
     GlobalModsecConfig.Builder builder = GlobalModsecConfig.newBuilder();
@@ -193,6 +194,7 @@ public class ScopedGlobalConfigStatusChangeConverter {
   private static Map.Entry<RuleVersion, RuleVersion> getRuleVersions(
       final RuleVersion newStableVersion,
       final RuleVersion oldStableVersion,
+      final long webAppRuleTestingModeRetentionDays,
       final RuleVersion overrideVersion,
       final RuleVersion currentStableVersion) {
 
@@ -204,7 +206,8 @@ public class ScopedGlobalConfigStatusChangeConverter {
       return new SimpleEntry<>(newStableVersion, oldStableVersion);
     }
 
-    if (isWithinTwoWeeks(newStableVersion.getPublishedDate())) {
+    if (isWithinRetentionDays(
+        newStableVersion.getPublishedDate(), webAppRuleTestingModeRetentionDays)) {
       if (isNotNullOrDefault(currentStableVersion)
           && (currentStableVersion.equals(newStableVersion)
               || currentStableVersion.equals(oldStableVersion))) {
@@ -217,14 +220,16 @@ public class ScopedGlobalConfigStatusChangeConverter {
     return new SimpleEntry<>(newStableVersion, newStableVersion);
   }
 
-  private static boolean isWithinTwoWeeks(String newStableVersionDate) {
-    if (newStableVersionDate.isEmpty()) {
+  private static boolean isWithinRetentionDays(
+      String newStableVersionDate, long webAppRuleTestingModeRetentionDays) {
+    if (newStableVersionDate.isEmpty() || webAppRuleTestingModeRetentionDays <= 0) {
       return false;
     }
     try {
       ZonedDateTime newStableVersionDateTime = ZonedDateTime.parse(newStableVersionDate);
       ZonedDateTime currentDateTime = ZonedDateTime.now();
-      return Duration.between(newStableVersionDateTime, currentDateTime).toDays() <= 14;
+      return Duration.between(newStableVersionDateTime, currentDateTime).toDays()
+          <= webAppRuleTestingModeRetentionDays;
     } catch (Exception e) {
       log.error("Error parsing dates for newStableVersionDate: {}", newStableVersionDate, e);
       return false;

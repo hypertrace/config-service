@@ -23,9 +23,7 @@ public class GlobalAnomalyConfigStatusUtils {
               .mergeFrom(mergedConfig.getGlobalModsecConfigChange())
               .build());
       builder.setModsecGlobalConfig(getModsecGlobalConfig(builder.getGlobalModsecConfigChange()));
-    }
-
-    if (requestedConfig.hasModsecGlobalConfig()) {
+    } else if (requestedConfig.hasModsecGlobalConfig()) {
       builder.setModsecGlobalConfig(
           getModsecGlobalConfig(mergedConfig.getGlobalModsecConfigChange()).toBuilder()
               .mergeFrom(mergedConfig.getModsecGlobalConfig())

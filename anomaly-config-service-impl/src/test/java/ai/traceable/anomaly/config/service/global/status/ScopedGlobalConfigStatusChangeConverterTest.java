@@ -142,6 +142,7 @@ public class ScopedGlobalConfigStatusChangeConverterTest {
     RuleVersion override = getRuleVersion("override", "");
     when(defaultConfig.getNewWebAppStableVersion()).thenReturn(v2);
     when(defaultConfig.getOldWebAppStableVersion()).thenReturn(v1);
+    when(defaultConfig.getWebAppRuleTestingModeRetentionDays()).thenReturn(14);
 
     ScopedAnomalyConfigStatusChange config =
         ScopedAnomalyConfigStatusChange.newBuilder()

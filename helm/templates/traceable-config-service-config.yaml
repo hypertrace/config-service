@@ -430,6 +430,7 @@ data:
           newWebAppStableVersionPublishedDate = {{ .Values.anomalyConfigServiceConfig.global.modsecGlobalConfig.newWebAppStableVersionPublishedDate | quote }}
           oldWebAppStableVersion = {{ .Values.anomalyConfigServiceConfig.global.modsecGlobalConfig.oldWebAppStableVersion }}
           oldWebAppStableVersionPublishedDate = {{ .Values.anomalyConfigServiceConfig.global.modsecGlobalConfig.oldWebAppStableVersionPublishedDate | quote }}
+          webAppRuleTestingModeRetentionDays = {{ .Values.anomalyConfigServiceConfig.global.modsecGlobalConfig.webAppRuleTestingModeRetentionDays }}
         }
         environmentDefaultConfigType = {{ .Values.anomalyConfigServiceConfig.global.modsecGlobalConfig.environmentDefaultConfigType }}
       }

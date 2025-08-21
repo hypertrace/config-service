@@ -232,6 +232,7 @@ message RuleVersionDataChange {
   RuleVersion override_version = 2;
   RuleTestingMode rule_testing_mode = 3;
   RuleVersion experimental_version = 4;
+  NotificationConfig notification_config = 5;
 }
 
 message RuleVersionData {
@@ -245,6 +246,12 @@ message RuleVersion {
   string version = 1;
   RuleVersionType version_type = 2;
   string published_date = 3;
+}
+
+message NotificationConfig {
+  optional bool release_notified = 1;
+  optional bool expiry_warning_notified = 2;
+  optional bool expiry_notified = 3;
 }
 
 message ChangeLog {

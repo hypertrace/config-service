@@ -57,6 +57,8 @@ import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import java.io.IOException;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
@@ -961,6 +963,240 @@ public class GlobalAnomalyConfigStatusManagerTest {
     assertEquals(true, modsec.getBlockingAvailableForRegularRules());
     assertEquals(false, modsec.getUseTestRules());
     assertEquals(ANOMALY_CONFIDENCE_LEVEL_HIGH, modsec.getMinConfidenceLevel());
+  }
+
+  @Test
+  void test_sendNotificationOnConfigUpdate() {
+    String tenantId = "tenant";
+    RequestContext requestContext = RequestContext.forTenantId(tenantId);
+    AnomalyConfigScope customerScope =
+        AnomalyConfigScope.newBuilder()
+            .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
+            .build();
+    requestContext.call(
+        () -> configStatusManager.getScopedAnomalyConfigStatus(requestContext, customerScope));
+
+    ScopedAnomalyConfigStatusChange unresolvedScopedAnomalyConfigStatusResult =
+        configStatusManager.getUnresolvedScopedAnomalyConfigStatus(requestContext, customerScope);
+    assertFalse(
+        unresolvedScopedAnomalyConfigStatusResult
+            .getGlobalModsecConfigChange()
+            .getRuleVersionDataChange()
+            .hasNotificationConfig());
+
+    String today = ZonedDateTime.now(ZoneOffset.UTC).toString();
+    String configStr =
+        String.format(
+            "disabled = true\n"
+                + "internal = false\n"
+                + "minConfidenceLevel = ANOMALY_CONFIDENCE_LEVEL_MEDIUM\n"
+                + "modsecGlobalConfig.ruleVersion.newWebAppStableVersion = \"1.1.0\"\n"
+                + "modsecGlobalConfig.ruleVersion.newWebAppStableVersionPublishedDate = \"%s\"\n"
+                + "modsecGlobalConfig.ruleVersion.oldWebAppStableVersion = \"1.0.0\"\n"
+                + "modsecGlobalConfig.ruleVersion.oldWebAppStableVersionPublishedDate = \"2023-01-01T00:00:00Z\"\n"
+                + "globalGenAiConfig.disabled = true\n"
+                + "licenseTiers = [\n"
+                + "    {\n"
+                + "        tier = TIER_TEAM_TRIAL\n"
+                + "        disabled = false\n"
+                + "    }\n"
+                + "]\n",
+            today);
+    config = new AnomalyGlobalConfigServiceConfig(ConfigFactory.parseString(configStr));
+    this.configStatusManager =
+        spy(
+            new GlobalAnomalyConfigStatusManagerImpl(
+                config,
+                configServiceBlockingStub,
+                configConverter,
+                new AnomalyConfigScopeUtils(),
+                licenseInfoLoader,
+                mock(ConfigChangeEventGenerator.class)));
+    requestContext.call(
+        () -> configStatusManager.getScopedAnomalyConfigStatus(requestContext, customerScope));
+    unresolvedScopedAnomalyConfigStatusResult =
+        configStatusManager.getUnresolvedScopedAnomalyConfigStatus(requestContext, customerScope);
+    assertTrue(
+        unresolvedScopedAnomalyConfigStatusResult
+            .getGlobalModsecConfigChange()
+            .getRuleVersionDataChange()
+            .hasNotificationConfig());
+    assertTrue(
+        unresolvedScopedAnomalyConfigStatusResult
+            .getGlobalModsecConfigChange()
+            .getRuleVersionDataChange()
+            .getNotificationConfig()
+            .getReleaseNotified());
+    assertFalse(
+        unresolvedScopedAnomalyConfigStatusResult
+            .getGlobalModsecConfigChange()
+            .getRuleVersionDataChange()
+            .getNotificationConfig()
+            .getExpiryNotified());
+    assertFalse(
+        unresolvedScopedAnomalyConfigStatusResult
+            .getGlobalModsecConfigChange()
+            .getRuleVersionDataChange()
+            .getNotificationConfig()
+            .getExpiryWarningNotified());
+
+    // once released Notification sent then it should not be sent again
+    requestContext.call(
+        () -> configStatusManager.getScopedAnomalyConfigStatus(requestContext, customerScope));
+    ScopedAnomalyConfigStatusChange unresolvedScopedAnomalyConfigStatusResult2 =
+        configStatusManager.getUnresolvedScopedAnomalyConfigStatus(requestContext, customerScope);
+    assertEquals(
+        unresolvedScopedAnomalyConfigStatusResult, unresolvedScopedAnomalyConfigStatusResult2);
+
+    // after 13 days, the notification should be sent again
+    ZonedDateTime futureDate = ZonedDateTime.now(ZoneOffset.UTC).minusDays(13);
+    configStr =
+        String.format(
+            "disabled = true\n"
+                + "internal = false\n"
+                + "minConfidenceLevel = ANOMALY_CONFIDENCE_LEVEL_MEDIUM\n"
+                + "modsecGlobalConfig.ruleVersion.newWebAppStableVersion = \"1.1.0\"\n"
+                + "modsecGlobalConfig.ruleVersion.newWebAppStableVersionPublishedDate = \"%s\"\n"
+                + "modsecGlobalConfig.ruleVersion.oldWebAppStableVersion = \"1.0.0\"\n"
+                + "modsecGlobalConfig.ruleVersion.oldWebAppStableVersionPublishedDate = \"2023-01-01T00:00:00Z\"\n"
+                + "globalGenAiConfig.disabled = true\n"
+                + "licenseTiers = [\n"
+                + "    {\n"
+                + "        tier = TIER_TEAM_TRIAL\n"
+                + "        disabled = false\n"
+                + "    }\n"
+                + "]\n",
+            futureDate);
+    config = new AnomalyGlobalConfigServiceConfig(ConfigFactory.parseString(configStr));
+    this.configStatusManager =
+        spy(
+            new GlobalAnomalyConfigStatusManagerImpl(
+                config,
+                configServiceBlockingStub,
+                configConverter,
+                new AnomalyConfigScopeUtils(),
+                licenseInfoLoader,
+                mock(ConfigChangeEventGenerator.class)));
+    requestContext.call(
+        () -> configStatusManager.getScopedAnomalyConfigStatus(requestContext, customerScope));
+    unresolvedScopedAnomalyConfigStatusResult =
+        configStatusManager.getUnresolvedScopedAnomalyConfigStatus(requestContext, customerScope);
+    assertTrue(
+        unresolvedScopedAnomalyConfigStatusResult
+            .getGlobalModsecConfigChange()
+            .getRuleVersionDataChange()
+            .hasNotificationConfig());
+    assertFalse(
+        unresolvedScopedAnomalyConfigStatusResult
+            .getGlobalModsecConfigChange()
+            .getRuleVersionDataChange()
+            .getNotificationConfig()
+            .getReleaseNotified());
+    assertFalse(
+        unresolvedScopedAnomalyConfigStatusResult
+            .getGlobalModsecConfigChange()
+            .getRuleVersionDataChange()
+            .getNotificationConfig()
+            .getExpiryNotified());
+    assertTrue(
+        unresolvedScopedAnomalyConfigStatusResult
+            .getGlobalModsecConfigChange()
+            .getRuleVersionDataChange()
+            .getNotificationConfig()
+            .getExpiryWarningNotified());
+
+    // after 14 days, the notification should be sent again
+    futureDate = ZonedDateTime.now(ZoneOffset.UTC).minusDays(14);
+    configStr =
+        String.format(
+            "disabled = true\n"
+                + "internal = false\n"
+                + "minConfidenceLevel = ANOMALY_CONFIDENCE_LEVEL_MEDIUM\n"
+                + "modsecGlobalConfig.ruleVersion.newWebAppStableVersion = \"1.1.0\"\n"
+                + "modsecGlobalConfig.ruleVersion.newWebAppStableVersionPublishedDate = \"%s\"\n"
+                + "modsecGlobalConfig.ruleVersion.oldWebAppStableVersion = \"1.0.0\"\n"
+                + "modsecGlobalConfig.ruleVersion.oldWebAppStableVersionPublishedDate = \"2023-01-01T00:00:00Z\"\n"
+                + "globalGenAiConfig.disabled = true\n"
+                + "licenseTiers = [\n"
+                + "    {\n"
+                + "        tier = TIER_TEAM_TRIAL\n"
+                + "        disabled = false\n"
+                + "    }\n"
+                + "]\n",
+            futureDate);
+    config = new AnomalyGlobalConfigServiceConfig(ConfigFactory.parseString(configStr));
+    this.configStatusManager =
+        spy(
+            new GlobalAnomalyConfigStatusManagerImpl(
+                config,
+                configServiceBlockingStub,
+                configConverter,
+                new AnomalyConfigScopeUtils(),
+                licenseInfoLoader,
+                mock(ConfigChangeEventGenerator.class)));
+    requestContext.call(
+        () -> configStatusManager.getScopedAnomalyConfigStatus(requestContext, customerScope));
+    unresolvedScopedAnomalyConfigStatusResult =
+        configStatusManager.getUnresolvedScopedAnomalyConfigStatus(requestContext, customerScope);
+    assertTrue(
+        unresolvedScopedAnomalyConfigStatusResult
+            .getGlobalModsecConfigChange()
+            .getRuleVersionDataChange()
+            .hasNotificationConfig());
+    assertFalse(
+        unresolvedScopedAnomalyConfigStatusResult
+            .getGlobalModsecConfigChange()
+            .getRuleVersionDataChange()
+            .getNotificationConfig()
+            .getReleaseNotified());
+    assertTrue(
+        unresolvedScopedAnomalyConfigStatusResult
+            .getGlobalModsecConfigChange()
+            .getRuleVersionDataChange()
+            .getNotificationConfig()
+            .getExpiryNotified());
+    assertFalse(
+        unresolvedScopedAnomalyConfigStatusResult
+            .getGlobalModsecConfigChange()
+            .getRuleVersionDataChange()
+            .getNotificationConfig()
+            .getExpiryWarningNotified());
+
+    // after this there should be no notification sent
+    futureDate = ZonedDateTime.now(ZoneOffset.UTC).minusDays(15);
+    configStr =
+        String.format(
+            "disabled = true\n"
+                + "internal = false\n"
+                + "minConfidenceLevel = ANOMALY_CONFIDENCE_LEVEL_MEDIUM\n"
+                + "modsecGlobalConfig.ruleVersion.newWebAppStableVersion = \"1.1.0\"\n"
+                + "modsecGlobalConfig.ruleVersion.newWebAppStableVersionPublishedDate = \"%s\"\n"
+                + "modsecGlobalConfig.ruleVersion.oldWebAppStableVersion = \"1.0.0\"\n"
+                + "modsecGlobalConfig.ruleVersion.oldWebAppStableVersionPublishedDate = \"2023-01-01T00:00:00Z\"\n"
+                + "globalGenAiConfig.disabled = true\n"
+                + "licenseTiers = [\n"
+                + "    {\n"
+                + "        tier = TIER_TEAM_TRIAL\n"
+                + "        disabled = false\n"
+                + "    }\n"
+                + "]\n",
+            futureDate);
+    config = new AnomalyGlobalConfigServiceConfig(ConfigFactory.parseString(configStr));
+    this.configStatusManager =
+        spy(
+            new GlobalAnomalyConfigStatusManagerImpl(
+                config,
+                configServiceBlockingStub,
+                configConverter,
+                new AnomalyConfigScopeUtils(),
+                licenseInfoLoader,
+                mock(ConfigChangeEventGenerator.class)));
+    requestContext.call(
+        () -> configStatusManager.getScopedAnomalyConfigStatus(requestContext, customerScope));
+    unresolvedScopedAnomalyConfigStatusResult2 =
+        configStatusManager.getUnresolvedScopedAnomalyConfigStatus(requestContext, customerScope);
+    assertEquals(
+        unresolvedScopedAnomalyConfigStatusResult, unresolvedScopedAnomalyConfigStatusResult2);
   }
 
   private ScopedAnomalyConfigStatusChange upsertApiConfigStatus(

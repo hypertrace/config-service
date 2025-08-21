@@ -31,6 +31,8 @@ public class AnomalyGlobalConfigServiceConfig {
       "modsecGlobalConfig.ruleVersion.newWebAppStableVersionPublishedDate";
   private static final String OLD_WEBAPP_STABLE_VERSION_PUBLISHED_DATE =
       "modsecGlobalConfig.ruleVersion.oldWebAppStableVersionPublishedDate";
+  private static final String WEBAPP_RULE_TESTING_MODE_RETENTION_DAYS =
+      "modsecGlobalConfig.ruleVersion.webAppRuleTestingModeRetentionDays";
 
   private static final String ENVIRONMENT_SCOPE_MODSEC_DEFAULT_CONFIG_TYPE =
       "modsecGlobalConfig.environmentDefaultConfigType";
@@ -44,6 +46,7 @@ public class AnomalyGlobalConfigServiceConfig {
   @Getter private final ModsecDefaultConfigsType modsecDefaultConfigsType;
   @Getter private final RuleVersion newWebAppStableVersion;
   @Getter private final RuleVersion oldWebAppStableVersion;
+  @Getter private final int webAppRuleTestingModeRetentionDays;
   @Getter private final ModsecDefaultConfigsType envScopeModsecDefaultConfigsType;
   @Getter private final ApiDefaultConfigsType apiDefaultConfigsType;
   @Getter private final boolean genAiDisabled;
@@ -67,6 +70,10 @@ public class AnomalyGlobalConfigServiceConfig {
             .setVersionType(RuleVersionType.RULE_VERSION_TYPE_STABLE)
             .setPublishedDate(config.getString(OLD_WEBAPP_STABLE_VERSION_PUBLISHED_DATE))
             .build();
+    this.webAppRuleTestingModeRetentionDays =
+        config.hasPath(WEBAPP_RULE_TESTING_MODE_RETENTION_DAYS)
+            ? config.getInt(WEBAPP_RULE_TESTING_MODE_RETENTION_DAYS)
+            : 14;
 
     this.envScopeModsecDefaultConfigsType =
         config.hasPath(ENVIRONMENT_SCOPE_MODSEC_DEFAULT_CONFIG_TYPE)
