@@ -13,14 +13,12 @@ import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule
 import ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
 import ai.traceable.detection.exclusion.config.service.v1.RuleSource;
-import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
 import ai.traceable.detection.exclusion.config.service.v1.UpdateDetectionExclusionRuleRequest;
 import ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionRulesStore;
 import ai.traceable.platform.actor.v1.Actor;
 import ai.traceable.platform.config.provider.common.clients.ActorServiceClient;
 import com.google.common.collect.Sets;
 import jakarta.inject.Inject;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -37,8 +35,6 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
 
   static final GetRulesFilter OLD_RULES_FILTER =
       GetRulesFilter.newBuilder().addRuleCreationSources(RuleSource.RULE_SOURCE_OLD_API).build();
-  private static final String SSTI_OLD_SUB_RULE_ID = "crs_9210310";
-  private static final String SSTI_NEW_SUB_RULE_ID = "crs_9320310";
 
   private final FeatureCachingClient featureCachingClient;
   private final DetectionExclusionRulesStore newRulesStore;
@@ -367,37 +363,6 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
   }
 
   private boolean updateConditionForSSTIifAny(DetectionExclusionRuleInfo.Builder ruleInfoBuilder) {
-    boolean isUpdated = false;
-    List<DetectionExclusionCondition> conditions = new ArrayList<>();
-    for (DetectionExclusionCondition condition : ruleInfoBuilder.getConditionsList()) {
-      if (condition.getEventCondition().getSystemDefinedEventsList().stream()
-          .anyMatch(event -> SSTI_OLD_SUB_RULE_ID.equals(event.getEventSubTypeId()))) {
-        List<SystemDefinedEvent> events =
-            condition.getEventCondition().getSystemDefinedEventsList().stream()
-                .map(
-                    event -> {
-                      if (SSTI_OLD_SUB_RULE_ID.equals(event.getEventSubTypeId())) {
-                        return event.toBuilder().setEventSubTypeId(SSTI_NEW_SUB_RULE_ID).build();
-                      }
-                      return event;
-                    })
-                .collect(Collectors.toList());
-        conditions.add(
-            condition.toBuilder()
-                .setEventCondition(
-                    condition.getEventCondition().toBuilder()
-                        .clearSystemDefinedEvents()
-                        .addAllSystemDefinedEvents(events))
-                .build());
-        isUpdated = true;
-      } else {
-        conditions.add(condition);
-      }
-    }
-    if (isUpdated) {
-      ruleInfoBuilder.clearConditions();
-      ruleInfoBuilder.addAllConditions(conditions);
-    }
-    return isUpdated;
+    return DetectionExclusionRuleIdMigrationManager.updateRuleConditions(ruleInfoBuilder);
   }
 }
