@@ -32,10 +32,13 @@ import java.util.Map;
 import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.validator.routines.DomainValidator;
 
 @Slf4j
 @AllArgsConstructor(onConstructor_ = {@Inject})
 public class CloudEdgeDeploymentValidator {
+  private static final DomainValidator DOMAIN_VALIDATOR = DomainValidator.getInstance(false);
+
   private final SharedConfigMetadataRegistry sharedConfigMetadataRegistry;
   private final StateTransitionsRegistry stateTransitionsRegistry;
   private static final String EMPTY_ID_ERROR = "Cloud edge deployment config ID cannot be empty";
@@ -138,6 +141,8 @@ public class CloudEdgeDeploymentValidator {
       // validate domain uniqueness across all services
       for (DomainConfig domainConfig : serviceConfig.getDomainConfigsList()) {
         String domainName = domainConfig.getDomainName();
+        // Validate domain
+        validateDomainName(domainName);
         if (!domainNames.add(domainName)) {
           return Status.INVALID_ARGUMENT.withDescription(
               String.format(
@@ -270,6 +275,22 @@ public class CloudEdgeDeploymentValidator {
     if (!allowedNextStates.contains(updatedStatus)) {
       throw Status.PERMISSION_DENIED
           .withDescription("This operation is not permitted")
+          .asRuntimeException();
+    }
+  }
+
+  private static void validateDomainName(String domain) {
+    // Handle wildcard domains
+    if (domain.startsWith("*.")) {
+      String domainWithoutWildcard = domain.substring(2);
+      if (!DOMAIN_VALIDATOR.isValid(domainWithoutWildcard)) {
+        throw Status.INVALID_ARGUMENT
+            .withDescription("Invalid wildcard domain format: " + domain)
+            .asRuntimeException();
+      }
+    } else if (!DOMAIN_VALIDATOR.isValid(domain)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Invalid domain format: " + domain)
           .asRuntimeException();
     }
   }

@@ -31,7 +31,6 @@ import org.apache.commons.validator.routines.DomainValidator;
 @AllArgsConstructor(onConstructor_ = {@Inject})
 public class CloudBotDeploymentConfigValidator {
 
-  private static final int MAX_DOMAIN_LENGTH = 253; // Maximum length of a domain name
   private static final DomainValidator DOMAIN_VALIDATOR = DomainValidator.getInstance(false);
 
   public Status validate(CreateCloudBotDeploymentConfigRequest request) {
@@ -149,12 +148,6 @@ public class CloudBotDeploymentConfigValidator {
 
     // Validate each domain
     for (String domain : siteConfig.getDomainsList()) {
-      // Check domain length
-      if (domain.length() > MAX_DOMAIN_LENGTH) {
-        return Status.INVALID_ARGUMENT.withDescription(
-            "Domain exceeds maximum length of " + MAX_DOMAIN_LENGTH + " characters: " + domain);
-      }
-
       // Handle wildcard domains
       if (domain.startsWith("*.")) {
         String domainWithoutWildcard = domain.substring(2);
