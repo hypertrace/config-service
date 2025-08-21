@@ -70,7 +70,7 @@ spec:
           annotations:
             summary: 'Cloud Bot Deployment Config Status Change'
             message: 'Cloud Bot Deployment Config status changed to {{`{{ $labels.deploymentStatus}}`}} for config id: {{`{{ $labels.configId}}`}} for customer: {{`{{ $labels.tenantId }}`}}'
-          expr: (sum(increase(cloud_bot_deployment_config_status_change_count_total[2m])) by (tenantId, configId, deploymentStatus)) > 0 and (deploymentStatus =~ "DEPLOYMENT_STATUS_REQUESTED|DEPLOYMENT_STATUS_CHANGE_REQUESTED|DEPLOYMENT_STATUS_REMOVAL_IN_PROGRESS")
+          expr: sum(increase(cloud_bot_deployment_config_status_change_count_total{deploymentStatus=~"DEPLOYMENT_STATUS_REQUESTED|DEPLOYMENT_STATUS_CHANGE_REQUESTED|DEPLOYMENT_STATUS_REMOVAL_IN_PROGRESS"}[2m])) by (tenantId, configId, deploymentStatus) > 0
           for: 0m
           labels:
             severity: SEV2
