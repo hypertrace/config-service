@@ -3,6 +3,7 @@ package ai.traceable.customsignature.config.service.modsec;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.MatchCategory;
+import ai.traceable.customsignature.config.service.v1.ScopeExpression;
 import java.util.Objects;
 
 public final class ModsecRulesSupportChecker {
@@ -45,6 +46,16 @@ public final class ModsecRulesSupportChecker {
               .getMatchCategory()
               .equals(MatchCategory.MATCH_CATEGORY_RESPONSE)
           && clause.getMatchExpression().getMatchKey().name().contains(COOKIE_KEYWORD)) {
+        return false;
+      }
+
+      // API scope is not supported in modsec
+      if (clause.getScopeExpression().getEntityScope().getEntityType()
+          == ScopeExpression.EntityType.ENTITY_TYPE_API) {
+        return false;
+      }
+      if (clause.getScopeExpression().getLabelScope().getLabelType()
+          == ScopeExpression.LabelType.LABEL_TYPE_API) {
         return false;
       }
     }
