@@ -75,7 +75,12 @@ public class ModsecManagerImpl implements ModsecManager {
       List<AnomalySubRuleType> subRuleTypes,
       boolean removeDisabledRules,
       AnomalyConfigScope anomalyConfigScope) {
-
+    // if protection engine web app protection is enabled for tenant then don't send TA blocking
+    // modsec rules since those will get evaluated in eds via protection engine
+    if (featureCachingClient.isProtectionEngineWebAppProtectionEnabledForTenant(requestContext)
+        && rulesTarget.equals(ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING)) {
+      return new ModsecCrsRules(subRuleTypes);
+    }
     ScopedAnomalyConfigStatus globalConfig =
         globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(
             requestContext, anomalyConfigScope);

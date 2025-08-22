@@ -1,5 +1,6 @@
 package ai.traceable.edge.config.service;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Stage;
@@ -12,11 +13,15 @@ import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 
 public class TraceableEdgeConfigServiceFactory {
   public static Set<BindableService> build(
-      Channel channel, Config config, GrpcChannelRegistry grpcChannelRegistry) {
+      Channel channel,
+      Config config,
+      GrpcChannelRegistry grpcChannelRegistry,
+      FeatureCachingClient featureCachingClient) {
     Injector injector =
         Guice.createInjector(
             Stage.PRODUCTION,
-            new TraceableEdgeConfigServiceModule(channel, config, grpcChannelRegistry));
+            new TraceableEdgeConfigServiceModule(
+                channel, config, grpcChannelRegistry, featureCachingClient));
     return Collections.singleton(injector.getInstance(BindableService.class));
   }
 }

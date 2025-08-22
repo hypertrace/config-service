@@ -11,6 +11,7 @@ dependencies {
   implementation(projects.cloudBotDeploymentConfigServiceApi)
   implementation(projects.traceableEdgeBotConfigServiceApi)
   implementation(projects.traceableEdgeDecisionConfigServiceApi)
+  implementation(projects.featureCachingClient)
 
   implementation(commonLibs.grpc.api)
   implementation(commonLibs.typesafe.config)

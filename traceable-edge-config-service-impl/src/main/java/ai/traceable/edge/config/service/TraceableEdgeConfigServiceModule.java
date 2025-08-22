@@ -3,6 +3,7 @@ package ai.traceable.edge.config.service;
 import ai.traceable.anomaly.config.service.v1.modsec.AnomalyModsecConfigServiceGrpc;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CloudBotDeploymentConfigServiceGrpc;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CloudBotDeploymentConfigServiceGrpc.CloudBotDeploymentConfigServiceBlockingStub;
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.edge.bot.config.service.v1.BotConfigServiceGrpc;
 import ai.traceable.edge.config.service.config.TraceableEdgeConfig;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionConfigServiceGrpc;
@@ -24,12 +25,17 @@ public class TraceableEdgeConfigServiceModule extends AbstractModule {
   private final Channel channel;
   private final TraceableEdgeConfig config;
   private final GrpcChannelRegistry grpcChannelRegistry;
+  private final FeatureCachingClient featureCachingClient;
 
   public TraceableEdgeConfigServiceModule(
-      Channel channel, Config config, GrpcChannelRegistry grpcChannelRegistry) {
+      Channel channel,
+      Config config,
+      GrpcChannelRegistry grpcChannelRegistry,
+      FeatureCachingClient featureCachingClient) {
     this.channel = channel;
     this.config = new TraceableEdgeConfig(config);
     this.grpcChannelRegistry = grpcChannelRegistry;
+    this.featureCachingClient = featureCachingClient;
   }
 
   @Override
@@ -38,6 +44,7 @@ public class TraceableEdgeConfigServiceModule extends AbstractModule {
     bind(GrpcChannelRegistry.class).toInstance(grpcChannelRegistry);
     bind(Clock.class).toInstance(Clock.systemUTC());
     bind(TraceableEdgeConfig.class).toInstance(config);
+    bind(FeatureCachingClient.class).toInstance(featureCachingClient);
     bind(BindableService.class).to(TraceableEdgeConfigService.class);
 
     install(new ProtectionFilteringRulesProviderModule());

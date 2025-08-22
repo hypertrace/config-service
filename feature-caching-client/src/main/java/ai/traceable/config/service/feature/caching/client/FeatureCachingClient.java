@@ -43,6 +43,9 @@ public class FeatureCachingClient {
   private static final boolean DEFAULT_TRACEABLE_EDGE_DECISION_FLAG_VALUE = false;
   private static final boolean DEFAULT_WAAP_VERSIONING_FLAG_VALUE = false;
   private static final boolean DEFAULT_GENAI_DETECTION_V2_VALUE = false;
+  private static final boolean DEFAULT_PROTECTION_ENGINE_WEBAPP_PROTECTION_FLAG_VALUE = false;
+  private static final boolean DEFAULT_PROTECTION_ENGINE_POST_DETECTION_FILTERING_FLAG_VALUE =
+      false;
 
   private static final String DATA_CLASSIFICATION_ENHANCED_OBFUSCATION_FLAG =
       "data-classification.enhanced-obfuscation";
@@ -65,6 +68,10 @@ public class FeatureCachingClient {
   private static final String CONFIG_SERVICE_WAAP_RULES_VERSIONING =
       "config-service.waap-rules-versioning";
   private static final String GENAI_DETECTION_V2_FLAG = "enricher.genai-detection-v2";
+  private static final String PROTECTION_ENGINE_WEBAPP_PROTECTION_FLAG =
+      "protection-engine.webapp-protection";
+  private static final String PROTECTION_ENGINE_POST_DETECTION_FILTERING_FLAG =
+      "protection-engine.post-detection-filtering";
 
   private static final List<String> ALL_FLAGS_TO_FETCH =
       List.of(
@@ -83,7 +90,9 @@ public class FeatureCachingClient {
           THREAT_SCORING_NOTIFICATION_RULE_MIGRATION_FLAG,
           TRACEABLE_EDGE_DECISION_FLAG,
           CONFIG_SERVICE_WAAP_RULES_VERSIONING,
-          GENAI_DETECTION_V2_FLAG);
+          GENAI_DETECTION_V2_FLAG,
+          PROTECTION_ENGINE_WEBAPP_PROTECTION_FLAG,
+          PROTECTION_ENGINE_POST_DETECTION_FILTERING_FLAG);
   private final FeatureFlagServiceBlockingStub featureFlagStub;
   private final LoadingCache<ContextualKey<Void>, Map<String, Boolean>> featureFlagCache;
   private final Duration featureFlagRequestTimeout;
@@ -314,6 +323,35 @@ public class FeatureCachingClient {
     } catch (Exception exception) {
       log.warn("Failed to retrieve current feature flag value for WAAP versioning", exception);
       return DEFAULT_WAAP_VERSIONING_FLAG_VALUE;
+    }
+  }
+
+  public boolean isProtectionEngineWebAppProtectionEnabledForTenant(RequestContext requestContext) {
+    try {
+      return requireNonNull(
+          this.featureFlagCache
+              .get(requestContext.buildInternalContextualKey())
+              .get(PROTECTION_ENGINE_WEBAPP_PROTECTION_FLAG));
+    } catch (Exception exception) {
+      log.warn(
+          "Failed to retrieve current feature flag value for Protection Engine Web App Protection",
+          exception);
+      return DEFAULT_PROTECTION_ENGINE_WEBAPP_PROTECTION_FLAG_VALUE;
+    }
+  }
+
+  public boolean isProtectionEnginePostDetectionFilteringEnabledForTenant(
+      RequestContext requestContext) {
+    try {
+      return requireNonNull(
+          this.featureFlagCache
+              .get(requestContext.buildInternalContextualKey())
+              .get(PROTECTION_ENGINE_POST_DETECTION_FILTERING_FLAG));
+    } catch (Exception exception) {
+      log.warn(
+          "Failed to retrieve current feature flag value for Protection Engine Post Detection Filtering",
+          exception);
+      return DEFAULT_PROTECTION_ENGINE_POST_DETECTION_FILTERING_FLAG_VALUE;
     }
   }
 

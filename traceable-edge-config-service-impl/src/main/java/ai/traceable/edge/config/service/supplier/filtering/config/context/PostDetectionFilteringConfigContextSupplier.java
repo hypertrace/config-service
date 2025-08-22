@@ -2,6 +2,7 @@ package ai.traceable.edge.config.service.supplier.filtering.config.context;
 
 import static ai.traceable.protection.rules.filtering.v1.ProtectionFilteringRuleCategory.PROTECTION_FILTERING_RULE_CATEGORY_POST_DETECTION;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.edge.config.service.TraceableEdgeConfigSupplier;
 import ai.traceable.edge.config.service.config.TraceableEdgeConfig;
@@ -37,6 +38,7 @@ public class PostDetectionFilteringConfigContextSupplier implements TraceableEdg
   private final ProtectionFilteringRulesProvider rulesProvider;
   private final UuidGenerator uuidGenerator;
   private final TraceableEdgeConfig config;
+  private final FeatureCachingClient featureCachingClient;
 
   @Override
   public String getConfigType() {
@@ -48,9 +50,15 @@ public class PostDetectionFilteringConfigContextSupplier implements TraceableEdg
       RequestContext requestContext,
       ConfigRequestElement requestElement,
       AgentCapabilities agentCapabilities) {
-    List<ProtectionFilteringRulesFilter> filters = this.buildApplicableFilters(agentCapabilities);
-    List<ProtectionFilteringRule> rules = rulesProvider.getProtectionFilteringRules(filters);
-    PostDetectionFilteringConfigContext context = this.buildContext(rules);
+    PostDetectionFilteringConfigContext context;
+    if (!featureCachingClient.isProtectionEnginePostDetectionFilteringEnabledForTenant(
+        requestContext)) {
+      context = PostDetectionFilteringConfigContext.getDefaultInstance();
+    } else {
+      List<ProtectionFilteringRulesFilter> filters = this.buildApplicableFilters(agentCapabilities);
+      List<ProtectionFilteringRule> rules = rulesProvider.getProtectionFilteringRules(filters);
+      context = this.buildContext(rules);
+    }
 
     ConfigPayloads payloads =
         ConfigPayloads.newBuilder().addConfigBytes(context.toByteString()).build();

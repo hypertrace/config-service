@@ -122,6 +122,12 @@ public class WebAppEvaluationConfigContextManagerImpl
   @Override
   public WebAppEvaluationConfigContext getWebAppEvaluationConfigContext(
       RequestContext requestContext, GetWebAppEvaluationConfigContextRequest request) {
+    if (!featureCachingClient.isProtectionEngineWebAppProtectionEnabledForTenant(requestContext)) {
+      log.debug(
+          "Protection engine web app protection is disabled for tenant: {}",
+          requestContext.getTenantId());
+      return WebAppEvaluationConfigContext.getDefaultInstance();
+    }
     log.debug(
         "Starting getWebAppEvaluationConfigContext with request: ruleEvaluationPoint={}, subRuleTypes={}",
         request.getRuleEvaluationPoint(),

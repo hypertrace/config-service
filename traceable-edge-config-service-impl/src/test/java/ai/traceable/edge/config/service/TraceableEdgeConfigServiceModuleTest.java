@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import com.google.inject.Guice;
 import com.google.inject.Stage;
 import com.typesafe.config.Config;
@@ -27,7 +28,10 @@ class TraceableEdgeConfigServiceModuleTest {
             Guice.createInjector(
                     Stage.PRODUCTION,
                     new TraceableEdgeConfigServiceModule(
-                        mockChannel, config, mockGrpcChannelRegistry))
+                        mockChannel,
+                        config,
+                        mockGrpcChannelRegistry,
+                        mock(FeatureCachingClient.class)))
                 .getAllBindings());
   }
 }

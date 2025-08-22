@@ -208,7 +208,8 @@ class WebAppEvaluationConfigContextManagerImplTest {
     when(globalAnomalyConfigStatusManager.getAllScopedAnomalyConfigStatusConfigs(
             eq(requestContext), any()))
         .thenReturn(List.of(getTenantScopedAnomalyConfigStatus()));
-
+    when(featureCachingClient.isProtectionEngineWebAppProtectionEnabledForTenant(any()))
+        .thenReturn(true);
     configContextManager =
         new WebAppEvaluationConfigContextManagerImpl(
             modsecManager,
