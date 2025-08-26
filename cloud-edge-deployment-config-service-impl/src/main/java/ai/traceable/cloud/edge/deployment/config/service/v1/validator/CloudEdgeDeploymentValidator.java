@@ -115,10 +115,6 @@ public class CloudEdgeDeploymentValidator {
       return Status.INVALID_ARGUMENT.withDescription("Invalid action: " + request.getAction());
     }
 
-    if (request.getAccessType() == ConfigAccessType.CONFIG_ACCESS_TYPE_UNSPECIFIED) {
-      return Status.INVALID_ARGUMENT.withDescription("Access type cannot be unspecified");
-    }
-
     return Status.OK;
   }
 
@@ -263,6 +259,17 @@ public class CloudEdgeDeploymentValidator {
     }
 
     return stateTransitionsRegistry.getNextStates(currentStatus, accessType, action);
+  }
+
+  public List<DeploymentStatus> validateActionAndGetNextStates(
+      DeploymentStatus currentStatus, Action action) {
+    if (!stateTransitionsRegistry.isActionAllowed(currentStatus, action)) {
+      throw Status.PERMISSION_DENIED
+          .withDescription("This operation is not permitted")
+          .asRuntimeException();
+    }
+
+    return stateTransitionsRegistry.getNextStates(currentStatus, action);
   }
 
   public void validateUpdatedStatus(

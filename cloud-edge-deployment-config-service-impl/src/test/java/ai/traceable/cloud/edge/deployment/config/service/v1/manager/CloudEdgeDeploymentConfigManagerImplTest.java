@@ -183,27 +183,27 @@ class CloudEdgeDeploymentConfigManagerImplTest {
     // Setup
     String id = "test-id";
     requestContext = RequestContext.forTenantId("tenant-id");
-    DeleteCloudEdgeDeploymentConfigRequest expectedRequest =
+    DeleteCloudEdgeDeploymentConfigRequest request =
         DeleteCloudEdgeDeploymentConfigRequest.newBuilder().setId(id).build();
 
     // Test case 1: Validation fails
-    when(validator.validate(expectedRequest))
+    when(validator.validate(request))
         .thenReturn(Status.INVALID_ARGUMENT.withDescription("Invalid input"));
 
     StatusRuntimeException exception =
         assertThrows(
             StatusRuntimeException.class,
-            () -> manager.deleteCloudEdgeDeploymentConfig(requestContext, id));
+            () -> manager.deleteCloudEdgeDeploymentConfig(requestContext, request));
     assertEquals(Status.Code.INVALID_ARGUMENT, exception.getStatus().getCode());
 
     // Test case 2: Config not found
-    when(validator.validate(expectedRequest)).thenReturn(Status.OK);
+    when(validator.validate(request)).thenReturn(Status.OK);
     when(store.getCloudEdgeDeploymentConfig(requestContext, id)).thenReturn(null);
 
     exception =
         assertThrows(
             StatusRuntimeException.class,
-            () -> manager.deleteCloudEdgeDeploymentConfig(requestContext, id));
+            () -> manager.deleteCloudEdgeDeploymentConfig(requestContext, request));
     assertEquals(Status.Code.NOT_FOUND, exception.getStatus().getCode());
 
     // Test case 3: Action validation fails
@@ -216,12 +216,10 @@ class CloudEdgeDeploymentConfigManagerImplTest {
                     .build())
             .build();
 
-    when(validator.validate(expectedRequest)).thenReturn(Status.OK);
+    when(validator.validate(request)).thenReturn(Status.OK);
     when(store.getCloudEdgeDeploymentConfig(requestContext, id)).thenReturn(existingConfig);
     when(validator.validateActionAndGetNextStates(
-            DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY,
-            ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE,
-            Action.ACTION_DELETE))
+            DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY, Action.ACTION_DELETE))
         .thenThrow(
             Status.PERMISSION_DENIED
                 .withDescription("Delete operation not permitted")
@@ -230,7 +228,7 @@ class CloudEdgeDeploymentConfigManagerImplTest {
     exception =
         assertThrows(
             StatusRuntimeException.class,
-            () -> manager.deleteCloudEdgeDeploymentConfig(requestContext, id));
+            () -> manager.deleteCloudEdgeDeploymentConfig(requestContext, request));
     assertEquals(Status.Code.PERMISSION_DENIED, exception.getStatus().getCode());
     assertTrue(exception.getStatus().getDescription().contains("not permitted"));
 
@@ -244,12 +242,10 @@ class CloudEdgeDeploymentConfigManagerImplTest {
                     .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_ON_HOLD)
                     .build())
             .build();
-    when(validator.validate(expectedRequest)).thenReturn(Status.OK);
+    when(validator.validate(request)).thenReturn(Status.OK);
     when(store.getCloudEdgeDeploymentConfig(requestContext, id)).thenReturn(existingConfigSuccess);
     when(validator.validateActionAndGetNextStates(
-            DeploymentStatus.DEPLOYMENT_STATUS_ON_HOLD,
-            ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE,
-            Action.ACTION_DELETE))
+            DeploymentStatus.DEPLOYMENT_STATUS_ON_HOLD, Action.ACTION_DELETE))
         .thenReturn(List.of(DeploymentStatus.DEPLOYMENT_STATUS_UNSPECIFIED));
 
     {
@@ -258,7 +254,7 @@ class CloudEdgeDeploymentConfigManagerImplTest {
           .thenReturn(Status.FAILED_PRECONDITION);
       assertThrows(
           StatusRuntimeException.class,
-          () -> manager.deleteCloudEdgeDeploymentConfig(requestContext, id));
+          () -> manager.deleteCloudEdgeDeploymentConfig(requestContext, request));
       verify(store, never()).deleteCloudEdgeDeploymentConfig(requestContext, id);
     }
 
@@ -266,7 +262,7 @@ class CloudEdgeDeploymentConfigManagerImplTest {
       // If no bot deployment is using edge allow deletion
       when(edgeDeploymentUsageValidator.validateEdgeDeploymentNotInUse(requestContext, id))
           .thenReturn(Status.OK);
-      manager.deleteCloudEdgeDeploymentConfig(requestContext, id);
+      manager.deleteCloudEdgeDeploymentConfig(requestContext, request);
       verify(store).deleteCloudEdgeDeploymentConfig(requestContext, id);
     }
   }
@@ -483,9 +479,13 @@ class CloudEdgeDeploymentConfigManagerImplTest {
     assertNotNull(response);
 
     // Verify original configs are included
-    assertEquals(2, response.getCloudEdgeDeploymentsCount());
-    assertEquals("id1", response.getCloudEdgeDeployments(0).getId());
-    assertEquals("id2", response.getCloudEdgeDeployments(1).getId());
+    assertEquals(2, response.getCloudEdgeDeploymentsWithActionsCount());
+    assertEquals(
+        "id1",
+        response.getCloudEdgeDeploymentsWithActions(0).getCloudEdgeDeploymentConfig().getId());
+    assertEquals(
+        "id2",
+        response.getCloudEdgeDeploymentsWithActions(1).getCloudEdgeDeploymentConfig().getId());
 
     // Verify configs with actions
     assertEquals(2, response.getCloudEdgeDeploymentsWithActionsCount());
@@ -556,7 +556,6 @@ class CloudEdgeDeploymentConfigManagerImplTest {
     when(store.getCloudEdgeDeploymentConfig(requestContext, id)).thenReturn(configNotActionable);
     when(validator.validateActionAndGetNextStates(
             DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY,
-            ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL,
             Action.ACTION_CANCEL_CHANGE_REQUEST))
         .thenThrow(
             Status.PERMISSION_DENIED
@@ -609,7 +608,6 @@ class CloudEdgeDeploymentConfigManagerImplTest {
     when(store.getCloudEdgeDeploymentConfig(requestContext, id)).thenReturn(configChangeRequested);
     when(validator.validateActionAndGetNextStates(
             DeploymentStatus.DEPLOYMENT_STATUS_CHANGE_REQUESTED,
-            ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL,
             Action.ACTION_CANCEL_CHANGE_REQUEST))
         .thenReturn(List.of(DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY));
 
@@ -650,9 +648,7 @@ class CloudEdgeDeploymentConfigManagerImplTest {
     when(validator.validate(holdRequest)).thenReturn(Status.OK);
     when(store.getCloudEdgeDeploymentConfig(requestContext, id)).thenReturn(deployedConfig);
     when(validator.validateActionAndGetNextStates(
-            DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY,
-            ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL,
-            Action.ACTION_HOLD))
+            DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY, Action.ACTION_HOLD))
         .thenReturn(List.of(DeploymentStatus.DEPLOYMENT_STATUS_ON_HOLD));
 
     // Execute

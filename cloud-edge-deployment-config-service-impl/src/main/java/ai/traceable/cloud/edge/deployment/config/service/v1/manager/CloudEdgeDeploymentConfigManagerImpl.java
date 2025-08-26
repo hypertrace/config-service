@@ -127,7 +127,6 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
             .collect(Collectors.toList());
 
     return GetCloudEdgeDeploymentConfigsResponse.newBuilder()
-        .addAllCloudEdgeDeployments(configs)
         .addAllCloudEdgeDeploymentsWithActions(configsWithActions)
         .build();
   }
@@ -193,31 +192,28 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
   }
 
   @Override
-  public void deleteCloudEdgeDeploymentConfig(RequestContext ctx, String id) {
-    DeleteCloudEdgeDeploymentConfigRequest request =
-        DeleteCloudEdgeDeploymentConfigRequest.newBuilder().setId(id).build();
+  public void deleteCloudEdgeDeploymentConfig(
+      RequestContext ctx, DeleteCloudEdgeDeploymentConfigRequest request) {
     Status validationStatus = validator.validate(request);
     if (!validationStatus.isOk()) {
       throw validationStatus.asRuntimeException();
     }
 
     // Check if config exists
-    CloudEdgeDeploymentConfig config = getExistingConfigOrThrow(ctx, id);
+    CloudEdgeDeploymentConfig config = getExistingConfigOrThrow(ctx, request.getId());
     validator.validateActionAndGetNextStates(
-        config.getCloudEdgeDeployedOutputConfig().getStatus(),
-        ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE,
-        Action.ACTION_DELETE);
+        config.getCloudEdgeDeployedOutputConfig().getStatus(), Action.ACTION_DELETE);
 
     // Validate that the edge deployment is not in use by any bot configuration
     Status usageValidationStatus =
-        edgeDeploymentUsageValidator.validateEdgeDeploymentNotInUse(ctx, id);
+        edgeDeploymentUsageValidator.validateEdgeDeploymentNotInUse(ctx, request.getId());
     if (!usageValidationStatus.isOk()) {
       throw usageValidationStatus.asRuntimeException();
     }
 
     // Delete the edge deployment config
     try {
-      store.deleteCloudEdgeDeploymentConfig(ctx, id);
+      store.deleteCloudEdgeDeploymentConfig(ctx, request.getId());
     } catch (Exception e) {
       throw new StatusRuntimeException(
           Status.INTERNAL.withDescription(
@@ -244,9 +240,7 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
     DeploymentStatus updatedStatus =
         validator
             .validateActionAndGetNextStates(
-                existingConfig.getCloudEdgeDeployedOutputConfig().getStatus(),
-                request.getAccessType(),
-                request.getAction())
+                existingConfig.getCloudEdgeDeployedOutputConfig().getStatus(), request.getAction())
             .get(0);
 
     CloudEdgeDeploymentConfig.Builder updatedConfigBuilder = existingConfig.toBuilder();

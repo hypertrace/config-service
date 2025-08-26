@@ -15,4 +15,8 @@ public interface StateTransitionsRegistry {
 
   Map<Action, List<DeploymentStatus>> getActionsMap(
       DeploymentStatus currentState, ConfigAccessType accessType);
+
+  boolean isActionAllowed(DeploymentStatus currentState, Action action);
+
+  List<DeploymentStatus> getNextStates(DeploymentStatus currentState, Action action);
 }

@@ -95,6 +95,25 @@ public class StateTransitionsRegistryImpl implements StateTransitionsRegistry {
         .orElse(Collections.emptyMap());
   }
 
+  @Override
+  public boolean isActionAllowed(DeploymentStatus currentState, Action action) {
+    return deploymentStatusTuplesMap.keySet().stream()
+        .filter(tuple -> tuple.getDeploymentStatus() == currentState)
+        .map(deploymentStatusTuplesMap::get)
+        .anyMatch(map -> map.containsKey(action));
+  }
+
+  @Override
+  public List<DeploymentStatus> getNextStates(DeploymentStatus currentState, Action action) {
+    return deploymentStatusTuplesMap.keySet().stream()
+        .filter(tuple -> tuple.getDeploymentStatus() == currentState)
+        .map(deploymentStatusTuplesMap::get)
+        .filter(map -> map.containsKey(action))
+        .flatMap(map -> map.get(action).stream())
+        .distinct()
+        .collect(Collectors.toList());
+  }
+
   @Value
   static class DeploymentStatusTuple {
     DeploymentStatus deploymentStatus;

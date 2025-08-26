@@ -103,7 +103,7 @@ public class CloudEdgeDeploymentConfigServiceImpl extends CloudEdgeDeploymentCon
       StreamObserver<DeleteCloudEdgeDeploymentConfigResponse> responseObserver) {
     RequestContext ctx = RequestContext.CURRENT.get();
     try {
-      cloudEdgeDeploymentConfigManager.deleteCloudEdgeDeploymentConfig(ctx, request.getId());
+      cloudEdgeDeploymentConfigManager.deleteCloudEdgeDeploymentConfig(ctx, request);
 
       responseObserver.onNext(DeleteCloudEdgeDeploymentConfigResponse.getDefaultInstance());
       responseObserver.onCompleted();

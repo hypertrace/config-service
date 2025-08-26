@@ -4,6 +4,7 @@ import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentC
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentConfigActionRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigAccessType;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CreateCloudEdgeDeploymentConfigRequest;
+import ai.traceable.cloud.edge.deployment.config.service.v1.DeleteCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.GetCloudEdgeDeploymentConfigsFilter;
 import ai.traceable.cloud.edge.deployment.config.service.v1.GetCloudEdgeDeploymentConfigsResponse;
 import ai.traceable.cloud.edge.deployment.config.service.v1.SharedConfigMetadata;
@@ -25,7 +26,8 @@ public interface CloudEdgeDeploymentConfigManager {
   CloudEdgeDeploymentConfig updateCloudEdgeDeploymentConfig(
       RequestContext ctx, String id, UpdateCloudEdgeDeploymentConfigRequest request);
 
-  void deleteCloudEdgeDeploymentConfig(RequestContext ctx, String id);
+  void deleteCloudEdgeDeploymentConfig(
+      RequestContext ctx, DeleteCloudEdgeDeploymentConfigRequest request);
 
   SharedConfigMetadata getSharedConfigMetadata(RequestContext ctx, ConfigAccessType accessType);
 

@@ -2,12 +2,14 @@ package ai.traceable.certificate.management.config.service.v1.validator;
 
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentConfigServiceGrpc.CloudEdgeDeploymentConfigServiceBlockingStub;
+import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentConfigWithActions;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigAccessType;
 import ai.traceable.cloud.edge.deployment.config.service.v1.GetCloudEdgeDeploymentConfigsFilter;
 import ai.traceable.cloud.edge.deployment.config.service.v1.GetCloudEdgeDeploymentConfigsRequest;
 import io.grpc.Status;
 import jakarta.inject.Inject;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -41,7 +43,10 @@ public class CertificateUsageValidator {
       List<CloudEdgeDeploymentConfig> deployments =
           cloudEdgeDeploymentConfigService
               .getCloudEdgeDeploymentConfigs(request)
-              .getCloudEdgeDeploymentsList();
+              .getCloudEdgeDeploymentsWithActionsList()
+              .stream()
+              .map(CloudEdgeDeploymentConfigWithActions::getCloudEdgeDeploymentConfig)
+              .collect(Collectors.toList());
 
       // If any deployments are returned, the certificate is in use
       if (!deployments.isEmpty()) {
