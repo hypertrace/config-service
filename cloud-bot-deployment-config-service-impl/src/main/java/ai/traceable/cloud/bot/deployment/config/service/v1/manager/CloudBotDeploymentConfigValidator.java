@@ -94,15 +94,6 @@ public class CloudBotDeploymentConfigValidator {
           Status.INVALID_ARGUMENT.withDescription("Cannot change site key id"));
     }
 
-    // Protecting change is list of domains as it is passed to MTCaptcha as well
-    if (!input
-        .getSiteConfig()
-        .getDomainsList()
-        .equals(existingConfig.getSiteConfig().getDomainsList())) {
-      throw new StatusRuntimeException(
-          Status.INVALID_ARGUMENT.withDescription("Cannot change list of domains to be protected"));
-    }
-
     return Status.OK;
   }
 
