@@ -296,6 +296,12 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
 
   @BeforeEach
   void initialize() {
+    actorEntityIds.clear();
+    customSignatureRuleIds.clear();
+    regionRuleIds.clear();
+    maliciousSourcesRuleIds.clear();
+    ipRangeRuleIds.clear();
+
     regionConfigServiceStub =
         RegionConfigServiceGrpc.newBlockingStub(channelForInternalServices)
             .withCallCredentials(
