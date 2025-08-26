@@ -31,6 +31,7 @@ import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider.ApiIdentifierEntity;
 import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
 import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider.ServiceIdentifierEntity;
+import ai.traceable.modsecurity.utils.ModsecRuleUtils;
 import ai.traceable.protection.engine.config.webapp.v1.SecRuleProcessorConfig;
 import ai.traceable.protection.engine.config.webapp.v1.WebAppEvaluationConfig;
 import ai.traceable.protection.engine.config.webapp.v1.WebAppEvaluationConfigContext;
@@ -380,12 +381,13 @@ public class WebAppEvaluationConfigContextManagerImpl
       Map<String, AnomalySubRuleConfig> subRuleConfigMap = getSubRuleConfigMap(detectionConfig);
       for (AnomalySubRuleInfo subRuleInfo : anomalyRuleInfo.getSubRuleInfosList()) {
         String subRuleId = subRuleInfo.getRuleId();
+
         AnomalySubRuleConfig subRuleConfig =
             subRuleConfigMap.getOrDefault(subRuleId, AnomalySubRuleConfig.getDefaultInstance());
 
         boolean isDisabled = isDisabled(detectionConfig, subRuleConfig, ruleEvaluationPoint);
         if (isDisabled) {
-          disabledModsecRuleIds.add(subRuleId);
+          disabledModsecRuleIds.add(removeCrsPrefixIfPresent(subRuleId));
         }
       }
     }
@@ -699,5 +701,12 @@ public class WebAppEvaluationConfigContextManagerImpl
       return ruleVersionData.getCurrentVersion();
     }
     return RuleVersion.getDefaultInstance();
+  }
+
+  private String removeCrsPrefixIfPresent(String ruleId) {
+    if (ruleId.startsWith(ModsecRuleUtils.MODSEC_RULE_PREFIX)) {
+      return ruleId.substring(4);
+    }
+    return ruleId;
   }
 }
