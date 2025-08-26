@@ -433,6 +433,9 @@ public class ValidatorUtils {
       case LABEL_SCOPE:
         validateLabelScope(scopeCondition.getLabelScope());
         break;
+      case URL_SCOPE:
+        validateUrlScope(scopeCondition.getUrlScope());
+        break;
       default:
         throwInvalidArgumentException(
             String.format(
@@ -448,6 +451,11 @@ public class ValidatorUtils {
   private void validateLabelScope(LabelScope labelScope) {
     validateNonDefaultPresenceOrThrow(labelScope, LabelScope.LABEL_TYPE_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(labelScope, LabelScope.LABEL_IDS_FIELD_NUMBER);
+  }
+
+  private void validateUrlScope(ScopeCondition.UrlScope urlScope) {
+    validateNonDefaultPresenceOrThrow(urlScope, ScopeCondition.UrlScope.URL_REGEXES_FIELD_NUMBER);
+    RegexValidator.validateRegexesWithNonWide(urlScope.getUrlRegexesList());
   }
 
   private void validateDatatypeCondition(DatatypeCondition datatypeCondition) {
