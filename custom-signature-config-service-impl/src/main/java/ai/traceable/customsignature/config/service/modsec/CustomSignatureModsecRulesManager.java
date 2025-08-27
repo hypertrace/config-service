@@ -1,5 +1,7 @@
 package ai.traceable.customsignature.config.service.modsec;
 
+import static ai.traceable.customsignature.config.service.v1.Clause.ClauseCase.SCOPE_EXPRESSION;
+
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesTarget;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
@@ -14,13 +16,17 @@ import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRu
 import ai.traceable.customsignature.config.service.v1.ModsecBlobData;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.ScopeExpression;
+import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
 import io.grpc.Status;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -32,8 +38,13 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 @Slf4j
 public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
   private static final long MODSEC_ID_SEED = 10000000;
+
   private static final String RANDOM_RULE_ID = UUID.randomUUID().toString();
   private static final String NEW_LINES_DELIMITER = "\n\n";
+  private static final String EMPTY_BLOB = "";
+  private static final String MODSEC_MATCH_MESSAGE =
+      "URL Regex and key-value conditions corresponding to custom signature rule - %s";
+
   private static final EnumSet<Clause.ClauseCase> NON_SOURCE_OR_TARGET_BASED_CLAUSES =
       EnumSet.of(
           Clause.ClauseCase.MATCH_EXPRESSION,
@@ -45,17 +56,20 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
   private final ModsecDirectivesManager modsecDirectivesManager;
   private final ModsecRulesRegistry modsecRulesRegistry;
   private final ModsecBlobValidator modsecBlobValidator;
+  private final CachedServiceMappingProvider cachedServiceMappingProvider;
 
   @Inject
   public CustomSignatureModsecRulesManager(
       CustomModsecRuleConverter customModsecRuleConverter,
       ModsecDirectivesManager modsecDirectivesManager,
       ModsecRulesRegistry modsecRulesRegistry,
-      ModsecBlobValidator modsecBlobValidator) {
+      ModsecBlobValidator modsecBlobValidator,
+      CachedServiceMappingProvider cachedServiceMappingProvider) {
     this.customModsecRuleConverter = customModsecRuleConverter;
     this.modsecDirectivesManager = modsecDirectivesManager;
     this.modsecRulesRegistry = modsecRulesRegistry;
     this.modsecBlobValidator = modsecBlobValidator;
+    this.cachedServiceMappingProvider = cachedServiceMappingProvider;
   }
 
   @Override
@@ -64,13 +78,14 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
       List<CustomSignatureRule> customSignatureRules,
       CustomModsecRuleVersion customModsecRuleVersion,
       boolean includeAllPartialModsecRules,
-      List<String> serviceNames,
-      ModsecCrsRulesTarget modsecCrsRulesTarget) {
-    /**
-     * This filters out rules with source-based or target-based clauses. These rules are excluded
-     * because TPA doesn't have information about them.
+      ModsecCrsRulesTarget modsecCrsRulesTarget,
+      List<String> serviceNames) {
+    /*
+     * This filters out rules with source-based or target-based clauses in case the crs rules target
+     * is of type TPA.
+     * These rules are excluded because TPA doesn't have information about them.
      */
-    List<CustomSignatureRule> rulesHavingNoSourceOrTargetBasedClauses =
+    List<CustomSignatureRule> filteredCustomSignatureRules =
         modsecCrsRulesTarget == ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TPA_DETECTION
             ? customSignatureRules.stream()
                 .filter(
@@ -92,65 +107,66 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
     long modsecIdAssignment = MODSEC_ID_SEED;
 
     // Map to hold service-specific ModSec blobs and rule IDs as pairs
-    Map<String, List<ModsecBlobRuleIdPair>> serviceToModsecBlobDataMap = new LinkedHashMap<>();
+    Map<String, List<ModsecBlobResult>> serviceToModsecBlobDataMap = new LinkedHashMap<>();
     // Ensuring that all services have at least an empty blob
     serviceNames.forEach(
         serviceName ->
             serviceToModsecBlobDataMap.computeIfAbsent(serviceName, k -> new ArrayList<>()));
 
-    for (CustomSignatureRule rule : rulesHavingNoSourceOrTargetBasedClauses) {
+    for (CustomSignatureRule customSignatureRule : filteredCustomSignatureRules) {
       if (!includeAllPartialModsecRules
           && !ModsecRulesSupportChecker.isInlineRuleMappingSupported(
-              rule.getDefinition().getClauseGroup())) {
+              customSignatureRule.getDefinition().getClauseGroup())) {
         log.debug(
             "Inline rule mapping is not supported for rule - rule ID: {} tenant ID: {}",
-            rule,
+            customSignatureRule,
             requestContext.getTenantId().orElse("Unknown"));
         continue;
       }
 
-      List<Clause> modsecConvertibleClauses =
-          getModsecConvertibleClauses(rule.getDefinition().getClauseGroup());
-      if (modsecConvertibleClauses.isEmpty()) {
-        inlineRuleList.add(CustomSignatureInlineRule.newBuilder().setRule(rule).build());
-        continue;
-      }
-
-      String modsecRule;
-      modsecIdAssignment++;
+      String modsecBlob;
       try {
-        modsecRule =
-            customModsecRuleConverter.getValidatedModsecRule(
-                modsecIdAssignment, rule.getId(), rule.getName(), modsecConvertibleClauses);
+        // Extract the applicable services first
+        List<String> applicableServices =
+            servicesOnWhichRuleIsApplicable(requestContext, customSignatureRule, serviceNames);
+
+        // Filter out clauses which can't be converted into modsec rule
+        List<Clause> modsecConvertibleClauses =
+            getModsecConvertibleClauses(customSignatureRule.getDefinition().getClauseGroup());
+
+        if (modsecConvertibleClauses.isEmpty()) {
+          inlineRuleList.add(
+              CustomSignatureInlineRule.newBuilder().setRule(customSignatureRule).build());
+          continue;
+        }
+
+        ModsecBlobResult modsecBlobResult =
+            getModsecBlobResult(
+                customSignatureRule.getId(), modsecConvertibleClauses, modsecIdAssignment++);
+        modsecBlob = modsecBlobResult.getModsecBlob();
+
+        applicableServices.forEach(
+            applicableService ->
+                serviceToModsecBlobDataMap.get(applicableService).add(modsecBlobResult));
       } catch (Exception ex) {
         log.warn(
             "For tenant id - {} Modsec rule could not be created for rule: {}, exception: {}",
             requestContext.getTenantId().orElse("Unknown"),
-            rule.getName(),
+            customSignatureRule.getName(),
             ex);
         continue;
       }
-      if (modsecRule == null || modsecRule.isBlank()) {
+
+      if (modsecBlob == null || modsecBlob.isBlank()) {
         continue;
       }
-      if (rule.getEffect().getEventType() == EventType.EVENT_TYPE_ALLOW) {
-        allowModsecRules.add(modsecRule);
+      if (customSignatureRule.getEffect().getEventType() == EventType.EVENT_TYPE_ALLOW) {
+        allowModsecRules.add(modsecBlob);
       } else {
-        violationModsecRules.add(modsecRule);
+        violationModsecRules.add(modsecBlob);
       }
-      inlineRuleList.add(CustomSignatureInlineRule.newBuilder().setRule(rule).build());
-
-      List<ServiceDetail> serviceDetails = new ArrayList<>();
-      for (Clause modsecConvertibleClause : modsecConvertibleClauses) {
-        serviceDetails.addAll(getServiceDetailsForModsecConvertibleClause(modsecConvertibleClause));
-      }
-      List<String> applicableServices =
-          servicesOnWhichRuleIsApplicable(serviceDetails, serviceNames);
-      applicableServices.forEach(
-          applicableService ->
-              serviceToModsecBlobDataMap
-                  .get(applicableService)
-                  .add(new ModsecBlobRuleIdPair(modsecRule, rule.getId())));
+      inlineRuleList.add(
+          CustomSignatureInlineRule.newBuilder().setRule(customSignatureRule).build());
     }
 
     if (inlineRuleList.isEmpty()) {
@@ -218,7 +234,7 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
                 clause.hasCustomSecRule()
                     || clause.hasMatchExpression()
                     || clause.hasKeyValueExpression()
-                    || clause.hasScopeExpression())
+                    || (clause.hasScopeExpression() && clause.getScopeExpression().hasUrlScope()))
         .collect(Collectors.toList());
   }
 
@@ -243,29 +259,12 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
     }
   }
 
-  private List<ServiceDetail> getServiceDetailsForModsecConvertibleClause(Clause clause) {
-    switch (clause.getClauseCase()) {
-      case SCOPE_EXPRESSION:
-        return handleScopeExpression(clause.getScopeExpression());
-      default:
-        return List.of();
-    }
-  }
-
-  private List<ServiceDetail> handleScopeExpression(ScopeExpression scopeExpression) {
-    if (scopeExpression.hasEntityScope()
-        && scopeExpression.getEntityScope().getEntityType()
-            == ScopeExpression.EntityType.ENTITY_TYPE_SERVICE) {
-      // TODO: This will be done as a part of the next PR
-    } else if (scopeExpression.hasUrlScope()) {
-      return List.of();
-    }
-    throw new UnsupportedOperationException(
-        String.format("Cannot derive ServiceDetails for scope expression - %s", scopeExpression));
-  }
-
   private List<String> servicesOnWhichRuleIsApplicable(
-      List<ServiceDetail> serviceDetails, List<String> serviceNames) {
+      RequestContext requestContext,
+      CustomSignatureRule customSignatureRule,
+      List<String> serviceNames) {
+    List<ServiceDetail> serviceDetails = getServiceDetails(requestContext, customSignatureRule);
+
     // Case 1: if serviceDetails is empty, then all services in serviceNames are applicable
     if (serviceDetails.isEmpty()) {
       return serviceNames;
@@ -298,13 +297,22 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
         .collect(Collectors.toUnmodifiableList());
   }
 
+  private List<ServiceDetail> getServiceDetails(
+      RequestContext requestContext, CustomSignatureRule customSignatureRule) {
+    return customSignatureRule.getDefinition().getClauseGroup().getClausesList().stream()
+        .filter(this::isClauseServiceScoped)
+        .map(clause -> this.convertToServiceDetails(requestContext, clause.getScopeExpression()))
+        .flatMap(Collection::stream)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
   private ModsecBlobData createCombinedBlob(
       RequestContext requestContext,
       String serviceName,
-      List<ModsecBlobRuleIdPair> modsecBlobRuleIdPairs) {
+      List<ModsecBlobResult> modsecBlobRuleIdPairs) {
     String combinedBlob =
         modsecBlobRuleIdPairs.stream()
-            .map(ModsecBlobRuleIdPair::getModsecBlob)
+            .map(ModsecBlobResult::getModsecBlob)
             .filter(Predicate.not(String::isBlank))
             .collect(Collectors.joining(NEW_LINES_DELIMITER));
 
@@ -316,10 +324,52 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
                 : "")
         .addAllCustomSignatureRuleIds(
             modsecBlobRuleIdPairs.stream()
-                .map(ModsecBlobRuleIdPair::getCustomSignatureRuleId)
+                .map(ModsecBlobResult::getCustomSignatureRuleId)
                 .filter(Predicate.not(String::isBlank))
                 .collect(Collectors.toUnmodifiableList()))
         .build();
+  }
+
+  private boolean isClauseServiceScoped(Clause clause) {
+    return clause.getClauseCase().equals(SCOPE_EXPRESSION)
+        && clause.getScopeExpression().hasEntityScope()
+        && clause.getScopeExpression().getEntityScope().getEntityType()
+            == ScopeExpression.EntityType.ENTITY_TYPE_SERVICE;
+  }
+
+  private Set<ServiceDetail> convertToServiceDetails(
+      RequestContext requestContext, ScopeExpression scopeExpression) {
+    return scopeExpression.getEntityScope().getEntityIdsList().stream()
+        .distinct()
+        .map(
+            entityId ->
+                cachedServiceMappingProvider.getServiceIdentifierEntity(requestContext, entityId))
+        .flatMap(Optional::stream)
+        .map(
+            serviceIdentifierEntity ->
+                new ServiceDetail(
+                    serviceIdentifierEntity.getServiceName(), scopeExpression.getExclude()))
+        .collect(Collectors.toUnmodifiableSet());
+  }
+
+  private ModsecBlobResult getModsecBlobResult(
+      String ruleIdentifier, List<Clause> ANDClausesList, long modsecIdAssignment) {
+    try {
+      if (ANDClausesList.isEmpty()) {
+        return new ModsecBlobResult(EMPTY_BLOB, ruleIdentifier);
+      }
+      return new ModsecBlobResult(
+          customModsecRuleConverter.getValidatedModsecRule(
+              modsecIdAssignment,
+              ruleIdentifier,
+              String.format(MODSEC_MATCH_MESSAGE, ruleIdentifier),
+              ANDClausesList),
+          ruleIdentifier);
+    } catch (Exception e) {
+      log.warn(
+          "Cannot convert custom signature rule with id {} into modsec rule", ruleIdentifier, e);
+      return new ModsecBlobResult(EMPTY_BLOB, "");
+    }
   }
 
   @Value
@@ -329,7 +379,7 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
   }
 
   @Value
-  static class ModsecBlobRuleIdPair {
+  static class ModsecBlobResult {
     String modsecBlob;
     String customSignatureRuleId;
   }

@@ -26,18 +26,18 @@ public class ModsecRuleConverterImpl implements ModsecRuleConverter {
   }
 
   @Override
-  public String getJNIValidatedModsecRule(CustomModsecRule customModsecRule) throws Exception {
+  public String getJNIValidatedModsecRule(CustomModsecRule customModsecRule) {
     ModsecSecRuleGroup modsecRule = getModsecRule(customModsecRule);
     return modsecRule.getJNIValidatedModsecRuleString();
   }
 
   @Override
-  public String getValidatedModsecRule(CustomModsecRule customModsecRule) throws Exception {
+  public String getValidatedModsecRule(CustomModsecRule customModsecRule) {
     ModsecSecRuleGroup modsecRule = getModsecRule(customModsecRule);
     return modsecRule.getValidatedModsecRuleString();
   }
 
-  private ModsecSecRuleGroup getModsecRule(CustomModsecRule customModsecRule) throws Exception {
+  private ModsecSecRuleGroup getModsecRule(CustomModsecRule customModsecRule) {
     if (customModsecRule.getRuleId() <= 0 || customModsecRule.getRuleUuid().isBlank()) {
       throw new IllegalArgumentException(
           "Custom Modsec Rule should have a valid rule ID and a valid rule UUID");

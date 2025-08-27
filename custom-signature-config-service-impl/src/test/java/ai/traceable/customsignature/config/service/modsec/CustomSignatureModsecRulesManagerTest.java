@@ -9,8 +9,6 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
@@ -49,6 +47,7 @@ import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.customsignature.config.service.v1.UserAgentExpression;
 import ai.traceable.customsignature.config.service.v1.UserIdExpression;
+import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
 import ai.traceable.modsecurity.rule.conversion.ModsecRuleConverterImpl;
 import ai.traceable.modsecurity.rule.conversion.clause.CustomModsecKeyValueMatchClauseConverter;
 import ai.traceable.modsecurity.rule.conversion.clause.CustomModsecValueMatchClauseConverter;
@@ -57,6 +56,7 @@ import ai.traceable.modsecurity.rule.conversion.clause.ModsecVariableConverter;
 import ai.traceable.modsecurity.utils.ModsecRuleEngineUtils;
 import com.github.f4b6a3.uuid.UuidCreator;
 import com.google.common.io.Resources;
+import com.google.protobuf.Value;
 import io.grpc.Status;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -86,13 +86,15 @@ class CustomSignatureModsecRulesManagerTest {
                       ClauseGroup.newBuilder()
                           .addClauses(
                               Clause.newBuilder()
-                                  .setMatchExpression(MatchExpression.newBuilder().build())
-                                  .build())
-                          .build())
-                  .build())
+                                  .setMatchExpression(
+                                      MatchExpression.newBuilder()
+                                          .setMatchKey(MatchKey.MATCH_KEY_URL)
+                                          .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                          .setValue(Value.newBuilder().setStringValue("url"))))))
           .build();
   @Mock private ModsecRulesRegistry mockModsecRulesRegistry;
   @Mock private ModsecBlobValidator mockModsecBlobValidator;
+  @Mock private CachedServiceMappingProvider mockCachedServiceMappingProvider;
 
   @BeforeEach
   void setup() {
@@ -101,6 +103,7 @@ class CustomSignatureModsecRulesManagerTest {
             MODSEC_RULE_VERSION_V3_SECARG_LIMITS_DETECTION_ONLY_MODE))
         .thenReturn("SecRuleEngine DetectionOnly");
     mockModsecBlobValidator = mock(ModsecBlobValidator.class);
+    mockCachedServiceMappingProvider = mock(CachedServiceMappingProvider.class);
   }
 
   @Test
@@ -108,13 +111,15 @@ class CustomSignatureModsecRulesManagerTest {
     ModsecDirectivesManager mockDirectivesManager = mock(ModsecDirectivesManager.class);
     when(mockDirectivesManager.getModsecHeader(ModsecRuleVersion.MODSEC_RULE_VERSION_V3))
         .thenReturn("");
+
     CustomModsecRuleConverter customModsecRuleConverter = mock(CustomModsecRuleConverter.class);
     CustomSignatureModsecRulesManager modsecRulesManager =
         new CustomSignatureModsecRulesManager(
             customModsecRuleConverter,
             mockDirectivesManager,
             mockModsecRulesRegistry,
-            mockModsecBlobValidator);
+            mockModsecBlobValidator,
+            mockCachedServiceMappingProvider);
 
     GetCustomSignatureModsecRulesResponse response =
         modsecRulesManager.getModsecRules(
@@ -122,8 +127,8 @@ class CustomSignatureModsecRulesManagerTest {
             List.of(ruleWithModsecConvertibleClause),
             CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_UNSPECIFIED,
             false,
-            List.of(),
-            ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING);
+            ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING,
+            List.of());
     assertTrue(response.getModsecRulesBlob().isEmpty());
     assertTrue(response.getInlineRulesList().isEmpty());
 
@@ -133,8 +138,8 @@ class CustomSignatureModsecRulesManagerTest {
             List.of(ruleWithModsecConvertibleClause),
             CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3,
             false,
-            List.of(),
-            ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING);
+            ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING,
+            List.of());
     assertTrue(response.getModsecRulesBlob().isEmpty());
     assertTrue(response.getInlineRulesList().isEmpty());
 
@@ -147,12 +152,10 @@ class CustomSignatureModsecRulesManagerTest {
             List.of(ruleWithModsecConvertibleClause),
             CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3,
             false,
-            List.of(),
-            ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING);
+            ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING,
+            List.of());
     assertTrue(response.getModsecRulesBlob().isEmpty());
     assertTrue(response.getInlineRulesList().isEmpty());
-    verify(customModsecRuleConverter, times(3))
-        .getValidatedModsecRule(anyLong(), anyString(), anyString(), anyList());
   }
 
   @Test
@@ -426,8 +429,8 @@ class CustomSignatureModsecRulesManagerTest {
               rules,
               CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS,
               false,
-              List.of(),
-              ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING);
+              ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING,
+              List.of());
       assertEquals(
           rules.size()
               + 4
@@ -478,7 +481,8 @@ class CustomSignatureModsecRulesManagerTest {
             customModsecRuleConverter,
             mockDirectivesManager,
             mockModsecRulesRegistry,
-            mockModsecBlobValidator);
+            mockModsecBlobValidator,
+            mockCachedServiceMappingProvider);
     when(customModsecRuleConverter.getValidatedModsecRule(
             anyLong(), anyString(), anyString(), anyList()))
         .thenReturn("SecRule");
@@ -534,8 +538,8 @@ class CustomSignatureModsecRulesManagerTest {
             rules,
             CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS,
             true,
-            List.of(),
-            ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING);
+            ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING,
+            List.of());
     assertEquals(2, response.getInlineRulesList().size());
 
     response =
@@ -544,8 +548,8 @@ class CustomSignatureModsecRulesManagerTest {
             rules,
             CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS,
             true,
-            List.of(),
-            ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TPA_DETECTION);
+            ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TPA_DETECTION,
+            List.of());
     assertEquals(1, response.getInlineRulesList().size());
 
     response =
@@ -554,8 +558,8 @@ class CustomSignatureModsecRulesManagerTest {
             rules,
             CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS,
             false,
-            List.of(),
-            ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING);
+            ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING,
+            List.of());
     assertEquals(1, response.getInlineRulesList().size());
   }
 
@@ -601,7 +605,8 @@ class CustomSignatureModsecRulesManagerTest {
                     modsecVariableConverter, modsecOperatorConverter))),
         mockDirectivesManager,
         mockModsecRulesRegistry,
-        mockModsecBlobValidator);
+        mockModsecBlobValidator,
+        mockCachedServiceMappingProvider);
   }
 
   private void createRules(

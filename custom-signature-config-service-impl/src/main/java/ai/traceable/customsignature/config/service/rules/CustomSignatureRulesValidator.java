@@ -2,6 +2,7 @@ package ai.traceable.customsignature.config.service.rules;
 
 import static ai.traceable.customsignature.config.service.v1.EventType.EVENT_TYPE_ALLOW;
 import static ai.traceable.customsignature.config.service.v1.EventType.EVENT_TYPE_DETECTION_AND_BLOCKING;
+import static ai.traceable.customsignature.config.service.v1.EventType.EVENT_TYPE_NORMAL_DETECTION;
 import static ai.traceable.customsignature.config.service.v1.MatchCategory.MATCH_CATEGORY_REQUEST;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 
@@ -223,7 +224,7 @@ public class CustomSignatureRulesValidator implements RulesValidator {
       return Status.INVALID_ARGUMENT.withDescription(
           "Custom Signature Rule Effect should have a valid event type.");
     }
-    if (eventType == EventType.EVENT_TYPE_NORMAL_DETECTION
+    if (eventType == EVENT_TYPE_NORMAL_DETECTION
         && ruleEffect.getEventSeverity() == EventSeverity.EVENT_SEVERITY_UNSPECIFIED) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Custom Signature Rule Effect with alert action should have a valid event severity.");

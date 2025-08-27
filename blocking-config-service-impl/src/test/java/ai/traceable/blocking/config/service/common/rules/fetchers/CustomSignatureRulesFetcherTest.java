@@ -55,6 +55,7 @@ public class CustomSignatureRulesFetcherTest {
                                 .setEnvironmentScope(EnvironmentScope.getDefaultInstance())))
                 .setModsecCrsRulesTarget(ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING)
                 .setRuleVersion(CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS)
+                .setModsecCrsRulesTarget(ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING)
                 .build());
 
     doReturn(

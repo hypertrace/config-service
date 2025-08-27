@@ -43,13 +43,6 @@ public class CustomModsecRuleConverter {
         createCustomModsecRule(ruleId, ruleUuid, ruleMsg, clauses, Optional.empty()));
   }
 
-  public String getValidatedModsecRuleWithCustomLogMsg(
-      long ruleId, String ruleUuid, String ruleMsg, List<Clause> clauses, String logMsg)
-      throws Exception {
-    return modsecRuleConverter.getValidatedModsecRule(
-        createCustomModsecRule(ruleId, ruleUuid, ruleMsg, clauses, Optional.ofNullable(logMsg)));
-  }
-
   public String getJNIValidatedModsecRuleWithCustomLogMsg(
       long ruleId, String ruleUuid, String ruleMsg, List<Clause> clauses, String logMsg)
       throws Exception {
@@ -186,9 +179,10 @@ public class CustomModsecRuleConverter {
     } else if (scopeExpression.hasEntityScope()
         && scopeExpression.getEntityScope().getEntityType()
             == ScopeExpression.EntityType.ENTITY_TYPE_SERVICE) {
-      // TODO : will be done as a part of separate PR that exclusively deals with changes
-      // corresponding to
-      // service-name in both config-service and blocking-config-service
+      throw new IllegalArgumentException(
+          String.format(
+              "Cannot convert a service scope clause into a modsec rule clause: %s",
+              scopeExpression));
     }
 
     return customModsecRuleClauseBuilder.build();

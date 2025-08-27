@@ -231,7 +231,9 @@ public class CustomSignatureConfigServiceIntegrationTest
             .getExpiryTimestampMillis());
     assertEquals(
         modsecDirectives
-            + "SecRule REQUEST_HEADERS:Host|REQUEST_HEADERS:x-forwarded-host|REQUEST_HEADERS:forwarded \"@streq 127.0.0.1\" \"id:10000001,phase:2,capture,t:none,msg:'rule-2',logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',tag:'CUSTOM_SIGNATURE',tag:'paranoia-level/1',tag:'rule-uuid/"
+            + "SecRule REQUEST_HEADERS:Host|REQUEST_HEADERS:x-forwarded-host|REQUEST_HEADERS:forwarded \"@streq 127.0.0.1\" \"id:10000000,phase:2,capture,t:none,msg:'URL Regex and key-value conditions corresponding to custom signature rule - "
+            + createdRules.get(1).getId()
+            + "',logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',tag:'CUSTOM_SIGNATURE',tag:'paranoia-level/1',tag:'rule-uuid/"
             + createdRules.get(1).getId()
             + "',severity:'CRITICAL',chain\"\n"
             + "SecRule REQUEST_HEADERS:x-real-ip \"@rx ^127\" \"capture,block,t:none\"",
@@ -277,7 +279,9 @@ public class CustomSignatureConfigServiceIntegrationTest
             .getExpiryTimestampMillis());
     assertEquals(
         modsecDirectives
-            + "SecRule REQUEST_HEADERS:Host|REQUEST_HEADERS:x-forwarded-host|REQUEST_HEADERS:forwarded \"@streq 127.0.0.1\" \"id:10000001,phase:2,capture,t:none,msg:'rule-1',logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',tag:'CUSTOM_SIGNATURE',tag:'paranoia-level/1',tag:'rule-uuid/"
+            + "SecRule REQUEST_HEADERS:Host|REQUEST_HEADERS:x-forwarded-host|REQUEST_HEADERS:forwarded \"@streq 127.0.0.1\" \"id:10000000,phase:2,capture,t:none,msg:'URL Regex and key-value conditions corresponding to custom signature rule - "
+            + createdRules.get(0).getId()
+            + "',logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',tag:'CUSTOM_SIGNATURE',tag:'paranoia-level/1',tag:'rule-uuid/"
             + createdRules.get(0).getId()
             + "',severity:'CRITICAL',chain\"\n"
             + "SecRule REQUEST_HEADERS:x-real-ip \"@rx ^127\" \"capture,block,t:none\"",
