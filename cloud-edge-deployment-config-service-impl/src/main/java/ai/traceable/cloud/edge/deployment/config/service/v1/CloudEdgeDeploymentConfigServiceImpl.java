@@ -69,21 +69,9 @@ public class CloudEdgeDeploymentConfigServiceImpl extends CloudEdgeDeploymentCon
       StreamObserver<GetCloudEdgeDeploymentConfigsResponse> responseObserver) {
     RequestContext ctx = RequestContext.CURRENT.get();
     try {
-      // Create a filter that combines both explicit IDs and any other filter criteria
-      GetCloudEdgeDeploymentConfigsFilter.Builder filterBuilder =
-          request.hasFilter()
-              ? request.getFilter().toBuilder()
-              : GetCloudEdgeDeploymentConfigsFilter.newBuilder();
-
-      // Add any explicit IDs to the filter
-      if (request.getIdsCount() > 0) {
-        filterBuilder.addAllIds(request.getIdsList());
-      }
-
-      // Use the combined filter for all requests
       GetCloudEdgeDeploymentConfigsResponse response =
           cloudEdgeDeploymentConfigManager.getCloudEdgeDeploymentConfigsWithActions(
-              ctx, filterBuilder.build(), request.getReadAccess());
+              ctx, request.getFilter(), request.getReadAccess());
 
       responseObserver.onNext(response);
       responseObserver.onCompleted();

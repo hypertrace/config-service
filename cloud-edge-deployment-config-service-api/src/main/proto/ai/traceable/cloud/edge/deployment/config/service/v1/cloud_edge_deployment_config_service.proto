@@ -37,7 +37,6 @@ message UpdateCloudEdgeDeploymentConfigResponse {
 }
 
 message GetCloudEdgeDeploymentConfigsRequest {
-  repeated string ids = 1 [deprecated = true];
   ConfigAccessType read_access = 2;
   GetCloudEdgeDeploymentConfigsFilter filter = 3;
 }
@@ -48,7 +47,6 @@ message GetCloudEdgeDeploymentConfigsFilter {
 }
 
 message GetCloudEdgeDeploymentConfigsResponse {
-  repeated CloudEdgeDeploymentConfig cloud_edge_deployments = 1 [deprecated = true];
   repeated CloudEdgeDeploymentConfigWithActions cloud_edge_deployments_with_actions = 2;
 }
 
@@ -62,14 +60,12 @@ message GetSharedConfigMetadataResponse {
 
 message DeleteCloudEdgeDeploymentConfigRequest {
   string id = 1;
-  ConfigAccessType access_type = 2 [deprecated = true];
 }
 
 message DeleteCloudEdgeDeploymentConfigResponse {}
 
 message CloudEdgeDeploymentConfigActionRequest {
   string id = 1;
-  ConfigAccessType access_type = 2 [deprecated = true];
   Action action = 3;
 }
 

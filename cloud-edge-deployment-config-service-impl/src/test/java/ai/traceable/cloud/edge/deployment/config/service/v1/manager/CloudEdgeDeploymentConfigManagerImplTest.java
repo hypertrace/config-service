@@ -518,7 +518,6 @@ class CloudEdgeDeploymentConfigManagerImplTest {
     CloudEdgeDeploymentConfigActionRequest request =
         CloudEdgeDeploymentConfigActionRequest.newBuilder()
             .setId(id)
-            .setAccessType(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
             .setAction(Action.ACTION_CANCEL_CHANGE_REQUEST)
             .build();
 
@@ -621,7 +620,6 @@ class CloudEdgeDeploymentConfigManagerImplTest {
     CloudEdgeDeploymentConfigActionRequest holdRequest =
         CloudEdgeDeploymentConfigActionRequest.newBuilder()
             .setId(id)
-            .setAccessType(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
             .setAction(Action.ACTION_HOLD)
             .build();
 

@@ -162,8 +162,10 @@ class CloudEdgeDeploymentConfigServiceImplTest {
   void testGetCloudEdgeDeploymentConfigs() {
     GetCloudEdgeDeploymentConfigsRequest request =
         GetCloudEdgeDeploymentConfigsRequest.newBuilder()
-            .addIds("test-id-1")
-            .addIds("test-id-2")
+            .setFilter(
+                GetCloudEdgeDeploymentConfigsFilter.newBuilder()
+                    .addIds("test-id-1")
+                    .addIds("test-id-2"))
             .setReadAccess(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
             .build();
 
@@ -198,7 +200,6 @@ class CloudEdgeDeploymentConfigServiceImplTest {
 
     GetCloudEdgeDeploymentConfigsResponse managerResponse =
         GetCloudEdgeDeploymentConfigsResponse.newBuilder()
-            .addAllCloudEdgeDeployments(Arrays.asList(config1, config2))
             .addAllCloudEdgeDeploymentsWithActions(
                 Arrays.asList(configWithActions1, configWithActions2))
             .build();
@@ -255,7 +256,6 @@ class CloudEdgeDeploymentConfigServiceImplTest {
     CloudEdgeDeploymentConfigActionRequest request =
         CloudEdgeDeploymentConfigActionRequest.newBuilder()
             .setId("test-id")
-            .setAccessType(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
             .setAction(Action.ACTION_DEPLOY)
             .build();
 
