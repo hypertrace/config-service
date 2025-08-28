@@ -1,5 +1,11 @@
 package ai.traceable.anomaly.config.service.modsec.rules;
 
+import static ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3;
+import static ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3_DETECTION_ONLY_MODE;
+import static ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion.MODSEC_RULE_VERSION_SENSITIVE_AGENT_CORAZA_V3;
+import static ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion.MODSEC_RULE_VERSION_TEST_CORAZA_V3;
+import static ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion.MODSEC_RULE_VERSION_TEST_CORAZA_V3_DETECTION_ONLY_MODE;
+
 import ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigManager;
 import ai.traceable.anomaly.config.service.global.ruleinfo.WebAppRuleInfoProvider;
 import ai.traceable.anomaly.config.service.global.status.GlobalAnomalyConfigStatusManager;
@@ -40,6 +46,13 @@ public class ModsecManagerImpl implements ModsecManager {
           .addAnomalyDetectionConfigTypes(
               AnomalyDetectionConfigType.ANOMALY_DETECTION_CONFIG_TYPE_MODSECURITY)
           .build();
+  private static final Set<ModsecRuleVersion> CORAZA_DIRECTIVES =
+      Set.of(
+          MODSEC_RULE_VERSION_CORAZA_V3,
+          MODSEC_RULE_VERSION_TEST_CORAZA_V3,
+          MODSEC_RULE_VERSION_SENSITIVE_AGENT_CORAZA_V3,
+          MODSEC_RULE_VERSION_CORAZA_V3_DETECTION_ONLY_MODE,
+          MODSEC_RULE_VERSION_TEST_CORAZA_V3_DETECTION_ONLY_MODE);
 
   private final ModsecRulesRegistry modsecRulesRegistry;
   private final WebAppRuleInfoProvider webAppRuleInfoProvider;
@@ -75,10 +88,15 @@ public class ModsecManagerImpl implements ModsecManager {
       List<AnomalySubRuleType> subRuleTypes,
       boolean removeDisabledRules,
       AnomalyConfigScope anomalyConfigScope) {
-    // if protection engine web app protection is enabled for tenant then don't send TA blocking
-    // modsec rules since those will get evaluated in eds via protection engine
-    if (featureCachingClient.isProtectionEngineWebAppProtectionEnabledForTenant(requestContext)
-        && rulesTarget.equals(ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING)) {
+    // if edge is enabled and protection engine web app protection is enabled for tenant
+    // then don't send TA blocking modsec rules since those will get evaluated in eds via
+    // protection engine
+    // currently we are not sending only if its coraza directive since protection engine supports
+    // coraza evaluation only but eventually it will support both coraza and modsec-jni
+    if (featureCachingClient.isEdgeDecisionEnabledForTenant(requestContext)
+        && featureCachingClient.isProtectionEngineWebAppProtectionEnabledForTenant(requestContext)
+        && rulesTarget.equals(ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING)
+        && isCorazaDirective(modsecRuleVersion)) {
       return new ModsecCrsRules(subRuleTypes);
     }
     ScopedAnomalyConfigStatus globalConfig =
@@ -319,5 +337,9 @@ public class ModsecManagerImpl implements ModsecManager {
         .stream()
         .collect(
             Collectors.toUnmodifiableMap(AnomalySubRuleConfig::getSubRuleId, Function.identity()));
+  }
+
+  private boolean isCorazaDirective(ModsecRuleVersion modsecRuleVersion) {
+    return CORAZA_DIRECTIVES.contains(modsecRuleVersion);
   }
 }
