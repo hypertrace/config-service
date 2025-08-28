@@ -4,12 +4,14 @@ import static ai.traceable.ratelimiting.config.service.v2.ApiAggregateType.API_A
 import static ai.traceable.ratelimiting.config.service.v2.ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.MatchOperator.MATCH_OPERATOR_EQUALS;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.MatchOperator.MATCH_OPERATOR_MATCHES_REGEX;
+import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.MatchOperator.MATCH_OPERATOR_NOT_CONTAIN;
 import static ai.traceable.ratelimiting.config.service.v2.UserAggregateType.USER_AGGREGATE_TYPE_ACROSS_USERS;
 import static ai.traceable.ratelimiting.config.service.v2.UserAggregateType.USER_AGGREGATE_TYPE_PER_USER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import ai.traceable.ratelimiting.config.service.v2.Action;
 import ai.traceable.ratelimiting.config.service.v2.Category;
@@ -20,6 +22,9 @@ import ai.traceable.ratelimiting.config.service.v2.DeleteRateLimitingRuleRequest
 import ai.traceable.ratelimiting.config.service.v2.EnvironmentScope;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingEdgeDecisionRulesRequest;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingEdgeDecisionRulesResponse;
+import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingModsecRulesFilter;
+import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRuleModsecRulesRequest;
+import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRuleModsecRulesResponse;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesRequest;
 import ai.traceable.ratelimiting.config.service.v2.IpAddressCondition;
@@ -38,8 +43,14 @@ import ai.traceable.ratelimiting.config.service.v2.ScopeCondition;
 import ai.traceable.ratelimiting.config.service.v2.ThresholdActionConfig;
 import ai.traceable.ratelimiting.config.service.v2.TransactionActionConfig;
 import ai.traceable.ratelimiting.config.service.v2.UpdateRateLimitingRuleRequest;
+import com.google.common.io.Resources;
+import com.google.protobuf.Value;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -351,17 +362,6 @@ class RateLimitingV2ConfigServiceIntegrationTest extends TraceableConfigServiceI
     assertFalse(rateLimitingRules.contains(rateLimitingRule));
   }
 
-  private List<RateLimitingRule> getRules(GetRateLimitingRulesFilter getRateLimitingRulesFilter) {
-    return GrpcClientRequestContextUtil.executeInTenantContext(
-            TENANT_ID,
-            () ->
-                rateLimitingConfigServiceBlockingStub.getRateLimitingRules(
-                    GetRateLimitingRulesRequest.newBuilder()
-                        .setRulesFilter(getRateLimitingRulesFilter)
-                        .build()))
-        .getRulesList();
-  }
-
   @Test
   void testGetRateLimitingEdgeDecisionRules() {
 
@@ -440,5 +440,218 @@ class RateLimitingV2ConfigServiceIntegrationTest extends TraceableConfigServiceI
         DeleteRateLimitingRuleRequest.newBuilder().setRuleId(createdRule.getId()).build();
     REQUEST_CONTEXT.call(
         () -> rateLimitingConfigServiceBlockingStub.deleteRateLimitingRule(deleteRequest));
+  }
+
+  @Test
+  void testGetRateLimitingRuleModsecRules() {
+    String modsecDirectives = "";
+    String modsecInitializationRules = "";
+    URL directiveUrl =
+        Resources.getResource(
+            "modsec/crs/directives/modsec-directives-v3-secarglimits-detectiononly-mode.conf");
+    URL initializationRulesUrl =
+        Resources.getResource("modsec/crs/modsec-initialization-901-rules.conf");
+    try {
+      modsecDirectives = Resources.toString(directiveUrl, StandardCharsets.UTF_8) + "\n";
+      modsecInitializationRules =
+          Resources.toString(initializationRulesUrl, StandardCharsets.UTF_8);
+    } catch (IOException e) {
+      fail("Failed to read modsec directives file and/or modsec initialization rules file.");
+    }
+
+    GetRateLimitingRulesFilter getRateLimitingRulesFilter =
+        GetRateLimitingRulesFilter.newBuilder()
+            .addCategories(Category.CATEGORY_DATA_EXFILTRATION)
+            .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT)
+            .setScope(
+                RuleConfigScope.newBuilder()
+                    .setEnvironmentScope(
+                        EnvironmentScope.newBuilder()
+                            .addEnvironmentIds(
+                                "integration-test-get-rate-limiting-rule-modsec-rules-env")))
+            .build();
+
+    List<RateLimitingRule> createdRules = createModsecConvertibleRateLimitingRules();
+    assertEquals(2, createdRules.size());
+
+    GetRateLimitingRuleModsecRulesResponse getRateLimitingRuleModsecRulesResponse =
+        GrpcClientRequestContextUtil.executeInTenantContext(
+            TENANT_ID,
+            () ->
+                rateLimitingConfigServiceBlockingStub.getRateLimitingRuleModsecRules(
+                    GetRateLimitingRuleModsecRulesRequest.newBuilder()
+                        .setRulesFilter(
+                            GetRateLimitingModsecRulesFilter.newBuilder()
+                                .setRulesFilter(getRateLimitingRulesFilter))
+                        .build()));
+
+    List<String> createdRuleIds =
+        createdRules.stream().map(RateLimitingRule::getId).collect(Collectors.toUnmodifiableList());
+
+    assertEquals(2, getRateLimitingRuleModsecRulesResponse.getRulesCount());
+    assertTrue(createdRuleIds.contains(getRateLimitingRuleModsecRulesResponse.getRules(0).getId()));
+    assertTrue(createdRuleIds.contains(getRateLimitingRuleModsecRulesResponse.getRules(1).getId()));
+    assertEquals(
+        modsecDirectives + modsecInitializationRules,
+        getRateLimitingRuleModsecRulesResponse.getModsecDirectivesBlob());
+
+    disableCreatedRule(createdRules.get(0));
+
+    getRateLimitingRuleModsecRulesResponse =
+        GrpcClientRequestContextUtil.executeInTenantContext(
+            TENANT_ID,
+            () ->
+                rateLimitingConfigServiceBlockingStub.getRateLimitingRuleModsecRules(
+                    GetRateLimitingRuleModsecRulesRequest.newBuilder()
+                        .setRulesFilter(
+                            GetRateLimitingModsecRulesFilter.newBuilder()
+                                .setRulesFilter(
+                                    getRateLimitingRulesFilter.toBuilder()
+                                        .setDisabled(true)
+                                        .build()))
+                        .build()));
+
+    assertEquals(1, getRateLimitingRuleModsecRulesResponse.getRulesCount());
+    assertEquals(
+        createdRules.get(0).getId(), getRateLimitingRuleModsecRulesResponse.getRules(0).getId());
+    assertEquals(
+        modsecDirectives + modsecInitializationRules,
+        getRateLimitingRuleModsecRulesResponse.getModsecDirectivesBlob());
+  }
+
+  private List<RateLimitingRule> createModsecConvertibleRateLimitingRules() {
+    RuleConfigScope rateLimitingRuleConfigScope =
+        RuleConfigScope.newBuilder()
+            .setEnvironmentScope(
+                EnvironmentScope.newBuilder()
+                    .addEnvironmentIds("integration-test-get-rate-limiting-rule-modsec-rules-env"))
+            .build();
+
+    CreateRateLimitingRuleRequest createRateLimitingRuleRequest1 =
+        CreateRateLimitingRuleRequest.newBuilder()
+            .setData(
+                RateLimitingRuleData.newBuilder()
+                    .setCategory(Category.CATEGORY_DATA_EXFILTRATION)
+                    .setName("name1")
+                    .setDescription("description1")
+                    .setRuleStatus(RULE_SOURCE_TRACEABLE)
+                    .setRuleConfigScope(rateLimitingRuleConfigScope)
+                    .setEnabled(true)
+                    .setCondition(
+                        Condition.newBuilder()
+                            .setCompositeCondition(
+                                CompositeCondition.newBuilder()
+                                    .setOperator(
+                                        CompositeCondition.LogicalOperator.LOGICAL_OPERATOR_AND)
+                                    .addChildren(
+                                        Condition.newBuilder()
+                                            .setLeafCondition(
+                                                LeafCondition.newBuilder()
+                                                    .setKeyValueCondition(
+                                                        KeyValueCondition.newBuilder()
+                                                            .setStaticValueCondition(
+                                                                KeyValueCondition
+                                                                    .StaticValueCondition
+                                                                    .newBuilder()
+                                                                    .setKeyCondition(
+                                                                        KeyValueCondition
+                                                                            .KeyCondition
+                                                                            .newBuilder()
+                                                                            .setKeyType(
+                                                                                KeyValueCondition
+                                                                                    .Type
+                                                                                    .TYPE_USER_AGENT))
+                                                                    .setValueMatchOperatorCondition(
+                                                                        KeyValueCondition
+                                                                            .MatchOperatorCondition
+                                                                            .newBuilder()
+                                                                            .setOperator(
+                                                                                MATCH_OPERATOR_NOT_CONTAIN)
+                                                                            .setValue(
+                                                                                Value.newBuilder()
+                                                                                    .setStringValue(
+                                                                                        "not-contained-str-value")))))))
+                                    .addChildren(
+                                        Condition.newBuilder()
+                                            .setLeafCondition(
+                                                LeafCondition.newBuilder()
+                                                    .setScopeCondition(
+                                                        ScopeCondition.newBuilder()
+                                                            .setUrlScope(
+                                                                ScopeCondition.UrlScope.newBuilder()
+                                                                    .addUrlRegexes(
+                                                                        "url-regex")))))))
+                    .setTransactionActionConfig(
+                        TransactionActionConfig.newBuilder()
+                            .setAction(
+                                Action.newBuilder().setBlock(Action.Block.getDefaultInstance()))))
+            .build();
+
+    RateLimitingRule rule1 =
+        GrpcClientRequestContextUtil.executeInTenantContext(
+                TENANT_ID,
+                () ->
+                    rateLimitingConfigServiceBlockingStub.createRateLimitingRule(
+                        createRateLimitingRuleRequest1))
+            .getRule();
+
+    CreateRateLimitingRuleRequest createRateLimitingRuleRequest2 =
+        CreateRateLimitingRuleRequest.newBuilder()
+            .setData(
+                RateLimitingRuleData.newBuilder()
+                    .setCategory(Category.CATEGORY_DATA_EXFILTRATION)
+                    .setName("name2")
+                    .setDescription("description2")
+                    .setRuleStatus(RULE_SOURCE_TRACEABLE)
+                    .setRuleConfigScope(rateLimitingRuleConfigScope)
+                    .setEnabled(true)
+                    .setCondition(
+                        Condition.newBuilder()
+                            .setLeafCondition(
+                                LeafCondition.newBuilder()
+                                    .setScopeCondition(
+                                        ScopeCondition.newBuilder()
+                                            .setUrlScope(
+                                                ScopeCondition.UrlScope.newBuilder()
+                                                    .addUrlRegexes("url-regex")))))
+                    .setTransactionActionConfig(
+                        TransactionActionConfig.newBuilder()
+                            .setAction(
+                                Action.newBuilder().setAllow(Action.Allow.getDefaultInstance()))))
+            .build();
+
+    RateLimitingRule rule2 =
+        GrpcClientRequestContextUtil.executeInTenantContext(
+                TENANT_ID,
+                () ->
+                    rateLimitingConfigServiceBlockingStub.createRateLimitingRule(
+                        createRateLimitingRuleRequest2))
+            .getRule();
+
+    return List.of(rule1, rule2);
+  }
+
+  private void disableCreatedRule(RateLimitingRule rateLimitingRule) {
+    RateLimitingRuleData updatedRuleData =
+        rateLimitingRule.getData().toBuilder().setEnabled(false).clearRuleStatus().build();
+    UpdateRateLimitingRuleRequest updateRequest =
+        UpdateRateLimitingRuleRequest.newBuilder()
+            .setRuleId(rateLimitingRule.getId())
+            .setData(updatedRuleData)
+            .build();
+    GrpcClientRequestContextUtil.executeInTenantContext(
+        TENANT_ID,
+        () -> rateLimitingConfigServiceBlockingStub.updateRateLimitingRule(updateRequest));
+  }
+
+  private List<RateLimitingRule> getRules(GetRateLimitingRulesFilter getRateLimitingRulesFilter) {
+    return GrpcClientRequestContextUtil.executeInTenantContext(
+            TENANT_ID,
+            () ->
+                rateLimitingConfigServiceBlockingStub.getRateLimitingRules(
+                    GetRateLimitingRulesRequest.newBuilder()
+                        .setRulesFilter(getRateLimitingRulesFilter)
+                        .build()))
+        .getRulesList();
   }
 }
