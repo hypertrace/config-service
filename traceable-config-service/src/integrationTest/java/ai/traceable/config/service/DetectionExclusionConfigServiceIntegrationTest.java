@@ -1,10 +1,13 @@
 package ai.traceable.config.service;
 
 import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_ALERT;
+import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_USER_AGENT;
+import static ai.traceable.detection.exclusion.config.service.v1.MatchOperator.MATCH_OPERATOR_MATCHES_REGEX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import ai.traceable.detection.exclusion.config.service.v1.CreateDetectionExclusionRuleRequest;
 import ai.traceable.detection.exclusion.config.service.v1.DeleteDetectionExclusionRuleRequest;
@@ -19,19 +22,31 @@ import ai.traceable.detection.exclusion.config.service.v1.EventCondition;
 import ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget;
 import ai.traceable.detection.exclusion.config.service.v1.GetDetectionExclusionEdgeDecisionRulesRequest;
 import ai.traceable.detection.exclusion.config.service.v1.GetDetectionExclusionRulesRequest;
+import ai.traceable.detection.exclusion.config.service.v1.GetExclusionModsecRulesRequest;
+import ai.traceable.detection.exclusion.config.service.v1.GetExclusionModsecRulesResponse;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
 import ai.traceable.detection.exclusion.config.service.v1.IpReputationCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpReputationSeverity;
+import ai.traceable.detection.exclusion.config.service.v1.KeyMetadataMatchCondition;
+import ai.traceable.detection.exclusion.config.service.v1.MatchCondition;
 import ai.traceable.detection.exclusion.config.service.v1.RuleChangeSource;
 import ai.traceable.detection.exclusion.config.service.v1.RuleEvaluationPoint;
+import ai.traceable.detection.exclusion.config.service.v1.RuleSource;
+import ai.traceable.detection.exclusion.config.service.v1.ScopeCondition;
+import ai.traceable.detection.exclusion.config.service.v1.SpanAttributeMatchCondition;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEventFamily;
 import ai.traceable.detection.exclusion.config.service.v1.UpdateDetectionExclusionRuleRequest;
+import ai.traceable.detection.exclusion.config.service.v1.UrlScope;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRule;
+import com.google.common.io.Resources;
 import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.Value;
 import com.google.protobuf.util.JsonFormat;
 import java.io.File;
+import java.io.IOException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
@@ -257,6 +272,187 @@ public class DetectionExclusionConfigServiceIntegrationTest
         () -> detectionExclusionConfigServiceStub.deleteDetectionExclusionRule(deleteRequest));
   }
 
+  @Test
+  void testGetExclusionModsecRules() {
+    String modsecDirectives = "";
+    String modsecInitializationRules = "";
+    URL directiveUrl =
+        Resources.getResource(
+            "modsec/crs/directives/modsec-directives-v3-secarglimits-detectiononly-mode.conf");
+    URL initializationRulesUrl =
+        Resources.getResource("modsec/crs/modsec-initialization-901-rules.conf");
+    try {
+      modsecDirectives = Resources.toString(directiveUrl, StandardCharsets.UTF_8) + "\n";
+      modsecInitializationRules =
+          Resources.toString(initializationRulesUrl, StandardCharsets.UTF_8);
+    } catch (IOException e) {
+      fail("Failed to read modsec directives file and/or modsec initialization rules file.");
+    }
+
+    GetRulesFilter getRulesFilter =
+        GetRulesFilter.newBuilder()
+            .addRuleCreationSources(RuleSource.RULE_SOURCE_TRACEABLE)
+            .setRuleScope(
+                DetectionExclusionRuleScope.newBuilder()
+                    .setEnvironmentScope(
+                        EnvironmentScope.newBuilder().addEnvironmentIds("test-getModsec-env")))
+            .build();
+
+    List<DetectionExclusionRule> initialRules = getRules(getRulesFilter);
+    assertTrue(initialRules.isEmpty());
+    List<DetectionExclusionRule> createdRules = createRulesForTestGetExclusionModsecRules();
+    assertEquals(2, createdRules.size());
+
+    GetExclusionModsecRulesResponse getExclusionModsecRulesResponse =
+        REQUEST_CONTEXT.call(
+            () ->
+                detectionExclusionConfigServiceStub.getExclusionModsecRules(
+                    GetExclusionModsecRulesRequest.newBuilder()
+                        .setRulesFilter(getRulesFilter)
+                        .build()));
+
+    List<String> createdRuleIds =
+        createdRules.stream()
+            .map(DetectionExclusionRule::getId)
+            .collect(Collectors.toUnmodifiableList());
+
+    assertEquals(2, getExclusionModsecRulesResponse.getModsecRulesCount());
+    assertTrue(
+        createdRuleIds.contains(
+            getExclusionModsecRulesResponse.getModsecRules(0).getRule().getId()));
+    assertTrue(
+        createdRuleIds.contains(
+            getExclusionModsecRulesResponse.getModsecRules(1).getRule().getId()));
+
+    assertEquals(
+        modsecDirectives + modsecInitializationRules,
+        getExclusionModsecRulesResponse.getModsecDirectivesBlob());
+
+    disableCreatedRule(createdRules.get(0));
+
+    getExclusionModsecRulesResponse =
+        REQUEST_CONTEXT.call(
+            () ->
+                detectionExclusionConfigServiceStub.getExclusionModsecRules(
+                    GetExclusionModsecRulesRequest.newBuilder()
+                        .setRulesFilter(getRulesFilter.toBuilder().setDisabled(true).build())
+                        .build()));
+
+    assertEquals(1, getExclusionModsecRulesResponse.getModsecRulesCount());
+    assertEquals(
+        createdRules.get(0).getId(),
+        getExclusionModsecRulesResponse.getModsecRules(0).getRule().getId());
+    assertEquals(
+        modsecDirectives + modsecInitializationRules,
+        getExclusionModsecRulesResponse.getModsecDirectivesBlob());
+
+    // deleting the created rules for this test
+    for (DetectionExclusionRule rule : createdRules) {
+      DeleteDetectionExclusionRuleRequest deleteRequest =
+          DeleteDetectionExclusionRuleRequest.newBuilder().setId(rule.getId()).build();
+      REQUEST_CONTEXT.call(
+          () -> detectionExclusionConfigServiceStub.deleteDetectionExclusionRule(deleteRequest));
+    }
+
+    // verifying cleanup
+    List<DetectionExclusionRule> finalRules = getRules(getRulesFilter);
+    assertEquals(0, finalRules.size());
+  }
+
+  private List<DetectionExclusionRule> createRulesForTestGetExclusionModsecRules() {
+    DetectionExclusionRuleInfo ruleInfo1 =
+        DetectionExclusionRuleInfo.newBuilder()
+            .setName("test-exclusion-rule-1")
+            .addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_BLOCK)
+            .addConditions(
+                DetectionExclusionCondition.newBuilder()
+                    .setScopeCondition(
+                        ScopeCondition.newBuilder()
+                            .setUrlScope(UrlScope.newBuilder().addUrlRegexes("url-regex"))))
+            .setRuleStatus(
+                DetectionExclusionRuleStatus.newBuilder()
+                    .setRuleCreationSource(RuleSource.RULE_SOURCE_TRACEABLE))
+            .build();
+
+    DetectionExclusionRuleScope ruleScope1 =
+        DetectionExclusionRuleScope.newBuilder()
+            .setEnvironmentScope(
+                EnvironmentScope.newBuilder().addEnvironmentIds("test-getModsec-env"))
+            .build();
+
+    CreateDetectionExclusionRuleRequest createRequest1 =
+        CreateDetectionExclusionRuleRequest.newBuilder()
+            .setRuleInfo(ruleInfo1)
+            .setRuleScope(ruleScope1)
+            .build();
+
+    DetectionExclusionRule rule1 =
+        REQUEST_CONTEXT.call(
+            () ->
+                detectionExclusionConfigServiceStub
+                    .createDetectionExclusionRule(createRequest1)
+                    .getRule());
+
+    DetectionExclusionRuleInfo ruleInfo2 =
+        DetectionExclusionRuleInfo.newBuilder()
+            .setName("test-exclusion-rule-2")
+            .addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_BLOCK)
+            .addConditions(
+                DetectionExclusionCondition.newBuilder()
+                    .setAttributeMatchCondition(
+                        SpanAttributeMatchCondition.newBuilder()
+                            .setKeyMatchCondition(
+                                KeyMetadataMatchCondition.newBuilder()
+                                    .setMetadata(KEY_METADATA_USER_AGENT))
+                            .setValueMatchCondition(
+                                MatchCondition.newBuilder()
+                                    .setOperator(MATCH_OPERATOR_MATCHES_REGEX)
+                                    .setValue(Value.newBuilder().setStringValue("str-value-2")))))
+            .setRuleStatus(
+                DetectionExclusionRuleStatus.newBuilder()
+                    .setRuleCreationSource(RuleSource.RULE_SOURCE_TRACEABLE))
+            .build();
+
+    DetectionExclusionRuleScope ruleScope2 =
+        DetectionExclusionRuleScope.newBuilder()
+            .setEnvironmentScope(
+                EnvironmentScope.newBuilder().addEnvironmentIds("test-getModsec-env"))
+            .build();
+
+    CreateDetectionExclusionRuleRequest createRequest2 =
+        CreateDetectionExclusionRuleRequest.newBuilder()
+            .setRuleInfo(ruleInfo2)
+            .setRuleScope(ruleScope2)
+            .build();
+
+    DetectionExclusionRule rule2 =
+        REQUEST_CONTEXT.call(
+            () ->
+                detectionExclusionConfigServiceStub
+                    .createDetectionExclusionRule(createRequest2)
+                    .getRule());
+
+    return List.of(rule1, rule2);
+  }
+
+  private void disableCreatedRule(DetectionExclusionRule detectionExclusionRule) {
+    DetectionExclusionRule updatedRule =
+        detectionExclusionRule.toBuilder()
+            .setRuleInfo(
+                detectionExclusionRule.getRuleInfo().toBuilder()
+                    .setRuleStatus(
+                        detectionExclusionRule.getRuleInfo().getRuleStatus().toBuilder()
+                            .setDisabled(true)
+                            .clearRuleCreationSource()
+                            .build())
+                    .build())
+            .build();
+    UpdateDetectionExclusionRuleRequest updateRequest =
+        UpdateDetectionExclusionRuleRequest.newBuilder().setRule(updatedRule).build();
+    REQUEST_CONTEXT.call(
+        () -> detectionExclusionConfigServiceStub.updateDetectionExclusionRule(updateRequest));
+  }
+
   static List<String> getInputFileNames() {
     String folderName =
         Objects.requireNonNull(
@@ -268,8 +464,6 @@ public class DetectionExclusionConfigServiceIntegrationTest
 
     return Arrays.stream(Objects.requireNonNull(queriesFolder.listFiles()))
         .map(File::getName)
-        // .filter(fileName ->
-        // fileName.contains("detection-exclusion-rule-ip-address-condition-1.json"))
         .collect(Collectors.toUnmodifiableList());
   }
 
