@@ -4,11 +4,11 @@ import ai.traceable.anomaly.config.service.v1.global.AnomalyGlobalConfigServiceG
 import ai.traceable.api.attribute.override.service.v1.ApiAttributeOverrideServiceGrpc;
 import ai.traceable.config.service.rest.codegen.error.JaxRsResourceGenerationException;
 import ai.traceable.config.service.rest.codegen.model.GrpcApiSpec;
+import ai.traceable.edge.decision.service.api.v1.EdgeDecisionServiceGrpc;
 import ai.traceable.fraud.datamodel.config.service.v1.FraudDataModelConfigServiceGrpc;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.FraudDataModelDerivationConfigServiceGrpc;
 import ai.traceable.fraud.engine.ml.FraudEngineMLServiceGrpc;
 import ai.traceable.fraud.policy.config.service.v1.FraudPolicyConfigServiceGrpc;
-import ai.traceable.risk.decision.service.api.v1.RiskDecisionServiceGrpc;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -69,7 +69,7 @@ public class JaxRsResourceGeneratorTest {
         new GrpcApiSpec(AnomalyGlobalConfigServiceGrpc.class.getName(), "localhost", 8080));
     apiSpecList.add(
         new GrpcApiSpec(FraudPolicyConfigServiceGrpc.class.getName(), "localhost", 8080));
-    apiSpecList.add(new GrpcApiSpec(RiskDecisionServiceGrpc.class.getName(), "localhost", 8080));
+    apiSpecList.add(new GrpcApiSpec(EdgeDecisionServiceGrpc.class.getName(), "localhost", 8080));
     apiSpecList.add(
         new GrpcApiSpec(ApiAttributeOverrideServiceGrpc.class.getName(), "localhost", 8080));
     apiSpecList.add(

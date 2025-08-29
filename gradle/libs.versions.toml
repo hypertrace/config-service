@@ -15,8 +15,6 @@ hypertrace-configservice-changeeventgenerator = { module = "org.hypertrace.confi
 hypertrace-configservice-changeeventapi = { module = "org.hypertrace.config.service:config-service-change-event-api" }
 hypertrace-configservice-factory = { module = "org.hypertrace.config.service:config-service-factory" }
 hypertrace-configservice-partitioner-config-impl = { module = "org.hypertrace.config.service:partitioner-config-service-impl" }
-# TODO check-with sunil to get this dep to bom
-traceable-risk-decision-service-api = { module = "ai.traceable.fraud-engine:risk-decision-service-api", version = "0.1.251" }
 
 automaton = { module = "dk.brics.automaton:automaton", version = "1.11-8"}
 domain-validation = { module = "commons-validator:commons-validator", version = "1.10.0"}

@@ -40,7 +40,7 @@ dependencies {
   testImplementation(commonLibs.mockito.core)
   testImplementation(commonLibs.mockito.junit)
   // additional api modules that hold the rpc contracts
-  testImplementation(localLibs.traceable.risk.decision.service.api)
+  testImplementation(commonLibs.traceable.edge.decision.engine.api)
   testImplementation(commonLibs.traceable.fraud.engine.api)
   testImplementation(projects.anomalyConfigServiceApi)
   testImplementation(projects.apiAttributeOverrideServiceApi)
