@@ -13,6 +13,7 @@ message GoogleSecopsIntegrationDetails {
   optional string description = 2;
   GcpAuthCredentials auth_credentials = 3;
   ChronicleRegion region = 4;
+  string customer_id = 5;
 }
 
 message GoogleSecopsIntegration {
