@@ -48,6 +48,12 @@ message CloudflareIntegrationParams {
   string api_token = 3 [deprecated = true];
   EncryptedData encrypted_api_token = 4;
   string ruleset_id = 5;
+  optional CustomListDetail custom_list_detail = 6;
+}
+
+message CustomListDetail {
+  string block_list_name = 1;
+  string allow_list_name = 2;
 }
 
 message UpdatedWafIntegrationDetails {
