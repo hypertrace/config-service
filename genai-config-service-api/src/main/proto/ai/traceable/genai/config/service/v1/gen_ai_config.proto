@@ -15,8 +15,14 @@ message EnvironmentScope {
 
 message GenAiConfig {
   GenAiScope scope = 1;
+  GlobalConfig global_config = 4;
   IssuesSummaryFeatureConfig issues_summary_feature_config = 2;
   ThreatActivitySummaryFeatureConfig threat_activity_summary_feature_config = 3;
+  ChatbotFeatureConfig chat_bot_feature_config = 5;
+}
+
+message GlobalConfig {
+  bool enabled = 1;
 }
 
 message IssuesSummaryFeatureConfig {
@@ -24,5 +30,9 @@ message IssuesSummaryFeatureConfig {
 }
 
 message ThreatActivitySummaryFeatureConfig {
+  bool enabled = 1;
+}
+
+message ChatbotFeatureConfig {
   bool enabled = 1;
 }

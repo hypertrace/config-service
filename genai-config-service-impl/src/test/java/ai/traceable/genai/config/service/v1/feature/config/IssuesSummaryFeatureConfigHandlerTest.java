@@ -4,9 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import ai.traceable.genai.config.service.v1.FeatureLevelConfigUpdate;
 import ai.traceable.genai.config.service.v1.GenAiConfig;
 import ai.traceable.genai.config.service.v1.GenAiFeatureConfigUpdate;
 import ai.traceable.genai.config.service.v1.IssuesSummaryFeatureConfig;
+import ai.traceable.genai.config.service.v1.UpdateGenAiConfigRequest;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -142,5 +144,122 @@ class IssuesSummaryFeatureConfigHandlerTest {
     Optional<IssuesSummaryFeatureConfig> result = handler.getFeatureConfigFromUpdate(update);
 
     assertFalse(result.isPresent());
+  }
+
+  @Test
+  void
+      test_getFeatureLevelConfigFromUpdate_whenFeatureLevelConfigUpdateHasIssuesConfig_returnsConfig() {
+    IssuesSummaryFeatureConfig issuesFeatureConfig =
+        IssuesSummaryFeatureConfig.newBuilder().setEnabled(true).build();
+    FeatureLevelConfigUpdate featureLevelUpdate =
+        FeatureLevelConfigUpdate.newBuilder()
+            .setIssuesSummaryFeatureConfigUpdate(issuesFeatureConfig)
+            .build();
+    UpdateGenAiConfigRequest update =
+        UpdateGenAiConfigRequest.newBuilder()
+            .setFeatureLevelConfigUpdate(featureLevelUpdate)
+            .build();
+
+    Optional<IssuesSummaryFeatureConfig> result = handler.getFeatureLevelConfigFromUpdate(update);
+
+    assertTrue(result.isPresent());
+    assertTrue(result.get().getEnabled());
+    assertEquals(issuesFeatureConfig, result.get());
+  }
+
+  @Test
+  void
+      test_getFeatureLevelConfigFromUpdate_whenFeatureLevelConfigUpdateHasDisabledIssuesConfig_returnsDisabledConfig() {
+    IssuesSummaryFeatureConfig issuesFeatureConfig =
+        IssuesSummaryFeatureConfig.newBuilder().setEnabled(false).build();
+    FeatureLevelConfigUpdate featureLevelUpdate =
+        FeatureLevelConfigUpdate.newBuilder()
+            .setIssuesSummaryFeatureConfigUpdate(issuesFeatureConfig)
+            .build();
+    UpdateGenAiConfigRequest update =
+        UpdateGenAiConfigRequest.newBuilder()
+            .setFeatureLevelConfigUpdate(featureLevelUpdate)
+            .build();
+
+    Optional<IssuesSummaryFeatureConfig> result = handler.getFeatureLevelConfigFromUpdate(update);
+
+    assertTrue(result.isPresent());
+    assertFalse(result.get().getEnabled());
+    assertEquals(issuesFeatureConfig, result.get());
+  }
+
+  @Test
+  void
+      test_getFeatureLevelConfigFromUpdate_whenFeatureLevelConfigUpdateHasNoIssuesConfig_returnsEmpty() {
+    FeatureLevelConfigUpdate featureLevelUpdate = FeatureLevelConfigUpdate.getDefaultInstance();
+    UpdateGenAiConfigRequest update =
+        UpdateGenAiConfigRequest.newBuilder()
+            .setFeatureLevelConfigUpdate(featureLevelUpdate)
+            .build();
+
+    Optional<IssuesSummaryFeatureConfig> result = handler.getFeatureLevelConfigFromUpdate(update);
+
+    assertFalse(result.isPresent());
+  }
+
+  @Test
+  void test_getFeatureLevelConfigFromUpdate_priorityTest() {
+    IssuesSummaryFeatureConfig issuesFeatureConfig =
+        IssuesSummaryFeatureConfig.newBuilder().setEnabled(false).build();
+    FeatureLevelConfigUpdate featureLevelUpdate =
+        FeatureLevelConfigUpdate.newBuilder()
+            .setIssuesSummaryFeatureConfigUpdate(issuesFeatureConfig)
+            .build();
+
+    UpdateGenAiConfigRequest update =
+        UpdateGenAiConfigRequest.newBuilder()
+            .setFeatureLevelConfigUpdate(featureLevelUpdate)
+            .build();
+
+    Optional<IssuesSummaryFeatureConfig> result = handler.getFeatureLevelConfigFromUpdate(update);
+
+    assertTrue(result.isPresent());
+    assertFalse(result.get().getEnabled());
+  }
+
+  @Test
+  void test_getFeatureLevelConfigFromUpdate_priorityTest_featureLevelOverrides() {
+    IssuesSummaryFeatureConfig issuesFeatureConfig =
+        IssuesSummaryFeatureConfig.newBuilder().setEnabled(true).build();
+    FeatureLevelConfigUpdate featureLevelUpdate =
+        FeatureLevelConfigUpdate.newBuilder()
+            .setIssuesSummaryFeatureConfigUpdate(issuesFeatureConfig)
+            .build();
+
+    UpdateGenAiConfigRequest update =
+        UpdateGenAiConfigRequest.newBuilder()
+            .setFeatureLevelConfigUpdate(featureLevelUpdate)
+            .build();
+
+    Optional<IssuesSummaryFeatureConfig> result = handler.getFeatureLevelConfigFromUpdate(update);
+
+    assertTrue(result.isPresent());
+    assertTrue(result.get().getEnabled());
+  }
+
+  @Test
+  void test_getFeatureLevelConfigFromUpdate_onlyFeatureLevelUpdate_noGlobalUpdate() {
+    IssuesSummaryFeatureConfig issuesFeatureConfig =
+        IssuesSummaryFeatureConfig.newBuilder().setEnabled(true).build();
+    FeatureLevelConfigUpdate featureLevelUpdate =
+        FeatureLevelConfigUpdate.newBuilder()
+            .setIssuesSummaryFeatureConfigUpdate(issuesFeatureConfig)
+            .build();
+
+    UpdateGenAiConfigRequest update =
+        UpdateGenAiConfigRequest.newBuilder()
+            .setFeatureLevelConfigUpdate(featureLevelUpdate)
+            .build();
+
+    Optional<IssuesSummaryFeatureConfig> result = handler.getFeatureLevelConfigFromUpdate(update);
+
+    assertTrue(result.isPresent());
+    assertTrue(result.get().getEnabled());
+    assertEquals(issuesFeatureConfig, result.get());
   }
 }

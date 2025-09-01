@@ -3,10 +3,13 @@ package ai.traceable.genai.config.service.v1.genai.config;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import ai.traceable.genai.config.service.v1.ChatbotFeatureConfig;
 import ai.traceable.genai.config.service.v1.GenAiConfig;
 import ai.traceable.genai.config.service.v1.GenAiFeatureConfigUpdate;
 import ai.traceable.genai.config.service.v1.IssuesSummaryFeatureConfig;
 import ai.traceable.genai.config.service.v1.ThreatActivitySummaryFeatureConfig;
+import ai.traceable.genai.config.service.v1.UpdateGenAiConfigRequest;
+import ai.traceable.genai.config.service.v1.feature.config.ChatbotFeatureConfigHandler;
 import ai.traceable.genai.config.service.v1.feature.config.GenAiFeatureConfigHandler;
 import ai.traceable.genai.config.service.v1.feature.config.IssuesSummaryFeatureConfigHandler;
 import ai.traceable.genai.config.service.v1.feature.config.ThreatActivitySummaryFeatureConfigHandler;
@@ -18,13 +21,16 @@ class GenAiConfigHandlerTest {
 
   private GenAiConfigHandler configHandler;
   private GenAiFeatureConfigHandler<IssuesSummaryFeatureConfig> issuesHandler;
-  private GenAiFeatureConfigHandler<ThreatActivitySummaryFeatureConfig> threatActivityHandler;
 
   @BeforeEach
   void setUp() {
     issuesHandler = new IssuesSummaryFeatureConfigHandler();
-    threatActivityHandler = new ThreatActivitySummaryFeatureConfigHandler();
-    configHandler = new GenAiConfigHandler(Set.of(issuesHandler, threatActivityHandler));
+    GenAiFeatureConfigHandler<ThreatActivitySummaryFeatureConfig> threatActivityHandler =
+        new ThreatActivitySummaryFeatureConfigHandler();
+    GenAiFeatureConfigHandler<ChatbotFeatureConfig> chatbotHandler =
+        new ChatbotFeatureConfigHandler();
+    configHandler =
+        new GenAiConfigHandler(Set.of(issuesHandler, threatActivityHandler, chatbotHandler));
   }
 
   @Test
@@ -83,8 +89,9 @@ class GenAiConfigHandlerTest {
         IssuesSummaryFeatureConfig.newBuilder().setEnabled(true).build();
     GenAiFeatureConfigUpdate update =
         GenAiFeatureConfigUpdate.newBuilder().setIssuesSummaryFeatureConfig(featureConfig).build();
-
-    GenAiConfig result = configHandler.getGenAiConfigFromUpdate(update);
+    UpdateGenAiConfigRequest request =
+        UpdateGenAiConfigRequest.newBuilder().setUpdate(update).build();
+    GenAiConfig result = configHandler.getGenAiConfigFromUpdate(request);
 
     assertTrue(result.hasIssuesSummaryFeatureConfig());
     assertTrue(result.getIssuesSummaryFeatureConfig().getEnabled());
@@ -93,10 +100,13 @@ class GenAiConfigHandlerTest {
   @Test
   void test_getGenAiConfigFromUpdate_whenUpdateDoesNotHaveConfig() {
     GenAiFeatureConfigUpdate update = GenAiFeatureConfigUpdate.getDefaultInstance();
+    UpdateGenAiConfigRequest request =
+        UpdateGenAiConfigRequest.newBuilder().setUpdate(update).build();
 
-    GenAiConfig result = configHandler.getGenAiConfigFromUpdate(update);
+    GenAiConfig result = configHandler.getGenAiConfigFromUpdate(request);
 
     assertFalse(result.hasIssuesSummaryFeatureConfig());
+    assertFalse(result.hasChatBotFeatureConfig());
   }
 
   @Test

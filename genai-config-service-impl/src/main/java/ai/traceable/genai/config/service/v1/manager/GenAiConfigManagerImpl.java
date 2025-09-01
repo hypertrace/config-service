@@ -1,8 +1,8 @@
 package ai.traceable.genai.config.service.v1.manager;
 
 import ai.traceable.genai.config.service.v1.GenAiConfig;
-import ai.traceable.genai.config.service.v1.GenAiFeatureConfigUpdate;
 import ai.traceable.genai.config.service.v1.GenAiScope;
+import ai.traceable.genai.config.service.v1.UpdateGenAiConfigRequest;
 import ai.traceable.genai.config.service.v1.genai.config.DefaultGenAiConfigProvider;
 import ai.traceable.genai.config.service.v1.genai.config.GenAiConfigHandler;
 import ai.traceable.genai.config.service.v1.store.GenAiConfigStore;
@@ -36,8 +36,8 @@ public class GenAiConfigManagerImpl implements GenAiConfigManager {
 
   @Override
   public GenAiConfig updateGenAiConfig(
-      RequestContext requestContext, GenAiScope scope, GenAiFeatureConfigUpdate update) {
-    GenAiConfig genAiConfigToUpdate = genAiConfigHandler.getGenAiConfigFromUpdate(update);
+      RequestContext requestContext, GenAiScope scope, UpdateGenAiConfigRequest request) {
+    GenAiConfig genAiConfigToUpdate = genAiConfigHandler.getGenAiConfigFromUpdate(request);
     Optional<GenAiConfig> configFromStoreOptional =
         genAiConfigStore.getGenAiConfigFromStore(requestContext, scope);
     GenAiConfig mergedConfigToUpdate = genAiConfigToUpdate;

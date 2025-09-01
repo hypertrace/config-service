@@ -8,13 +8,22 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.genai.config.service.v1.ChatbotFeatureConfig;
 import ai.traceable.genai.config.service.v1.EnvironmentScope;
+import ai.traceable.genai.config.service.v1.FeatureLevelConfigUpdate;
 import ai.traceable.genai.config.service.v1.GenAiConfig;
 import ai.traceable.genai.config.service.v1.GenAiFeatureConfigUpdate;
 import ai.traceable.genai.config.service.v1.GenAiScope;
+import ai.traceable.genai.config.service.v1.GlobalConfig;
+import ai.traceable.genai.config.service.v1.GlobalConfigUpdate;
 import ai.traceable.genai.config.service.v1.IssuesSummaryFeatureConfig;
+import ai.traceable.genai.config.service.v1.ThreatActivitySummaryFeatureConfig;
+import ai.traceable.genai.config.service.v1.UpdateGenAiConfigRequest;
+import ai.traceable.genai.config.service.v1.feature.config.ChatbotFeatureConfigHandler;
 import ai.traceable.genai.config.service.v1.feature.config.GenAiFeatureConfigHandler;
+import ai.traceable.genai.config.service.v1.feature.config.GlobalConfigHandler;
 import ai.traceable.genai.config.service.v1.feature.config.IssuesSummaryFeatureConfigHandler;
+import ai.traceable.genai.config.service.v1.feature.config.ThreatActivitySummaryFeatureConfigHandler;
 import ai.traceable.genai.config.service.v1.genai.config.DefaultGenAiConfigProvider;
 import ai.traceable.genai.config.service.v1.genai.config.GenAiConfigHandler;
 import ai.traceable.genai.config.service.v1.store.GenAiConfigConverter;
@@ -41,9 +50,16 @@ class GenAiConfigManagerImplTest {
 
   @BeforeEach
   void setUp() {
-    GenAiFeatureConfigHandler<IssuesSummaryFeatureConfig> handler =
+    GenAiFeatureConfigHandler<GlobalConfig> globalConfigHandler = new GlobalConfigHandler();
+    GenAiFeatureConfigHandler<IssuesSummaryFeatureConfig> issuesHandler =
         new IssuesSummaryFeatureConfigHandler();
-    GenAiConfigHandler genAiConfigHandler = new GenAiConfigHandler(Set.of(handler));
+    GenAiFeatureConfigHandler<ThreatActivitySummaryFeatureConfig> threatHandler =
+        new ThreatActivitySummaryFeatureConfigHandler();
+    GenAiFeatureConfigHandler<ChatbotFeatureConfig> chatbotHandler =
+        new ChatbotFeatureConfigHandler();
+    GenAiConfigHandler genAiConfigHandler =
+        new GenAiConfigHandler(
+            Set.of(globalConfigHandler, issuesHandler, threatHandler, chatbotHandler));
 
     ConfigServiceGrpc.ConfigServiceBlockingStub stub =
         mock(ConfigServiceGrpc.ConfigServiceBlockingStub.class);
@@ -68,8 +84,14 @@ class GenAiConfigManagerImplTest {
     GenAiConfig result = manager.getGenAiConfig(requestContext, defaultScope);
 
     assertNotNull(result);
+    assertTrue(result.hasGlobalConfig());
+    assertTrue(result.getGlobalConfig().getEnabled());
     assertTrue(result.hasIssuesSummaryFeatureConfig());
     assertTrue(result.getIssuesSummaryFeatureConfig().getEnabled());
+    assertTrue(result.hasThreatActivitySummaryFeatureConfig());
+    assertTrue(result.getThreatActivitySummaryFeatureConfig().getEnabled());
+    assertTrue(result.hasChatBotFeatureConfig());
+    assertTrue(result.getChatBotFeatureConfig().getEnabled());
     assertEquals(defaultScope, result.getScope());
   }
 
@@ -88,8 +110,12 @@ class GenAiConfigManagerImplTest {
     GenAiConfig result = manager.getGenAiConfig(requestContext, scope);
 
     assertNotNull(result);
+    assertTrue(result.hasGlobalConfig());
+    assertTrue(result.getGlobalConfig().getEnabled());
     assertTrue(result.hasIssuesSummaryFeatureConfig());
     assertTrue(result.getIssuesSummaryFeatureConfig().getEnabled());
+    assertTrue(result.hasThreatActivitySummaryFeatureConfig());
+    assertTrue(result.getThreatActivitySummaryFeatureConfig().getEnabled());
     assertEquals(scope, result.getScope());
   }
 
@@ -106,8 +132,14 @@ class GenAiConfigManagerImplTest {
     GenAiConfig result = manager.getGenAiConfig(requestContext, scope);
 
     assertNotNull(result);
+    assertTrue(result.hasGlobalConfig());
+    assertTrue(result.getGlobalConfig().getEnabled());
     assertTrue(result.hasIssuesSummaryFeatureConfig());
     assertTrue(result.getIssuesSummaryFeatureConfig().getEnabled());
+    assertTrue(result.hasThreatActivitySummaryFeatureConfig());
+    assertTrue(result.getThreatActivitySummaryFeatureConfig().getEnabled());
+    assertTrue(result.hasChatBotFeatureConfig());
+    assertTrue(result.getChatBotFeatureConfig().getEnabled());
     assertEquals(scope, result.getScope());
   }
 
@@ -122,12 +154,14 @@ class GenAiConfigManagerImplTest {
         IssuesSummaryFeatureConfig.newBuilder().setEnabled(true).build();
     GenAiFeatureConfigUpdate update =
         GenAiFeatureConfigUpdate.newBuilder().setIssuesSummaryFeatureConfig(featureConfig).build();
+    UpdateGenAiConfigRequest request =
+        UpdateGenAiConfigRequest.newBuilder().setScope(scope).setUpdate(update).build();
 
     GenAiConfig existingConfig = createGenAiConfig(false).toBuilder().setScope(scope).build();
     when(defaultGenAiConfigProvider.get()).thenReturn(createGenAiConfig(false));
     genAiConfigStore.upsertObject(requestContext, existingConfig);
 
-    GenAiConfig result = manager.updateGenAiConfig(requestContext, scope, update);
+    GenAiConfig result = manager.updateGenAiConfig(requestContext, scope, request);
 
     assertNotNull(result);
     assertTrue(result.hasIssuesSummaryFeatureConfig());
@@ -146,10 +180,12 @@ class GenAiConfigManagerImplTest {
         IssuesSummaryFeatureConfig.newBuilder().setEnabled(true).build();
     GenAiFeatureConfigUpdate update =
         GenAiFeatureConfigUpdate.newBuilder().setIssuesSummaryFeatureConfig(featureConfig).build();
+    UpdateGenAiConfigRequest request =
+        UpdateGenAiConfigRequest.newBuilder().setScope(scope).setUpdate(update).build();
 
     when(defaultGenAiConfigProvider.get()).thenReturn(createGenAiConfig(false));
 
-    GenAiConfig result = manager.updateGenAiConfig(requestContext, scope, update);
+    GenAiConfig result = manager.updateGenAiConfig(requestContext, scope, request);
 
     assertNotNull(result);
     assertTrue(result.hasIssuesSummaryFeatureConfig());
@@ -263,20 +299,24 @@ class GenAiConfigManagerImplTest {
             .setIssuesSummaryFeatureConfig(
                 IssuesSummaryFeatureConfig.newBuilder().setEnabled(true).build())
             .build();
+    UpdateGenAiConfigRequest request1 =
+        UpdateGenAiConfigRequest.newBuilder().setScope(scope).setUpdate(update1).build();
 
     GenAiFeatureConfigUpdate update2 =
         GenAiFeatureConfigUpdate.newBuilder()
             .setIssuesSummaryFeatureConfig(
                 IssuesSummaryFeatureConfig.newBuilder().setEnabled(false).build())
             .build();
+    UpdateGenAiConfigRequest request2 =
+        UpdateGenAiConfigRequest.newBuilder().setScope(scope).setUpdate(update2).build();
 
     when(defaultGenAiConfigProvider.get()).thenReturn(createGenAiConfig(false));
 
-    GenAiConfig result1 = manager.updateGenAiConfig(requestContext, scope, update1);
+    GenAiConfig result1 = manager.updateGenAiConfig(requestContext, scope, request1);
     assertTrue(result1.getIssuesSummaryFeatureConfig().getEnabled());
     assertEquals(scope, result1.getScope());
 
-    GenAiConfig result2 = manager.updateGenAiConfig(requestContext, scope, update2);
+    GenAiConfig result2 = manager.updateGenAiConfig(requestContext, scope, request2);
     assertFalse(result2.getIssuesSummaryFeatureConfig().getEnabled());
     assertEquals(scope, result2.getScope());
 
@@ -380,10 +420,862 @@ class GenAiConfigManagerImplTest {
     assertFalse(result2.getIssuesSummaryFeatureConfig().getEnabled());
   }
 
+  @Test
+  void test_getGenAiConfig_withDefaultDisabledConfig() {
+    GenAiScope defaultScope = GenAiScope.getDefaultInstance();
+    GenAiConfig defaultConfig = createDefaultDisabledConfig();
+    when(defaultGenAiConfigProvider.get()).thenReturn(defaultConfig);
+
+    GenAiConfig result = manager.getGenAiConfig(requestContext, defaultScope);
+
+    assertNotNull(result);
+    assertTrue(result.hasGlobalConfig());
+    assertFalse(result.getGlobalConfig().getEnabled());
+    assertTrue(result.hasIssuesSummaryFeatureConfig());
+    assertFalse(result.getIssuesSummaryFeatureConfig().getEnabled());
+    assertTrue(result.hasThreatActivitySummaryFeatureConfig());
+    assertFalse(result.getThreatActivitySummaryFeatureConfig().getEnabled());
+    assertEquals(defaultScope, result.getScope());
+  }
+
+  @Test
+  void test_updateGenAiConfig_globalConfigOnly() {
+    GenAiScope scope = GenAiScope.getDefaultInstance();
+
+    GlobalConfigUpdate globalConfigUpdate =
+        GlobalConfigUpdate.newBuilder().setEnabled(true).build();
+    UpdateGenAiConfigRequest request =
+        UpdateGenAiConfigRequest.newBuilder()
+            .setScope(scope)
+            .setGlobalConfigUpdate(globalConfigUpdate)
+            .build();
+
+    when(defaultGenAiConfigProvider.get()).thenReturn(createDefaultDisabledConfig());
+
+    GenAiConfig result = manager.updateGenAiConfig(requestContext, scope, request);
+
+    assertNotNull(result);
+    assertTrue(result.hasGlobalConfig());
+    assertTrue(result.getGlobalConfig().getEnabled());
+    assertTrue(result.hasIssuesSummaryFeatureConfig());
+    assertTrue(result.getIssuesSummaryFeatureConfig().getEnabled());
+    assertTrue(result.hasThreatActivitySummaryFeatureConfig());
+    assertTrue(result.getThreatActivitySummaryFeatureConfig().getEnabled());
+    assertEquals(scope, result.getScope());
+  }
+
+  @Test
+  void test_updateGenAiConfig_globalConfigDisableFromEnabled() {
+    GenAiScope scope = GenAiScope.getDefaultInstance();
+
+    GenAiConfig existingConfig = createGenAiConfig(true).toBuilder().setScope(scope).build();
+    genAiConfigStore.upsertObject(requestContext, existingConfig);
+
+    GlobalConfigUpdate globalConfigUpdate =
+        GlobalConfigUpdate.newBuilder().setEnabled(false).build();
+    UpdateGenAiConfigRequest request =
+        UpdateGenAiConfigRequest.newBuilder()
+            .setScope(scope)
+            .setGlobalConfigUpdate(globalConfigUpdate)
+            .build();
+
+    when(defaultGenAiConfigProvider.get()).thenReturn(createDefaultDisabledConfig());
+
+    GenAiConfig result = manager.updateGenAiConfig(requestContext, scope, request);
+
+    assertNotNull(result);
+    assertTrue(result.hasGlobalConfig());
+    assertFalse(result.getGlobalConfig().getEnabled());
+    assertTrue(result.hasIssuesSummaryFeatureConfig());
+    assertFalse(result.getIssuesSummaryFeatureConfig().getEnabled());
+    assertTrue(result.hasThreatActivitySummaryFeatureConfig());
+    assertFalse(result.getThreatActivitySummaryFeatureConfig().getEnabled());
+    assertEquals(scope, result.getScope());
+  }
+
+  @Test
+  void test_updateGenAiConfig_mixedFeatureAndGlobalUpdate() {
+    GenAiScope scope =
+        GenAiScope.newBuilder()
+            .setEnvironmentScope(EnvironmentScope.newBuilder().setEnvironmentId("env1").build())
+            .build();
+
+    IssuesSummaryFeatureConfig featureConfig =
+        IssuesSummaryFeatureConfig.newBuilder().setEnabled(true).build();
+    GenAiFeatureConfigUpdate featureUpdate =
+        GenAiFeatureConfigUpdate.newBuilder().setIssuesSummaryFeatureConfig(featureConfig).build();
+    GlobalConfigUpdate globalConfigUpdate =
+        GlobalConfigUpdate.newBuilder().setEnabled(true).build();
+
+    UpdateGenAiConfigRequest request =
+        UpdateGenAiConfigRequest.newBuilder()
+            .setScope(scope)
+            .setUpdate(featureUpdate)
+            .setGlobalConfigUpdate(globalConfigUpdate)
+            .build();
+
+    when(defaultGenAiConfigProvider.get()).thenReturn(createDefaultDisabledConfig());
+
+    GenAiConfig result = manager.updateGenAiConfig(requestContext, scope, request);
+
+    assertNotNull(result);
+    assertTrue(result.hasGlobalConfig());
+    assertTrue(result.getGlobalConfig().getEnabled());
+    assertTrue(result.hasIssuesSummaryFeatureConfig());
+    assertTrue(result.getIssuesSummaryFeatureConfig().getEnabled());
+    assertTrue(result.hasThreatActivitySummaryFeatureConfig());
+    assertTrue(result.getThreatActivitySummaryFeatureConfig().getEnabled());
+    assertEquals(scope, result.getScope());
+  }
+
+  @Test
+  void test_getGenAiConfig_hierarchyMerging_globalVsFeatureLevel() {
+    GenAiScope defaultScope = GenAiScope.getDefaultInstance();
+    GenAiConfig globalScopeConfig =
+        createConfigWithGlobalOnly(true).toBuilder().setScope(defaultScope).build();
+    genAiConfigStore.upsertObject(requestContext, globalScopeConfig);
+
+    GenAiScope envScope =
+        GenAiScope.newBuilder()
+            .setEnvironmentScope(EnvironmentScope.newBuilder().setEnvironmentId("env1").build())
+            .build();
+    GenAiConfig envScopeConfig =
+        GenAiConfig.newBuilder()
+            .setScope(envScope)
+            .setIssuesSummaryFeatureConfig(
+                IssuesSummaryFeatureConfig.newBuilder().setEnabled(true).build())
+            .build();
+    genAiConfigStore.upsertObject(requestContext, envScopeConfig);
+
+    when(defaultGenAiConfigProvider.get()).thenReturn(createDefaultDisabledConfig());
+
+    GenAiConfig result = manager.getGenAiConfig(requestContext, envScope);
+
+    assertNotNull(result);
+    assertTrue(result.hasGlobalConfig());
+    assertTrue(result.getGlobalConfig().getEnabled());
+    assertTrue(result.hasIssuesSummaryFeatureConfig());
+    assertTrue(result.getIssuesSummaryFeatureConfig().getEnabled());
+    assertTrue(result.hasThreatActivitySummaryFeatureConfig());
+    assertTrue(result.getThreatActivitySummaryFeatureConfig().getEnabled());
+    assertEquals(envScope, result.getScope());
+  }
+
+  @Test
+  void test_updateGenAiConfig_threatActivitySummaryFeature() {
+    GenAiScope scope =
+        GenAiScope.newBuilder()
+            .setEnvironmentScope(EnvironmentScope.newBuilder().setEnvironmentId("env1").build())
+            .build();
+
+    ThreatActivitySummaryFeatureConfig threatFeatureConfig =
+        ThreatActivitySummaryFeatureConfig.newBuilder().setEnabled(true).build();
+    GenAiFeatureConfigUpdate update =
+        GenAiFeatureConfigUpdate.newBuilder()
+            .setThreatActivitySummaryFeatureConfig(threatFeatureConfig)
+            .build();
+    UpdateGenAiConfigRequest request =
+        UpdateGenAiConfigRequest.newBuilder().setScope(scope).setUpdate(update).build();
+
+    when(defaultGenAiConfigProvider.get()).thenReturn(createDefaultDisabledConfig());
+
+    GenAiConfig result = manager.updateGenAiConfig(requestContext, scope, request);
+
+    assertNotNull(result);
+    assertTrue(result.hasGlobalConfig());
+    assertFalse(result.getGlobalConfig().getEnabled());
+    assertTrue(result.hasIssuesSummaryFeatureConfig());
+    assertFalse(result.getIssuesSummaryFeatureConfig().getEnabled());
+    assertTrue(result.hasThreatActivitySummaryFeatureConfig());
+    assertTrue(result.getThreatActivitySummaryFeatureConfig().getEnabled());
+    assertEquals(scope, result.getScope());
+  }
+
+  @Test
+  void test_updateGenAiConfig_allFeaturesEnabled() {
+    GenAiScope scope =
+        GenAiScope.newBuilder()
+            .setEnvironmentScope(EnvironmentScope.newBuilder().setEnvironmentId("env1").build())
+            .build();
+
+    IssuesSummaryFeatureConfig issuesFeatureConfig =
+        IssuesSummaryFeatureConfig.newBuilder().setEnabled(true).build();
+    ThreatActivitySummaryFeatureConfig threatFeatureConfig =
+        ThreatActivitySummaryFeatureConfig.newBuilder().setEnabled(true).build();
+    GenAiFeatureConfigUpdate featureUpdate =
+        GenAiFeatureConfigUpdate.newBuilder()
+            .setIssuesSummaryFeatureConfig(issuesFeatureConfig)
+            .setThreatActivitySummaryFeatureConfig(threatFeatureConfig)
+            .build();
+    GlobalConfigUpdate globalConfigUpdate =
+        GlobalConfigUpdate.newBuilder().setEnabled(true).build();
+
+    UpdateGenAiConfigRequest request =
+        UpdateGenAiConfigRequest.newBuilder()
+            .setScope(scope)
+            .setUpdate(featureUpdate)
+            .setGlobalConfigUpdate(globalConfigUpdate)
+            .build();
+
+    when(defaultGenAiConfigProvider.get()).thenReturn(createDefaultDisabledConfig());
+
+    GenAiConfig result = manager.updateGenAiConfig(requestContext, scope, request);
+
+    assertNotNull(result);
+    assertTrue(result.hasGlobalConfig());
+    assertTrue(result.getGlobalConfig().getEnabled());
+    assertTrue(result.hasIssuesSummaryFeatureConfig());
+    assertTrue(result.getIssuesSummaryFeatureConfig().getEnabled());
+    assertTrue(result.hasThreatActivitySummaryFeatureConfig());
+    assertTrue(result.getThreatActivitySummaryFeatureConfig().getEnabled());
+    assertEquals(scope, result.getScope());
+  }
+
+  @Test
+  void test_getGenAiConfig_partialFeatureOverride() {
+    GenAiScope scope =
+        GenAiScope.newBuilder()
+            .setEnvironmentScope(EnvironmentScope.newBuilder().setEnvironmentId("env1").build())
+            .build();
+
+    GenAiConfig partialConfig =
+        GenAiConfig.newBuilder()
+            .setScope(scope)
+            .setGlobalConfig(GlobalConfig.newBuilder().setEnabled(true).build())
+            .setIssuesSummaryFeatureConfig(
+                IssuesSummaryFeatureConfig.newBuilder().setEnabled(true).build())
+            .build();
+    genAiConfigStore.upsertObject(requestContext, partialConfig);
+
+    when(defaultGenAiConfigProvider.get()).thenReturn(createDefaultDisabledConfig());
+
+    GenAiConfig result = manager.getGenAiConfig(requestContext, scope);
+
+    assertNotNull(result);
+    assertTrue(result.hasGlobalConfig());
+    assertTrue(result.getGlobalConfig().getEnabled());
+    assertTrue(result.hasIssuesSummaryFeatureConfig());
+    assertTrue(result.getIssuesSummaryFeatureConfig().getEnabled());
+    assertTrue(result.hasThreatActivitySummaryFeatureConfig());
+    assertTrue(result.getThreatActivitySummaryFeatureConfig().getEnabled());
+    assertEquals(scope, result.getScope());
+  }
+
+  @Test
+  void test_backwardCompatibility_oldFeatureConfigUpdate() {
+    GenAiScope scope =
+        GenAiScope.newBuilder()
+            .setEnvironmentScope(EnvironmentScope.newBuilder().setEnvironmentId("env1").build())
+            .build();
+
+    IssuesSummaryFeatureConfig featureConfig =
+        IssuesSummaryFeatureConfig.newBuilder().setEnabled(true).build();
+    GenAiFeatureConfigUpdate update =
+        GenAiFeatureConfigUpdate.newBuilder().setIssuesSummaryFeatureConfig(featureConfig).build();
+    UpdateGenAiConfigRequest request =
+        UpdateGenAiConfigRequest.newBuilder().setScope(scope).setUpdate(update).build();
+
+    when(defaultGenAiConfigProvider.get()).thenReturn(createDefaultDisabledConfig());
+
+    GenAiConfig result = manager.updateGenAiConfig(requestContext, scope, request);
+
+    assertNotNull(result);
+    assertTrue(result.hasGlobalConfig());
+    assertFalse(result.getGlobalConfig().getEnabled());
+    assertTrue(result.hasIssuesSummaryFeatureConfig());
+    assertTrue(result.getIssuesSummaryFeatureConfig().getEnabled());
+    assertTrue(result.hasThreatActivitySummaryFeatureConfig());
+    assertFalse(result.getThreatActivitySummaryFeatureConfig().getEnabled());
+    assertEquals(scope, result.getScope());
+  }
+
+  @Test
+  void test_newFlow_globalConfigUpdate() {
+    GenAiScope scope =
+        GenAiScope.newBuilder()
+            .setEnvironmentScope(EnvironmentScope.newBuilder().setEnvironmentId("env1").build())
+            .build();
+
+    GlobalConfigUpdate globalConfigUpdate =
+        GlobalConfigUpdate.newBuilder().setEnabled(true).build();
+    UpdateGenAiConfigRequest request =
+        UpdateGenAiConfigRequest.newBuilder()
+            .setScope(scope)
+            .setGlobalConfigUpdate(globalConfigUpdate)
+            .build();
+
+    when(defaultGenAiConfigProvider.get()).thenReturn(createDefaultDisabledConfig());
+
+    GenAiConfig result = manager.updateGenAiConfig(requestContext, scope, request);
+
+    assertNotNull(result);
+    assertTrue(result.hasGlobalConfig());
+    assertTrue(result.getGlobalConfig().getEnabled());
+    assertTrue(result.hasIssuesSummaryFeatureConfig());
+    assertTrue(result.getIssuesSummaryFeatureConfig().getEnabled());
+    assertTrue(result.hasThreatActivitySummaryFeatureConfig());
+    assertTrue(result.getThreatActivitySummaryFeatureConfig().getEnabled());
+    assertEquals(scope, result.getScope());
+  }
+
+  @Test
+  void test_mixedFlow_bothUpdateTypes() {
+    GenAiScope scope =
+        GenAiScope.newBuilder()
+            .setEnvironmentScope(EnvironmentScope.newBuilder().setEnvironmentId("env1").build())
+            .build();
+
+    IssuesSummaryFeatureConfig issuesFeatureConfig =
+        IssuesSummaryFeatureConfig.newBuilder().setEnabled(true).build();
+    ThreatActivitySummaryFeatureConfig threatFeatureConfig =
+        ThreatActivitySummaryFeatureConfig.newBuilder().setEnabled(true).build();
+    GenAiFeatureConfigUpdate featureUpdate =
+        GenAiFeatureConfigUpdate.newBuilder()
+            .setIssuesSummaryFeatureConfig(issuesFeatureConfig)
+            .setThreatActivitySummaryFeatureConfig(threatFeatureConfig)
+            .build();
+    GlobalConfigUpdate globalConfigUpdate =
+        GlobalConfigUpdate.newBuilder().setEnabled(false).build();
+
+    UpdateGenAiConfigRequest request =
+        UpdateGenAiConfigRequest.newBuilder()
+            .setScope(scope)
+            .setUpdate(featureUpdate)
+            .setGlobalConfigUpdate(globalConfigUpdate)
+            .build();
+
+    when(defaultGenAiConfigProvider.get()).thenReturn(createDefaultDisabledConfig());
+
+    GenAiConfig result = manager.updateGenAiConfig(requestContext, scope, request);
+
+    assertNotNull(result);
+    assertTrue(result.hasGlobalConfig());
+    assertFalse(result.getGlobalConfig().getEnabled());
+    assertTrue(result.hasIssuesSummaryFeatureConfig());
+    assertFalse(result.getIssuesSummaryFeatureConfig().getEnabled());
+    assertTrue(result.hasThreatActivitySummaryFeatureConfig());
+    assertFalse(result.getThreatActivitySummaryFeatureConfig().getEnabled());
+    assertEquals(scope, result.getScope());
+  }
+
+  @Test
+  void test_defaultDisabledConfigFlow() {
+    GenAiScope scope =
+        GenAiScope.newBuilder()
+            .setEnvironmentScope(EnvironmentScope.newBuilder().setEnvironmentId("env1").build())
+            .build();
+
+    when(defaultGenAiConfigProvider.get()).thenReturn(createDefaultDisabledConfig());
+
+    GenAiConfig result = manager.getGenAiConfig(requestContext, scope);
+
+    assertNotNull(result);
+    assertTrue(result.hasGlobalConfig());
+    assertFalse(result.getGlobalConfig().getEnabled());
+    assertTrue(result.hasIssuesSummaryFeatureConfig());
+    assertFalse(result.getIssuesSummaryFeatureConfig().getEnabled());
+    assertTrue(result.hasThreatActivitySummaryFeatureConfig());
+    assertFalse(result.getThreatActivitySummaryFeatureConfig().getEnabled());
+    assertEquals(scope, result.getScope());
+  }
+
+  @Test
+  void test_getGenAiConfig_globalDisabledIssuesEnabledThreatDisabled() {
+    GenAiScope scope =
+        GenAiScope.newBuilder()
+            .setEnvironmentScope(EnvironmentScope.newBuilder().setEnvironmentId("env1").build())
+            .build();
+
+    GenAiConfig storedConfig =
+        GenAiConfig.newBuilder()
+            .setScope(scope)
+            .setGlobalConfig(GlobalConfig.newBuilder().setEnabled(false).build())
+            .setIssuesSummaryFeatureConfig(
+                IssuesSummaryFeatureConfig.newBuilder().setEnabled(true).build())
+            .setThreatActivitySummaryFeatureConfig(
+                ThreatActivitySummaryFeatureConfig.newBuilder().setEnabled(false).build())
+            .build();
+    genAiConfigStore.upsertObject(requestContext, storedConfig);
+
+    when(defaultGenAiConfigProvider.get()).thenReturn(createDefaultDisabledConfig());
+
+    GenAiConfig result = manager.getGenAiConfig(requestContext, scope);
+
+    assertNotNull(result);
+    assertTrue(result.hasGlobalConfig());
+    assertFalse(result.getGlobalConfig().getEnabled());
+    assertTrue(result.hasIssuesSummaryFeatureConfig());
+    assertTrue(result.getIssuesSummaryFeatureConfig().getEnabled());
+    assertTrue(result.hasThreatActivitySummaryFeatureConfig());
+    assertFalse(result.getThreatActivitySummaryFeatureConfig().getEnabled());
+    assertEquals(scope, result.getScope());
+  }
+
+  @Test
+  void test_updateGenAiConfig_newFlowIssuesUpdateWithExistingMixedConfig() {
+    GenAiScope scope =
+        GenAiScope.newBuilder()
+            .setEnvironmentScope(EnvironmentScope.newBuilder().setEnvironmentId("env1").build())
+            .build();
+
+    GenAiConfig existingConfig =
+        GenAiConfig.newBuilder()
+            .setScope(scope)
+            .setGlobalConfig(GlobalConfig.newBuilder().setEnabled(true).build())
+            .setIssuesSummaryFeatureConfig(
+                IssuesSummaryFeatureConfig.newBuilder().setEnabled(false).build())
+            .setThreatActivitySummaryFeatureConfig(
+                ThreatActivitySummaryFeatureConfig.newBuilder().setEnabled(true).build())
+            .build();
+    genAiConfigStore.upsertObject(requestContext, existingConfig);
+
+    IssuesSummaryFeatureConfig issuesFeatureConfig =
+        IssuesSummaryFeatureConfig.newBuilder().setEnabled(true).build();
+    GenAiFeatureConfigUpdate update =
+        GenAiFeatureConfigUpdate.newBuilder()
+            .setIssuesSummaryFeatureConfig(issuesFeatureConfig)
+            .build();
+    UpdateGenAiConfigRequest request =
+        UpdateGenAiConfigRequest.newBuilder().setScope(scope).setUpdate(update).build();
+
+    when(defaultGenAiConfigProvider.get()).thenReturn(createDefaultDisabledConfig());
+
+    GenAiConfig result = manager.updateGenAiConfig(requestContext, scope, request);
+
+    assertNotNull(result);
+    assertTrue(result.hasGlobalConfig());
+    assertTrue(result.getGlobalConfig().getEnabled());
+    assertTrue(result.hasIssuesSummaryFeatureConfig());
+    assertTrue(result.getIssuesSummaryFeatureConfig().getEnabled());
+    assertTrue(result.hasThreatActivitySummaryFeatureConfig());
+    assertTrue(result.getThreatActivitySummaryFeatureConfig().getEnabled());
+    assertEquals(scope, result.getScope());
+  }
+
+  @Test
+  void test_updateGenAiConfig_multipleFeaturesWithGlobalDisabledInStore() {
+    GenAiScope scope =
+        GenAiScope.newBuilder()
+            .setEnvironmentScope(EnvironmentScope.newBuilder().setEnvironmentId("env1").build())
+            .build();
+
+    GenAiConfig existingConfig =
+        GenAiConfig.newBuilder()
+            .setScope(scope)
+            .setGlobalConfig(GlobalConfig.newBuilder().setEnabled(false).build())
+            .setIssuesSummaryFeatureConfig(
+                IssuesSummaryFeatureConfig.newBuilder().setEnabled(false).build())
+            .setThreatActivitySummaryFeatureConfig(
+                ThreatActivitySummaryFeatureConfig.newBuilder().setEnabled(false).build())
+            .build();
+    genAiConfigStore.upsertObject(requestContext, existingConfig);
+
+    IssuesSummaryFeatureConfig issuesFeatureConfig =
+        IssuesSummaryFeatureConfig.newBuilder().setEnabled(true).build();
+    ThreatActivitySummaryFeatureConfig threatFeatureConfig =
+        ThreatActivitySummaryFeatureConfig.newBuilder().setEnabled(true).build();
+    GenAiFeatureConfigUpdate featureUpdate =
+        GenAiFeatureConfigUpdate.newBuilder()
+            .setIssuesSummaryFeatureConfig(issuesFeatureConfig)
+            .setThreatActivitySummaryFeatureConfig(threatFeatureConfig)
+            .build();
+
+    UpdateGenAiConfigRequest request =
+        UpdateGenAiConfigRequest.newBuilder().setScope(scope).setUpdate(featureUpdate).build();
+
+    when(defaultGenAiConfigProvider.get()).thenReturn(createDefaultDisabledConfig());
+
+    GenAiConfig result = manager.updateGenAiConfig(requestContext, scope, request);
+
+    assertNotNull(result);
+    assertTrue(result.hasGlobalConfig());
+    assertFalse(result.getGlobalConfig().getEnabled());
+    assertTrue(result.hasIssuesSummaryFeatureConfig());
+    assertTrue(result.getIssuesSummaryFeatureConfig().getEnabled());
+    assertTrue(result.hasThreatActivitySummaryFeatureConfig());
+    assertTrue(result.getThreatActivitySummaryFeatureConfig().getEnabled());
+    assertEquals(scope, result.getScope());
+  }
+
+  @Test
+  void test_updateGenAiConfig_multipleFeaturesWithGlobalEnabledInStore() {
+    GenAiScope scope =
+        GenAiScope.newBuilder()
+            .setEnvironmentScope(EnvironmentScope.newBuilder().setEnvironmentId("env1").build())
+            .build();
+
+    GenAiConfig existingConfig =
+        GenAiConfig.newBuilder()
+            .setScope(scope)
+            .setGlobalConfig(GlobalConfig.newBuilder().setEnabled(true).build())
+            .setIssuesSummaryFeatureConfig(
+                IssuesSummaryFeatureConfig.newBuilder().setEnabled(true).build())
+            .setThreatActivitySummaryFeatureConfig(
+                ThreatActivitySummaryFeatureConfig.newBuilder().setEnabled(true).build())
+            .build();
+    genAiConfigStore.upsertObject(requestContext, existingConfig);
+
+    IssuesSummaryFeatureConfig issuesFeatureConfig =
+        IssuesSummaryFeatureConfig.newBuilder().setEnabled(false).build();
+    ThreatActivitySummaryFeatureConfig threatFeatureConfig =
+        ThreatActivitySummaryFeatureConfig.newBuilder().setEnabled(false).build();
+    GenAiFeatureConfigUpdate featureUpdate =
+        GenAiFeatureConfigUpdate.newBuilder()
+            .setIssuesSummaryFeatureConfig(issuesFeatureConfig)
+            .setThreatActivitySummaryFeatureConfig(threatFeatureConfig)
+            .build();
+
+    UpdateGenAiConfigRequest request =
+        UpdateGenAiConfigRequest.newBuilder().setScope(scope).setUpdate(featureUpdate).build();
+
+    when(defaultGenAiConfigProvider.get()).thenReturn(createDefaultDisabledConfig());
+
+    GenAiConfig result = manager.updateGenAiConfig(requestContext, scope, request);
+
+    assertNotNull(result);
+    assertTrue(result.hasGlobalConfig());
+    assertTrue(result.getGlobalConfig().getEnabled());
+    assertTrue(result.hasIssuesSummaryFeatureConfig());
+    assertFalse(result.getIssuesSummaryFeatureConfig().getEnabled());
+    assertTrue(result.hasThreatActivitySummaryFeatureConfig());
+    assertFalse(result.getThreatActivitySummaryFeatureConfig().getEnabled());
+    assertEquals(scope, result.getScope());
+  }
+
+  @Test
+  void test_getGenAiConfig_partialConfigurationsInStore() {
+    GenAiScope scope =
+        GenAiScope.newBuilder()
+            .setEnvironmentScope(EnvironmentScope.newBuilder().setEnvironmentId("env1").build())
+            .build();
+
+    GenAiConfig partialConfig =
+        GenAiConfig.newBuilder()
+            .setScope(scope)
+            .setIssuesSummaryFeatureConfig(
+                IssuesSummaryFeatureConfig.newBuilder().setEnabled(true).build())
+            .build();
+    genAiConfigStore.upsertObject(requestContext, partialConfig);
+
+    when(defaultGenAiConfigProvider.get()).thenReturn(createDefaultDisabledConfig());
+
+    GenAiConfig result = manager.getGenAiConfig(requestContext, scope);
+
+    assertNotNull(result);
+    assertTrue(result.hasGlobalConfig());
+    assertFalse(result.getGlobalConfig().getEnabled());
+    assertTrue(result.hasIssuesSummaryFeatureConfig());
+    assertTrue(result.getIssuesSummaryFeatureConfig().getEnabled());
+    assertTrue(result.hasThreatActivitySummaryFeatureConfig());
+    assertFalse(result.getThreatActivitySummaryFeatureConfig().getEnabled());
+    assertEquals(scope, result.getScope());
+  }
+
+  @Test
+  void test_updateGenAiConfig_overridePartialExistingConfig() {
+    GenAiScope scope =
+        GenAiScope.newBuilder()
+            .setEnvironmentScope(EnvironmentScope.newBuilder().setEnvironmentId("env1").build())
+            .build();
+
+    GenAiConfig existingPartialConfig =
+        GenAiConfig.newBuilder()
+            .setScope(scope)
+            .setThreatActivitySummaryFeatureConfig(
+                ThreatActivitySummaryFeatureConfig.newBuilder().setEnabled(true).build())
+            .build();
+    genAiConfigStore.upsertObject(requestContext, existingPartialConfig);
+
+    GlobalConfigUpdate globalConfigUpdate =
+        GlobalConfigUpdate.newBuilder().setEnabled(true).build();
+    IssuesSummaryFeatureConfig issuesFeatureConfig =
+        IssuesSummaryFeatureConfig.newBuilder().setEnabled(true).build();
+    GenAiFeatureConfigUpdate featureUpdate =
+        GenAiFeatureConfigUpdate.newBuilder()
+            .setIssuesSummaryFeatureConfig(issuesFeatureConfig)
+            .build();
+
+    UpdateGenAiConfigRequest request =
+        UpdateGenAiConfigRequest.newBuilder()
+            .setScope(scope)
+            .setGlobalConfigUpdate(globalConfigUpdate)
+            .setUpdate(featureUpdate)
+            .build();
+
+    when(defaultGenAiConfigProvider.get()).thenReturn(createDefaultDisabledConfig());
+
+    GenAiConfig result = manager.updateGenAiConfig(requestContext, scope, request);
+
+    assertNotNull(result);
+    assertTrue(result.hasGlobalConfig());
+    assertTrue(result.getGlobalConfig().getEnabled());
+    assertTrue(result.hasIssuesSummaryFeatureConfig());
+    assertTrue(result.getIssuesSummaryFeatureConfig().getEnabled());
+    assertTrue(result.hasThreatActivitySummaryFeatureConfig());
+    assertTrue(result.getThreatActivitySummaryFeatureConfig().getEnabled());
+    assertEquals(scope, result.getScope());
+  }
+
+  @Test
+  void test_updateGenAiConfig_featureLevelConfigUpdate_issuesOnly() {
+    GenAiScope scope =
+        GenAiScope.newBuilder()
+            .setEnvironmentScope(EnvironmentScope.newBuilder().setEnvironmentId("env1").build())
+            .build();
+
+    IssuesSummaryFeatureConfig issuesFeatureConfig =
+        IssuesSummaryFeatureConfig.newBuilder().setEnabled(true).build();
+    FeatureLevelConfigUpdate featureLevelUpdate =
+        FeatureLevelConfigUpdate.newBuilder()
+            .setIssuesSummaryFeatureConfigUpdate(issuesFeatureConfig)
+            .build();
+    UpdateGenAiConfigRequest request =
+        UpdateGenAiConfigRequest.newBuilder()
+            .setScope(scope)
+            .setFeatureLevelConfigUpdate(featureLevelUpdate)
+            .build();
+
+    when(defaultGenAiConfigProvider.get()).thenReturn(createDefaultDisabledConfig());
+
+    GenAiConfig result = manager.updateGenAiConfig(requestContext, scope, request);
+
+    assertNotNull(result);
+    assertTrue(result.hasGlobalConfig());
+    assertFalse(result.getGlobalConfig().getEnabled());
+    assertTrue(result.hasIssuesSummaryFeatureConfig());
+    assertTrue(result.getIssuesSummaryFeatureConfig().getEnabled());
+    assertTrue(result.hasThreatActivitySummaryFeatureConfig());
+    assertFalse(result.getThreatActivitySummaryFeatureConfig().getEnabled());
+    assertEquals(scope, result.getScope());
+  }
+
+  @Test
+  void test_updateGenAiConfig_featureLevelConfigUpdate_threatOnly() {
+    GenAiScope scope =
+        GenAiScope.newBuilder()
+            .setEnvironmentScope(EnvironmentScope.newBuilder().setEnvironmentId("env1").build())
+            .build();
+
+    ThreatActivitySummaryFeatureConfig threatFeatureConfig =
+        ThreatActivitySummaryFeatureConfig.newBuilder().setEnabled(true).build();
+    FeatureLevelConfigUpdate featureLevelUpdate =
+        FeatureLevelConfigUpdate.newBuilder()
+            .setThreatActivitySummaryFeatureConfigUpdate(threatFeatureConfig)
+            .build();
+    UpdateGenAiConfigRequest request =
+        UpdateGenAiConfigRequest.newBuilder()
+            .setScope(scope)
+            .setFeatureLevelConfigUpdate(featureLevelUpdate)
+            .build();
+
+    when(defaultGenAiConfigProvider.get()).thenReturn(createDefaultDisabledConfig());
+
+    GenAiConfig result = manager.updateGenAiConfig(requestContext, scope, request);
+
+    assertNotNull(result);
+    assertTrue(result.hasGlobalConfig());
+    assertFalse(result.getGlobalConfig().getEnabled());
+    assertTrue(result.hasIssuesSummaryFeatureConfig());
+    assertFalse(result.getIssuesSummaryFeatureConfig().getEnabled());
+    assertTrue(result.hasThreatActivitySummaryFeatureConfig());
+    assertTrue(result.getThreatActivitySummaryFeatureConfig().getEnabled());
+    assertEquals(scope, result.getScope());
+  }
+
+  @Test
+  void test_updateGenAiConfig_featureLevelConfigUpdate_bothFeatures() {
+    GenAiScope scope =
+        GenAiScope.newBuilder()
+            .setEnvironmentScope(EnvironmentScope.newBuilder().setEnvironmentId("env1").build())
+            .build();
+
+    IssuesSummaryFeatureConfig issuesFeatureConfig =
+        IssuesSummaryFeatureConfig.newBuilder().setEnabled(true).build();
+    ThreatActivitySummaryFeatureConfig threatFeatureConfig =
+        ThreatActivitySummaryFeatureConfig.newBuilder().setEnabled(false).build();
+    FeatureLevelConfigUpdate featureLevelUpdate =
+        FeatureLevelConfigUpdate.newBuilder()
+            .setIssuesSummaryFeatureConfigUpdate(issuesFeatureConfig)
+            .setThreatActivitySummaryFeatureConfigUpdate(threatFeatureConfig)
+            .build();
+    UpdateGenAiConfigRequest request =
+        UpdateGenAiConfigRequest.newBuilder()
+            .setScope(scope)
+            .setFeatureLevelConfigUpdate(featureLevelUpdate)
+            .build();
+
+    when(defaultGenAiConfigProvider.get()).thenReturn(createDefaultDisabledConfig());
+
+    GenAiConfig result = manager.updateGenAiConfig(requestContext, scope, request);
+
+    assertNotNull(result);
+    assertTrue(result.hasGlobalConfig());
+    assertFalse(result.getGlobalConfig().getEnabled());
+    assertTrue(result.hasIssuesSummaryFeatureConfig());
+    assertTrue(result.getIssuesSummaryFeatureConfig().getEnabled());
+    assertTrue(result.hasThreatActivitySummaryFeatureConfig());
+    assertFalse(result.getThreatActivitySummaryFeatureConfig().getEnabled());
+    assertEquals(scope, result.getScope());
+  }
+
+  @Test
+  void test_updateGenAiConfig_featureLevelConfigUpdate_withExistingMixedStore() {
+    GenAiScope scope =
+        GenAiScope.newBuilder()
+            .setEnvironmentScope(EnvironmentScope.newBuilder().setEnvironmentId("env1").build())
+            .build();
+
+    GenAiConfig existingConfig =
+        GenAiConfig.newBuilder()
+            .setScope(scope)
+            .setGlobalConfig(GlobalConfig.newBuilder().setEnabled(true).build())
+            .setIssuesSummaryFeatureConfig(
+                IssuesSummaryFeatureConfig.newBuilder().setEnabled(true).build())
+            .setThreatActivitySummaryFeatureConfig(
+                ThreatActivitySummaryFeatureConfig.newBuilder().setEnabled(false).build())
+            .build();
+    genAiConfigStore.upsertObject(requestContext, existingConfig);
+
+    ThreatActivitySummaryFeatureConfig threatFeatureConfig =
+        ThreatActivitySummaryFeatureConfig.newBuilder().setEnabled(true).build();
+    FeatureLevelConfigUpdate featureLevelUpdate =
+        FeatureLevelConfigUpdate.newBuilder()
+            .setThreatActivitySummaryFeatureConfigUpdate(threatFeatureConfig)
+            .build();
+    UpdateGenAiConfigRequest request =
+        UpdateGenAiConfigRequest.newBuilder()
+            .setScope(scope)
+            .setFeatureLevelConfigUpdate(featureLevelUpdate)
+            .build();
+
+    when(defaultGenAiConfigProvider.get()).thenReturn(createDefaultDisabledConfig());
+
+    GenAiConfig result = manager.updateGenAiConfig(requestContext, scope, request);
+
+    assertNotNull(result);
+    assertTrue(result.hasGlobalConfig());
+    assertTrue(result.getGlobalConfig().getEnabled());
+    assertTrue(result.hasIssuesSummaryFeatureConfig());
+    assertTrue(result.getIssuesSummaryFeatureConfig().getEnabled());
+    assertTrue(result.hasThreatActivitySummaryFeatureConfig());
+    assertTrue(result.getThreatActivitySummaryFeatureConfig().getEnabled());
+    assertEquals(scope, result.getScope());
+  }
+
+  @Test
+  void test_updateGenAiConfig_featureLevelVsDeprecatedFlowPriority() {
+    GenAiScope scope =
+        GenAiScope.newBuilder()
+            .setEnvironmentScope(EnvironmentScope.newBuilder().setEnvironmentId("env1").build())
+            .build();
+
+    IssuesSummaryFeatureConfig deprecatedFlowConfig =
+        IssuesSummaryFeatureConfig.newBuilder().setEnabled(true).build();
+    GenAiFeatureConfigUpdate deprecatedUpdate =
+        GenAiFeatureConfigUpdate.newBuilder()
+            .setIssuesSummaryFeatureConfig(deprecatedFlowConfig)
+            .build();
+
+    IssuesSummaryFeatureConfig newFlowConfig =
+        IssuesSummaryFeatureConfig.newBuilder().setEnabled(false).build();
+    FeatureLevelConfigUpdate featureLevelUpdate =
+        FeatureLevelConfigUpdate.newBuilder()
+            .setIssuesSummaryFeatureConfigUpdate(newFlowConfig)
+            .build();
+
+    UpdateGenAiConfigRequest request =
+        UpdateGenAiConfigRequest.newBuilder()
+            .setScope(scope)
+            .setUpdate(deprecatedUpdate)
+            .setFeatureLevelConfigUpdate(featureLevelUpdate)
+            .build();
+
+    when(defaultGenAiConfigProvider.get()).thenReturn(createDefaultDisabledConfig());
+
+    GenAiConfig result = manager.updateGenAiConfig(requestContext, scope, request);
+
+    assertNotNull(result);
+    assertTrue(result.hasGlobalConfig());
+    assertFalse(result.getGlobalConfig().getEnabled());
+    assertTrue(result.hasIssuesSummaryFeatureConfig());
+    assertFalse(result.getIssuesSummaryFeatureConfig().getEnabled());
+    assertTrue(result.hasThreatActivitySummaryFeatureConfig());
+    assertFalse(result.getThreatActivitySummaryFeatureConfig().getEnabled());
+    assertEquals(scope, result.getScope());
+  }
+
+  @Test
+  void test_updateGenAiConfig_featureLevelConfigUpdate_disableFeatures() {
+    GenAiScope scope =
+        GenAiScope.newBuilder()
+            .setEnvironmentScope(EnvironmentScope.newBuilder().setEnvironmentId("env1").build())
+            .build();
+
+    GenAiConfig existingConfig =
+        GenAiConfig.newBuilder()
+            .setScope(scope)
+            .setGlobalConfig(GlobalConfig.newBuilder().setEnabled(true).build())
+            .setIssuesSummaryFeatureConfig(
+                IssuesSummaryFeatureConfig.newBuilder().setEnabled(true).build())
+            .setThreatActivitySummaryFeatureConfig(
+                ThreatActivitySummaryFeatureConfig.newBuilder().setEnabled(true).build())
+            .build();
+    genAiConfigStore.upsertObject(requestContext, existingConfig);
+
+    IssuesSummaryFeatureConfig issuesFeatureConfig =
+        IssuesSummaryFeatureConfig.newBuilder().setEnabled(false).build();
+    ThreatActivitySummaryFeatureConfig threatFeatureConfig =
+        ThreatActivitySummaryFeatureConfig.newBuilder().setEnabled(false).build();
+    FeatureLevelConfigUpdate featureLevelUpdate =
+        FeatureLevelConfigUpdate.newBuilder()
+            .setIssuesSummaryFeatureConfigUpdate(issuesFeatureConfig)
+            .setThreatActivitySummaryFeatureConfigUpdate(threatFeatureConfig)
+            .build();
+
+    UpdateGenAiConfigRequest request =
+        UpdateGenAiConfigRequest.newBuilder()
+            .setScope(scope)
+            .setFeatureLevelConfigUpdate(featureLevelUpdate)
+            .build();
+
+    when(defaultGenAiConfigProvider.get()).thenReturn(createDefaultDisabledConfig());
+
+    GenAiConfig result = manager.updateGenAiConfig(requestContext, scope, request);
+
+    assertNotNull(result);
+    assertTrue(result.hasGlobalConfig());
+    assertTrue(result.getGlobalConfig().getEnabled());
+    assertTrue(result.hasIssuesSummaryFeatureConfig());
+    assertFalse(result.getIssuesSummaryFeatureConfig().getEnabled());
+    assertTrue(result.hasThreatActivitySummaryFeatureConfig());
+    assertFalse(result.getThreatActivitySummaryFeatureConfig().getEnabled());
+    assertEquals(scope, result.getScope());
+  }
+
   private GenAiConfig createGenAiConfig(boolean enabled) {
     return GenAiConfig.newBuilder()
+        .setGlobalConfig(GlobalConfig.newBuilder().setEnabled(enabled).build())
         .setIssuesSummaryFeatureConfig(
             IssuesSummaryFeatureConfig.newBuilder().setEnabled(enabled).build())
+        .setThreatActivitySummaryFeatureConfig(
+            ThreatActivitySummaryFeatureConfig.newBuilder().setEnabled(enabled).build())
+        .setChatBotFeatureConfig(ChatbotFeatureConfig.newBuilder().setEnabled(enabled).build())
+        .build();
+  }
+
+  private GenAiConfig createDefaultDisabledConfig() {
+    return GenAiConfig.newBuilder()
+        .setGlobalConfig(GlobalConfig.newBuilder().setEnabled(false).build())
+        .setIssuesSummaryFeatureConfig(
+            IssuesSummaryFeatureConfig.newBuilder().setEnabled(false).build())
+        .setThreatActivitySummaryFeatureConfig(
+            ThreatActivitySummaryFeatureConfig.newBuilder().setEnabled(false).build())
+        .build();
+  }
+
+  private GenAiConfig createConfigWithGlobalOnly(boolean globalEnabled) {
+    return GenAiConfig.newBuilder()
+        .setGlobalConfig(GlobalConfig.newBuilder().setEnabled(globalEnabled).build())
         .build();
   }
 }

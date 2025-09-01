@@ -11,7 +11,21 @@ message GetGenAiConfigRequest {
 
 message UpdateGenAiConfigRequest {
   GenAiScope scope = 1;
-  GenAiFeatureConfigUpdate update = 2;
+  oneof config_update {
+    GlobalConfigUpdate global_config_update = 3;
+    FeatureLevelConfigUpdate feature_level_config_update = 4;
+  }
+  GenAiFeatureConfigUpdate update = 2 [deprecated = true];
+}
+
+message GlobalConfigUpdate {
+  bool enabled = 1;
+}
+
+message FeatureLevelConfigUpdate {
+  IssuesSummaryFeatureConfig issues_summary_feature_config_update = 1;
+  ThreatActivitySummaryFeatureConfig threat_activity_summary_feature_config_update = 2;
+  ChatbotFeatureConfig chatbot_feature_config_update = 3;
 }
 
 message GenAiFeatureConfigUpdate {

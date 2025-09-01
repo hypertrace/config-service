@@ -40,8 +40,7 @@ public class GenAiConfigServiceImpl extends GenAiConfigServiceGrpc.GenAiConfigSe
     RequestContext requestContext = RequestContext.CURRENT.get();
     try {
       GenAiConfig genAiConfig =
-          genAiConfigManager.updateGenAiConfig(
-              requestContext, request.getScope(), request.getUpdate());
+          genAiConfigManager.updateGenAiConfig(requestContext, request.getScope(), request);
       responseObserver.onNext(
           UpdateGenAiConfigResponse.newBuilder().setGenAiConfig(genAiConfig).build());
       responseObserver.onCompleted();

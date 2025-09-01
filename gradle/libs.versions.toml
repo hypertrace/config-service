@@ -1,11 +1,9 @@
 [libraries]
-hypertrace-configservice-server = { module = "org.hypertrace.config.service:config-service" }
 hypertrace-configservice-impl = { module = "org.hypertrace.config.service:config-service-impl" }
 hypertrace-configservice-api = { module = "org.hypertrace.config.service:config-service-api" }
 hypertrace-configservice-labelsConfigServiceApi = { module = "org.hypertrace.config.service:labels-config-service-api" }
 hypertrace-configservice-alerting-api = { module = "org.hypertrace.config.service:alerting-config-service-api" }
 hypertrace-configservice-notification-rule-impl = { module = "org.hypertrace.config.service:notification-rule-config-service-impl" }
-hypertrace-configservice-notification-channel-impl = { module = "org.hypertrace.config.service:notification-channel-config-service-impl" }
 hypertrace-configservice-span-processing-api = { module = "org.hypertrace.config.service:span-processing-config-service-api" }
 hypertrace-configservice-protoconverter = { module = "org.hypertrace.config.service:config-proto-converter" }
 hypertrace-configservice-objectstore = { module = "org.hypertrace.config.service:config-object-store" }

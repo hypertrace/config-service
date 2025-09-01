@@ -39,4 +39,18 @@ class DefaultGenAiConfigProviderTest {
     assertTrue(config.hasIssuesSummaryFeatureConfig());
     assertFalse(config.getIssuesSummaryFeatureConfig().getEnabled());
   }
+
+  @Test
+  void test_get_configServiceConfigExists_chatbotFeatureConfig() {
+    Config mockConfig =
+        ConfigFactory.parseString(
+            "{\n" + "  chatBotFeatureConfig: {\n" + "    enabled: true\n" + "  }\n" + "}");
+
+    when(configServiceConfig.getGenAiConfig()).thenReturn(mockConfig);
+    GenAiConfig config = provider.get();
+
+    assertNotNull(config);
+    assertTrue(config.hasChatBotFeatureConfig());
+    assertTrue(config.getChatBotFeatureConfig().getEnabled());
+  }
 }

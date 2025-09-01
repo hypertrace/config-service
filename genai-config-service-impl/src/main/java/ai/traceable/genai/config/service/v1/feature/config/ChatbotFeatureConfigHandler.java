@@ -1,15 +1,15 @@
 package ai.traceable.genai.config.service.v1.feature.config;
 
+import ai.traceable.genai.config.service.v1.ChatbotFeatureConfig;
 import ai.traceable.genai.config.service.v1.GenAiConfig;
 import ai.traceable.genai.config.service.v1.GenAiFeatureConfigUpdate;
-import ai.traceable.genai.config.service.v1.IssuesSummaryFeatureConfig;
 import ai.traceable.genai.config.service.v1.UpdateGenAiConfigRequest;
 import java.util.Optional;
 
-public class IssuesSummaryFeatureConfigHandler
-    implements GenAiFeatureConfigHandler<IssuesSummaryFeatureConfig> {
+public class ChatbotFeatureConfigHandler
+    implements GenAiFeatureConfigHandler<ChatbotFeatureConfig> {
 
-  private static final String FEATURE_NAME = "issues_summary_feature_config";
+  private static final String FEATURE_NAME = "chat_bot_feature_config";
 
   @Override
   public String getFeatureName() {
@@ -17,23 +17,23 @@ public class IssuesSummaryFeatureConfigHandler
   }
 
   @Override
-  public Optional<IssuesSummaryFeatureConfig> mergeConfigs(
+  public Optional<ChatbotFeatureConfig> mergeConfigs(
       GenAiConfig highPriorityConfig, GenAiConfig lowPriorityConfig) {
-    if (highPriorityConfig.hasIssuesSummaryFeatureConfig()) {
-      return Optional.of(highPriorityConfig.getIssuesSummaryFeatureConfig());
+    if (highPriorityConfig.hasChatBotFeatureConfig()) {
+      return Optional.of(highPriorityConfig.getChatBotFeatureConfig());
     }
     if (highPriorityConfig.hasGlobalConfig()) {
       return Optional.of(
-          IssuesSummaryFeatureConfig.newBuilder()
+          ChatbotFeatureConfig.newBuilder()
               .setEnabled(highPriorityConfig.getGlobalConfig().getEnabled())
               .build());
     }
-    if (lowPriorityConfig.hasIssuesSummaryFeatureConfig()) {
-      return Optional.of(lowPriorityConfig.getIssuesSummaryFeatureConfig());
+    if (lowPriorityConfig.hasChatBotFeatureConfig()) {
+      return Optional.of(lowPriorityConfig.getChatBotFeatureConfig());
     }
     if (lowPriorityConfig.hasGlobalConfig()) {
       return Optional.of(
-          IssuesSummaryFeatureConfig.newBuilder()
+          ChatbotFeatureConfig.newBuilder()
               .setEnabled(lowPriorityConfig.getGlobalConfig().getEnabled())
               .build());
     }
@@ -41,27 +41,24 @@ public class IssuesSummaryFeatureConfigHandler
   }
 
   @Override
-  public Optional<IssuesSummaryFeatureConfig> getFeatureConfigFromUpdate(
+  public Optional<ChatbotFeatureConfig> getFeatureConfigFromUpdate(
       GenAiFeatureConfigUpdate featureConfigUpdate) {
-    if (featureConfigUpdate.hasIssuesSummaryFeatureConfig()) {
-      return Optional.of(featureConfigUpdate.getIssuesSummaryFeatureConfig());
-    }
     return Optional.empty();
   }
 
   @Override
-  public Optional<IssuesSummaryFeatureConfig> getFeatureLevelConfigFromUpdate(
+  public Optional<ChatbotFeatureConfig> getFeatureLevelConfigFromUpdate(
       UpdateGenAiConfigRequest configUpdate) {
     if (configUpdate.hasGlobalConfigUpdate()) {
       return Optional.of(
-          IssuesSummaryFeatureConfig.newBuilder()
+          ChatbotFeatureConfig.newBuilder()
               .setEnabled(configUpdate.getGlobalConfigUpdate().getEnabled())
               .build());
     }
     if (configUpdate.hasFeatureLevelConfigUpdate()
-        && configUpdate.getFeatureLevelConfigUpdate().hasIssuesSummaryFeatureConfigUpdate()) {
+        && configUpdate.getFeatureLevelConfigUpdate().hasChatbotFeatureConfigUpdate()) {
       return Optional.of(
-          configUpdate.getFeatureLevelConfigUpdate().getIssuesSummaryFeatureConfigUpdate());
+          configUpdate.getFeatureLevelConfigUpdate().getChatbotFeatureConfigUpdate());
     }
     return Optional.empty();
   }
