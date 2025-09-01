@@ -6,6 +6,7 @@ plugins {
 
 dependencies {
   implementation(projects.configUtils)
+  implementation(projects.entityFetcherCache)
   implementation(projects.anomalyConfigServiceApi)
   implementation(projects.traceableEdgeConfigServiceApi)
   implementation(projects.cloudBotDeploymentConfigServiceApi)
@@ -21,6 +22,7 @@ dependencies {
 
   implementation(commonLibs.guice7)
   implementation(commonLibs.slf4j2.api)
+  implementation(commonLibs.jackson.databind)
   implementation(commonLibs.traceable.protection.rules.filtering)
   implementation(commonLibs.traceable.protection.engine.config.filtering)
 
