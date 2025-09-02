@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package ai.traceable.fraud.policy.config.service.v1;
+
+option java_multiple_files = true;
+
+enum Source {
+  SOURCE_UNSPECIFIED = 0;
+  SOURCE_FRAUD_POLICY = 1;
+  SOURCE_INCIDENT = 2;
+}
+
+enum SummaryFormat {
+  SUMMARY_FORMAT_UNSPECIFIED = 0;
+  SUMMARY_FORMAT_STRING = 1;
+  SUMMARY_FORMAT_UNSTRUCTURED_LIST = 2;
+  SUMMARY_FORMAT_STRUCTURED_LIST = 3;
+}
+
+message SummaryPlaceholder {
+  Source source = 1;
+  string fqn = 2;
+  SummaryFormat format = 3;
+}
+
+enum ThreatSummaryMode {
+  THREAT_SUMMARY_MODE_UNSPECIFIED = 0;
+  THREAT_SUMMARY_MODE_LLM = 1; // llm - call llm
+  THREAT_SUMMARY_MODE_STATIC = 2; // static - aggregate information from primary threats/tags
+}
+
+message ThreatSummaryConfig {
+  string summary_text = 1;
+  ThreatSummaryMode mode = 2;
+  map<string, SummaryPlaceholder> placeholders = 3;
+}

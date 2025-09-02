@@ -4,6 +4,7 @@ package ai.traceable.fraud.policy.config.service.v1;
 
 import "ai/traceable/fraud/datamodel/config/service/v1/fraud_datamodel.proto";
 import "ai/traceable/fraud/policy/config/service/v1/incident_config.proto";
+import "ai/traceable/fraud/policy/config/service/v1/threat_summary_config.proto";
 import "ai/traceable/fraud/policy/config/service/v1/time_object.proto";
 import "ai/traceable/fraud/policy/config/service/v1/triage_config.proto";
 import "ai/traceable/fraud/query/model/v1/fraud_data_query.proto";
@@ -184,6 +185,7 @@ message FraudPolicy {
   // store context information about substitution variables (used in
   // conjunction with template id)
   repeated ai.traceable.fraud.query.model.v1.TypedParam template_overrides = 104;
+  ThreatSummaryConfig threat_summary_config = 105;
 }
 
 message FraudWatcherPolicy {
