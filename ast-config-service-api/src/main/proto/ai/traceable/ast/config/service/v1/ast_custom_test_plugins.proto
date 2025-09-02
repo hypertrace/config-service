@@ -39,6 +39,7 @@ message CreateCustomTestPlugin {
   repeated string potential_generated_vulnerability_types = 8;
   SampleData sample_data = 9;
   repeated ApiType supported_api_types = 10;
+  PluginScope plugin_scope = 12;
 }
 
 enum ApiType {

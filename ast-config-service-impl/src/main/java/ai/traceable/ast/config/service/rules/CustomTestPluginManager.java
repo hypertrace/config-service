@@ -103,6 +103,7 @@ public class CustomTestPluginManager {
                 createCustomTestPlugin.getSupportedApiTypesList().isEmpty()
                     ? DEFAULT_SUPPORTED_API_TYPES
                     : createCustomTestPlugin.getSupportedApiTypesList())
+            .setPluginScope(createCustomTestPlugin.getPluginScope())
             .build();
 
     return customTestPluginStore.upsertObject(requestContext, createdCustomTestPlugin).getData();
