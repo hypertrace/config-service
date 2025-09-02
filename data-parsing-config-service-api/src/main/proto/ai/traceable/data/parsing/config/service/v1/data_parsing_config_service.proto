@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package ai.traceable.data.parsing.config.service.v1;
+
+import "ai/traceable/data/parsing/config/service/v1/data_parsing_config.proto";
+
+option java_multiple_files = true;
+
+service DataParsingConfigService {
+  rpc CreateDataParsingRule(CreateDataParsingRuleRequest) returns (CreateDataParsingRuleResponse) {}
+  rpc UpdateDataParsingRule(UpdateDataParsingRuleRequest) returns (UpdateDataParsingRuleResponse) {}
+  rpc DeleteDataParsingRule(DeleteDataParsingRuleRequest) returns (DeleteDataParsingRuleResponse) {}
+  rpc GetDataParsingRules(GetDataParsingRulesRequest) returns (GetDataParsingRulesResponse) {}
+  rpc RankDataParsingConfig(RankDataParsingConfigRequest) returns (RankDataParsingConfigResponse) {}
+}
+
+message CreateDataParsingRuleRequest {
+  DataParsingRule data_parsing_rule = 1;
+}
+
+message CreateDataParsingRuleResponse {
+  DataParsingConfig data_parsing_config = 1;
+}
+
+message UpdateDataParsingRuleRequest {
+  string id = 1;
+  DataParsingRule data_parsing_rule = 3;
+}
+
+message UpdateDataParsingRuleResponse {
+  DataParsingConfig data_parsing_config = 1;
+}
+
+message GetDataParsingRulesRequest {
+  GetDataParsingRulesFilter filter = 1;
+}
+
+message GetDataParsingRulesFilter {
+  repeated string ids = 1;
+  repeated string environment_ids = 2;
+  optional bool enabled = 3;
+}
+
+message GetDataParsingRulesResponse {
+  repeated DataParsingConfig data_parsing_configs = 1;
+}
+
+message DeleteDataParsingRuleRequest {
+  string id = 1;
+}
+
+message DeleteDataParsingRuleResponse {}
+
+message RankDataParsingConfigRequest {
+  string config_id_to_update = 1;
+  optional string preceding_config_id = 2;
+}
+
+message RankDataParsingConfigResponse {
+  repeated DataParsingConfig data_parsing_configs = 1;
+}

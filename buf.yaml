@@ -29,6 +29,7 @@ modules:
   - path: data-protection-config-service-api/src/main/proto
   - path: detection-exclusion-config-service-api/src/main/proto
   - path: external-agent-attribute-config-service-api/src/main/proto
+  - path: data-parsing-config-service-api/src/main/proto
   - path: external-data-classification-config-service-api/src/main/proto
   - path: external-user-attribution-config-service-api/src/main/proto
   - path: external-wasm-config-service-api/src/main/proto

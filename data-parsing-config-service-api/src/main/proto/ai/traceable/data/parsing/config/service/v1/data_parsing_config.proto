@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+package ai.traceable.data.parsing.config.service.v1;
+
+option java_multiple_files = true;
+
+message DataParsingConfig {
+  string id = 1;
+  int32 rank = 2;
+  DataParsingRule data_parsing_rule = 3;
+}
+
+message DataParsingRule {
+  bool enabled = 1;
+  oneof scope {
+    GlobalScope global_scope = 2;
+    EnvironmentScope environment_scope = 3;
+  }
+  SpanFilter span_filter = 4;
+  AttributeFilter attribute_filter = 5;
+  DataParsingMode mode = 6;
+  oneof failure_strategy {
+    DropOnFailure drop_on_failure = 7;
+  }
+
+  enum DataParsingMode {
+    DATA_PARSING_MODE_UNSPECIFIED = 0;
+    DATA_PARSING_MODE_JSON = 1;
+    DATA_PARSING_MODE_COOKIE_STRING = 2;
+    DATA_PARSING_MODE_SQL = 3;
+    DATA_PARSING_MODE_URL_ENCODED = 4;
+    DATA_PARSING_MODE_XML = 5;
+    DATA_PARSING_MODE_MULTIPART = 6;
+    DATA_PARSING_MODE_CONTENT_TYPE_HEADER = 7;
+    DATA_PARSING_MODE_SERVER_SENT_EVENTS = 8;
+  }
+
+  message DropOnFailure {}
+
+  message GlobalScope {}
+
+  message EnvironmentScope {
+    repeated string environment_ids = 1;
+  }
+}
+
+message SpanFilter {
+  // TODO - this could include things like API scoping in the future
+  // This supports things like matching a url before checking for a particular param name
+  repeated AttributePredicate required_matching_attributes = 1;
+}
+
+message AttributeFilter {
+  // This is used to, for example, restrict matches to only headers
+  repeated string prefixes = 1;
+}
+
+message StringPredicate {
+  Operator operator = 1;
+  string value = 2;
+}
+
+message AttributePredicate {
+  StringPredicate name_predicate = 1;
+  StringPredicate value_predicate = 2;
+}
+
+enum Operator {
+  OPERATOR_UNSPECIFIED = 0;
+  OPERATOR_EQUALS = 1;
+  OPERATOR_MATCHES_REGEX = 2;
+  OPERATOR_NOT_EQUALS = 3;
+  OPERATOR_NOT_MATCHES_REGEX = 4;
+}
