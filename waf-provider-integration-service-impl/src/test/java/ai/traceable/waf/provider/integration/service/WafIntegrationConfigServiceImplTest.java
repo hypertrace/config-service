@@ -28,6 +28,7 @@ import ai.traceable.waf.integration.service.api.v1.BarracudaPolicyDetails;
 import ai.traceable.waf.integration.service.api.v1.CloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.CreateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.CreateWafIntegrationResponse;
+import ai.traceable.waf.integration.service.api.v1.CustomListDetail;
 import ai.traceable.waf.integration.service.api.v1.DeleteWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.EncryptedData;
 import ai.traceable.waf.integration.service.api.v1.EncryptedText;
@@ -1729,6 +1730,11 @@ class WafIntegrationConfigServiceImplTest {
                             .build())
                     .setEmail(email)
                     .setRulesetId("rulesetId")
+                    .setCustomListDetail(
+                        CustomListDetail.newBuilder()
+                            .setAllowListName("allowList")
+                            .setBlockListName("blockList")
+                            .build())
                     .setZone("zone"))
             .build();
       case AWS_INTEGRATION_PARAMS:

@@ -62,7 +62,6 @@ public class WafIntegrationBuilderUtils {
         existingWafIntegration.getWafIntegrationDetails().toBuilder();
     updatedWafIntegrationDetailsBuilder =
         updateGenericFields(updatedWafIntegrationDetailsBuilder, request);
-
     switch (request.getUpdatedWafIntegrationDetails().getIntegrationParamsCase()) {
       case UPDATED_CLOUDFLARE_INTEGRATION_PARAMS:
         updateCloudflareWafIntegration(request, updatedWafIntegrationDetailsBuilder);
@@ -279,7 +278,10 @@ public class WafIntegrationBuilderUtils {
                     .setKeyId(keyId)
                     .setBase64EncryptedData(apiToken)
                     .build());
-
+    if (builder.getCloudflareIntegrationParams().hasCustomListDetail()) {
+      cloudFlareIntegrationParamsBuilder.setCustomListDetail(
+          builder.getCloudflareIntegrationParams().getCustomListDetail());
+    }
     builder.setCloudflareIntegrationParams(cloudFlareIntegrationParamsBuilder);
   }
 
