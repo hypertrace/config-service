@@ -48,8 +48,9 @@ class IpRangeDataHandlerTest {
 
   @Test
   void testGetBlockingDetails_Active() {
+    long expirationTimestamp = (System.currentTimeMillis() / 1000) + 1000;
     MaliciousSourcesRule rule =
-        createMaliciousSourcesRule(RuleActionType.RULE_ACTION_TYPE_BLOCK, 1756401052L);
+        createMaliciousSourcesRule(RuleActionType.RULE_ACTION_TYPE_BLOCK, expirationTimestamp);
 
     Optional<BlockingPolicyData> result = handler.getBlockingDetails(rule);
 
