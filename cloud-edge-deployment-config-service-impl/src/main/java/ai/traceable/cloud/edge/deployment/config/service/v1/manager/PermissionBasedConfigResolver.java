@@ -154,6 +154,7 @@ public class PermissionBasedConfigResolver {
         .setEnvironmentName(newClusterConfig.getEnvironmentName())
         .addAllPrimaryRegions(newClusterConfig.getPrimaryRegionsList())
         .addAllSecondaryRegions(newClusterConfig.getSecondaryRegionsList())
+        .setProtectionDisabled(newClusterConfig.getProtectionDisabled())
         .setAdvancedConfig(
             ClusterAdvancedConfig.newBuilder().setGenericConfig(mergedGenericConfig).build())
         .build();
