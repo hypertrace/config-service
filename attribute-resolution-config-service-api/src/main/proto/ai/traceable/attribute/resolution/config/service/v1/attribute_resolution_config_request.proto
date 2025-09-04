@@ -1,0 +1,22 @@
+syntax = "proto3";
+package ai.traceable.attribute.resolution.config.service.v1;
+
+import "ai/traceable/attribute/resolution/config/service/v1/attribute_resolution_config.proto";
+
+option java_multiple_files = true;
+
+message GetAttributeResolutionConfigsRequest {
+  GetAttributeResolutionConfigsFilter filter = 1;
+}
+
+message CreateAttributeResolutionConfigRequest {
+  AttributeResolutionConfigData data = 1;
+}
+
+message UpdateAttributeResolutionConfigRequest {
+  AttributeResolutionConfig config = 1;
+}
+
+message DeleteAttributeResolutionConfigRequest {
+  string id = 1;
+}

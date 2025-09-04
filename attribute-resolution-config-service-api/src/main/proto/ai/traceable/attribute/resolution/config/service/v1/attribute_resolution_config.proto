@@ -1,0 +1,131 @@
+syntax = "proto3";
+package ai.traceable.attribute.resolution.config.service.v1;
+
+import "google/protobuf/struct.proto";
+
+option java_multiple_files = true;
+
+message GetAttributeResolutionConfigsFilter {
+  bool enabled = 1;
+  string entity_type = 2;
+}
+
+message AttributeResolutionConfig {
+  string id = 1;
+  AttributeResolutionConfigData data = 2;
+}
+
+message AttributeResolutionConfigData {
+  string name = 1;
+  string description = 2;
+  bool enabled = 3;
+  string attribute_key = 4;
+  string entity_type = 5;
+  repeated ScopedCondition scoped_conditions = 6;
+}
+
+message ScopedCondition {
+  ConfigScope scope = 1;
+  Filter filter = 2;
+  Action action = 3;
+}
+
+message ConfigScope {
+  oneof scope {
+    CustomerScope customer_scope = 1;
+    EnvironmentScope environment_scope = 2;
+    ServiceScope service_scope = 3;
+  }
+}
+
+message CustomerScope {}
+
+message EnvironmentScope {
+  repeated string environment_ids = 1;
+}
+
+message ServiceScope {
+  repeated string service_ids = 1;
+  EnvironmentScope environment_scope = 2; // Optional
+}
+
+message Action {
+  oneof action {
+    StaticAction static_action = 1;
+    DynamicAction dynamic_action = 2;
+  }
+}
+
+message StaticAction {
+  google.protobuf.Value value = 1;
+}
+
+message DynamicAction {
+  KeyFilter key_filter = 1;
+  oneof dynamic_value_action {
+    NoOperation no_operation = 2;
+    MatchGroupOperation match_group_operation = 3;
+  }
+}
+
+message NoOperation {}
+
+message MatchGroupOperation {
+  string match_group_regex = 1;
+  string match_group = 2;
+}
+
+message Filter {
+  oneof filter {
+    RelationalFilter relational_filter = 1;
+    LogicalFilter logical_filter = 2;
+  }
+}
+
+message LogicalFilter {
+  LogicalOperator operator = 1;
+  repeated Filter filters = 2;
+}
+
+message RelationalFilter {
+  KeyFilter key_filter = 1;
+  ValueFilter value_filter = 2;
+}
+
+message KeyFilter {
+  KeyLocation location = 1;
+  RelationalOperator operator = 2;
+  google.protobuf.Value value = 3;
+}
+
+message ValueFilter {
+  RelationalOperator operator = 1;
+  google.protobuf.Value value = 2;
+}
+
+enum KeyLocation {
+  KEY_LOCATION_UNSPECIFIED = 0;
+  KEY_LOCATION_REQUEST_HEADER = 1;
+  KEY_LOCATION_URL_PATH = 2;
+  KEY_LOCATION_QUERY_PARAMS = 3;
+}
+
+enum LogicalOperator {
+  LOGICAL_OPERATOR_UNSPECIFIED = 0;
+  LOGICAL_OPERATOR_AND = 1;
+  LOGICAL_OPERATOR_OR = 2;
+}
+
+enum RelationalOperator {
+  RELATIONAL_OPERATOR_UNSPECIFIED = 0;
+  RELATIONAL_OPERATOR_EQUALS = 1;
+  RELATIONAL_OPERATOR_NOT_EQUALS = 2;
+  RELATIONAL_OPERATOR_CONTAINS = 3;
+  RELATIONAL_OPERATOR_STARTS_WITH = 4;
+  RELATIONAL_OPERATOR_ENDS_WITH = 5;
+  RELATIONAL_OPERATOR_REGEX_MATCH = 6;
+  RELATIONAL_OPERATOR_IN = 7;
+  RELATIONAL_OPERATOR_EXISTS = 8;
+  RELATIONAL_OPERATOR_NOT_IN = 9;
+  RELATIONAL_OPERATOR_NOT_CONTAINS = 10;
+}
