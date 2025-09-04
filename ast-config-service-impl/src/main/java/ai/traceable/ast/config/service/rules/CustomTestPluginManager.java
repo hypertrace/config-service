@@ -141,6 +141,7 @@ public class CustomTestPluginManager {
             updatedCustomTestPlugin.getSupportedApiTypesValueList().isEmpty()
                 ? DEFAULT_SUPPORTED_API_TYPES
                 : updatedCustomTestPlugin.getSupportedApiTypesList())
+        .setPluginScope(existingCustomTestPlugin.getPluginScope())
         .build();
   }
 
