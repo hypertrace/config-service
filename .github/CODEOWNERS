@@ -67,6 +67,8 @@ data-protection-config-service-impl @singhalprerana @avinashkolluru @bhubam
 threat-management-config-service-api @singhalprerana @avinashkolluru @bhubam
 threat-scoring-config-service-impl @singhalprerana @avinashkolluru @bhubam
 attribute-resolution-config-service-api @aman-bansal @sanket-mundra @Vaibhav090420
+attribute-resolution-config-service-impl @aman-bansal @sanket-mundra @Vaibhav090420
+attribute-resolution-config-client @aman-bansal @sanket-mundra @Vaibhav090420
 
 # No owners for lock changes
 **/gradle.lockfile
