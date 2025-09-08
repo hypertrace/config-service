@@ -1,5 +1,8 @@
 package ai.traceable.cloud.bot.deployment.config.service.v1.manager;
 
+import static ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentStatus.DEPLOYMENT_STATUS_BLOCKED;
+import static ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentStatus.DEPLOYMENT_STATUS_CHANGE_BLOCKED;
+
 import ai.traceable.cloud.bot.deployment.config.service.v1.ApiToken;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CloudBotDeploymentConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CloudBotDeploymentConfigInput;
@@ -30,6 +33,7 @@ import io.grpc.StatusRuntimeException;
 import jakarta.inject.Inject;
 import java.nio.file.AccessDeniedException;
 import java.time.Clock;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -42,6 +46,9 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentConfigManager {
 
   public static final String UNKNOWN_TENANT = "UNKNOWN_TENANT";
+  public static final EnumSet<DeploymentStatus> BLOCKED_STATUSES =
+      EnumSet.of(DEPLOYMENT_STATUS_BLOCKED, DEPLOYMENT_STATUS_CHANGE_BLOCKED);
+
   private final CloudBotDeploymentConfigStore store;
   private final CloudBotDeploymentMetricsUtil cloudBotDeploymentMetricsUtil;
   private final CloudBotDeploymentConfigValidator validator;
@@ -197,8 +204,8 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
             checkAndSetDeploymentState(
                 id,
                 existingConfig.getCloudBotDeploymentStatus().getDeploymentStatus(),
-                request.getCloudBotDeploymentStatus().getDeploymentStatus()
-                        == DeploymentStatus.DEPLOYMENT_STATUS_BLOCKED
+                BLOCKED_STATUSES.contains(
+                        request.getCloudBotDeploymentStatus().getDeploymentStatus())
                     ? Action.ACTION_BLOCK
                     : Action.ACTION_UPDATE_STATUS);
 

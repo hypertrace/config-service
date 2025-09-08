@@ -38,6 +38,11 @@ class StateTransitionsRegistryImplTest {
         DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYMENT_DELETED,
         registry.checkAndGetNextState(
             DeploymentStatus.DEPLOYMENT_STATUS_REQUESTED, Action.ACTION_DELETE));
+
+    assertEquals(
+        DeploymentStatus.DEPLOYMENT_STATUS_CHANGE_BLOCKED,
+        registry.checkAndGetNextState(
+            DeploymentStatus.DEPLOYMENT_STATUS_CHANGE_IN_PROGRESS, Action.ACTION_BLOCK));
   }
 
   @Test

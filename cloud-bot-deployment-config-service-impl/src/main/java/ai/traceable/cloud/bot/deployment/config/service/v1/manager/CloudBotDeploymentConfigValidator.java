@@ -230,10 +230,11 @@ public class CloudBotDeploymentConfigValidator {
       return Status.INVALID_ARGUMENT.withDescription("Deployment status cannot be UNSPECIFIED");
     }
     if (status.getDeploymentStatus() == DeploymentStatus.DEPLOYMENT_STATUS_BLOCKED
-        && !status.hasMessage()
-        && status.getMessage().isEmpty()) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "Blocked deployment status should have a reason for being blocked, which will be shown to customers");
+        || status.getDeploymentStatus() == DeploymentStatus.DEPLOYMENT_STATUS_CHANGE_BLOCKED) {
+      if (!status.hasMessage() && status.getMessage().isEmpty()) {
+        return Status.INVALID_ARGUMENT.withDescription(
+            "Blocked deployment status should have a reason for being blocked, which will be shown to customers");
+      }
     }
     return Status.OK;
   }
