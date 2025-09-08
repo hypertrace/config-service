@@ -50,7 +50,9 @@ message DeleteAstHookRequest {
 
 message DeleteAstHookResponse {}
 
-message GetAllAstHooksRequest {}
+message GetAllAstHooksRequest {
+  HookScope scope = 1;
+}
 
 message GetAllAstHooksResponse {
   repeated AstHook ast_hooks = 1;
