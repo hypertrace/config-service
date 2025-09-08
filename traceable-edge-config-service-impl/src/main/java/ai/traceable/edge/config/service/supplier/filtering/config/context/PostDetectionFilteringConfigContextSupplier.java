@@ -24,8 +24,10 @@ import com.google.inject.Inject;
 import io.grpc.Status;
 import java.util.List;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
+@Slf4j
 @AllArgsConstructor(onConstructor_ = @Inject)
 public class PostDetectionFilteringConfigContextSupplier implements TraceableEdgeConfigSupplier {
   private static final String CONFIG_TYPE =
@@ -50,19 +52,26 @@ public class PostDetectionFilteringConfigContextSupplier implements TraceableEdg
       RequestContext requestContext,
       ConfigRequestElement requestElement,
       AgentCapabilities agentCapabilities) {
+    log.debug(
+        "Received request for PostDetectionFilteringConfigContext for tenantId: {}",
+        requestContext.getTenantId());
     PostDetectionFilteringConfigContext context;
     if (!featureCachingClient.isProtectionEnginePostDetectionFilteringEnabledForTenant(
         requestContext)) {
+      log.debug(
+          "Protection engine post detection filtering not enabled for tenant: {}",
+          requestContext.getTenantId());
       context = PostDetectionFilteringConfigContext.getDefaultInstance();
     } else {
       List<ProtectionFilteringRulesFilter> filters = this.buildApplicableFilters(agentCapabilities);
       List<ProtectionFilteringRule> rules = rulesProvider.getProtectionFilteringRules(filters);
       context = this.buildContext(rules);
     }
-
     ConfigPayloads payloads =
         ConfigPayloads.newBuilder().addConfigBytes(context.toByteString()).build();
-
+    log.debug(
+        "Returning PostDetectionFilteringConfigContext for tenantId: {}",
+        requestContext.getTenantId());
     return ConfigResponseElement.newBuilder()
         .setHash(uuidGenerator.generateId(payloads))
         .setConfigType(CONFIG_TYPE)

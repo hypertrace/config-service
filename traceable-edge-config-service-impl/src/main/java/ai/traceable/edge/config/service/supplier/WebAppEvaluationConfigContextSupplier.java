@@ -45,12 +45,17 @@ public class WebAppEvaluationConfigContextSupplier implements TraceableEdgeConfi
       RequestContext requestContext,
       ConfigRequestElement requestElement,
       AgentCapabilities agentCapabilities) {
+    log.debug(
+        "Received request for WebAppEvaluationConfigContext for tenantId: {}",
+        requestContext.getTenantId());
     GetWebAppEvaluationConfigContextResponse response =
         getWebAppEvaluationConfigContext(requestContext, requestElement);
     ConfigPayloads configPayloads =
         ConfigPayloads.newBuilder()
             .addConfigBytes(response.getWebAppEvaluationConfigContext())
             .build();
+    log.debug(
+        "Returning WebAppEvaluationConfigContext for tenantId: {}", requestContext.getTenantId());
     return ConfigResponseElement.newBuilder()
         .setConfigType(getConfigType())
         .setEnabled(true)

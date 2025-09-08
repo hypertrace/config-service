@@ -97,6 +97,8 @@ public class ModsecManagerImpl implements ModsecManager {
         && featureCachingClient.isProtectionEngineWebAppProtectionEnabledForTenant(requestContext)
         && rulesTarget.equals(ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING)
         && isCorazaDirective(modsecRuleVersion)) {
+      log.debug(
+          "Not sending TA blocking modsec rules for tenant: {}", requestContext.getTenantId());
       return new ModsecCrsRules(subRuleTypes);
     }
     ScopedAnomalyConfigStatus globalConfig =
