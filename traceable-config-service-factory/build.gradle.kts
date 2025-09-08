@@ -80,6 +80,7 @@ dependencies {
   implementation(projects.httpEventCollectorIntegrationConfigServiceImpl)
   implementation(projects.cloudEdgeDeploymentConfigServiceImpl)
   implementation(projects.cloudBotDeploymentConfigServiceImpl)
+  implementation(projects.attributeResolutionConfigServiceImpl)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

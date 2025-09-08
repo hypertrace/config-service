@@ -6,8 +6,8 @@ import "google/protobuf/struct.proto";
 option java_multiple_files = true;
 
 message GetAttributeResolutionConfigsFilter {
-  bool enabled = 1;
-  string entity_type = 2;
+  optional bool enabled = 1;
+  optional string entity_type = 2;
 }
 
 message AttributeResolutionConfig {

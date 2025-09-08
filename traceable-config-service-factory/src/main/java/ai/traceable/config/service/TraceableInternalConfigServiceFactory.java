@@ -9,6 +9,7 @@ import ai.traceable.api.spec.config.service.ApiSpecConfigServiceFactory;
 import ai.traceable.ast.config.service.AstConfigServiceFactory;
 import ai.traceable.ast.hooks.config.service.AstHooksConfigServiceFactory;
 import ai.traceable.ast.scan.profile.config.service.AstScanProfileConfigServiceFactory;
+import ai.traceable.attribute.resolution.config.service.v1.AttributeResolutionConfigServiceFactory;
 import ai.traceable.auth.detection.config.service.AuthDetectionConfigServiceFactory;
 import ai.traceable.azure.devops.integration.config.service.AzureDevopsIntegrationConfigServiceFactory;
 import ai.traceable.bot.categorized.config.service.v1.CategorizedBotConfigServiceFactory;
@@ -284,6 +285,9 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                     providers.getChangeEventGenerator())),
             wrap(
                 GenAiSystemDiscoveryConfigServiceFactory.build(
+                    providers.getLocalChannel(), providers.getChangeEventGenerator())),
+            wrap(
+                AttributeResolutionConfigServiceFactory.build(
                     providers.getLocalChannel(), providers.getChangeEventGenerator())),
             wrap(
                 SavedFilterConfigServiceFactory.build(
