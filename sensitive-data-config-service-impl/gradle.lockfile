@@ -2,7 +2,7 @@
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
 ai.traceable.accesscontrol:grpc-access-control-policy:0.5.14=testRuntimeClasspath
-ai.traceable.bom:traceable-bom:0.4.2922=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.2926=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-future-client:0.7.52=testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.7.52=runtimeClasspath,testRuntimeClasspath
 ai.traceable.iam.v2:iam-service-api-v2:0.16.137=testRuntimeClasspath
@@ -37,11 +37,11 @@ ai.traceable.platform:trace-data-parser:3.0.22=testRuntimeClasspath
 ai.traceable.platform:trace-enricher-api:5.0.4=testRuntimeClasspath
 ai.traceable.platform:trace-enricher-constants:5.0.4=testRuntimeClasspath
 ai.traceable.platform:view-generation-api:1.0.135=testRuntimeClasspath
-ai.traceable.protection.rules:ai-application-protection-rules:0.1.61=testRuntimeClasspath
-ai.traceable.protection.rules:api-protection-rules:0.1.61=testRuntimeClasspath
-ai.traceable.protection.rules:protection-filtering-rules:0.1.61=testRuntimeClasspath
-ai.traceable.protection.rules:protection-rules-common:0.1.61=testRuntimeClasspath
-ai.traceable.protection.rules:web-application-protection-rules:0.1.61=testRuntimeClasspath
+ai.traceable.protection.rules:ai-application-protection-rules:0.1.63=testRuntimeClasspath
+ai.traceable.protection.rules:api-protection-rules:0.1.63=testRuntimeClasspath
+ai.traceable.protection.rules:protection-filtering-rules:0.1.63=testRuntimeClasspath
+ai.traceable.protection.rules:protection-rules-common:0.1.63=testRuntimeClasspath
+ai.traceable.protection.rules:web-application-protection-rules:0.1.63=testRuntimeClasspath
 ai.traceable.protection:protection-filtering-engine-config:0.1.67=testRuntimeClasspath
 ai.traceable.protection:secrules-processor:0.1.67=testRuntimeClasspath
 ai.traceable.protection:web-application-protection-engine-config:0.1.67=testRuntimeClasspath

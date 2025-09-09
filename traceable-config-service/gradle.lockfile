@@ -2,10 +2,10 @@
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
 ai.traceable.accesscontrol:grpc-access-control-policy:0.5.14=integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
-ai.traceable.bom:traceable-bom:0.4.2922=compileClasspath,integrationTestCompileClasspath,integrationTestRuntimeClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.config.service:anomaly-config-service-api:0.37.852=integrationTestCompileClasspath,integrationTestRuntimeClasspath
-ai.traceable.config.service:config-utils:0.37.852=integrationTestRuntimeClasspath
-ai.traceable.config.service:traceable-span-processing-config-service-api:0.37.852=integrationTestCompileClasspath,integrationTestRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.2926=compileClasspath,integrationTestCompileClasspath,integrationTestRuntimeClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.config.service:anomaly-config-service-api:0.37.861=integrationTestCompileClasspath,integrationTestRuntimeClasspath
+ai.traceable.config.service:config-utils:0.37.861=integrationTestRuntimeClasspath
+ai.traceable.config.service:traceable-span-processing-config-service-api:0.37.861=integrationTestCompileClasspath,integrationTestRuntimeClasspath
 ai.traceable.featureflag:feature-flag-future-client:0.7.52=integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.7.52=integrationTestCompileClasspath,integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
 ai.traceable.iam.v2:iam-service-api-v2:0.16.137=integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
@@ -40,11 +40,11 @@ ai.traceable.platform:trace-data-parser:3.0.22=integrationTestRuntimeClasspath,r
 ai.traceable.platform:trace-enricher-api:5.0.4=integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:trace-enricher-constants:5.0.4=integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:view-generation-api:1.0.135=integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
-ai.traceable.protection.rules:ai-application-protection-rules:0.1.61=integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
-ai.traceable.protection.rules:api-protection-rules:0.1.61=integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
-ai.traceable.protection.rules:protection-filtering-rules:0.1.61=integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
-ai.traceable.protection.rules:protection-rules-common:0.1.61=integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
-ai.traceable.protection.rules:web-application-protection-rules:0.1.61=integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
+ai.traceable.protection.rules:ai-application-protection-rules:0.1.63=integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
+ai.traceable.protection.rules:api-protection-rules:0.1.63=integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
+ai.traceable.protection.rules:protection-filtering-rules:0.1.63=integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
+ai.traceable.protection.rules:protection-rules-common:0.1.63=integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
+ai.traceable.protection.rules:web-application-protection-rules:0.1.63=integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
 ai.traceable.protection:protection-filtering-engine-config:0.1.67=integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
 ai.traceable.protection:secrules-processor:0.1.67=integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
 ai.traceable.protection:web-application-protection-engine-config:0.1.67=integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
