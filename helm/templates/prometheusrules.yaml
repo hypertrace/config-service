@@ -68,12 +68,12 @@ spec:
             {{- end }}
         - alert: CloudBotDeploymentConfigStatusChange
           annotations:
-            summary: 'Cloud Bot Deployment Config Status Change'
+            summary: 'IGNORE: Cloud Bot Deployment Config Status Change'
             message: 'Cloud Bot Deployment Config status changed to {{`{{ $labels.deploymentStatus}}`}} for config id: {{`{{ $labels.configId}}`}} for customer: {{`{{ $labels.tenantId }}`}}'
-          expr: sum(increase(cloud_bot_deployment_config_status_change_count_total{deploymentStatus=~"DEPLOYMENT_STATUS_REQUESTED|DEPLOYMENT_STATUS_CHANGE_REQUESTED|DEPLOYMENT_STATUS_REMOVAL_IN_PROGRESS"}[2m])) by (tenantId, configId, deploymentStatus) > 0
+          expr: sum(changes(cloud_bot_deployment_config_status_change_count_total{deploymentStatus=~"DEPLOYMENT_STATUS_REQUESTED|DEPLOYMENT_STATUS_CHANGE_REQUESTED|DEPLOYMENT_STATUS_REMOVAL_IN_PROGRESS"}[2m])) by (tenantId, configId, deploymentStatus) > bool 0
           for: 0m
           labels:
-            severity: SEV2
+            severity: SEV4
             repository: config-service
             team: devops
             {{- with .Values.prometheusRule.additionalRuleLabels }}
