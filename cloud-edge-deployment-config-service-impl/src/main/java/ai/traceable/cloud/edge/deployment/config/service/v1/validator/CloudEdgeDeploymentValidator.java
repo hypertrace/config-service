@@ -10,6 +10,7 @@ import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigPermission;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigValueDescriptor;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CreateCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DeleteCloudEdgeDeploymentConfigRequest;
+import ai.traceable.cloud.edge.deployment.config.service.v1.DeploymentMode;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DeploymentStatus;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DomainConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.HealthCheckDetails;
@@ -83,6 +84,13 @@ public class CloudEdgeDeploymentValidator {
               request.getCloudEdgeDeploymentInputConfig(), request.getConfigPermission());
       if (!status.equals(Status.OK)) {
         return status;
+      }
+    }
+
+    if (request.hasCloudEdgeDeployedOutputConfig()) {
+      if (DeploymentMode.DEPLOYMENT_MODE_UNSPECIFIED
+          == request.getCloudEdgeDeployedOutputConfig().getDeploymentMode()) {
+        return Status.INVALID_ARGUMENT.withDescription("Deployment mode must be specified");
       }
     }
 

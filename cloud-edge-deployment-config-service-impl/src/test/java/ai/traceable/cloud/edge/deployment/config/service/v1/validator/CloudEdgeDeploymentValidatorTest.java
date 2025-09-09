@@ -399,7 +399,11 @@ class CloudEdgeDeploymentValidatorTest {
     UpdateCloudEdgeDeploymentConfigRequest request =
         UpdateCloudEdgeDeploymentConfigRequest.newBuilder()
             .setId("test-id")
-            .setCloudEdgeDeployedOutputConfig(CloudEdgeDeploymentOutputConfig.getDefaultInstance())
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_IN_PROGRESS)
+                    .setDeploymentMode(DeploymentMode.DEPLOYMENT_MODE_MONITORING_ONLY)
+                    .build())
             .setConfigPermission(
                 ConfigPermission.newBuilder()
                     .setRead(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
@@ -407,7 +411,8 @@ class CloudEdgeDeploymentValidatorTest {
                     .build())
             .build();
 
-    // Validate and verify - should be OK since traceable permission can update output config
+    // Validate and verify - should be OK since traceable permission can update output config with
+    // explicit status
     Status status = validator.validate(request);
     assertTrue(status.isOk());
   }

@@ -12,7 +12,7 @@ message ClusterConfig {
   repeated RegionConfig primary_regions = 3;
   repeated RegionConfig secondary_regions = 4;
   ClusterAdvancedConfig advanced_config = 5;
-  bool protection_disabled = 6;
+  bool protection_disabled = 6 [deprecated = true];
 }
 
 message ClusterAdvancedConfig {

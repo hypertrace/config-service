@@ -25,6 +25,7 @@ message CloudEdgeDeploymentOutputConfig {
   repeated string ips_to_be_whitelisted = 3;
   DeploymentStatus status = 4;
   string comment = 5;
+  DeploymentMode deployment_mode = 6;
 }
 
 message CloudEdgeDeploymentConfigWithActions {
@@ -60,4 +61,10 @@ enum Action {
   ACTION_CANCEL_REMOVAL_REQUEST = 8;
   ACTION_DEPLOY = 9;
   ACTION_CREATE = 10;
+}
+
+enum DeploymentMode {
+  DEPLOYMENT_MODE_UNSPECIFIED = 0;
+  DEPLOYMENT_MODE_MONITORING_ONLY = 1;
+  DEPLOYMENT_MODE_MONITORING_AND_BLOCKING = 2;
 }
