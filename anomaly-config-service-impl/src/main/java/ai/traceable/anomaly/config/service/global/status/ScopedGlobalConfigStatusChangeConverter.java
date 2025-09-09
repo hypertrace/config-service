@@ -13,6 +13,7 @@ import ai.traceable.anomaly.config.service.v1.global.GlobalGenAiConfig;
 import ai.traceable.anomaly.config.service.v1.global.GlobalModsecConfig;
 import ai.traceable.anomaly.config.service.v1.global.GlobalModsecConfigChange;
 import ai.traceable.anomaly.config.service.v1.global.ModsecDefaultConfigsType;
+import ai.traceable.anomaly.config.service.v1.global.ModsecGlobalConfig;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatusChange;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -67,7 +68,11 @@ public class ScopedGlobalConfigStatusChangeConverter {
                     config.getModsecGlobalConfig().getMinConfidenceLevel()
                             == AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_UNSPECIFIED
                         ? defaultConfig.getMinConfidenceLevel()
-                        : config.getModsecGlobalConfig().getMinConfidenceLevel()))
+                        : config.getModsecGlobalConfig().getMinConfidenceLevel())
+                .setEnabledForExitSpans(
+                    config.getModsecGlobalConfig().hasEnabledForExitSpans()
+                        ? config.getModsecGlobalConfig().getEnabledForExitSpans()
+                        : defaultConfig.isModsecExitSpansEvalEnabled()))
         .setGlobalModsecConfig(getGlobalModsecConfig(config, defaultConfig))
         .setApiGlobalConfig(
             config.toBuilder()
@@ -77,6 +82,10 @@ public class ScopedGlobalConfigStatusChangeConverter {
                             == ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_UNSPECIFIED
                         ? defaultConfig.getApiDefaultConfigsType()
                         : config.getApiGlobalConfig().getDefaultConfigsType())
+                .setEnabledForExitSpans(
+                    config.getApiGlobalConfig().hasEnabledForExitSpans()
+                        ? config.getApiGlobalConfig().getEnabledForExitSpans()
+                        : defaultConfig.isApiExitSpansEvalEnabled())
                 .build())
         .setGlobalGenAiConfig(
             GlobalGenAiConfig.newBuilder()
@@ -136,26 +145,27 @@ public class ScopedGlobalConfigStatusChangeConverter {
             globalModsecConfigChange.getRuleVersionDataChange().getOverrideVersion(),
             globalModsecConfigChange.getRuleVersionDataChange().getStableVersion());
     GlobalModsecConfig.Builder builder = GlobalModsecConfig.newBuilder();
-
     if (isNullOrDefault(globalModsecConfigChange)) {
+      ModsecGlobalConfig modsecGlobalConfig = config.getModsecGlobalConfig();
       builder
           .setBlockingAvailableForRegularRules(
-              config.getModsecGlobalConfig().getBlockingAvailableForRegularRules())
-          .setUseTestRules(config.getModsecGlobalConfig().getUseTestRules())
-          .setDisabled(config.getModsecGlobalConfig().getDisabled())
-          .setEnabledForExitSpans(config.getModsecGlobalConfig().getEnabledForExitSpans())
-          .setModsecEvaluationEngineConfig(
-              config.getModsecGlobalConfig().getModsecEvaluationEngineConfig());
+              modsecGlobalConfig.getBlockingAvailableForRegularRules())
+          .setUseTestRules(modsecGlobalConfig.getUseTestRules())
+          .setDisabled(modsecGlobalConfig.getDisabled())
+          .setEnabledForExitSpans(
+              modsecGlobalConfig.hasEnabledForExitSpans()
+                  ? modsecGlobalConfig.getEnabledForExitSpans()
+                  : defaultConfig.isModsecExitSpansEvalEnabled())
+          .setModsecEvaluationEngineConfig(modsecGlobalConfig.getModsecEvaluationEngineConfig());
       ModsecDefaultConfigsType defaultConfigsType =
           getModsecDefaultConfigsType(
-              config, defaultConfig, config.getModsecGlobalConfig().getDefaultConfigsType());
+              config, defaultConfig, modsecGlobalConfig.getDefaultConfigsType());
       builder.setDefaultConfigsType(defaultConfigsType);
-      AnomalyConfidenceLevel confidenceLevel =
-          config.getModsecGlobalConfig().getMinConfidenceLevel();
+      AnomalyConfidenceLevel confidenceLevel = modsecGlobalConfig.getMinConfidenceLevel();
       if (confidenceLevel == AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_UNSPECIFIED) {
         builder.setMinConfidenceLevel(defaultConfig.getMinConfidenceLevel());
       } else {
-        builder.setMinConfidenceLevel(config.getModsecGlobalConfig().getMinConfidenceLevel());
+        builder.setMinConfidenceLevel(modsecGlobalConfig.getMinConfidenceLevel());
       }
     } else {
       builder
@@ -163,7 +173,10 @@ public class ScopedGlobalConfigStatusChangeConverter {
               globalModsecConfigChange.getBlockingAvailableForRegularRules())
           .setUseTestRules(globalModsecConfigChange.getUseTestRules())
           .setDisabled(globalModsecConfigChange.getDisabled())
-          .setEnabledForExitSpans(globalModsecConfigChange.getEnabledForExitSpans())
+          .setEnabledForExitSpans(
+              globalModsecConfigChange.hasEnabledForExitSpans()
+                  ? globalModsecConfigChange.getEnabledForExitSpans()
+                  : defaultConfig.isModsecExitSpansEvalEnabled())
           .setModsecEvaluationEngineConfig(
               globalModsecConfigChange.getModsecEvaluationEngineConfig());
       ModsecDefaultConfigsType defaultConfigsType =

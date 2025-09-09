@@ -23,6 +23,8 @@ public class AnomalyGlobalConfigServiceConfig {
   private static final String LICENSE_TIERS_CONFIG_PATH = "licenseTiers";
   private static final String TIER_CONFIG_PATH = "tier";
   private static final String MODSEC_DEFAULT_CONFIG_TYPE = "modsecGlobalConfig.defaultConfigsType";
+  private static final String MODSEC_EXIT_SPANS_EVAL_ENABLED_PATH =
+      "modsecGlobalConfig.exitSpansEvalEnabled";
   private static final String NEW_WEBAPP_STABLE_VERSION =
       "modsecGlobalConfig.ruleVersion.newWebAppStableVersion";
   private static final String OLD_WEBAPP_STABLE_VERSION =
@@ -37,6 +39,8 @@ public class AnomalyGlobalConfigServiceConfig {
   private static final String ENVIRONMENT_SCOPE_MODSEC_DEFAULT_CONFIG_TYPE =
       "modsecGlobalConfig.environmentDefaultConfigType";
   private static final String API_DEFAULT_CONFIG_TYPE = "apiGlobalConfig.defaultConfigsType";
+  private static final String API_EXIT_SPANS_EVAL_ENABLED_PATH =
+      "apiGlobalConfig.exitSpansEvalEnabled";
   private static final String GEN_AI_DEFAULT_DISABLED = "globalGenAiConfig.disabled";
 
   private final boolean disabled;
@@ -44,11 +48,13 @@ public class AnomalyGlobalConfigServiceConfig {
   private final AnomalyConfidenceLevel minConfidenceLevel;
   private final Map<LicenseInfo.Tier, Boolean> licenseTiersConfigStatusMap;
   @Getter private final ModsecDefaultConfigsType modsecDefaultConfigsType;
+  @Getter private final boolean modsecExitSpansEvalEnabled;
   @Getter private final RuleVersion newWebAppStableVersion;
   @Getter private final RuleVersion oldWebAppStableVersion;
   @Getter private final int webAppRuleTestingModeRetentionDays;
   @Getter private final ModsecDefaultConfigsType envScopeModsecDefaultConfigsType;
   @Getter private final ApiDefaultConfigsType apiDefaultConfigsType;
+  @Getter private final boolean apiExitSpansEvalEnabled;
   @Getter private final boolean genAiDisabled;
 
   public AnomalyGlobalConfigServiceConfig(Config config) {
@@ -58,6 +64,7 @@ public class AnomalyGlobalConfigServiceConfig {
         config.hasPath(MODSEC_DEFAULT_CONFIG_TYPE)
             ? config.getEnum(ModsecDefaultConfigsType.class, MODSEC_DEFAULT_CONFIG_TYPE)
             : ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_STANDARD_MONITORING;
+    this.modsecExitSpansEvalEnabled = config.getBoolean(MODSEC_EXIT_SPANS_EVAL_ENABLED_PATH);
     this.newWebAppStableVersion =
         RuleVersion.newBuilder()
             .setVersion(config.getString(NEW_WEBAPP_STABLE_VERSION))
@@ -84,6 +91,7 @@ public class AnomalyGlobalConfigServiceConfig {
         config.hasPath(API_DEFAULT_CONFIG_TYPE)
             ? config.getEnum(ApiDefaultConfigsType.class, API_DEFAULT_CONFIG_TYPE)
             : ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED;
+    this.apiExitSpansEvalEnabled = config.getBoolean(API_EXIT_SPANS_EVAL_ENABLED_PATH);
     this.genAiDisabled =
         config.hasPath(GEN_AI_DEFAULT_DISABLED) && config.getBoolean(GEN_AI_DEFAULT_DISABLED);
     if (config.hasPath(CONFIDENCE_CONFIG_PATH)) {

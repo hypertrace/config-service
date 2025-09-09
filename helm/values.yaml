@@ -3273,8 +3273,10 @@ anomalyConfigServiceConfig:
     internal: false
     apiGlobalConfig:
       defaultConfigsType: API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED
+      exitSpansEvalEnabled: false
     modsecGlobalConfig:
       defaultConfigsType: MODSEC_DEFAULT_CONFIGS_TYPE_STANDARD
+      exitSpansEvalEnabled: false
       newWebAppStableVersion: "1.0.0"
       newWebAppStableVersionPublishedDate: "2020-01-01T00:00:00Z"
       oldWebAppStableVersion: "1.0.0"

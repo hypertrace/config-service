@@ -142,18 +142,21 @@ public class GlobalAnomalyConfigStatusManagerImpl
                   ApiGlobalConfig.newBuilder()
                       .setDisabled(configStatus.getDisabled())
                       .setDefaultConfigsType(config.getApiDefaultConfigsType())
+                      .setEnabledForExitSpans(config.isApiExitSpansEvalEnabled())
                       .build())
               .setModsecGlobalConfig(
                   ModsecGlobalConfig.newBuilder()
                       .setDisabled(configStatus.getDisabled())
                       .setMinConfidenceLevel(config.getMinConfidenceLevel())
                       .setDefaultConfigsType(config.getModsecDefaultConfigsType())
+                      .setEnabledForExitSpans(config.isModsecExitSpansEvalEnabled())
                       .build())
               .setGlobalModsecConfig(
                   GlobalModsecConfig.newBuilder()
                       .setDisabled(configStatus.getDisabled())
                       .setMinConfidenceLevel(config.getMinConfidenceLevel())
                       .setDefaultConfigsType(config.getModsecDefaultConfigsType())
+                      .setEnabledForExitSpans(config.isModsecExitSpansEvalEnabled())
                       .build())
               .setGlobalGenAiConfig(
                   GlobalGenAiConfig.newBuilder().setDisabled(config.isGenAiDisabled()))
@@ -377,17 +380,15 @@ public class GlobalAnomalyConfigStatusManagerImpl
       }
     }
 
-    if (scopedAnomalyConfigStatusChange.hasEnabledForExitSpans()) {
-      if (!scopedAnomalyConfigStatusChange.getModsecGlobalConfig().hasEnabledForExitSpans()) {
-        builder
-            .getModsecGlobalConfigBuilder()
-            .setEnabledForExitSpans(scopedAnomalyConfigStatusChange.getEnabledForExitSpans());
-      }
-      if (!scopedAnomalyConfigStatusChange.getApiGlobalConfig().hasEnabledForExitSpans()) {
-        builder
-            .getApiGlobalConfigBuilder()
-            .setEnabledForExitSpans(scopedAnomalyConfigStatusChange.getEnabledForExitSpans());
-      }
+    if (!scopedAnomalyConfigStatusChange.getModsecGlobalConfig().hasEnabledForExitSpans()) {
+      builder
+          .getModsecGlobalConfigBuilder()
+          .setEnabledForExitSpans(config.isModsecExitSpansEvalEnabled());
+    }
+    if (!scopedAnomalyConfigStatusChange.getApiGlobalConfig().hasEnabledForExitSpans()) {
+      builder
+          .getApiGlobalConfigBuilder()
+          .setEnabledForExitSpans(config.isApiExitSpansEvalEnabled());
     }
 
     if (scopedAnomalyConfigStatusChange.hasMinConfidenceLevel()) {
