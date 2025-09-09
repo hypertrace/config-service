@@ -21,6 +21,7 @@ import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceF
 import ai.traceable.dashboard.config.service.DashboardConfigServiceFactory;
 import ai.traceable.data.classification.config.service.DataClassificationConfigServiceFactory;
 import ai.traceable.data.exfiltration.config.service.detection.rule.DataExfiltrationDetectionRulesConfigServiceFactory;
+import ai.traceable.data.parsing.config.service.v1.DataParsingConfigServiceFactory;
 import ai.traceable.data.protection.config.service.DataProtectionConfigServiceFactory;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceFactory;
 import ai.traceable.edge.bot.config.service.CaptchaSiteKeyConfigServiceFactory;
@@ -361,6 +362,9 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                     providers.getLocalChannel(),
                     providers.getConfig(),
                     providers.getChangeEventGenerator())),
+            wrap(
+                DataParsingConfigServiceFactory.build(
+                    providers.getLocalChannel(), providers.getChangeEventGenerator())),
             wrap(
                 HttpEventCollectorIntegrationConfigServiceFactory.build(
                     providers.getLocalChannel(),
