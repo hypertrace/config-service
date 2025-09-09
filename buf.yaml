@@ -33,6 +33,7 @@ modules:
   - path: external-data-classification-config-service-api/src/main/proto
   - path: external-user-attribution-config-service-api/src/main/proto
   - path: external-wasm-config-service-api/src/main/proto
+  - path: external-agent-action-config-service-api/src/main/proto
   - path: fraud-datamodel-config-service-api/src/main/proto
   - path: fraud-datamodel-derivation-config-service-api/src/main/proto
   - path: fraud-policy-config-service-api/src/main/proto
