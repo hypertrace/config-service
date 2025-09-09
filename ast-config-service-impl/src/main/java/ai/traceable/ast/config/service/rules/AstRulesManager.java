@@ -164,6 +164,20 @@ class AstRulesManager implements RulesManager {
       existingVulnerabilityMetadata.setEstimatedFixTime(
           overriddenVulnerabilityMetadata.getEstimatedFixTime());
     }
+    if (overriddenVulnerabilityMetadata.hasDescription()) {
+      existingVulnerabilityMetadata.setDescription(
+          overriddenVulnerabilityMetadata.getDescription());
+    }
+    if (overriddenVulnerabilityMetadata.hasMitigation()) {
+      existingVulnerabilityMetadata.setMitigation(overriddenVulnerabilityMetadata.getMitigation());
+    }
+    if (overriddenVulnerabilityMetadata.hasImpact()) {
+      existingVulnerabilityMetadata.setImpact(overriddenVulnerabilityMetadata.getImpact());
+    }
+    if (overriddenVulnerabilityMetadata.hasAttackMethodology()) {
+      existingVulnerabilityMetadata.setAttackMethodology(
+          overriddenVulnerabilityMetadata.getAttackMethodology());
+    }
   }
 
   private AstReplayConfig getUpdatedAstReplayConfig(

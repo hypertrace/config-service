@@ -74,6 +74,10 @@ message VulnerabilityMetadataOverrides {
   optional string cvss_vector_string = 4;
   optional VulnerabilitySeverity severity = 5;
   optional google.protobuf.Duration estimated_fix_time = 6;
+  optional string description = 7;
+  optional string mitigation = 8;
+  optional string attack_methodology = 9;
+  optional string impact = 10;
 }
 
 message CustomerDefinedTagsMap {
