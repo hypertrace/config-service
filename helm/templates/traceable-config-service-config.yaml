@@ -425,6 +425,7 @@ data:
       licenseTiers = {{- .Values.anomalyConfigServiceConfig.global.licenseTiers | indent 6 }}
       modsecGlobalConfig {
         defaultConfigsType = {{ .Values.anomalyConfigServiceConfig.global.modsecGlobalConfig.defaultConfigsType }}
+        exitSpansEvalEnabled = {{ .Values.anomalyConfigServiceConfig.global.modsecGlobalConfig.exitSpansEvalEnabled }}
         ruleVersion {
           newWebAppStableVersion = {{ .Values.anomalyConfigServiceConfig.global.modsecGlobalConfig.newWebAppStableVersion }}
           newWebAppStableVersionPublishedDate = {{ .Values.anomalyConfigServiceConfig.global.modsecGlobalConfig.newWebAppStableVersionPublishedDate | quote }}
@@ -436,6 +437,7 @@ data:
       }
       apiGlobalConfig {
         defaultConfigsType = {{ .Values.anomalyConfigServiceConfig.global.apiGlobalConfig.defaultConfigsType }}
+        exitSpansEvalEnabled = {{ .Values.anomalyConfigServiceConfig.global.apiGlobalConfig.exitSpansEvalEnabled }}
       }
     }
     trainer.config.service = {
