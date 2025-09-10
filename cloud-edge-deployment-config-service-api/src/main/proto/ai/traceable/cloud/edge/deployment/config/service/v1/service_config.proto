@@ -20,6 +20,7 @@ message DomainConfig {
   Protocol protocol = 2;
   int32 port = 3;
   string certificate_id = 4;
+  bool redirection_enabled = 5;
 }
 
 message OriginConfig {
