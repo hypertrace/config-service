@@ -1,11 +1,5 @@
 package ai.traceable.anomaly.config.service.modsec.rules;
 
-import static ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3;
-import static ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3_DETECTION_ONLY_MODE;
-import static ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion.MODSEC_RULE_VERSION_SENSITIVE_AGENT_CORAZA_V3;
-import static ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion.MODSEC_RULE_VERSION_TEST_CORAZA_V3;
-import static ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion.MODSEC_RULE_VERSION_TEST_CORAZA_V3_DETECTION_ONLY_MODE;
-
 import ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigManager;
 import ai.traceable.anomaly.config.service.global.ruleinfo.WebAppRuleInfoProvider;
 import ai.traceable.anomaly.config.service.global.status.GlobalAnomalyConfigStatusManager;
@@ -46,13 +40,6 @@ public class ModsecManagerImpl implements ModsecManager {
           .addAnomalyDetectionConfigTypes(
               AnomalyDetectionConfigType.ANOMALY_DETECTION_CONFIG_TYPE_MODSECURITY)
           .build();
-  private static final Set<ModsecRuleVersion> CORAZA_DIRECTIVES =
-      Set.of(
-          MODSEC_RULE_VERSION_CORAZA_V3,
-          MODSEC_RULE_VERSION_TEST_CORAZA_V3,
-          MODSEC_RULE_VERSION_SENSITIVE_AGENT_CORAZA_V3,
-          MODSEC_RULE_VERSION_CORAZA_V3_DETECTION_ONLY_MODE,
-          MODSEC_RULE_VERSION_TEST_CORAZA_V3_DETECTION_ONLY_MODE);
 
   private final ModsecRulesRegistry modsecRulesRegistry;
   private final WebAppRuleInfoProvider webAppRuleInfoProvider;
@@ -95,11 +82,17 @@ public class ModsecManagerImpl implements ModsecManager {
     // coraza evaluation only but eventually it will support both coraza and modsec-jni
     if (featureCachingClient.isEdgeDecisionEnabledForTenant(requestContext)
         && featureCachingClient.isProtectionEngineWebAppProtectionEnabledForTenant(requestContext)
-        && rulesTarget.equals(ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING)
-        && isCorazaDirective(modsecRuleVersion)) {
+        && rulesTarget.equals(ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING)) {
       log.debug(
           "Not sending TA blocking modsec rules for tenant: {}", requestContext.getTenantId());
       return new ModsecCrsRules(subRuleTypes);
+    } else if (featureCachingClient.isEdgeDecisionEnabledForTenant(requestContext)
+        && featureCachingClient.isProtectionEngineWebAppProtectionEnabledForTenant(requestContext)
+        && !rulesTarget.equals(ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_PLATFORM_DETECTION)) {
+      log.debug(
+          "Sending actual modsec rules for tenant: {}, target: {}",
+          requestContext.getTenantId(),
+          rulesTarget);
     }
     ScopedAnomalyConfigStatus globalConfig =
         globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(
@@ -339,9 +332,5 @@ public class ModsecManagerImpl implements ModsecManager {
         .stream()
         .collect(
             Collectors.toUnmodifiableMap(AnomalySubRuleConfig::getSubRuleId, Function.identity()));
-  }
-
-  private boolean isCorazaDirective(ModsecRuleVersion modsecRuleVersion) {
-    return CORAZA_DIRECTIVES.contains(modsecRuleVersion);
   }
 }
