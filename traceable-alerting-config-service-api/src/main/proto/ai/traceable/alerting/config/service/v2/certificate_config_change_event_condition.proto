@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package ai.traceable.alerting.config.service.v2;
+
+option java_multiple_files = true;
+
+message CertificateConfigChangeEventCondition {
+  repeated CertificateConfigChangeType config_change_types = 1;
+}
+
+enum CertificateConfigChangeType {
+  CERTIFICATE_CONFIG_CHANGE_TYPE_UNSPECIFIED = 0;
+  CERTIFICATE_CONFIG_CHANGE_TYPE_CREATE = 1;
+  CERTIFICATE_CONFIG_CHANGE_TYPE_UPDATE = 2;
+  CERTIFICATE_CONFIG_CHANGE_TYPE_DELETE = 3;
+  CERTIFICATE_CONFIG_CHANGE_TYPE_EXPIRY = 4;
+}

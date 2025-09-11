@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package ai.traceable.alerting.config.service.v2;
+
+option java_multiple_files = true;
+
+message DeploymentConfigChangeEventCondition {
+  repeated DeploymentConfigType config_types = 1;
+  repeated DeploymentConfigChangeType config_change_types = 2;
+}
+
+enum DeploymentConfigType {
+  DEPLOYMENT_CONFIG_TYPE_UNSPECIFIED = 0;
+  DEPLOYMENT_CONFIG_TYPE_EDGE_DEPLOYMENT = 1;
+  DEPLOYMENT_CONFIG_TYPE_BOT_DEPLOYMENT = 2;
+}
+
+enum DeploymentConfigChangeType {
+  DEPLOYMENT_CONFIG_CHANGE_TYPE_UNSPECIFIED = 0;
+  DEPLOYMENT_CONFIG_CHANGE_TYPE_CREATE = 1;
+  DEPLOYMENT_CONFIG_CHANGE_TYPE_UPDATE = 2;
+  DEPLOYMENT_CONFIG_CHANGE_TYPE_DELETE = 3;
+  DEPLOYMENT_CONFIG_CHANGE_TYPE_STATUS_UPDATE = 4;
+}

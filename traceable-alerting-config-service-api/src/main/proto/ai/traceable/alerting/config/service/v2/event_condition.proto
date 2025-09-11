@@ -7,7 +7,9 @@ import "ai/traceable/alerting/config/service/v2/api_fraud_incident_change_event_
 import "ai/traceable/alerting/config/service/v2/api_naming_rule_config_change_condition.proto";
 import "ai/traceable/alerting/config/service/v2/api_spec_config_change_condition.proto";
 import "ai/traceable/alerting/config/service/v2/blocked_event_condition.proto";
+import "ai/traceable/alerting/config/service/v2/certificate_config_change_event_condition.proto";
 import "ai/traceable/alerting/config/service/v2/data_collection_change_condition.proto";
+import "ai/traceable/alerting/config/service/v2/deployment_config_change_event_condition.proto";
 import "ai/traceable/alerting/config/service/v2/detected_security_event_condition.proto";
 import "ai/traceable/alerting/config/service/v2/exclude_span_rule_config_change_condition.proto";
 import "ai/traceable/alerting/config/service/v2/fraud_detection_event_condition.proto";
@@ -52,6 +54,8 @@ message EventConditionMutableData {
     IntegrationEventCondition integration_event_condition = 20;
     ThreatScoringConfigChangeEventCondition threat_scoring_config_change_event_condition = 21;
     FraudDetectionEventCondition fraud_detection_event_condition = 22;
+    DeploymentConfigChangeEventCondition deployment_config_change_event_condition = 23;
+    CertificateConfigChangeEventCondition certificate_config_change_event_condition = 24;
   }
   optional string environment = 5 [deprecated = true]; // use the EventConditionScope moving forward
   EventConditionScope scope = 9;
