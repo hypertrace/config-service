@@ -27,12 +27,12 @@ traceable-policy-config-service-api/src @sunilgattupalle @surajpuvvada @avinashk
 traceable-policy-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini
 traceable-datamodel-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini
 traceable-datamodel-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini
-traceable-edge-bot-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini
-traceable-edge-bot-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini
-traceable-edge-decision-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @PrajwalKrishna @saxenakshitiz @RishabhB99
-traceable-edge-decision-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @PrajwalKrishna @saxenakshitiz @RishabhB99
-traceable-edge-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @PrajwalKrishna @saxenakshitiz @RishabhB99
-traceable-edge-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @PrajwalKrishna @saxenakshitiz @RishabhB99
+traceable-edge-bot-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @abhishek-yadav-tracable
+traceable-edge-bot-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @abhishek-yadav-tracable
+traceable-edge-decision-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @PrajwalKrishna @saxenakshitiz @RishabhB99 @abhishek-yadav-tracable
+traceable-edge-decision-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @PrajwalKrishna @saxenakshitiz @RishabhB99 @abhishek-yadav-tracable
+traceable-edge-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @PrajwalKrishna @saxenakshitiz @RishabhB99 @abhishek-yadav-tracable
+traceable-edge-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @PrajwalKrishna @saxenakshitiz @RishabhB99 @abhishek-yadav-tracable
 traceable-config-service-rest/src @sunilgattupalle @surajpuvvada @avinashkolluru @aaron-steinfeld @vinaysrini
 threat-scoring-config-service-impl/src/main/resources @piyushroshan @soujanyanmbri @singhalprerana @avinashkolluru
 user-attribution-config-service-api/src @sanket-mundra @rutvij-menavlikar @saxenakshitiz @aaron-steinfeld
@@ -54,7 +54,8 @@ jira-integration-config-service-impl/src @murari54 @Kunal-8789 @sanketkar24 @Gg-
 genai-system-discovery-config-service-api/src @aaron-steinfeld @skjindal93 @sanket-mundra @Vaibhav090420
 genai-system-discovery-config-service-impl/src @aaron-steinfeld @skjindal93 @sanket-mundra @Vaibhav090420
 genai-system-discovery-client/src @aaron-steinfeld @skjindal93 @sanket-mundra @Vaibhav090420
-cloud-bot-deployment-config-service-api @singhalprerana @avinashkolluru @saxenakshitiz @bhubam
+cloud-bot-deployment-config-service-api @singhalprerana @avinashkolluru @saxenakshitiz @bhubam @abhishek-yadav-tracable
+cloud-bot-deployment-config-service-impl @avinashkolluru @saxenakshitiz @bhubam @abhishek-yadav-tracable
 cloud-edge-deployment-config-service-impl @singhalprerana @avinashkolluru @saxenakshitiz @bhubam
 certificate-management-config-service-api @singhalprerana @avinashkolluru @saxenakshitiz @bhubam
 certificate-management-config-service-impl @singhalprerana @avinashkolluru @saxenakshitiz @bhubam
