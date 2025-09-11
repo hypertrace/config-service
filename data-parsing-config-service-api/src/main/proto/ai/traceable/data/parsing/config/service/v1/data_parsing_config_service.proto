@@ -3,59 +3,71 @@ syntax = "proto3";
 package ai.traceable.data.parsing.config.service.v1;
 
 import "ai/traceable/data/parsing/config/service/v1/data_parsing_config.proto";
+import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
+import "ai/traceable/graphql/autogen/schema/annotations/method/v1/graphql_method_options.proto";
 
 option java_multiple_files = true;
 
 service DataParsingConfigService {
-  rpc CreateDataParsingRule(CreateDataParsingRuleRequest) returns (CreateDataParsingRuleResponse) {}
-  rpc UpdateDataParsingRule(UpdateDataParsingRuleRequest) returns (UpdateDataParsingRuleResponse) {}
-  rpc DeleteDataParsingRule(DeleteDataParsingRuleRequest) returns (DeleteDataParsingRuleResponse) {}
-  rpc GetDataParsingRules(GetDataParsingRulesRequest) returns (GetDataParsingRulesResponse) {}
-  rpc RankDataParsingConfig(RankDataParsingConfigRequest) returns (RankDataParsingConfigResponse) {}
+  rpc CreateDataParsingRule(CreateDataParsingRuleRequest) returns (CreateDataParsingRuleResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "Create a new data parsing rule";
+  }
+  rpc UpdateDataParsingRule(UpdateDataParsingRuleRequest) returns (UpdateDataParsingRuleResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "Update an existing data parsing rule";
+  }
+  rpc DeleteDataParsingRule(DeleteDataParsingRuleRequest) returns (DeleteDataParsingRuleResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "Delete a data parsing rule";
+  }
+  rpc GetDataParsingRules(GetDataParsingRulesRequest) returns (GetDataParsingRulesResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "Get a list of data parsing rules";
+  }
+  rpc RankDataParsingConfig(RankDataParsingConfigRequest) returns (RankDataParsingConfigResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "Rank or reorder data parsing configs";
+  }
 }
 
 message CreateDataParsingRuleRequest {
-  DataParsingRule data_parsing_rule = 1;
+  DataParsingRule data_parsing_rule = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "The data parsing rule to create"];
 }
 
 message CreateDataParsingRuleResponse {
-  DataParsingConfig data_parsing_config = 1;
+  DataParsingConfig data_parsing_config = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Created data parsing config"];
 }
 
 message UpdateDataParsingRuleRequest {
-  string id = 1;
-  DataParsingRule data_parsing_rule = 3;
+  string id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "ID of the data parsing rule to update"];
+  DataParsingRule data_parsing_rule = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Updated data parsing rule"];
 }
 
 message UpdateDataParsingRuleResponse {
-  DataParsingConfig data_parsing_config = 1;
+  DataParsingConfig data_parsing_config = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Updated data parsing config"];
 }
 
 message GetDataParsingRulesRequest {
-  GetDataParsingRulesFilter filter = 1;
+  GetDataParsingRulesFilter filter = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Filter for fetching data parsing rules"];
 }
 
 message GetDataParsingRulesFilter {
-  repeated string ids = 1;
-  repeated string environment_ids = 2;
-  optional bool enabled = 3;
+  repeated string ids = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "IDs to filter data parsing rules"];
+  repeated string environment_ids = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Environment IDs to filter data parsing rules"];
+  optional bool enabled = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Filter by enabled status"];
 }
 
 message GetDataParsingRulesResponse {
-  repeated DataParsingConfig data_parsing_configs = 1;
+  repeated DataParsingConfig data_parsing_configs = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of data parsing configs"];
 }
 
 message DeleteDataParsingRuleRequest {
-  string id = 1;
+  string id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "ID of the data parsing rule to delete"];
 }
 
 message DeleteDataParsingRuleResponse {}
 
 message RankDataParsingConfigRequest {
-  string config_id_to_update = 1;
-  optional string preceding_config_id = 2;
+  string config_id_to_update = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "ID of the config to update rank for"];
+  optional string preceding_config_id = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "ID of the config to preceding this one."];
 }
 
 message RankDataParsingConfigResponse {
-  repeated DataParsingConfig data_parsing_configs = 1;
+  repeated DataParsingConfig data_parsing_configs = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of reordered data parsing configs"];
 }

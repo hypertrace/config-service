@@ -2,27 +2,29 @@ syntax = "proto3";
 
 package ai.traceable.data.parsing.config.service.v1;
 
+import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
+
 option java_multiple_files = true;
 
 message DataParsingConfig {
-  string id = 1;
-  int32 rank = 2;
-  DataParsingRule data_parsing_rule = 3;
+  string id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Identifier of the data parsing config"];
+  int32 rank = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Rank for ordering data parsing configs"];
+  DataParsingRule data_parsing_rule = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "The data parsing rule"];
 }
 
 message DataParsingRule {
-  bool enabled = 1;
+  bool enabled = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Data parsing rule is enabled or not"];
   oneof scope {
-    GlobalScope global_scope = 2;
-    EnvironmentScope environment_scope = 3;
+    GlobalScope global_scope = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Data parsing rule has global scope"];
+    EnvironmentScope environment_scope = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Data parsing rule is environment scoped"];
   }
   // NOTE: Keep below portion of this proto in sync with
   // the DataParsingRule proto in external-data-classification-config-service-api
-  SpanFilter span_filter = 4;
-  AttributeFilter attribute_filter = 5;
-  DataParsingMode mode = 6;
+  SpanFilter span_filter = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Filter for spans to apply data parsing rule"];
+  AttributeFilter attribute_filter = 5 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Filter for attributes to apply data parsing rule"];
+  DataParsingMode mode = 6 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Mode of data parsing rule"];
   oneof failure_strategy {
-    DropOnFailure drop_on_failure = 7;
+    DropOnFailure drop_on_failure = 7 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Strategy to drop data on failure"];
   }
 
   enum DataParsingMode {
@@ -42,29 +44,29 @@ message DataParsingRule {
   message GlobalScope {}
 
   message EnvironmentScope {
-    repeated string environment_ids = 1;
+    repeated string environment_ids = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of environment IDs"];
   }
 }
 
 message SpanFilter {
   // TODO - this could include things like API scoping in the future
   // This supports things like matching a url before checking for a particular param name
-  repeated AttributePredicate required_matching_attributes = 1;
+  repeated AttributePredicate required_matching_attributes = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Attributes required to match"];
 }
 
 message AttributeFilter {
   // This is used to, for example, restrict matches to only headers
-  repeated string prefixes = 1;
+  repeated string prefixes = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Prefixes to restrict attribute matching"];
 }
 
 message StringPredicate {
-  Operator operator = 1;
-  string value = 2;
+  Operator operator = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Operator for string predicate"];
+  string value = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Value for string predicate"];
 }
 
 message AttributePredicate {
-  StringPredicate name_predicate = 1;
-  StringPredicate value_predicate = 2;
+  StringPredicate name_predicate = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Predicate for attribute name"];
+  StringPredicate value_predicate = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Predicate for attribute value"];
 }
 
 enum Operator {
