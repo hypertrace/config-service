@@ -16,6 +16,8 @@ message DataParsingRule {
     GlobalScope global_scope = 2;
     EnvironmentScope environment_scope = 3;
   }
+  // NOTE: Keep below portion of this proto in sync with
+  // the DataParsingRule proto in external-data-classification-config-service-api
   SpanFilter span_filter = 4;
   AttributeFilter attribute_filter = 5;
   DataParsingMode mode = 6;

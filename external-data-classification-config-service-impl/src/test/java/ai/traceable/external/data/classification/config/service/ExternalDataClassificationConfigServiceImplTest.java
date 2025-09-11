@@ -26,6 +26,10 @@ import ai.traceable.data.classification.config.service.v1.GetDataClassificationO
 import ai.traceable.data.classification.config.service.v1.GetDataClassificationOverridesResponse;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesResponse;
+import ai.traceable.data.parsing.config.service.v1.DataParsingConfigServiceGrpc;
+import ai.traceable.data.parsing.config.service.v1.DataParsingConfigServiceGrpc.DataParsingConfigServiceBlockingStub;
+import ai.traceable.data.parsing.config.service.v1.GetDataParsingRulesRequest;
+import ai.traceable.data.parsing.config.service.v1.GetDataParsingRulesResponse;
 import ai.traceable.external.data.classification.config.service.v1.DataType.DataTypeMatchRule;
 import ai.traceable.external.data.classification.config.service.v1.DataType.Result;
 import ai.traceable.external.data.classification.config.service.v1.ExternalDataClassificationServiceGrpc;
@@ -136,6 +140,10 @@ public class ExternalDataClassificationConfigServiceImplTest {
                             .toInstance(
                                 SessionIdentificationConfigServiceGrpc.newBlockingStub(
                                     mockGenericConfigService.channel()));
+                        bind(DataParsingConfigServiceBlockingStub.class)
+                            .toInstance(
+                                DataParsingConfigServiceGrpc.newBlockingStub(
+                                    mockGenericConfigService.channel()));
                         bind(InsightsServiceBlockingStub.class)
                             .toInstance(
                                 InsightsServiceGrpc.newBlockingStub(
@@ -154,6 +162,7 @@ public class ExternalDataClassificationConfigServiceImplTest {
         .addService(injector.getInstance(BindableService.class))
         .addService(new MockSensitiveDataConfigService())
         .addService(new MockDataClassificationConfigService())
+        .addService(new MockDataParsingConfigService())
         .start();
     externalDataClassificationServiceBlockingStub =
         ExternalDataClassificationServiceGrpc.newBlockingStub(
@@ -509,6 +518,20 @@ public class ExternalDataClassificationConfigServiceImplTest {
         StreamObserver<GetUserAttributionRulesResponse> responseObserver) {
       GetUserAttributionRulesResponse.Builder responseBuilder =
           GetUserAttributionRulesResponse.newBuilder();
+      responseObserver.onNext(responseBuilder.build());
+      responseObserver.onCompleted();
+    }
+  }
+
+  static class MockDataParsingConfigService
+      extends DataParsingConfigServiceGrpc.DataParsingConfigServiceImplBase {
+
+    @Override
+    public void getDataParsingRules(
+        GetDataParsingRulesRequest request,
+        StreamObserver<GetDataParsingRulesResponse> responseObserver) {
+      GetDataParsingRulesResponse.Builder responseBuilder =
+          GetDataParsingRulesResponse.newBuilder();
       responseObserver.onNext(responseBuilder.build());
       responseObserver.onCompleted();
     }

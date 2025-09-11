@@ -170,8 +170,8 @@ class ExternalDataClassificationConfigServiceImpl
             request,
             requestContext,
             externalDataTypes,
-            this.dataParsingRuleManager.getDefaultParsingRulesForAgent(
-                requestContext, request.getAgentCapabilities()));
+            this.dataParsingRuleManager.getDataParsingRulesForAgent(
+                requestContext, requestedEnvironment, request.getAgentCapabilities()));
     this.updateCacheIfNeeded(requestKey, response);
     return response;
   }
