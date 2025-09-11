@@ -1,0 +1,147 @@
+syntax = "proto3";
+
+package ai.traceable.aiapp.protection.config.service.v1;
+
+import "ai/traceable/aiapp/protection/config/service/v1/common.proto";
+import "google/protobuf/struct.proto";
+
+option java_multiple_files = true;
+
+message AiAppCustomRule {
+  string rule_id = 1;
+  AiAppCustomRuleData rule_data = 2;
+}
+
+message AiAppCustomRuleData {
+  string rule_name = 1;
+  string description = 2;
+  RuleStatusDetails rule_status_details = 3;
+  bool enabled = 4;
+  RuleScope rule_scope = 5;
+  Action action = 6;
+  map<string, string> event_labels = 7;
+  oneof rule_data {
+    PiiDetectedInPromptRuleData pii_detected_in_prompt_rule_data = 8;
+    AiRateLimitingRuleData ai_rate_limiting_rule_data = 9;
+    ModelGovernanceRuleData model_governance_rule_data = 10;
+    AiInputExplosionRuleData ai_input_explosion_rule_data = 11;
+  }
+}
+
+message PiiDetectedInPromptRuleData {
+  DatatypeCondition datatype_condition = 1;
+  ScopeCondition scope_condition = 2;
+}
+
+message AiRateLimitingRuleData {
+  MatchOperatorCondition ai_model_types_condition = 1;
+  MatchOperatorCondition ai_vendors_condition = 2;
+  ResourceAccessThresholdConfig threshold_config = 3;
+}
+
+message ModelGovernanceRuleData {
+  MatchOperatorCondition ai_model_types_condition = 1;
+  MatchOperatorCondition ai_vendors_condition = 2;
+}
+
+message AiInputExplosionRuleData {
+  int32 input_character_limit = 1;
+}
+
+message RuleStatusDetails {
+  bool hidden = 1;
+  bool internal = 2;
+  RuleSource rule_creation_source = 3;
+
+  enum RuleSource {
+    RULE_SOURCE_UNSPECIFIED = 0;
+    RULE_SOURCE_DEFAULT = 1;
+    RULE_SOURCE_CUSTOMER = 2;
+    RULE_SOURCE_TRACEABLE = 3;
+  }
+}
+
+message DatatypeCondition {
+  repeated string dataset_ids = 1;
+  repeated string datatype_ids = 2;
+  MatchOperatorCondition request_body_custom_location_condition = 3;
+}
+
+message ScopeCondition {
+  oneof scope {
+    EntityScope entity_scope = 1;
+  }
+
+  message EntityScope {
+    EntityType entity_type = 1;
+    repeated string entity_ids = 2;
+  }
+
+  enum EntityType {
+    ENTITY_TYPE_UNSPECIFIED = 0;
+    ENTITY_TYPE_API = 1;
+  }
+}
+
+message MatchOperatorCondition {
+  MatchOperator operator = 1;
+  google.protobuf.Value value = 2;
+}
+
+enum MatchOperator {
+  MATCH_OPERATOR_UNSPECIFIED = 0;
+  MATCH_OPERATOR_EQUALS = 1;
+  MATCH_OPERATOR_NOT_EQUAL = 2;
+  MATCH_OPERATOR_MATCHES_REGEX = 3;
+  MATCH_OPERATOR_NOT_MATCH_REGEX = 4;
+  MATCH_OPERATOR_CONTAINS = 5;
+  MATCH_OPERATOR_NOT_CONTAIN = 6;
+  MATCH_OPERATOR_GREATER_THAN = 7;
+  MATCH_OPERATOR_LESS_THAN = 8;
+}
+
+message Action {
+  oneof action {
+    Alert alert = 1;
+    MarkForTesting mark_for_testing = 2;
+  }
+
+  message Alert {
+    SeverityLevel severity_level = 1;
+  }
+
+  message MarkForTesting {}
+}
+
+message ResourceAccessThresholdConfig {
+  UserAggregateType user_aggregate_type = 1;
+  ApiAggregateType api_aggregate_type = 2;
+  oneof threshold_config {
+    RollingWindowThresholdConfig rolling_window_threshold_config = 3; // static threshold
+  }
+
+  message RollingWindowThresholdConfig {
+    int64 count_allowed = 1;
+    string duration_iso = 2;
+  }
+}
+
+enum UserAggregateType {
+  USER_AGGREGATE_TYPE_UNSPECIFIED = 0;
+  USER_AGGREGATE_TYPE_PER_USER = 1;
+  USER_AGGREGATE_TYPE_ACROSS_USERS = 2;
+}
+
+enum ApiAggregateType {
+  API_AGGREGATE_TYPE_UNSPECIFIED = 0;
+  API_AGGREGATE_TYPE_PER_ENDPOINT = 1;
+  API_AGGREGATE_TYPE_ACROSS_ENDPOINTS = 2;
+}
+
+enum AiAppCustomRuleType {
+  AI_APP_CUSTOM_RULE_TYPE_UNSPECIFIED = 0;
+  AI_APP_CUSTOM_RULE_TYPE_PII_DETECTED_IN_PROMPT = 1;
+  AI_APP_CUSTOM_RULE_TYPE_RATE_LIMITING = 2;
+  AI_APP_CUSTOM_RULE_TYPE_MODEL_GOVERNANCE = 3;
+  AI_APP_CUSTOM_RULE_TYPE_INPUT_EXPLOSION = 4;
+}

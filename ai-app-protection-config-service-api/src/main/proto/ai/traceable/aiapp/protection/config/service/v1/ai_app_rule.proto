@@ -1,0 +1,75 @@
+syntax = "proto3";
+
+package ai.traceable.aiapp.protection.config.service.v1;
+
+import "ai/traceable/aiapp/protection/config/service/v1/ai_app_custom_rule.proto";
+import "ai/traceable/aiapp/protection/config/service/v1/common.proto";
+
+option java_multiple_files = true;
+
+message AiAppRule {
+  string rule_id = 1;
+  string rule_name = 2;
+  map<string, string> event_labels = 3;
+  EventDetails event_details = 4;
+  repeated AiAppSubRule ai_app_sub_rules = 5;
+  RuleStatus rule_status = 6;
+  repeated RuleScope overriding_child_scopes = 7;
+  bool overridden_default = 8;
+}
+
+message AiAppSubRule {
+  oneof sub_rule {
+    AiAppOotbRule ootb_rule = 1;
+    AiAppCustomRule custom_rule = 2;
+  }
+}
+
+message AiAppOotbRule {
+  string rule_id = 1;
+  string rule_name = 2;
+  map<string, string> event_labels = 3;
+  SeverityLevel severity_level = 4;
+  EventDetails event_details = 5;
+  RuleAction rule_action = 6;
+  optional bool internal = 7;
+  repeated RuleScope overriding_child_scopes = 8;
+  bool overridden_default = 9;
+}
+
+message AiAppRuleUpdate {
+  string rule_id = 1;
+  RuleStatusChange rule_status_change = 2;
+  repeated AiAppOotbSubRuleUpdate ootb_sub_rule_updates = 3;
+}
+
+message AiAppOotbSubRuleUpdate {
+  string rule_id = 1;
+  RuleAction rule_action = 2;
+  optional bool internal = 3;
+}
+
+message RuleStatus {
+  bool disabled = 1;
+  bool internal = 2;
+}
+
+message RuleStatusChange {
+  optional bool disabled = 1;
+  optional bool internal = 2;
+}
+
+message EventDetails {
+  string description = 1;
+  string mitigation = 2;
+  string impact = 3;
+  string references = 4;
+}
+
+enum RuleAction {
+  RULE_ACTION_UNSPECIFIED = 0;
+  RULE_ACTION_DISABLE = 1;
+  RULE_ACTION_MONITOR = 2;
+  RULE_ACTION_BLOCK = 3;
+  RULE_ACTION_TESTING = 4;
+}

@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package ai.traceable.aiapp.protection.config.service.v1;
+
+option java_multiple_files = true;
+
+enum SeverityLevel {
+  SEVERITY_LEVEL_UNSPECIFIED = 0;
+  SEVERITY_LEVEL_LOW = 1;
+  SEVERITY_LEVEL_MEDIUM = 2;
+  SEVERITY_LEVEL_HIGH = 3;
+  SEVERITY_LEVEL_CRITICAL = 4;
+}
+
+message RuleScope {
+  oneof scope {
+    TenantScope tenant_scope = 1;
+    EntityScope entity_scope = 2;
+  }
+}
+
+message TenantScope {}
+
+message EntityScope {
+  EntityType entity_type = 1;
+  repeated string entity_ids = 2;
+
+  enum EntityType {
+    ENTITY_TYPE_UNSPECIFIED = 0;
+    ENTITY_TYPE_ENVIRONMENT = 1;
+  }
+}

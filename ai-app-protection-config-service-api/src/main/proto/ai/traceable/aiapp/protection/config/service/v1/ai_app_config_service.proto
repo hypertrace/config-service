@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package ai.traceable.aiapp.protection.config.service.v1;
+
+import "ai/traceable/aiapp/protection/config/service/v1/ai_app_custom_rule.proto";
+import "ai/traceable/aiapp/protection/config/service/v1/ai_app_rule.proto";
+import "ai/traceable/aiapp/protection/config/service/v1/common.proto";
+
+option java_multiple_files = true;
+
+service AiAppConfigService {
+  rpc GetAiAppRules(GetAiAppRulesRequest) returns (GetAiAppRulesResponse) {}
+  rpc DeleteAiAppRules(DeleteAiAppRulesRequest) returns (DeleteAiAppRulesResponse) {}
+  rpc UpdateAiAppRules(UpdateAiAppRulesRequest) returns (UpdateAiAppRulesResponse) {}
+  rpc CreateAiAppCustomRule(CreateAiAppCustomRuleRequest) returns (CreateAiAppCustomRuleResponse) {}
+  rpc UpsertAiAppCustomRule(UpsertAiAppCustomRuleRequest) returns (UpsertAiAppCustomRuleResponse) {}
+}
+
+message GetAiAppRulesRequest {
+  RuleScope rule_scope = 1;
+}
+
+message GetAiAppRulesResponse {
+  repeated AiAppRule ai_app_rules = 1;
+}
+
+message UpdateAiAppRulesRequest {
+  RuleScope rule_scope = 1;
+  repeated AiAppRuleUpdate ai_app_rule_updates = 2;
+}
+
+message UpdateAiAppRulesResponse {
+  repeated AiAppRule ai_app_rules = 1;
+}
+
+message CreateAiAppCustomRuleRequest {
+  AiAppCustomRuleData ai_app_custom_rule_data = 1;
+}
+
+message CreateAiAppCustomRuleResponse {
+  AiAppCustomRule ai_app_custom_rule = 1;
+}
+
+message UpsertAiAppCustomRuleRequest {
+  AiAppCustomRule ai_app_custom_rule = 1;
+}
+
+message UpsertAiAppCustomRuleResponse {
+  AiAppCustomRule ai_app_custom_rule = 1;
+}
+
+message DeleteAiAppRulesRequest {
+  oneof delete_option {
+    ResetToDefault reset_to_default = 1;
+    AiAppCustomRuleToDelete custom_rule_to_delete = 2;
+  }
+}
+
+message ResetToDefault {
+  repeated string rule_ids = 1;
+}
+
+message AiAppCustomRuleToDelete {
+  string rule_id = 1;
+  AiAppCustomRuleType custom_rule_type = 2;
+}
+
+message DeleteAiAppRulesResponse {}
