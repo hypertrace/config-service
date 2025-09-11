@@ -179,6 +179,7 @@ public class AstConfigServiceRequestValidatorImpl implements AstConfigServiceReq
       case VULNERABILITY_SEVERITY_MEDIUM:
       case VULNERABILITY_SEVERITY_HIGH:
       case VULNERABILITY_SEVERITY_CRITICAL:
+      case VULNERABILITY_SEVERITY_INFORMATION:
         break;
       default:
         throw Status.INVALID_ARGUMENT
