@@ -43,8 +43,8 @@ public class AnomalyGlobalConfigServiceConfig {
       "apiGlobalConfig.exitSpansEvalEnabled";
   private static final String GEN_AI_DEFAULT_DISABLED = "globalGenAiConfig.disabled";
 
-  private final boolean disabled;
-  private final boolean internal;
+  @Getter private final boolean disabled;
+  @Getter private final boolean internal;
   private final AnomalyConfidenceLevel minConfidenceLevel;
   private final Map<LicenseInfo.Tier, Boolean> licenseTiersConfigStatusMap;
   @Getter private final ModsecDefaultConfigsType modsecDefaultConfigsType;

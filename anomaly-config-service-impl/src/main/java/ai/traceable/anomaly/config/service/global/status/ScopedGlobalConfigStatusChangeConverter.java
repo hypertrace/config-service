@@ -59,6 +59,10 @@ public class ScopedGlobalConfigStatusChangeConverter {
         .setModsecGlobalConfig(
             config.toBuilder()
                 .getModsecGlobalConfigBuilder()
+                .setDisabled(
+                    config.getModsecGlobalConfig().hasDisabled()
+                        ? config.getModsecGlobalConfig().getDisabled()
+                        : defaultConfig.isDisabled())
                 .setDefaultConfigsType(
                     getModsecDefaultConfigsType(
                         config,
@@ -77,6 +81,10 @@ public class ScopedGlobalConfigStatusChangeConverter {
         .setApiGlobalConfig(
             config.toBuilder()
                 .getApiGlobalConfigBuilder()
+                .setDisabled(
+                    config.getApiGlobalConfig().hasDisabled()
+                        ? config.getApiGlobalConfig().getDisabled()
+                        : defaultConfig.isDisabled())
                 .setDefaultConfigsType(
                     config.getApiGlobalConfig().getDefaultConfigsType()
                             == ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_UNSPECIFIED
@@ -145,13 +153,17 @@ public class ScopedGlobalConfigStatusChangeConverter {
             globalModsecConfigChange.getRuleVersionDataChange().getOverrideVersion(),
             globalModsecConfigChange.getRuleVersionDataChange().getStableVersion());
     GlobalModsecConfig.Builder builder = GlobalModsecConfig.newBuilder();
+
     if (isNullOrDefault(globalModsecConfigChange)) {
       ModsecGlobalConfig modsecGlobalConfig = config.getModsecGlobalConfig();
       builder
           .setBlockingAvailableForRegularRules(
               modsecGlobalConfig.getBlockingAvailableForRegularRules())
           .setUseTestRules(modsecGlobalConfig.getUseTestRules())
-          .setDisabled(modsecGlobalConfig.getDisabled())
+          .setDisabled(
+              modsecGlobalConfig.hasDisabled()
+                  ? modsecGlobalConfig.getDisabled()
+                  : defaultConfig.isDisabled())
           .setEnabledForExitSpans(
               modsecGlobalConfig.hasEnabledForExitSpans()
                   ? modsecGlobalConfig.getEnabledForExitSpans()
@@ -172,7 +184,10 @@ public class ScopedGlobalConfigStatusChangeConverter {
           .setBlockingAvailableForRegularRules(
               globalModsecConfigChange.getBlockingAvailableForRegularRules())
           .setUseTestRules(globalModsecConfigChange.getUseTestRules())
-          .setDisabled(globalModsecConfigChange.getDisabled())
+          .setDisabled(
+              globalModsecConfigChange.hasDisabled()
+                  ? globalModsecConfigChange.getDisabled()
+                  : defaultConfig.isDisabled())
           .setEnabledForExitSpans(
               globalModsecConfigChange.hasEnabledForExitSpans()
                   ? globalModsecConfigChange.getEnabledForExitSpans()
