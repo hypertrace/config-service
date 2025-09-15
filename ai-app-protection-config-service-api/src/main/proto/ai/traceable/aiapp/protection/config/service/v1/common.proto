@@ -17,18 +17,12 @@ enum SeverityLevel {
 message RuleScope {
   oneof scope {
     TenantScope tenant_scope = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Tenant scope for the rule"];
-    EntityScope entity_scope = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Entity scope for the rule"];
+    EnvironmentScope environment_scope = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Entity scope for the rule"];
   }
 }
 
 message TenantScope {}
 
-message EntityScope {
-  EntityType entity_type = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Entity type for the scope"];
-  repeated string entity_ids = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Entity IDs for the scope"];
-
-  enum EntityType {
-    ENTITY_TYPE_UNSPECIFIED = 0;
-    ENTITY_TYPE_ENVIRONMENT = 1;
-  }
+message EnvironmentScope {
+  repeated string environment_ids = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Environment IDs for the scope"];
 }

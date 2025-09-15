@@ -71,11 +71,16 @@ message DatatypeCondition {
 message ScopeCondition {
   oneof scope {
     EntityScope entity_scope = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Entity scope condition of the rule"];
+    UrlScope url_scope = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "URL scope condition of the rule"];
   }
 
   message EntityScope {
     EntityType entity_type = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Entity type for the scope"];
     repeated string entity_ids = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Entity IDs for the scope"];
+  }
+
+  message UrlScope {
+    repeated string url_regexes = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "URL regexes for the scope"];
   }
 
   enum EntityType {
