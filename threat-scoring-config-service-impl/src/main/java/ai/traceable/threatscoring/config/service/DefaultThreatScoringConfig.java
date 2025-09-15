@@ -145,6 +145,7 @@ public class DefaultThreatScoringConfig {
                 .setNewActivityConfidence(
                     SCORING_LEVEL_MAP.getOrDefault(
                         values[4], ScoringLevel.SCORING_LEVEL_UNSPECIFIED))
+                .setResponseVariationCount(ScoringLevel.SCORING_LEVEL_UNSPECIFIED)
                 .build());
       }
 

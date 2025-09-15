@@ -53,6 +53,7 @@ message ThreatActivityConfidenceMapping {
   ScoringLevel previous_activity_event_count = 3;
   ScoringLevel previous_unique_params_count = 4;
   ScoringLevel new_activity_confidence = 5;
+  ScoringLevel response_variation_count = 6;
 }
 
 message MaliciousSpanConfidenceScoring {
