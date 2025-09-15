@@ -4,66 +4,67 @@ package ai.traceable.aiapp.protection.config.service.v1;
 
 import "ai/traceable/aiapp/protection/config/service/v1/ai_app_custom_rule.proto";
 import "ai/traceable/aiapp/protection/config/service/v1/common.proto";
+import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
 
 option java_multiple_files = true;
 
 message AiAppRule {
-  string rule_id = 1;
-  string rule_name = 2;
-  map<string, string> event_labels = 3;
-  EventDetails event_details = 4;
-  repeated AiAppSubRule ai_app_sub_rules = 5;
-  RuleStatus rule_status = 6;
-  repeated RuleScope overriding_child_scopes = 7;
-  bool overridden_default = 8;
+  string rule_id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "ID of the rule"];
+  string rule_name = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Name of the rule"];
+  map<string, string> event_labels = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Event labels of the rule"];
+  EventDetails event_details = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Details of the rule"];
+  repeated AiAppSubRule ai_app_sub_rules = 5 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of sub rules"];
+  RuleStatus rule_status = 6 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Status of the rule"];
+  repeated RuleScope overriding_child_scopes = 7 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Overriding child scopes of the rule"];
+  bool overridden_default = 8 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "If the rule is overriding the default value"];
 }
 
 message AiAppSubRule {
   oneof sub_rule {
-    AiAppOotbRule ootb_rule = 1;
-    AiAppCustomRule custom_rule = 2;
+    AiAppOotbRule ootb_rule = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Out of the box sub rule"];
+    AiAppCustomRule custom_rule = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Custom sub rule"];
   }
 }
 
 message AiAppOotbRule {
-  string rule_id = 1;
-  string rule_name = 2;
-  map<string, string> event_labels = 3;
-  SeverityLevel severity_level = 4;
-  EventDetails event_details = 5;
-  RuleAction rule_action = 6;
-  optional bool internal = 7;
-  repeated RuleScope overriding_child_scopes = 8;
-  bool overridden_default = 9;
+  string rule_id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "ID of the sub rule"];
+  string rule_name = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Name of the sub rule"];
+  map<string, string> event_labels = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Labels of the sub rule"];
+  SeverityLevel severity_level = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Severity of the sub rule"];
+  EventDetails event_details = 5 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Details of the sub rule"];
+  RuleAction rule_action = 6 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Action of the sub rule"];
+  optional bool internal = 7 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "If the sub rule should generate internal events"];
+  repeated RuleScope overriding_child_scopes = 8 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Overriding child scopes of the sub rule"];
+  bool overridden_default = 9 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "If the sub rule is overriding the default value"];
 }
 
 message AiAppRuleUpdate {
-  string rule_id = 1;
-  RuleStatusChange rule_status_change = 2;
-  repeated AiAppOotbSubRuleUpdate ootb_sub_rule_updates = 3;
+  string rule_id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "ID of the rule to be updated"];
+  RuleStatusChange rule_status_change = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Status change for the rule"];
+  repeated AiAppOotbSubRuleUpdate ootb_sub_rule_updates = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of ootb sub rule updates"];
 }
 
 message AiAppOotbSubRuleUpdate {
-  string rule_id = 1;
-  RuleAction rule_action = 2;
-  optional bool internal = 3;
+  string rule_id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "ID of the sub rule to be updated"];
+  RuleAction rule_action = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Action of the sub rule to be updated"];
+  optional bool internal = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "If the sub rule should be marked to generate internal event"];
 }
 
 message RuleStatus {
-  bool disabled = 1;
-  bool internal = 2;
+  bool disabled = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "If the rule is disabled"];
+  bool internal = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "If the rule should generate internal events"];
 }
 
 message RuleStatusChange {
-  optional bool disabled = 1;
-  optional bool internal = 2;
+  optional bool disabled = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "If the rule should be marked disabled"];
+  optional bool internal = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "If the rule should be marked to generate internal events"];
 }
 
 message EventDetails {
-  string description = 1;
-  string mitigation = 2;
-  string impact = 3;
-  string references = 4;
+  string description = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Description of the rule"];
+  string mitigation = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Mitigation for the rule"];
+  string impact = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Impact of the rule"];
+  string references = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "References for the rule"];
 }
 
 enum RuleAction {

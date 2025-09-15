@@ -5,64 +5,76 @@ package ai.traceable.aiapp.protection.config.service.v1;
 import "ai/traceable/aiapp/protection/config/service/v1/ai_app_custom_rule.proto";
 import "ai/traceable/aiapp/protection/config/service/v1/ai_app_rule.proto";
 import "ai/traceable/aiapp/protection/config/service/v1/common.proto";
+import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
+import "ai/traceable/graphql/autogen/schema/annotations/method/v1/graphql_method_options.proto";
 
 option java_multiple_files = true;
 
 service AiAppConfigService {
-  rpc GetAiAppRules(GetAiAppRulesRequest) returns (GetAiAppRulesResponse) {}
-  rpc DeleteAiAppRules(DeleteAiAppRulesRequest) returns (DeleteAiAppRulesResponse) {}
-  rpc UpdateAiAppRules(UpdateAiAppRulesRequest) returns (UpdateAiAppRulesResponse) {}
-  rpc CreateAiAppCustomRule(CreateAiAppCustomRuleRequest) returns (CreateAiAppCustomRuleResponse) {}
-  rpc UpsertAiAppCustomRule(UpsertAiAppCustomRuleRequest) returns (UpsertAiAppCustomRuleResponse) {}
+  rpc GetAiAppRules(GetAiAppRulesRequest) returns (GetAiAppRulesResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "Fetch AI app rules";
+  }
+  rpc DeleteAiAppRules(DeleteAiAppRulesRequest) returns (DeleteAiAppRulesResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "Delete AI app rules";
+  }
+  rpc UpdateAiAppRules(UpdateAiAppRulesRequest) returns (UpdateAiAppRulesResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "Update AI app rules";
+  }
+  rpc CreateAiAppCustomRule(CreateAiAppCustomRuleRequest) returns (CreateAiAppCustomRuleResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "Create AI app custom rule";
+  }
+  rpc UpsertAiAppCustomRule(UpsertAiAppCustomRuleRequest) returns (UpsertAiAppCustomRuleResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "Upsert AI app custom rules";
+  }
 }
 
 message GetAiAppRulesRequest {
-  RuleScope rule_scope = 1;
+  RuleScope rule_scope = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Scope of the rules to be fetched"];
 }
 
 message GetAiAppRulesResponse {
-  repeated AiAppRule ai_app_rules = 1;
+  repeated AiAppRule ai_app_rules = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Rules of the scope"];
 }
 
 message UpdateAiAppRulesRequest {
-  RuleScope rule_scope = 1;
-  repeated AiAppRuleUpdate ai_app_rule_updates = 2;
+  RuleScope rule_scope = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Scope of the rules to be updated"];
+  repeated AiAppRuleUpdate ai_app_rule_updates = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of rule updates"];
 }
 
 message UpdateAiAppRulesResponse {
-  repeated AiAppRule ai_app_rules = 1;
+  repeated AiAppRule ai_app_rules = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Updated rules of the scope"];
 }
 
 message CreateAiAppCustomRuleRequest {
-  AiAppCustomRuleData ai_app_custom_rule_data = 1;
+  AiAppCustomRuleData ai_app_custom_rule_data = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Details of the custom rule to be created"];
 }
 
 message CreateAiAppCustomRuleResponse {
-  AiAppCustomRule ai_app_custom_rule = 1;
+  AiAppCustomRule ai_app_custom_rule = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Created custom rule"];
 }
 
 message UpsertAiAppCustomRuleRequest {
-  AiAppCustomRule ai_app_custom_rule = 1;
+  AiAppCustomRule ai_app_custom_rule = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Custom rule to be upserted"];
 }
 
 message UpsertAiAppCustomRuleResponse {
-  AiAppCustomRule ai_app_custom_rule = 1;
+  AiAppCustomRule ai_app_custom_rule = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Upserted custom rule"];
 }
 
 message DeleteAiAppRulesRequest {
   oneof delete_option {
-    ResetToDefault reset_to_default = 1;
-    AiAppCustomRuleToDelete custom_rule_to_delete = 2;
+    ResetToDefault reset_to_default = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Reset to default"];
+    AiAppCustomRuleToDelete custom_rule_to_delete = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Custom rule to be deleted"];
   }
 }
 
 message ResetToDefault {
-  repeated string rule_ids = 1;
+  repeated string rule_ids = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of rule IDs to be reset to default"];
 }
 
 message AiAppCustomRuleToDelete {
-  string rule_id = 1;
-  AiAppCustomRuleType custom_rule_type = 2;
+  string rule_id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Rule ID of the custom rule"];
+  AiAppCustomRuleType custom_rule_type = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Type of custom rule"];
 }
 
 message DeleteAiAppRulesResponse {}

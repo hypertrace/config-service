@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package ai.traceable.aiapp.protection.config.service.v1;
 
+import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
+
 option java_multiple_files = true;
 
 enum SeverityLevel {
@@ -14,16 +16,16 @@ enum SeverityLevel {
 
 message RuleScope {
   oneof scope {
-    TenantScope tenant_scope = 1;
-    EntityScope entity_scope = 2;
+    TenantScope tenant_scope = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Tenant scope for the rule"];
+    EntityScope entity_scope = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Entity scope for the rule"];
   }
 }
 
 message TenantScope {}
 
 message EntityScope {
-  EntityType entity_type = 1;
-  repeated string entity_ids = 2;
+  EntityType entity_type = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Entity type for the scope"];
+  repeated string entity_ids = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Entity IDs for the scope"];
 
   enum EntityType {
     ENTITY_TYPE_UNSPECIFIED = 0;

@@ -3,55 +3,56 @@ syntax = "proto3";
 package ai.traceable.aiapp.protection.config.service.v1;
 
 import "ai/traceable/aiapp/protection/config/service/v1/common.proto";
+import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
 import "google/protobuf/struct.proto";
 
 option java_multiple_files = true;
 
 message AiAppCustomRule {
-  string rule_id = 1;
-  AiAppCustomRuleData rule_data = 2;
+  string rule_id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "ID of the custom rule"];
+  AiAppCustomRuleData rule_data = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Details of the custom rule"];
 }
 
 message AiAppCustomRuleData {
-  string rule_name = 1;
-  string description = 2;
-  RuleStatusDetails rule_status_details = 3;
-  bool enabled = 4;
-  RuleScope rule_scope = 5;
-  Action action = 6;
-  map<string, string> event_labels = 7;
+  string rule_name = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Name of the rule"];
+  string description = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Description of the rule"];
+  RuleStatusDetails rule_status_details = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Status details of the rule"];
+  bool enabled = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "If the rule is enabled"];
+  RuleScope rule_scope = 5 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Scope of the rule"];
+  Action action = 6 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Action of the rule"];
+  map<string, string> event_labels = 7 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Event labels of the rule"];
   oneof rule_data {
-    PiiDetectedInPromptRuleData pii_detected_in_prompt_rule_data = 8;
-    AiRateLimitingRuleData ai_rate_limiting_rule_data = 9;
-    ModelGovernanceRuleData model_governance_rule_data = 10;
-    AiInputExplosionRuleData ai_input_explosion_rule_data = 11;
+    PiiDetectedInPromptRuleData pii_detected_in_prompt_rule_data = 8 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "PII detected in prompt custom rule details"];
+    AiRateLimitingRuleData ai_rate_limiting_rule_data = 9 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "AI rate limiting custom rule details"];
+    ModelGovernanceRuleData model_governance_rule_data = 10 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Model governance custom rule details"];
+    AiInputExplosionRuleData ai_input_explosion_rule_data = 11 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "AI input explosion custom rule details"];
   }
 }
 
 message PiiDetectedInPromptRuleData {
-  DatatypeCondition datatype_condition = 1;
-  ScopeCondition scope_condition = 2;
+  DatatypeCondition datatype_condition = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Datatype condition of the rule"];
+  ScopeCondition scope_condition = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Scope condition of the rule"];
 }
 
 message AiRateLimitingRuleData {
-  MatchOperatorCondition ai_model_types_condition = 1;
-  MatchOperatorCondition ai_vendors_condition = 2;
-  ResourceAccessThresholdConfig threshold_config = 3;
+  MatchOperatorCondition ai_model_types_condition = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "AI model types condition of the rule"];
+  MatchOperatorCondition ai_vendors_condition = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "AI vendors condition of the rule"];
+  ResourceAccessThresholdConfig threshold_config = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Threshold config of the rule"];
 }
 
 message ModelGovernanceRuleData {
-  MatchOperatorCondition ai_model_types_condition = 1;
-  MatchOperatorCondition ai_vendors_condition = 2;
+  MatchOperatorCondition ai_model_types_condition = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "AI model types condition of the rule"];
+  MatchOperatorCondition ai_vendors_condition = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "AI vendors condition of the rule"];
 }
 
 message AiInputExplosionRuleData {
-  int32 input_character_limit = 1;
+  int32 input_character_limit = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Input character limit of the rule"];
 }
 
 message RuleStatusDetails {
-  bool hidden = 1;
-  bool internal = 2;
-  RuleSource rule_creation_source = 3;
+  bool hidden = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "If the rule is hidden"];
+  bool internal = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "If the rule is marked for generating internal events"];
+  RuleSource rule_creation_source = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Creation source for the rule"];
 
   enum RuleSource {
     RULE_SOURCE_UNSPECIFIED = 0;
@@ -62,19 +63,19 @@ message RuleStatusDetails {
 }
 
 message DatatypeCondition {
-  repeated string dataset_ids = 1;
-  repeated string datatype_ids = 2;
-  MatchOperatorCondition request_body_custom_location_condition = 3;
+  repeated string dataset_ids = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Dataset IDs of the condition"];
+  repeated string datatype_ids = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Datatype IDs of the condition"];
+  MatchOperatorCondition request_body_custom_location_condition = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Custom request body location condition for datatype matching"];
 }
 
 message ScopeCondition {
   oneof scope {
-    EntityScope entity_scope = 1;
+    EntityScope entity_scope = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Entity scope condition of the rule"];
   }
 
   message EntityScope {
-    EntityType entity_type = 1;
-    repeated string entity_ids = 2;
+    EntityType entity_type = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Entity type for the scope"];
+    repeated string entity_ids = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Entity IDs for the scope"];
   }
 
   enum EntityType {
@@ -84,8 +85,8 @@ message ScopeCondition {
 }
 
 message MatchOperatorCondition {
-  MatchOperator operator = 1;
-  google.protobuf.Value value = 2;
+  MatchOperator operator = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Match operator for the condition"];
+  google.protobuf.Value value = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Value to be matched for the condition"];
 }
 
 enum MatchOperator {
@@ -102,27 +103,27 @@ enum MatchOperator {
 
 message Action {
   oneof action {
-    Alert alert = 1;
-    MarkForTesting mark_for_testing = 2;
+    Alert alert = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Alert action for the rule"];
+    MarkForTesting mark_for_testing = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Mark for testing action for the rule"];
   }
 
   message Alert {
-    SeverityLevel severity_level = 1;
+    SeverityLevel severity_level = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Severity level for the alert action"];
   }
 
   message MarkForTesting {}
 }
 
 message ResourceAccessThresholdConfig {
-  UserAggregateType user_aggregate_type = 1;
-  ApiAggregateType api_aggregate_type = 2;
+  UserAggregateType user_aggregate_type = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "User aggregate type for the threshold config"];
+  ApiAggregateType api_aggregate_type = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "API aggregate type for the threshold config"];
   oneof threshold_config {
-    RollingWindowThresholdConfig rolling_window_threshold_config = 3; // static threshold
+    RollingWindowThresholdConfig rolling_window_threshold_config = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Static threshold config"]; // static threshold
   }
 
   message RollingWindowThresholdConfig {
-    int64 count_allowed = 1;
-    string duration_iso = 2;
+    int64 count_allowed = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Count allowed for the static threshold config"];
+    string duration_iso = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Duration for the threshold config"];
   }
 }
 
