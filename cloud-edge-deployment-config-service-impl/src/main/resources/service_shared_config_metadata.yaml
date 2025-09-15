@@ -71,7 +71,7 @@
   identifiers:
     - chartName: ""
       chartPath: ""
-  default_value: 10
+  default_value: 30
 
 - configKey: "maxProbes"
   description: "Maximum number of TCP health probes to send"
@@ -102,3 +102,33 @@
     - chartName: ""
       chartPath: ""
   default_value: 2
+
+- configKey: "tcpKeepaliveTime"
+  description: "TCP keep alive time in seconds"
+  displayName: "TCP Keepalive Time(s)"
+  constraint:
+    intRange:
+      min: 1
+      max: 3600
+  configPermission:
+    read: CONFIG_ACCESS_TYPE_GLOBAL
+    write: CONFIG_ACCESS_TYPE_GLOBAL
+  identifiers:
+    - chartName: ""
+      chartPath: ""
+  default_value: 300
+
+- configKey: "httpMaxRequests"
+  description: "Maximum number of active requests to a destination"
+  displayName: "HTTP Max Requests"
+  constraint:
+    intRange:
+      min: 1
+      max: 25000
+  configPermission:
+    read: CONFIG_ACCESS_TYPE_GLOBAL
+    write: CONFIG_ACCESS_TYPE_GLOBAL
+  identifiers:
+    - chartName: ""
+      chartPath: ""
+  default_value: 5000

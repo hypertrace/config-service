@@ -90,7 +90,7 @@
 
 - configKey: "perRetryTimeout"
   description: "Timeout for the retry attempt"
-  displayName: "Retry Timeout"
+  displayName: "Retry Timeout(s)"
   constraint:
     intRange:
       min: 1
