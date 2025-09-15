@@ -38,7 +38,7 @@ class SharedConfigMetadataParserTest {
 
     // Verify
     assertNotNull(descriptors);
-    assertEquals(9, descriptors.size());
+    assertEquals(6, descriptors.size());
 
     // Verify first descriptor (idleTimeout)
     ConfigValueDescriptor idleTimeoutDescriptor = descriptors.get(0);

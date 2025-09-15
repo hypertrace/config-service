@@ -58,51 +58,6 @@
       chartPath: ""
   default_value: 2
 
-- configKey: "requestTimeout"
-  description: "Timeout for the entire request"
-  displayName: "Request Timeout(s)"
-  constraint:
-    intRange:
-      min: 1
-      max: 300
-  configPermission:
-    read: CONFIG_ACCESS_TYPE_GLOBAL
-    write: CONFIG_ACCESS_TYPE_GLOBAL
-  identifiers:
-    - chartName: ""
-      chartPath: ""
-  default_value: 30
-
-- configKey: "retryAttempts"
-  description: "Number of retry attempts for the request"
-  displayName: "Retry Attempts"
-  constraint:
-    intRange:
-      min: 1
-      max: 100
-  configPermission:
-    read: CONFIG_ACCESS_TYPE_GLOBAL
-    write: CONFIG_ACCESS_TYPE_GLOBAL
-  identifiers:
-  - chartName: ""
-    chartPath: ""
-  default_value: 2
-
-- configKey: "perRetryTimeout"
-  description: "Timeout for the retry attempt"
-  displayName: "Retry Timeout(s)"
-  constraint:
-    intRange:
-      min: 1
-      max: 300
-  configPermission:
-    read: CONFIG_ACCESS_TYPE_GLOBAL
-    write: CONFIG_ACCESS_TYPE_GLOBAL
-  identifiers:
-  - chartName: ""
-    chartPath: ""
-  default_value: 5
-
 - configKey: "maxHeaderCount"
   description: "Maximum number of headers allowed in a request"
   displayName: "Max Header Count"
