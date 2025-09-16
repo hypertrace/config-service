@@ -31,11 +31,9 @@ class BlockingConfigServiceImplTest {
   private SafeCrsBlockingRules modsecCrsBlockingRules;
   private IpTypeBlockingRules ipTypeBlockingRules;
   private BlockingPolicyConfiguration blockingPolicyConfiguration;
-  private BlockingRulesSupplierContext blockingRulesSupplierContext;
 
   private BlockingConfigServiceImpl blockingConfigService;
   private final String hash1 = "hash1";
-  private final String hash2 = "hash2";
   private final String environment = "env";
   private final Optional<String> environmentId = Optional.of("env-id");
 
@@ -50,13 +48,15 @@ class BlockingConfigServiceImplTest {
         mock(BlockingPolicyConfigurationManager.class);
     EntityFetcher entityFetcher = mock(EntityFetcher.class);
 
+    String hash2 = "hash2";
     this.regionBlockingRules = RegionBlockingRules.newBuilder().setHash(hash2).build();
     this.customModsecBlockingRules = CustomModsecBlockingRules.newBuilder().setHash(hash2).build();
     this.modsecCrsBlockingRules = SafeCrsBlockingRules.newBuilder().setHash(hash2).build();
     this.ipTypeBlockingRules = IpTypeBlockingRules.newBuilder().setHash(hash2).build();
     this.blockingPolicyConfiguration =
         BlockingPolicyConfiguration.newBuilder().setHash(hash2).build();
-    this.blockingRulesSupplierContext = mock(BlockingRulesSupplierContext.class);
+    BlockingRulesSupplierContext blockingRulesSupplierContext =
+        mock(BlockingRulesSupplierContext.class);
 
     doReturn(environmentId).when(entityFetcher).getEnvironmentId(REQUEST_CONTEXT, environment);
 

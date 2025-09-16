@@ -1,6 +1,6 @@
 package ai.traceable.blocking.config.service.common.rules;
 
-import static ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3;
+import static ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS_DETECTION_ONLY_MODE;
 
 import ai.traceable.blocking.config.service.common.iptype.IpTypeRuleInfo;
 import ai.traceable.blocking.config.service.common.rules.fetchers.CustomSignatureRulesFetcher;
@@ -67,6 +67,8 @@ public class BlockingRulesSupplierImpl implements BlockingRulesSupplier {
       dlpModsecRulesGetter;
   private final Function<Set<String>, Map<String, ModsecRulesData<DetectionExclusionModsecRule>>>
       exclusionModsecRulesGetter;
+  private final Function<Set<String>, Map<String, ModsecRulesData<CustomSignatureInlineRule>>>
+      customSignatureInlineRulesGetter;
   private final Function<List<String>, List<DetailedRegion>> countryIsoCodeRegionsGetter;
   private final ConcurrentMap<CustomModsecRuleVersion, GetCustomSignatureModsecRulesResponse>
       customSignatureRulesMap = new ConcurrentHashMap<>();
@@ -74,6 +76,8 @@ public class BlockingRulesSupplierImpl implements BlockingRulesSupplier {
       new ConcurrentHashMap<>();
   private final ConcurrentMap<String, ModsecRulesData<DetectionExclusionModsecRule>>
       exclusionRulesMap = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, ModsecRulesData<CustomSignatureInlineRule>>
+      customSignatureInlineRulesMap = new ConcurrentHashMap<>();
   private final Supplier<List<RegionRule>> regionRulesSupplier;
   private final Supplier<List<MaliciousSourcesRule>> maliciousSourcesRulesSupplier;
 
@@ -104,6 +108,12 @@ public class BlockingRulesSupplierImpl implements BlockingRulesSupplier {
                     blockingRulesSupplierContext.getRulesFetcher(RulesFetcherType.EXCLUSION))
                 .fetchExclusionModsecRules(requestContext, environmentId, serviceNames);
 
+    customSignatureInlineRulesGetter =
+        serviceNames ->
+            ((CustomSignatureRulesFetcher)
+                    blockingRulesSupplierContext.getRulesFetcher(RulesFetcherType.CUSTOM_SIGNATURE))
+                .fetchCustomSignatureInlineRules(requestContext, environmentId, serviceNames);
+
     countryIsoCodeRegionsGetter =
         countryIsoCodes ->
             ((RegionRulesFetcher)
@@ -128,15 +138,20 @@ public class BlockingRulesSupplierImpl implements BlockingRulesSupplier {
                     .fetchRules(requestContext, environmentId));
   }
 
+  @Override
   public RequestContext getRequestContext() {
     return requestContext;
   }
 
+  @Override
   public Optional<String> getEnvironmentId() {
     return environmentId;
   }
 
-  /** Returns the custom signature rules modsec blob for the specified version */
+  @Override
+  /*
+   * Returns the custom signature rules modsec blob for the specified version
+   */
   public String getCustomSignatureModsecBlob(CustomModsecRuleVersion version) {
     try {
       return customSignatureRulesMap
@@ -152,7 +167,8 @@ public class BlockingRulesSupplierImpl implements BlockingRulesSupplier {
     }
   }
 
-  /**
+  @Override
+  /*
    * Returns the list of modsec blobs (combination of custom signature and DLP rules) keyed by
    * service name
    */
@@ -167,15 +183,17 @@ public class BlockingRulesSupplierImpl implements BlockingRulesSupplier {
     String customSignatureModsecRulesBlob = getCustomSignatureModsecBlob(version);
     Function<String, String> combinedModsecBlobFunction;
 
-    if (CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS_DETECTION_ONLY_MODE
-        .equals(version)) {
+    if (CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS_DETECTION_ONLY_MODE.equals(version)) {
       // DLP and or exclusion rules are supported only when multi-match is enabled.
       fetchDlpRulesForMissingServiceNamesIfAny(serviceNames);
       fetchExclusionRulesForMissingServiceNamesIfAny(serviceNames);
+      fetchCustomSignatureInlineRulesForMissingServiceNamesIfAny(serviceNames);
+
       combinedModsecBlobFunction =
           serviceName ->
               getCombinedModsecBlobs(
                   customSignatureModsecRulesBlob,
+                  customSignatureInlineRulesMap.get(serviceName),
                   dlpRulesMap.get(serviceName),
                   exclusionRulesMap.get(serviceName));
     } else {
@@ -192,7 +210,10 @@ public class BlockingRulesSupplierImpl implements BlockingRulesSupplier {
                 LinkedHashMap::new));
   }
 
-  /** Returns list of Region to Ip-range mappings in the form of objects defined by the converter */
+  @Override
+  /*
+   * Returns list of Region to Ip-range mappings in the form of objects defined by the converter
+   */
   public <T> List<T> getRegionIpMappings(
       Function<DetailedRegion, T> ruleConverter, Set<String> serviceNames) {
 
@@ -202,7 +223,7 @@ public class BlockingRulesSupplierImpl implements BlockingRulesSupplier {
                     .flatMap(
                         regionRule -> regionRule.getRegionIdToCountryMapMap().values().stream())
                     .map(Country::getIsoCode),
-                getCustomSignatureRulesCountryIsoCodes().stream(),
+                getCustomSignatureRulesCountryIsoCodes(serviceNames).stream(),
                 getDlpRulesCountryIsoCodes(serviceNames).stream(),
                 getExclusionRulesCountryIsoCodes(serviceNames).stream())
             .flatMap(Function.identity())
@@ -218,11 +239,13 @@ public class BlockingRulesSupplierImpl implements BlockingRulesSupplier {
         .collect(Collectors.toUnmodifiableList());
   }
 
+  @Override
   public List<RegionRule> getRegionRules() {
     return regionRulesSupplier.get();
   }
 
-  /**
+  @Override
+  /*
    * Returns list of Ip-Type to Ip-range mappings in the form of objects defined by the converter
    * keyed by service name
    */
@@ -246,20 +269,25 @@ public class BlockingRulesSupplierImpl implements BlockingRulesSupplier {
 
     Stream<IpTypeRuleInfo.IpType> dlpRulesIpTypes = getDlpRulesIpTypes(serviceNames);
     Stream<IpTypeRuleInfo.IpType> exclusionRulesIpTypes = getExclusionRulesIpTypes(serviceNames);
+    Stream<IpTypeRuleInfo.IpType> customSignatureInlineRulesIpTypes =
+        getCustomSignatureRulesIpTypes(serviceNames);
 
     return convertIpTypeIpMappings(
         ruleConverter,
         ipTypesInfoMap,
         Stream.of(
                 maliciousSourcesIpTypes,
-                customSignatureIpTypes,
+                customSignatureInlineRulesIpTypes,
                 dlpRulesIpTypes,
                 exclusionRulesIpTypes)
             .flatMap(Function.identity())
             .distinct());
   }
 
-  /** Returns the list of DLP rules keyed by service name */
+  @Override
+  /*
+   * Returns the list of DLP rules keyed by service name
+   */
   public Map<String, List<RateLimitingModsecRule>> getDlpRules(Set<String> serviceNames) {
     if (serviceNames.isEmpty()) {
       // no dlp rules would be fetched if service-name is not provided.
@@ -278,7 +306,10 @@ public class BlockingRulesSupplierImpl implements BlockingRulesSupplier {
                 LinkedHashMap::new));
   }
 
-  /** Returns the list of Exclusion rules keyed by service name */
+  @Override
+  /*
+   * Returns the list of Exclusion rules keyed by service name
+   */
   public Map<String, List<DetectionExclusionModsecRule>> getExclusionRules(
       Set<String> serviceNames) {
     if (serviceNames.isEmpty()) {
@@ -298,17 +329,45 @@ public class BlockingRulesSupplierImpl implements BlockingRulesSupplier {
   }
 
   @Override
+  /*
+   * we just need to return any value from the map irrespective of the key because the inline rules
+   * list is independent of the modsec version.
+   * If no value is present, then we need to compute for some version & return.
+   */
   public List<CustomSignatureInlineRule> getCustomSignatureInlineRules() {
-    // we just need to return any value from the map irrespective of the key because inline rules
-    // list is independent of modsec version. If no value is present then we need to compute for
-    // some version & return
     return customSignatureRulesMap.values().stream()
         .findFirst()
         .orElseGet(
             () ->
                 customSignatureRulesMap.computeIfAbsent(
-                    CUSTOM_MODSEC_RULE_VERSION_V3, customSignatureRulesGetter))
+                    CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS_DETECTION_ONLY_MODE,
+                    customSignatureRulesGetter))
         .getInlineRulesList();
+  }
+
+  @Override
+  /*
+   * Returns the list of custom signature rules keyed by service name
+   */
+  public Map<String, List<CustomSignatureInlineRule>> getCustomSignatureInlineRules(
+      Set<String> serviceNames) {
+    // no custom signature inline rules would be fetched if service-name is not provided
+    if (serviceNames.isEmpty()) {
+      return Collections.emptyMap();
+    }
+
+    fetchCustomSignatureInlineRulesForMissingServiceNamesIfAny(serviceNames);
+
+    return serviceNames.stream()
+        .collect(
+            Collectors.toMap(
+                Function.identity(),
+                serviceName ->
+                    customSignatureInlineRulesMap
+                        .getOrDefault(serviceName, new ModsecRulesData<>())
+                        .getRules(),
+                (existingList, newList) -> existingList,
+                LinkedHashMap::new));
   }
 
   /** Method to fetch DLP rules for service not present in the map */
@@ -329,15 +388,34 @@ public class BlockingRulesSupplierImpl implements BlockingRulesSupplier {
                 .collect(Collectors.toCollection(LinkedHashSet::new))));
   }
 
+  /** Method to fetch Custom Signature Inline rules for service not present in the map */
+  private void fetchCustomSignatureInlineRulesForMissingServiceNamesIfAny(
+      Set<String> serviceNames) {
+    customSignatureInlineRulesMap.putAll(
+        customSignatureInlineRulesGetter.apply(
+            serviceNames.stream()
+                .filter(serviceName -> !customSignatureInlineRulesMap.containsKey(serviceName))
+                .collect(Collectors.toCollection(LinkedHashSet::new))));
+  }
+
   /**
    * Method to combine DLP and exclusion rules modsec blob with custom signature rules modsec blob
    */
   private String getCombinedModsecBlobs(
       String customSignatureModsecRulesBlob,
+      ModsecRulesData<CustomSignatureInlineRule> customSignatureInlineRulesData,
       ModsecRulesData<RateLimitingModsecRule> dlpModsecRulesData,
       ModsecRulesData<DetectionExclusionModsecRule> exclusionModsecRulesData) {
     // First combine custom signature and DLP
-    String modsecRulesBlobPrefix = customSignatureModsecRulesBlob;
+    String modsecRulesBlobPrefix = "";
+
+    if (customSignatureInlineRulesData != null
+        && !customSignatureInlineRulesData.getModsecRulesBlob().isEmpty()) {
+      modsecRulesBlobPrefix = customSignatureInlineRulesData.getModsecRulesBlob();
+    } else {
+      modsecRulesBlobPrefix = customSignatureModsecRulesBlob;
+    }
+
     // if dlp rules is present
     if (dlpModsecRulesData != null && !dlpModsecRulesData.getModsecDirectivesBlob().isEmpty()) {
       // no custom signature rules blob - add modsec directives from dlp rules modsec blob data
@@ -404,7 +482,7 @@ public class BlockingRulesSupplierImpl implements BlockingRulesSupplier {
   private Stream<IpTypeRuleInfo.IpType> getDlpRulesIpTypes(Set<String> serviceNames) {
     fetchDlpRulesForMissingServiceNamesIfAny(serviceNames);
     // To avoid using entire message for identifying distinct rules
-    // to subsequently avoid extracting ip-types from same rule multiple times
+    // to subsequently avoid extracting ip-types from the same rule multiple times
     Set<String> ruleIds = ConcurrentHashMap.newKeySet();
     return serviceNames.stream()
         .flatMap(
@@ -421,7 +499,7 @@ public class BlockingRulesSupplierImpl implements BlockingRulesSupplier {
   private Stream<IpTypeRuleInfo.IpType> getExclusionRulesIpTypes(Set<String> serviceNames) {
     fetchExclusionRulesForMissingServiceNamesIfAny(serviceNames);
     // To avoid using entire message for identifying distinct rules
-    // to subsequently avoid extracting ip-types from same rule multiple times
+    // to subsequently avoid extracting ip-types from the same rule multiple times
     Set<String> ruleIds = ConcurrentHashMap.newKeySet();
     return serviceNames.stream()
         .flatMap(
@@ -445,8 +523,19 @@ public class BlockingRulesSupplierImpl implements BlockingRulesSupplier {
         .filter(Objects::nonNull);
   }
 
-  private List<String> getCustomSignatureRulesCountryIsoCodes() {
-    return getCustomSignatureInlineRules().stream()
+  private Stream<IpTypeRuleInfo.IpType> getCustomSignatureRulesIpTypes(Set<String> serviceNames) {
+    fetchCustomSignatureInlineRulesForMissingServiceNamesIfAny(serviceNames);
+    // To avoid using entire message for identifying distinct rules
+    // to subsequently avoid extracting ip-types from the same rule multiple times
+    Set<String> ruleIds = ConcurrentHashMap.newKeySet();
+    return serviceNames.stream()
+        .flatMap(
+            serviceName ->
+                customSignatureInlineRulesMap
+                    .getOrDefault(serviceName, new ModsecRulesData<>())
+                    .getRules()
+                    .stream())
+        .filter(rule -> ruleIds.add(rule.getRule().getId()))
         .flatMap(
             customSignatureInlineRule ->
                 customSignatureInlineRule
@@ -455,13 +544,69 @@ public class BlockingRulesSupplierImpl implements BlockingRulesSupplier {
                     .getClauseGroup()
                     .getClausesList()
                     .stream()
-                    .filter(Clause::hasRegionExpression)
-                    .flatMap(
-                        clause ->
-                            clause.getRegionExpression().getRegionIdentifiersList().stream()
-                                .map(RegionExpression.Region::getCountryIsoCode)))
+                    .filter(Clause::hasIpTypeExpression)
+                    .flatMap(clause -> clause.getIpTypeExpression().getIpTypesList().stream()))
         .distinct()
         .filter(Objects::nonNull)
+        .map(BlockingRulesSupplierImpl::convertIpType)
+        .filter(Objects::nonNull);
+  }
+
+  private List<String> getCustomSignatureRulesCountryIsoCodes(Set<String> serviceNames) {
+    List<String> countryIsoCodes =
+        getCustomSignatureInlineRules().stream()
+            .flatMap(
+                customSignatureInlineRule ->
+                    customSignatureInlineRule
+                        .getRule()
+                        .getDefinition()
+                        .getClauseGroup()
+                        .getClausesList()
+                        .stream()
+                        .filter(Clause::hasRegionExpression)
+                        .flatMap(
+                            clause ->
+                                clause.getRegionExpression().getRegionIdentifiersList().stream()
+                                    .map(RegionExpression.Region::getCountryIsoCode)))
+            .distinct()
+            .collect(Collectors.toUnmodifiableList());
+
+    if (serviceNames.isEmpty()) {
+      return countryIsoCodes;
+    }
+
+    fetchCustomSignatureInlineRulesForMissingServiceNamesIfAny(serviceNames);
+
+    // To avoid using entire message for identifying distinct rules
+    // to subsequently avoid extracting region-iso from the same rule multiple times
+    Set<String> ruleIds = ConcurrentHashMap.newKeySet();
+    List<String> serviceScopedIsoCodes =
+        serviceNames.stream()
+            .flatMap(
+                serviceName ->
+                    customSignatureInlineRulesMap
+                        .getOrDefault(serviceName, new ModsecRulesData<>())
+                        .getRules()
+                        .stream())
+            .filter(rule -> ruleIds.add(rule.getRule().getId()))
+            .flatMap(
+                customSignatureInlineRule ->
+                    customSignatureInlineRule
+                        .getRule()
+                        .getDefinition()
+                        .getClauseGroup()
+                        .getClausesList()
+                        .stream()
+                        .filter(Clause::hasRegionExpression)
+                        .flatMap(
+                            clause ->
+                                clause.getRegionExpression().getRegionIdentifiersList().stream()
+                                    .map(RegionExpression.Region::getCountryIsoCode)))
+            .collect(Collectors.toList());
+
+    return Stream.concat(countryIsoCodes.stream(), serviceScopedIsoCodes.stream())
+        .filter(Objects::nonNull)
+        .distinct()
         .collect(Collectors.toUnmodifiableList());
   }
 
@@ -475,7 +620,7 @@ public class BlockingRulesSupplierImpl implements BlockingRulesSupplier {
     fetchDlpRulesForMissingServiceNamesIfAny(serviceNames);
 
     // To avoid using entire message for identifying distinct rules
-    // to subsequently avoid extracting ip-types from same rule multiple times
+    // to subsequently avoid extracting region-iso from the same rule multiple times
     Set<String> ruleIds = ConcurrentHashMap.newKeySet();
     return serviceNames.stream()
         .flatMap(
@@ -509,7 +654,7 @@ public class BlockingRulesSupplierImpl implements BlockingRulesSupplier {
     fetchExclusionRulesForMissingServiceNamesIfAny(serviceNames);
 
     // To avoid using entire message for identifying distinct rules
-    // to subsequently avoid extracting region-iso from same rule multiple times
+    // to subsequently avoid extracting region-iso from the same rule multiple times
     Set<String> ruleIds = ConcurrentHashMap.newKeySet();
     return serviceNames.stream()
         .flatMap(

@@ -151,16 +151,17 @@ public class CustomSignatureRulesStore
         .filter(filteredRule -> filterRuleOnLabels(filteredRule, filter.getLabelsMap()));
   }
 
-  private boolean filterRuleOnCategories(CustomSignatureRule rule, List<Category> categories) {
-    return categories.isEmpty() || categories.contains(rule.getCategory());
+  private boolean filterRuleOnCategories(
+      CustomSignatureRule rule, List<Category> categoriesInFilter) {
+    return categoriesInFilter.isEmpty() || categoriesInFilter.contains(rule.getCategory());
   }
 
-  private boolean filterRuleOnLabels(CustomSignatureRule rule, Map<String, String> labels) {
-    if (labels.isEmpty()) {
+  private boolean filterRuleOnLabels(CustomSignatureRule rule, Map<String, String> labelsInFilter) {
+    if (labelsInFilter.isEmpty()) {
       return true;
     }
     Map<String, String> ruleLabels = rule.getDefinition().getLabelsMap();
-    return labels.entrySet().stream()
+    return labelsInFilter.entrySet().stream()
         .anyMatch(
             entry -> {
               String key = entry.getKey();
@@ -170,13 +171,14 @@ public class CustomSignatureRulesStore
             });
   }
 
-  private boolean filterRuleOnSource(CustomSignatureRule rule, List<RuleSource> ruleSources) {
-    return ruleSources.isEmpty() || ruleSources.contains(rule.getRuleSource());
+  private boolean filterRuleOnSource(
+      CustomSignatureRule rule, List<RuleSource> ruleSourcesInFilter) {
+    return ruleSourcesInFilter.isEmpty() || ruleSourcesInFilter.contains(rule.getRuleSource());
   }
 
-  private boolean filterRuleOnLabels(CustomSignatureRule rule, List<String> labelKeys) {
-    return labelKeys.isEmpty()
-        || rule.getDefinition().getLabelsMap().keySet().containsAll(labelKeys);
+  private boolean filterRuleOnLabels(CustomSignatureRule rule, List<String> labelKeysInFilter) {
+    return labelKeysInFilter.isEmpty()
+        || rule.getDefinition().getLabelsMap().keySet().containsAll(labelKeysInFilter);
   }
 
   private boolean filterRuleOnRuleEvaluationPoints(

@@ -19,15 +19,22 @@ import ai.traceable.blocking.config.service.common.rules.fetchers.MaliciousSourc
 import ai.traceable.blocking.config.service.common.rules.fetchers.RegionRulesFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.RulesFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.RulesFetcher.RulesFetcherType;
+import ai.traceable.customsignature.config.service.v1.Category;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
+import ai.traceable.customsignature.config.service.v1.ClauseOperator;
 import ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureInlineRule;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
+import ai.traceable.customsignature.config.service.v1.EventSeverity;
+import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesResponse;
+import ai.traceable.customsignature.config.service.v1.IpAddressExpression;
 import ai.traceable.customsignature.config.service.v1.IpTypeExpression;
 import ai.traceable.customsignature.config.service.v1.RegionExpression;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
+import ai.traceable.customsignature.config.service.v1.RuleEffect;
+import ai.traceable.customsignature.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionModsecRule;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
@@ -73,6 +80,8 @@ public class BlockingRulesSupplierTest {
       createRateLimitingModsecRuleMap();
   private static final Map<String, DetectionExclusionModsecRule> detectionExclusionRuleMap =
       createDetectionExclusionRuleMap();
+  private static final Map<String, CustomSignatureInlineRule> customSignatureInlineRuleMap =
+      createCustomSignatureInlineRuleMap();
 
   BlockingRulesSupplierContext blockingRulesSupplierContext;
 
@@ -151,6 +160,27 @@ public class BlockingRulesSupplierTest {
                 "service-x",
                 new ModsecRulesData<>()));
 
+    when(customSignatureRulesFetcher.fetchCustomSignatureInlineRules(
+            REQUEST_CONTEXT, ENVIRONMENT_ID, SERVICE_NAMES))
+        .thenReturn(
+            Map.of(
+                "service1",
+                new ModsecRulesData<>(
+                    "directives",
+                    "inlineBlobA",
+                    List.of("inlineRuleId1", "inlineRuleId2"),
+                    customSignatureInlineRuleMap.values(),
+                    customSignatureInlineRule -> customSignatureInlineRule.getRule().getId()),
+                "service2",
+                new ModsecRulesData<>(
+                    "directives",
+                    "inlineBlobB",
+                    List.of("inlineRuleId3"),
+                    customSignatureInlineRuleMap.values(),
+                    customSignatureInlineRule -> customSignatureInlineRule.getRule().getId()),
+                "service-x",
+                new ModsecRulesData<>()));
+
     blockingRulesSupplierContext =
         new BlockingRulesSupplierContext(rulesFetchers, ipTypeRulesLoader);
   }
@@ -178,7 +208,7 @@ public class BlockingRulesSupplierTest {
     assertEquals(blob2, blockingRulesSupplier.getCustomSignatureModsecBlob(version2));
     verify(customSignatureRulesFetcher, times(2)).fetchModsecRules(any(), any(), any());
     assertEquals(blob2, blockingRulesSupplier.getCustomSignatureModsecBlob(version2));
-    // fetchRules will not be called again..
+    // fetchRules will not be called again
     verify(customSignatureRulesFetcher, times(2)).fetchModsecRules(any(), any(), any());
 
     assertEquals(
@@ -208,8 +238,9 @@ public class BlockingRulesSupplierTest {
             blockingRulesSupplierContext, REQUEST_CONTEXT, ENVIRONMENT_ID);
     Map<String, String> modsecBlobs;
 
-    // no dlp rules fetched..
+    // no dlp rules fetched
     modsecBlobs = blockingRulesSupplier.getCustomModsecBlobs(version1, SERVICE_NAMES);
+
     assertEquals(3, modsecBlobs.size());
     for (String sName : SERVICE_NAMES) {
       assertEquals(blob1, modsecBlobs.get(sName));
@@ -222,8 +253,8 @@ public class BlockingRulesSupplierTest {
     assertEquals(3, modsecBlobs.size());
     // no dlp rule for service-x
     assertEquals(blob2, modsecBlobs.get("service-x"));
-    assertEquals(blob2 + "\n\nblobA" + "\n\nblobA0", modsecBlobs.get("service1"));
-    assertEquals(blob2 + "\n\nblobB", modsecBlobs.get("service2"));
+    assertEquals("inlineBlobA" + "\n\nblobA" + "\n\nblobA0", modsecBlobs.get("service1"));
+    assertEquals("inlineBlobB" + "\n\nblobB", modsecBlobs.get("service2"));
     verify(customSignatureRulesFetcher, times(2)).fetchModsecRules(any(), any(), any());
     verify(dlpRulesFetcher, times(1)).fetchDlpModsecRules(any(), any(), eq(SERVICE_NAMES));
     verify(exclusionRulesFetcher, times(1))
@@ -235,7 +266,7 @@ public class BlockingRulesSupplierTest {
     assertEquals(2, modsecBlobs.size());
     // no dlp or exclusion rule for service-x
     assertEquals(blob2, modsecBlobs.get("service-x"));
-    assertEquals(blob2 + "\n\nblobA" + "\n\nblobA0", modsecBlobs.get("service1"));
+    assertEquals("inlineBlobA" + "\n\nblobA" + "\n\nblobA0", modsecBlobs.get("service1"));
     // fetchModsecRules will not be called again.
     verify(customSignatureRulesFetcher, times(2)).fetchModsecRules(any(), any(), any());
     // fetchDlpModsecRules will not be called again for the list of services.
@@ -253,6 +284,13 @@ public class BlockingRulesSupplierTest {
             blockingRulesSupplierContext, REQUEST_CONTEXT, ENVIRONMENT_ID);
     when(customSignatureRulesFetcher.fetchModsecRules(REQUEST_CONTEXT, ENVIRONMENT_ID, version2))
         .thenReturn(GetCustomSignatureModsecRulesResponse.getDefaultInstance());
+    when(customSignatureRulesFetcher.fetchCustomSignatureInlineRules(
+            REQUEST_CONTEXT, ENVIRONMENT_ID, SERVICE_NAMES))
+        .thenReturn(
+            Map.of(
+                "service1", new ModsecRulesData<>(),
+                "service2", new ModsecRulesData<>(),
+                "service-x", new ModsecRulesData<>()));
     modsecBlobs = blockingRulesSupplier.getCustomModsecBlobs(version2, SERVICE_NAMES);
     assertEquals(3, modsecBlobs.size());
     // no dlp rule for service-x
@@ -303,7 +341,7 @@ public class BlockingRulesSupplierTest {
     assertEquals(
         List.of(detailedRegion1, detailedRegion2, detailedRegion3, detailedRegion6),
         blockingRulesSupplier.getRegionIpMappings(Function.identity(), Collections.emptySet()));
-    // fetchRules will not be called again..
+    // fetchRules will not be called again
     verify(regionRulesFetcher, times(1)).fetchRegionRules(any(), any());
 
     assertEquals(
@@ -417,8 +455,8 @@ public class BlockingRulesSupplierTest {
             IpTypeRuleInfo.IpType.BOT,
             IpTypeRuleInfo.IpType.ANONYMOUS_VPN,
             IpTypeRuleInfo.IpType.PUBLIC_PROXY,
-            IpType.TOR_EXIT_NODE,
-            IpTypeRuleInfo.IpType.HOSTING_PROVIDER),
+            IpTypeRuleInfo.IpType.HOSTING_PROVIDER,
+            IpType.TOR_EXIT_NODE),
         ipTypeRuleInfoList);
     verify(dlpRulesFetcher, times(1)).fetchDlpModsecRules(any(), any(), eq(SERVICE_NAMES));
     verify(exclusionRulesFetcher, times(1))
@@ -462,6 +500,27 @@ public class BlockingRulesSupplierTest {
         List.of(detectionExclusionRuleMap.get("id10"), detectionExclusionRuleMap.get("id20")),
         exclusionRules.get("service1"));
     assertTrue(exclusionRules.get("service-x").isEmpty());
+  }
+
+  @Test
+  public void test_getCustomSignatureInlineRules() {
+    blockingRulesSupplier =
+        new BlockingRulesSupplierImpl(
+            blockingRulesSupplierContext, REQUEST_CONTEXT, ENVIRONMENT_ID);
+    assertTrue(
+        blockingRulesSupplier.getCustomSignatureInlineRules(Collections.emptySet()).isEmpty());
+    Map<String, List<CustomSignatureInlineRule>> customSignatureInlineRules =
+        blockingRulesSupplier.getCustomSignatureInlineRules(SERVICE_NAMES);
+    assertEquals(3, customSignatureInlineRules.size());
+    assertEquals(
+        List.of(
+            customSignatureInlineRuleMap.get("inlineRuleId1"),
+            customSignatureInlineRuleMap.get("inlineRuleId2")),
+        customSignatureInlineRules.get("service1"));
+    assertEquals(
+        List.of(customSignatureInlineRuleMap.get("inlineRuleId3")),
+        customSignatureInlineRules.get("service2"));
+    assertTrue(customSignatureInlineRules.get("service-x").isEmpty());
   }
 
   private static Map<String, RateLimitingModsecRule> createRateLimitingModsecRuleMap() {
@@ -590,6 +649,74 @@ public class BlockingRulesSupplierTest {
             .setRule(DetectionExclusionRule.newBuilder().setId("id40"))
             .build());
     return rulesMap;
+  }
+
+  private static Map<String, CustomSignatureInlineRule> createCustomSignatureInlineRuleMap() {
+    Map<String, CustomSignatureInlineRule> customSignatureInlineRulesMap = new LinkedHashMap<>();
+
+    customSignatureInlineRulesMap.put(
+        "inlineRuleId1",
+        CustomSignatureInlineRule.newBuilder()
+            .setRule(
+                CustomSignatureRule.newBuilder()
+                    .setId("inlineRuleId1")
+                    .setName("custom signature inline rule name 1")
+                    .setDescription("custom signature inline rule description 1")
+                    .setCategory(Category.CATEGORY_CUSTOM_SIGNATURE)
+                    .setEffect(
+                        RuleEffect.newBuilder()
+                            .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
+                            .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)
+                            .addRuleEvaluationPoints(
+                                RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT))
+                    .setDefinition(
+                        RuleDefinition.newBuilder()
+                            .setClauseGroup(
+                                ClauseGroup.newBuilder()
+                                    .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+                                    .addClauses(
+                                        Clause.newBuilder()
+                                            .setIpAddressExpression(
+                                                IpAddressExpression.newBuilder()
+                                                    .addIpAddresses("1.2.3.4"))))))
+            .build());
+
+    customSignatureInlineRulesMap.put(
+        "inlineRuleId2",
+        CustomSignatureInlineRule.newBuilder()
+            .setRule(
+                CustomSignatureRule.newBuilder()
+                    .setId("inlineRuleId2")
+                    .setName("custom signature inline rule name 2")
+                    .setDescription("custom signature inline rule description 2")
+                    .setCategory(Category.CATEGORY_CUSTOM_SIGNATURE)
+                    .setEffect(
+                        RuleEffect.newBuilder()
+                            .setEventType(EventType.EVENT_TYPE_ALLOW)
+                            .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
+                            .addRuleEvaluationPoints(
+                                RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT))
+                    .setDefinition(
+                        RuleDefinition.newBuilder()
+                            .setClauseGroup(
+                                ClauseGroup.newBuilder()
+                                    .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+                                    .addClauses(
+                                        Clause.newBuilder()
+                                            .setIpTypeExpression(
+                                                IpTypeExpression.newBuilder()
+                                                    .addIpTypes(
+                                                        ai.traceable.customsignature.config.service
+                                                            .v1.IpType.IP_TYPE_PUBLIC_PROXY))))))
+            .build());
+
+    customSignatureInlineRulesMap.put(
+        "inlineRuleId3",
+        CustomSignatureInlineRule.newBuilder()
+            .setRule(CustomSignatureRule.newBuilder().setId("inlineRuleId3"))
+            .build());
+
+    return customSignatureInlineRulesMap;
   }
 
   private GetCustomSignatureModsecRulesResponse getResponseWithRegionAndIpTypeBasedRules() {

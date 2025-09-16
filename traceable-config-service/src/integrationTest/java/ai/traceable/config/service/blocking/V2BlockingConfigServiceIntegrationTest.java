@@ -20,6 +20,8 @@ import static ai.traceable.blocking.config.service.v2.IpType.IP_TYPE_BOT;
 import static ai.traceable.blocking.config.service.v2.IpType.IP_TYPE_HOSTING_PROVIDER;
 import static ai.traceable.blocking.config.service.v2.IpType.IP_TYPE_PROXY;
 import static ai.traceable.blocking.config.service.v2.IpType.IP_TYPE_TOR;
+import static ai.traceable.customsignature.config.service.v1.EventType.EVENT_TYPE_DETECTION_AND_BLOCKING;
+import static ai.traceable.customsignature.config.service.v1.EventType.EVENT_TYPE_TESTING_DETECTION;
 import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_QUERY;
 import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_REQUEST_BODY;
 import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_REQUEST_HEADER;
@@ -422,7 +424,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
   @Test
   void agentVersioningModsecTest() {
     createCustomSignatureRule(
-        Optional.of(ENVIRONMENT_ID), EventType.EVENT_TYPE_DETECTION_AND_BLOCKING, matchClause);
+        Optional.of(ENVIRONMENT_ID), EVENT_TYPE_DETECTION_AND_BLOCKING, matchClause);
 
     AgentCapabilities unsetLibtraceableAgentCapability =
         AgentCapabilities.newBuilder()
@@ -558,12 +560,6 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
         customSignatureResponse.get(0).getAgentCapabilitiesList());
 
     assertNotEquals(modsecHash, customSignatureResponse.get(1).getHash());
-    assertTrue(
-        customSignatureResponse
-            .get(1)
-            .getCustomSignatureBlockingRules()
-            .getCustomSignatureRulesBlob()
-            .contains("SecArgumentsLimit"));
     assertEquals(
         List.of(sampleLatestAgentCapability),
         customSignatureResponse.get(1).getAgentCapabilitiesList());
@@ -598,7 +594,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
 
     customSignatureRuleIds.add(
         createCustomSignatureRule(
-            Optional.of(ENVIRONMENT_ID), EventType.EVENT_TYPE_DETECTION_AND_BLOCKING, matchClause));
+            Optional.of(ENVIRONMENT_ID), EVENT_TYPE_DETECTION_AND_BLOCKING, matchClause));
 
     GetBlockingRulesResponse response =
         RequestContext.forTenantId(TENANT_ID)
@@ -705,7 +701,8 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
         Collections.singletonList(sampleLatestAgentCapability),
         filteredElements.get(0).getAgentCapabilitiesList());
 
-    // 1 modsec rule is present + (1 threat-actors + 2 rate-limit + 2 malicious-source)
+    // 1 modsec rule is present + (1 threat-actors + 2 rate-limit + 2 malicious-source + 1 custom
+    // signature rule)
     filteredElements =
         filterElements(
             response.getResponseElementsList(),
@@ -713,7 +710,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     assertEquals(1, filteredElements.size());
     assertNotEquals(emptyValueUuid, filteredElements.get(0).getHash());
     assertEquals(
-        6, filteredElements.get(0).getBlockingPolicyConfiguration().getBlockingDetailsListCount());
+        7, filteredElements.get(0).getBlockingPolicyConfiguration().getBlockingDetailsListCount());
 
     // Testing that for older TAs we return IP-Details for threat-actor
     assertEquals(
@@ -734,23 +731,14 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
 
     createRegionRules();
 
-    // its expected that this rule will be dropped before modsec conversion as it contains a
-    // source-based clause
     customSignatureRuleIds.add(
-        createCustomSignatureRule(
-            Optional.empty(), EventType.EVENT_TYPE_TESTING_DETECTION, ipAddressClause));
+        createCustomSignatureRule(Optional.empty(), EVENT_TYPE_TESTING_DETECTION, ipAddressClause));
 
-    // its expected that this rule will be dropped before modsec conversion as it contains a
-    // source-based clause
     customSignatureRuleIds.add(
-        createCustomSignatureRule(
-            Optional.empty(), EventType.EVENT_TYPE_TESTING_DETECTION, ipTypeClause));
+        createCustomSignatureRule(Optional.empty(), EVENT_TYPE_TESTING_DETECTION, ipTypeClause));
 
-    // its expected that this rule will be dropped before modsec conversion as it contains a
-    // source-based clause
     customSignatureRuleIds.add(
-        createCustomSignatureRule(
-            Optional.empty(), EventType.EVENT_TYPE_TESTING_DETECTION, regionClause));
+        createCustomSignatureRule(Optional.empty(), EVENT_TYPE_TESTING_DETECTION, regionClause));
 
     createMaliciousSourcesRule(
         "test-rule-ipType-1",
@@ -821,7 +809,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                                     .setPreviousHash(emptyValueUuid)
                                     .setBlockingPolicyConfigurationRequest(
                                         BlockingPolicyConfigurationRequest.getDefaultInstance())
-                                    .addSupportedAgentCapabilities(sampleLatestAgentCapability))
+                                    .addSupportedAgentCapabilities(sampleOlderAgentCapability))
                             .addRequestElements(
                                 BlockingConfigRequestElement.newBuilder()
                                     .setPreviousHash(emptyValueUuid)
@@ -839,7 +827,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                                     .setPreviousHash(emptyValueUuid)
                                     .setCustomSignatureBlockingRulesRequest(
                                         CustomSignatureBlockingRulesRequest.getDefaultInstance())
-                                    .addSupportedAgentCapabilities(sampleLatestAgentCapability))
+                                    .addSupportedAgentCapabilities(sampleOlderAgentCapability))
                             .addRequestElements(
                                 BlockingConfigRequestElement.newBuilder()
                                     .setPreviousHash(emptyValueUuid)
@@ -865,13 +853,14 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
             response.getResponseElementsList(),
             BlockingConfigResponseElement::hasCustomSignatureBlockingRules);
     assertEquals(1, filteredElements.size());
-    assertNotEquals(emptyValueUuid, filteredElements.get(0).getHash());
-    assertFalse(
+    assertEquals(emptyValueUuid, filteredElements.get(0).getHash());
+    assertTrue(
         filteredElements
             .get(0)
             .getCustomSignatureBlockingRules()
             .getCustomSignatureRulesBlob()
             .isEmpty());
+
     filteredElements =
         filterElements(
             response.getResponseElementsList(),
@@ -907,7 +896,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
             BlockingConfigResponseElement::hasBlockingPolicyConfiguration);
     assertNotEquals(emptyValueUuid, filteredElements.get(0).getHash());
     assertEquals(
-        12, filteredElements.get(0).getBlockingPolicyConfiguration().getBlockingDetailsListCount());
+        13, filteredElements.get(0).getBlockingPolicyConfiguration().getBlockingDetailsListCount());
 
     addIpRangeRule("ip-range-rule-1", Optional.empty(), RULE_ACTION_ALLOW);
     addIpRangeRule("ip-range-rule-2", Optional.of(ENVIRONMENT_ID), RULE_ACTION_BLOCK);
@@ -962,10 +951,6 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
             BlockingConfigResponseElement::hasRegionBlockingRules);
     assertNotEquals(emptyValueUuid, filteredElements.get(0).getHash());
 
-    /*
-     * The following assertion seems flaky - doesn't work locally on Intellij (works with value 3),
-     * but works with GitHub actions
-     */
     assertEquals(
         4, filteredElements.get(0).getRegionBlockingRules().getRegionIpBlockingRulesCount());
 
@@ -1770,7 +1755,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
   private static String createCustomSignatureRule(
       Optional<String> environmentId, EventType eventType, Clause clause) {
     final RuleEffect ruleEffect;
-    if (eventType == EventType.EVENT_TYPE_TESTING_DETECTION) {
+    if (eventType == EVENT_TYPE_TESTING_DETECTION) {
       ruleEffect =
           RuleEffect.newBuilder()
               .setEventType(eventType)
@@ -1797,6 +1782,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
               .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
               .build();
     }
+
     CreateCustomSignatureRuleResponse response =
         RequestContext.forTenantId(TENANT_ID)
             .call(
@@ -1804,6 +1790,9 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                     customSignatureConfigServiceStub.createCustomSignatureRule(
                         CreateCustomSignatureRuleRequest.newBuilder()
                             .setName("rule-1")
+                            .setCategory(
+                                ai.traceable.customsignature.config.service.v1.Category
+                                    .CATEGORY_CUSTOM_SIGNATURE)
                             .setDefinition(
                                 RuleDefinition.newBuilder()
                                     .putAllLabels(Map.of("key", "value"))
@@ -1823,6 +1812,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                                     .orElse(RuleScope.getDefaultInstance()))
                             .setEffect(ruleEffect)
                             .build()));
+
     return response.getRule().getId();
   }
 

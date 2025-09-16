@@ -32,6 +32,8 @@ import ai.traceable.platform.opa.v1.exemption.ExemptionInfoEncoder;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import com.google.common.collect.ImmutableList;
 import jakarta.inject.Inject;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -56,16 +58,34 @@ class CustomSignatureBlockingPolicyDataFetcher implements BlockingPolicyDataFetc
       RequestContext requestContext,
       BlockingPolicyDataFilter filter,
       BlockingRulesSupplier blockingRulesSupplier) {
-    List<CustomSignatureInlineRule> ruleList =
-        blockingRulesSupplier.getCustomSignatureInlineRules();
-    return new BlockingPolicyAggregate<>(
-        ruleList.stream()
-            .map(CustomSignatureInlineRule::getRule)
-            .filter(this::filterRule)
-            .map(this::getBlockingDetails)
-            .filter(Optional::isPresent)
-            .map(Optional::get)
-            .collect(Collectors.toUnmodifiableList()));
+    if (filter.getServiceNames().isEmpty()) {
+      List<CustomSignatureInlineRule> ruleList =
+          blockingRulesSupplier.getCustomSignatureInlineRules();
+      return new BlockingPolicyAggregate<>(
+          ruleList.stream()
+              .map(CustomSignatureInlineRule::getRule)
+              .filter(this::filterRule)
+              .map(this::getBlockingDetails)
+              .filter(Optional::isPresent)
+              .map(Optional::get)
+              .collect(Collectors.toUnmodifiableList()));
+    }
+
+    LinkedHashMap<String, List<BlockingPolicyData>> serviceScopedBlockingPolicies =
+        new LinkedHashMap<>();
+    blockingRulesSupplier
+        .getCustomSignatureInlineRules(new LinkedHashSet<>(filter.getServiceNames()))
+        .forEach(
+            (serviceName, rules) ->
+                serviceScopedBlockingPolicies.put(
+                    serviceName,
+                    rules.stream()
+                        .map(CustomSignatureInlineRule::getRule)
+                        .filter(this::filterRule)
+                        .map(this::getBlockingDetails)
+                        .flatMap(Optional::stream)
+                        .collect(Collectors.toUnmodifiableList())));
+    return new BlockingPolicyAggregate<>(serviceScopedBlockingPolicies);
   }
 
   private Optional<BlockingPolicyData> getBlockingDetails(CustomSignatureRule customSignatureRule) {
@@ -116,7 +136,8 @@ class CustomSignatureBlockingPolicyDataFetcher implements BlockingPolicyDataFetc
                 clause ->
                     clause.hasMatchExpression()
                         || clause.hasKeyValueExpression()
-                        || clause.hasCustomSecRule());
+                        || clause.hasCustomSecRule()
+                        || clause.hasScopeExpression());
     if (hasModsecConvertibleExpression) {
       blockingDetails.add(
           CustomSignatureBlockingDetails.builder().ruleId(customSignatureRule.getId()).build());
@@ -169,6 +190,7 @@ class CustomSignatureBlockingPolicyDataFetcher implements BlockingPolicyDataFetc
       case CUSTOM_SEC_RULE:
       case MATCH_EXPRESSION:
       case KEY_VALUE_EXPRESSION:
+      case SCOPE_EXPRESSION:
         // these are supported by agents, but we will add only one blocking detail per rule for
         // modsec part of the rule instead of having a blocking detail for each clause.
         return Optional.empty();

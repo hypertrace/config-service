@@ -486,7 +486,7 @@ public class CustomSignatureConfigServiceIntegrationTest
             .build());
   }
 
-  private CustomSignatureRule updateExpiryTime(CustomSignatureRule rule) {
+  private void updateExpiryTime(CustomSignatureRule rule) {
     CustomSignatureRule updatedRule =
         CustomSignatureRule.newBuilder(rule.toBuilder().clearRuleSource().build())
             .setEffect(
@@ -497,7 +497,7 @@ public class CustomSignatureConfigServiceIntegrationTest
                     .setExpiryDuration(Duration.of(2, ChronoUnit.DAYS).toString())
                     .build())
             .build();
-    return GrpcClientRequestContextUtil.executeInTenantContext(
+    GrpcClientRequestContextUtil.executeInTenantContext(
         TENANT_ID,
         () ->
             configServiceStub

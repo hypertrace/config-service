@@ -52,4 +52,8 @@ public interface BlockingRulesSupplier {
 
   /** Returns the list of custom signature inline rule */
   List<CustomSignatureInlineRule> getCustomSignatureInlineRules();
+
+  /** Returns the list of custom signature inline rule keyed by service name */
+  Map<String, List<CustomSignatureInlineRule>> getCustomSignatureInlineRules(
+      Set<String> serviceNames);
 }

@@ -19,6 +19,7 @@ import static ai.traceable.blocking.config.service.v1.IpType.IP_TYPE_BOT;
 import static ai.traceable.blocking.config.service.v1.IpType.IP_TYPE_HOSTING_PROVIDER;
 import static ai.traceable.blocking.config.service.v1.IpType.IP_TYPE_PROXY;
 import static ai.traceable.blocking.config.service.v1.IpType.IP_TYPE_TOR;
+import static ai.traceable.customsignature.config.service.v1.EventType.EVENT_TYPE_DETECTION_AND_BLOCKING;
 import static ai.traceable.iprange.config.service.v1.RuleAction.RULE_ACTION_ALLOW;
 import static ai.traceable.iprange.config.service.v1.RuleAction.RULE_ACTION_BLOCK;
 import static ai.traceable.platform.actor.v1.Status.STATUS_ALWAYS_ALLOWED;
@@ -53,6 +54,7 @@ import ai.traceable.blocking.config.service.v1.GetBlockingRulesResponse;
 import ai.traceable.blocking.config.service.v1.IpType;
 import ai.traceable.blocking.config.service.v1.IpTypeRule;
 import ai.traceable.config.service.TraceableConfigServiceIntegrationTestBase;
+import ai.traceable.customsignature.config.service.v1.Category;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.ClauseOperator;
@@ -62,7 +64,6 @@ import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServi
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
 import ai.traceable.customsignature.config.service.v1.EnvironmentScope;
 import ai.traceable.customsignature.config.service.v1.EventSeverity;
-import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.IpAddressExpression;
 import ai.traceable.customsignature.config.service.v1.IpTypeExpression;
 import ai.traceable.customsignature.config.service.v1.MatchExpression;
@@ -72,6 +73,7 @@ import ai.traceable.customsignature.config.service.v1.RegionExpression;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
+import ai.traceable.customsignature.config.service.v1.RuleSource;
 import ai.traceable.iprange.config.service.v1.CreateIpRangeRuleRequest;
 import ai.traceable.iprange.config.service.v1.CreateIpRangeRuleResponse;
 import ai.traceable.iprange.config.service.v1.IpRangeConfigServiceGrpc;
@@ -107,8 +109,6 @@ import ai.traceable.platform.actor.v1.StatusChangeSource;
 import ai.traceable.platform.actor.v1.UpsertActorRequest;
 import ai.traceable.platform.actor.v1.UpsertActorResponse;
 import ai.traceable.platform.opa.v1.exemption.ExemptionInfoEncoder;
-import ai.traceable.platform.opa.v1.violation.RateLimitViolationInfo;
-import ai.traceable.platform.opa.v1.violation.ViolationInfoDecoder;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.CreateRegionRuleResponse;
@@ -1022,9 +1022,6 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
             RateLimitCategory.RATE_LIMIT_CATEGORY_ENUMERATION,
             Map.of("key", "value")),
         blockingPolicyConfiguration.getBlockingDetailsList(index).getInfo());
-    RateLimitViolationInfo rateLimitViolationInfo =
-        ViolationInfoDecoder.getDecodedRateLimitViolationInfo(
-            blockingPolicyConfiguration.getBlockingDetailsList(index).getInfo(), null);
     assertEquals(
         BLOCKING_STATUS_DENIED,
         blockingPolicyConfiguration.getBlockingDetailsList(index).getStatus());
@@ -1152,12 +1149,6 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
   }
 
   private String createCustomSignatureRule(Optional<String> environmentId, Clause clause) {
-    Clause.newBuilder()
-        .setMatchExpression(
-            MatchExpression.newBuilder()
-                .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
-                .setMatchOperator(MatchOperator.MATCH_OPERATOR_CONTAINS)
-                .setMatchValue("anomalous"));
     CreateCustomSignatureRuleResponse response =
         RequestContext.forTenantId(TENANT_ID)
             .call(
@@ -1165,6 +1156,7 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                     customSignatureConfigServiceStub.createCustomSignatureRule(
                         CreateCustomSignatureRuleRequest.newBuilder()
                             .setName("rule-1")
+                            .setCategory(Category.CATEGORY_CUSTOM_SIGNATURE)
                             .setDefinition(
                                 RuleDefinition.newBuilder()
                                     .putAllLabels(Map.of("key", "value"))
@@ -1182,9 +1174,10 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                                                         .addEnvironmentIds(id))
                                                 .build())
                                     .orElse(RuleScope.getDefaultInstance()))
+                            .setRuleSource(RuleSource.RULE_SOURCE_TRACEABLE)
                             .setEffect(
                                 RuleEffect.newBuilder()
-                                    .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
+                                    .setEventType(EVENT_TYPE_DETECTION_AND_BLOCKING)
                                     .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM))
                             .build()));
     return response.getRule().getId();

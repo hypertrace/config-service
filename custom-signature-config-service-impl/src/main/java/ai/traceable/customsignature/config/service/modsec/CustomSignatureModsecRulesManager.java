@@ -135,6 +135,14 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
             getModsecConvertibleClauses(customSignatureRule.getDefinition().getClauseGroup());
 
         if (modsecConvertibleClauses.isEmpty()) {
+          if (containsNonModsecTrackableClauses(
+              customSignatureRule.getDefinition().getClauseGroup())) {
+            ModsecBlobResult emptyModsecBlobResult =
+                new ModsecBlobResult(EMPTY_BLOB, customSignatureRule.getId());
+            applicableServices.forEach(
+                applicableService ->
+                    serviceToModsecBlobDataMap.get(applicableService).add(emptyModsecBlobResult));
+          }
           inlineRuleList.add(
               CustomSignatureInlineRule.newBuilder().setRule(customSignatureRule).build());
           continue;
@@ -236,6 +244,27 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
                     || clause.hasKeyValueExpression()
                     || (clause.hasScopeExpression() && clause.getScopeExpression().hasUrlScope()))
         .collect(Collectors.toList());
+  }
+
+  /**
+   * Checks if the clause group contains IP-related or region-related clauses that should be tracked
+   * in ModsecBlobData even though they can't be converted to ModSec format. These clauses are
+   * handled outside ModSec (in blocking config).
+   */
+  private boolean containsNonModsecTrackableClauses(ClauseGroup clauseGroup) {
+    return clauseGroup.getClausesList().stream().anyMatch(this::isNonModsecTrackableClause);
+  }
+
+  private boolean isNonModsecTrackableClause(Clause clause) {
+    switch (clause.getClauseCase()) {
+      case IP_ADDRESS_EXPRESSION:
+      case IP_TYPE_EXPRESSION:
+      case REGION_EXPRESSION:
+        // These are handled in blocking config (outside ModSec) but should be tracked
+        return true;
+      default:
+        return false;
+    }
   }
 
   private String getModsecDirective(CustomModsecRuleVersion customModsecRuleVersion) {
