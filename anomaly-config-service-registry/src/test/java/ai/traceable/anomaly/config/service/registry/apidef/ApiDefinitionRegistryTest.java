@@ -16,6 +16,7 @@ import ai.traceable.anomaly.config.service.v1.detector.ContentSizeAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ContentTypeAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.DeviceAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.EnumerationsAnomalyConfig;
+import ai.traceable.anomaly.config.service.v1.detector.GqlaAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.HttpStatusAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.IntegerAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.JwtAnomalyConfig;
@@ -45,6 +46,7 @@ public class ApiDefinitionRegistryTest {
                     verifyEventDetails(anomalyRuleInfo.getEventDetails());
                   }
                   String jwtRuleId = "jwt";
+                  String gqlaRuleId = "gqla";
                   if (anomalyRuleInfo.getRuleId().equals(jwtRuleId)) {
                     assertEquals(8, anomalyRuleInfo.getSubRuleInfosCount());
 
@@ -65,6 +67,23 @@ public class ApiDefinitionRegistryTest {
                                 verifyEventDetails(subRuleInfo.getEventDetails());
                               }
                             });
+                  } else if (anomalyRuleInfo.getRuleId().equals(gqlaRuleId)) {
+                    assertEquals(8, anomalyRuleInfo.getSubRuleInfosCount());
+
+                    anomalyRuleInfo
+                        .getSubRuleInfosList()
+                        .forEach(
+                            subRuleInfo -> {
+                              assertFalse(subRuleInfo.getEventLabelsMap().isEmpty());
+                              assertNotEquals(
+                                  AnomalySeverityLevel.ANOMALY_SEVERITY_LEVEL_UNSPECIFIED,
+                                  subRuleInfo.getSeverityLevel());
+                              assertTrue(subRuleInfo.getRuleId().startsWith(gqlaRuleId));
+                              assertTrue(subRuleInfo.getEventLabelsCount() > 0);
+                              if (subRuleInfo.getRuleId().equals("gqla_fs")) {
+                                verifyEventDetails(subRuleInfo.getEventDetails());
+                              }
+                            });
                   } else {
                     assertEquals(0, anomalyRuleInfo.getSubRuleInfosCount());
                     assertTrue(anomalyRuleInfo.getEventLabelsCount() > 0);
@@ -75,7 +94,7 @@ public class ApiDefinitionRegistryTest {
 
     Set<String> ruleIdsFromApiDefDetectionConfigs =
         apiDefinitionRegistry.getApiDefRuleIdToDetectionConfigMap().values().stream()
-            .map(detectionConfig -> detectionConfig.getAnomalyRuleId())
+            .map(ApiDefinitionMetadataAnomalyDetectionConfig::getAnomalyRuleId)
             .collect(Collectors.toSet());
 
     assertEquals(ruleIdsFromApiDefRuleInfos, ruleIdsFromApiDefDetectionConfigs);
@@ -166,6 +185,12 @@ public class ApiDefinitionRegistryTest {
         ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
             .setAnomalyRuleId("jwt")
             .setJwt(JwtAnomalyConfig.getDefaultInstance())
+            .build());
+    expectedMap.put(
+        "gqla",
+        ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+            .setAnomalyRuleId("gqla")
+            .setGqla(GqlaAnomalyConfig.getDefaultInstance())
             .build());
     expectedMap.put(
         "specialCharacter",

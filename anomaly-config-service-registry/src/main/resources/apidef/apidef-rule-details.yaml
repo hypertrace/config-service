@@ -511,3 +511,211 @@
         - OWASP API Security Top 10 - 2023 - API2:2023 - Broken Authentication (https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/)
         - CWE-347: Improper Verification of Cryptographic Signature: https://cwe.mitre.org/data/definitions/347.html
         - JWT JKU Integrity Violation: https://portswigger.net/web-security/jwt
+
+- ruleId: gqla
+  ruleName: GraphQL Attacks
+  anomalyRuleCategory: ANOMALY_RULE_CATEGORY_GRAPHQL_ATTACKS
+  severityLevel: ANOMALY_SEVERITY_LEVEL_MEDIUM
+  eventLabels:
+    CWE: 20,747
+    OWASP_API_2023: API6
+    OWASP_API_2019: API6
+    MITRE_TACTIC: TA0001
+    MITRE_TECHNIQUE: T1190
+  eventDetails:
+    description: |
+      This threat category includes attacks where GraphQL requests violate the schema definitions. This could include sending invalid or unknown fields, wrong types, or violating required constraints defined in the schema.
+    mitigation: |
+      Implement strict GraphQL schema validation for all queries and mutations. Enable introspection only in trusted environments. Enforce input sanitization and schema compliance at the server level.
+    impact: |
+      If not mitigated, attackers can exploit schema violations to bypass input validation, trigger unintended backend behavior, or perform enumeration attacks.
+    references: |
+      - CWE-707: Improper Neutralization
+      - CWE-20: Improper Input Validation - https://cwe.mitre.org/data/definitions/20.html
+      - OWASP API Security Top 10 - 2023 - API6:2023 - Unrestricted Access to Sensitive Business Flows - https://owasp.org/API-Security/editions/2023/en/0xa6-unrestricted-access-to-sensitive-business-flows/
+      - OWASP GraphQL Security Cheat Sheet - https://cheatsheetseries.owasp.org/cheatsheets/GraphQL_Security_Cheat_Sheet.html
+  subRuleInfos:
+    - ruleId: gqla_aba
+      ruleName: Alias Based Attack
+      severityLevel: ANOMALY_SEVERITY_LEVEL_HIGH
+      eventLabels:
+        CWE: 400
+        OWASP_API_2023: API4
+        OWASP_API_2019: API4
+        MITRE_TACTIC: TA0040
+        MITRE_TECHNIQUE: T1499.004
+      eventDetails:
+        description: |
+          An Aliased Based Attack is flagged when GraphQL's aliasing feature is exploited to create multiple instances of the same expensive query within a single request. Attackers use aliases to bypass query complexity limits and cause resource exhaustion by executing the same resource-intensive operation multiple times.
+        mitigation: |
+          Implement query complexity analysis that accounts for aliases, set limits on maximum aliases per query, and use depth limiting combined with alias detection. Monitor query execution time and resource usage patterns.
+        impact: |
+          Aliased attacks can cause severe resource exhaustion, CPU overload, memory depletion, and service disruption through multiplication of expensive operations within seemingly simple queries.
+        references: |
+          - GraphQL Security Best Practices - https://graphql.org/learn/security/
+          - OWASP GraphQL Cheat Sheet - https://cheatsheetseries.owasp.org/cheatsheets/GraphQL_Cheat_Sheet.html
+          - CWE-400: Uncontrolled Resource Consumption - https://cwe.mitre.org/data/definitions/400.html
+          - GraphQL Query Complexity Analysis - https://github.com/slicknode/graphql-query-complexity
+          - OWASP API Security Top 10 - 2023 - API4:Unrestricted Resource Consumption - https://owasp.org/API-Security/editions/2023/en/0xa4-unrestricted-resource-consumption/
+
+    - ruleId: gqla_drq
+      ruleName: Deep Recursion Query
+      severityLevel: ANOMALY_SEVERITY_LEVEL_HIGH
+      eventLabels:
+        CWE: 674
+        OWASP_API_2023: API4
+        OWASP_API_2019: API4
+        MITRE_TACTIC: TA0040
+        MITRE_TECHNIQUE: T1499.004
+      eventDetails:
+        description: |
+          A Deep Recursion Query attack is flagged when GraphQL's relationship traversal capabilities are exploited to create deeply nested queries that consume excessive server resources. These attacks target recursive relationships between objects to create queries with extreme depth levels.
+        mitigation: |
+          Implement query depth limiting with configurable maximum depth levels. Use query complexity analysis, implement timeout controls for query execution, and monitor for patterns of deep nested queries.
+        impact: |
+          Deep recursion attacks can cause stack overflow, memory exhaustion, CPU overload, and service disruption through exploitation of object relationship traversal without proper depth controls.
+        references: |
+          - GraphQL Security Best Practices - https://graphql.org/learn/security/
+          - OWASP GraphQL Cheat Sheet - https://cheatsheetseries.owasp.org/cheatsheets/GraphQL_Cheat_Sheet.html
+          - CWE-674: Uncontrolled Recursion - https://cwe.mitre.org/data/definitions/674.html
+          - CWE-400: Uncontrolled Resource Consumption - https://cwe.mitre.org/data/definitions/400.html
+
+    - ruleId: gqla_fda
+      ruleName: Field Duplication Attack
+      severityLevel: ANOMALY_SEVERITY_LEVEL_MEDIUM
+      eventLabels:
+        CWE: 400
+        OWASP_API_2023: API4
+        OWASP_API_2019: API4
+        MITRE_TACTIC: TA0040
+        MITRE_TECHNIQUE: T1499.004
+      eventDetails:
+        description: |
+          A Field Duplication Attack is flagged when the same field is requested multiple times within a single GraphQL query to amplify resource consumption. Attackers exploit the ability to request identical fields repeatedly to bypass simple query limits and cause resource exhaustion.
+        mitigation: |
+          Implement field duplication detection and limits on duplicate field requests. Use query complexity analysis that accounts for field repetition and implement query normalization to detect and prevent field duplication attacks.
+        impact: |
+          Field duplication attacks can cause resource amplification, increased response times, memory consumption, and potential service disruption through repetitive processing of identical field requests.
+        references: |
+          - GraphQL Security Best Practices - https://graphql.org/learn/security/
+          - OWASP GraphQL Cheat Sheet - https://cheatsheetseries.owasp.org/cheatsheets/GraphQL_Cheat_Sheet.html
+          - CWE-400: Uncontrolled Resource Consumption - https://cwe.mitre.org/data/definitions/400.html
+          - GraphQL Query Complexity Analysis - https://github.com/slicknode/graphql-query-complexity
+          - OWASP API Security Top 10 - 2023 - API4:Unrestricted Resource Consumption - https://owasp.org/API-Security/editions/2023/en/0xa4-unrestricted-resource-consumption/
+
+    - ruleId: gqla_bqa
+      ruleName: Batch Query Attack
+      severityLevel: ANOMALY_SEVERITY_LEVEL_HIGH
+      eventLabels:
+        CWE: 400
+        OWASP_API_2023: API4
+        OWASP_API_2019: API4
+        MITRE_TACTIC: TA0040
+        MITRE_TECHNIQUE: T1499.004
+      eventDetails:
+        description: |
+          A Batch Query Attack is flagged when GraphQL's ability to process multiple queries in a single request is exploited to overwhelm server resources. Attackers submit large batches of queries to bypass rate limiting and cause resource exhaustion through query multiplication.
+        mitigation: |
+          Implement batch query limits with maximum queries per request. Use rate limiting that accounts for batch operations, implement query complexity analysis across batched queries, and monitor for patterns of large batch requests.
+        impact: |
+          Batch query attacks can bypass rate limiting, cause resource exhaustion, overwhelm server capacity, and lead to service disruption through multiplication of query processing load.
+        references: |
+          - GraphQL Security Best Practices - https://graphql.org/learn/security/
+          - OWASP GraphQL Cheat Sheet - https://cheatsheetseries.owasp.org/cheatsheets/GraphQL_Cheat_Sheet.html
+          - CWE-400: Uncontrolled Resource Consumption - https://cwe.mitre.org/data/definitions/400.html
+          - OWASP API Security Top 10 - 2023 - API4:Unrestricted Resource Consumption - https://owasp.org/API-Security/editions/2023/en/0xa4-unrestricted-resource-consumption/
+
+    - ruleId: gqla_cf
+      ruleName: Circular Fragment
+      severityLevel: ANOMALY_SEVERITY_LEVEL_HIGH
+      eventLabels:
+        CWE: 674
+        OWASP_API_2023: API4
+        OWASP_API_2019: API4
+        MITRE_TACTIC: TA0040
+        MITRE_TECHNIQUE: T1499.004
+      eventDetails:
+        description: |
+          A Circular Fragment attack is flagged when GraphQL fragments that reference each other in circular patterns are detected, potentially causing infinite loops during query processing. These attacks target the fragment resolution mechanism to create recursive processing cycles that consume server resources.
+        mitigation: |
+          Implement fragment cycle detection during query parsing. Use fragment depth limiting, implement proper fragment resolution validation, and reject queries containing circular fragment references.
+        impact: |
+          Circular fragment attacks can cause infinite loops, stack overflow, memory exhaustion, and complete service disruption through recursive fragment processing that never terminates.
+        references: |
+          - GraphQL Security Best Practices - https://graphql.org/learn/security/
+          - OWASP GraphQL Cheat Sheet - https://cheatsheetseries.owasp.org/cheatsheets/GraphQL_Cheat_Sheet.html
+          - CWE-674: Uncontrolled Recursion - https://cwe.mitre.org/data/definitions/674.html
+          - CWE-400: Uncontrolled Resource Consumption - https://cwe.mitre.org/data/definitions/400.html
+          - GraphQL Fragment Validation - https://spec.graphql.org/October2021/#sec-Fragment-cycles
+
+    - ruleId: gqla_iq
+      ruleName: Introspection Query
+      severityLevel: ANOMALY_SEVERITY_LEVEL_MEDIUM
+      eventLabels:
+        CWE: 200
+        OWASP_API_2023: API9
+        OWASP_API_2019: API9
+        MITRE_TACTIC: TA0007
+        MITRE_TECHNIQUE: T1592
+      eventDetails:
+        description: |
+          An Introspection Query attack is flagged when GraphQL's built-in introspection capabilities are exploited to extract detailed schema information including available queries, mutations, types, and fields. Attackers use this information for reconnaissance and to plan more sophisticated attacks.
+        mitigation: |
+          Disable introspection in production environments, implement access controls for introspection queries, and use schema hiding techniques. Monitor for introspection attempts and implement proper security controls.
+        impact: |
+          Introspection attacks can reveal sensitive schema information, expose available attack surfaces, enable reconnaissance for more sophisticated attacks, and potentially lead to information disclosure about application architecture.
+        references: |
+          - GraphQL Security Best Practices - https://graphql.org/learn/security/
+          - OWASP GraphQL Cheat Sheet - https://cheatsheetseries.owasp.org/cheatsheets/GraphQL_Cheat_Sheet.html
+          - CWE-200: Information Exposure - https://cwe.mitre.org/data/definitions/200.html
+          - GraphQL Introspection - https://graphql.org/learn/introspection/
+          - OWASP API Security Top 10 - 2023 - API9:Improper Inventory Management - https://owasp.org/API-Security/editions/2023/en/0xa9-improper-inventory-management/
+
+    - ruleId: gqla_riq
+      ruleName: Resource Intensive Query
+      severityLevel: ANOMALY_SEVERITY_LEVEL_MEDIUM
+      eventLabels:
+        CWE: 200
+        OWASP_API_2023: API9
+        OWASP_API_2019: API9
+        MITRE_TACTIC: TA0007
+        MITRE_TECHNIQUE: T1592
+      eventDetails:
+        description: |
+          A Resource Intensive Query attack occurs when an attacker crafts queries that cause disproportionate CPU, memory, IO, or network use on the API, degrading availability or enabling large-scale data exfiltration.
+        mitigation: |
+          Enforce strict rate limiting per user/IP/tenant and global throttles. Limit result sizes (max page_size), query depth, and complexity (complexity analysis or depth limits for GraphQL). Apply quotas, circuit breakers, request size limits, and server-side timeouts. Monitor (anomalous spikes, slow queries), alert, and block abusive clients.
+        impact: |
+          Can cause service slowdown or full DoS for legitimate users (availability impact). 
+          May enable brute-force/enumeration and mass data extraction when rate limits and result-size limits are absent.
+        references: |
+          - GraphQL Security Best Practices - https://graphql.org/learn/security/
+          - OWASP GraphQL Cheat Sheet - https://cheatsheetseries.owasp.org/cheatsheets/GraphQL_Cheat_Sheet.html
+          - CWE-200: Information Exposure - https://cwe.mitre.org/data/definitions/200.html
+          - OWASP API Security Top 10 - 2023 - API9:Improper Inventory Management - https://owasp.org/API-Security/editions/2023/en/0xa9-improper-inventory-management/
+
+    - ruleId: gqla_fs
+      ruleName: Field Suggestions
+      severityLevel: ANOMALY_SEVERITY_LEVEL_MEDIUM
+      eventLabels:
+        CWE: 200
+        OWASP_API_2023: API9
+        OWASP_API_2019: API9
+        MITRE_TACTIC: TA0007
+        MITRE_TECHNIQUE: T1592
+      eventDetails:
+        description: |
+          Field Suggestions (autocomplete / suggestion endpoints) that expose field names, sample values, or metadata without proper access controls can leak sensitive data or reveal the shape of the backend schema (which aids reconnaissance and targeted attacks).
+        mitigation: |
+          Restrict access to suggestion/autocomplete endpoints — require auth/authorization and apply least privilege.
+          Sanitize responses: return minimal metadata, avoid returning real sample PII, and use aggregated/obfuscated counts instead of exact values.
+          Rate limit and monitor usage of suggestion endpoints to detect enumeration.
+          Mask/hide sensitive field names in public APIs and avoid exposing internal field names that reveal implementation details
+        impact: |
+          Reveals what fields/attributes exist and potential sensitive fields (emails, tokens, PII). That enables targeted enumeration and social engineering.
+          Combined with other endpoints, it speeds up recon and can enable privilege escalation or data harvesting.
+        references: |
+          - GraphQL Security Best Practices - https://graphql.org/learn/security/
+          - OWASP GraphQL Cheat Sheet - https://cheatsheetseries.owasp.org/cheatsheets/GraphQL_Cheat_Sheet.html
+          - CWE-200: Information Exposure - https://cwe.mitre.org/data/definitions/200.html
+          - OWASP API Security Top 10 - 2023 - API9:Improper Inventory Management - https://owasp.org/API-Security/editions/2023/en/0xa9-improper-inventory-management/

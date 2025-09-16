@@ -168,6 +168,7 @@ message ApiDefinitionMetadataAnomalyDetectionConfig {
     SpecialCharacterAnomalyConfig special_character = 16;
     ContentExplosionAnomalyConfig content_explosion = 17;
     ResponseDurationAnomalyConfig response_duration = 18;
+    GqlaAnomalyConfig gqla = 19;
   }
   AnomalySubRuleConfigMap sub_rule_configs = 15;
 }
@@ -432,6 +433,13 @@ message BflaAnomalyConfig {
 message JwtAnomalyConfig {
   optional double time_difference_buffer_millis = 1;
   optional double min_percent_seen = 2;
+}
+
+message GqlaAnomalyConfig {
+  optional double max_aliases = 1;
+  optional double max_depth = 2;
+  optional double max_duplicates = 3;
+  optional double max_batches = 4;
 }
 
 message SpecialCharacterAnomalyConfig {
