@@ -719,3 +719,27 @@
           - OWASP GraphQL Cheat Sheet - https://cheatsheetseries.owasp.org/cheatsheets/GraphQL_Cheat_Sheet.html
           - CWE-200: Information Exposure - https://cwe.mitre.org/data/definitions/200.html
           - OWASP API Security Top 10 - 2023 - API9:Improper Inventory Management - https://owasp.org/API-Security/editions/2023/en/0xa9-improper-inventory-management/
+
+    - ruleId: gqla_gst
+      ruleName: GraphQL Stack Traces
+      severityLevel: ANOMALY_SEVERITY_LEVEL_MEDIUM
+      eventLabels:
+        CWE: 200
+        OWASP_API_2023: API9
+        OWASP_API_2019: API9
+        MITRE_TACTIC: TA0007
+        MITRE_TECHNIQUE: T1592
+      eventDetails:
+        description: |
+          Interactive IDEs (GraphiQL / Playground / Voyager) or GraphQL endpoints that return raw stack traces or verbose error objects can leak implementation details (source file paths, class/method names, SQL queries, environment variables, runtime versions, dependency traces, input variables). Those details aid attackers in reconnaissance and make exploitation (SQLi, RCE, SSRF, auth bypass) much easier.
+        mitigation: |
+          Disable GraphiQL/Playground in production and restrict access to debugging tools. Configure the GraphQL server to return only generic error messages, with detailed traces logged securely on the server side. Centralize error handling to prevent leaks, and monitor for error-based probing attempts.
+        impact: |
+          Returning raw stack traces in GraphQL error responses can reveal sensitive details like file paths, class names, SQL queries, or environment variables.
+          This information helps attackers map the backend and craft targeted exploits, reducing the effort needed for reconnaissance.
+          Exposed developer tools like GraphiQL/Playground in production environments further increase the risk.
+        references: |
+          - GraphQL Security Best Practices - https://graphql.org/learn/security/
+          - OWASP GraphQL Cheat Sheet - https://cheatsheetseries.owasp.org/cheatsheets/GraphQL_Cheat_Sheet.html
+          - CWE-200: Information Exposure - https://cwe.mitre.org/data/definitions/200.html
+          - OWASP API Security Top 10 - 2023 - API9:Improper Inventory Management - https://owasp.org/API-Security/editions/2023/en/0xa9-improper-inventory-management/
