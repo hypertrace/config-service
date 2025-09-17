@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils;
 import ai.traceable.anomaly.config.service.common.license.LicenseInfoLoader;
@@ -61,6 +62,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
@@ -529,6 +531,31 @@ public class GlobalAnomalyConfigStatusManagerTest {
       assertEquals(serviceConfigScope, scopedConfigs.get(1).getConfigScope());
       assertEquals(expectedServiceStatus, scopedConfigs.get(1).getConfigStatus());
       assertEquals(apiConfigScope, scopedConfigs.get(2).getConfigScope());
+    }
+    {
+      when(configStatusManager.getData(requestContext, tenantId))
+          .thenReturn(
+              Optional.of(
+                  ScopedAnomalyConfigStatusChange.newBuilder()
+                      .setConfigStatus(AnomalyConfigStatusChange.newBuilder().setDisabled(true))
+                      .setMinConfidenceLevel(ANOMALY_CONFIDENCE_LEVEL_LOW)
+                      .build()));
+      ScopedAnomalyConfigStatusChange result =
+          configStatusManager.getUnresolvedScopedAnomalyConfigStatus(
+              requestContext, customerConfigScope);
+      assertEquals(
+          result.getGlobalModsecConfigChange().getDisabled(),
+          result.getModsecGlobalConfig().getDisabled());
+      assertEquals(
+          result.getGlobalModsecConfigChange().getDisabled(),
+          result.getConfigStatus().getDisabled());
+      assertEquals(
+          result.getGlobalModsecConfigChange().getMinConfidenceLevel(),
+          result.getMinConfidenceLevel());
+      assertEquals(ANOMALY_CONFIDENCE_LEVEL_LOW, result.getMinConfidenceLevel());
+      assertEquals(true, result.getConfigStatus().getDisabled());
+      assertEquals(true, result.getModsecGlobalConfig().getDisabled());
+      assertEquals(true, result.getGlobalModsecConfigChange().getDisabled());
     }
   }
 

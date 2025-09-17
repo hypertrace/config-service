@@ -26,6 +26,7 @@ import ai.traceable.anomaly.config.service.v1.global.ModsecDefaultConfigsType;
 import ai.traceable.anomaly.config.service.v1.global.ModsecGlobalConfig;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatusChange;
+import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatusChange.Builder;
 import ai.traceable.license.metering.service.api.v1.LicenseInfo;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
@@ -365,6 +366,42 @@ public class GlobalAnomalyConfigStatusManagerImpl
 
   private ScopedAnomalyConfigStatusChange migrateScopedAnomalyConfigStatusChange(
       ScopedAnomalyConfigStatusChange scopedAnomalyConfigStatusChange) {
+    ScopedAnomalyConfigStatusChange oldMigratedFields =
+        migrateToOldScopedAnomalyConfigStatusChange(scopedAnomalyConfigStatusChange);
+    ScopedAnomalyConfigStatusChange.Builder builder = oldMigratedFields.toBuilder();
+    migrateToNewScopedAnomalyConfigStatusChange(oldMigratedFields, builder);
+    return builder.build();
+  }
+
+  private void migrateToNewScopedAnomalyConfigStatusChange(
+      ScopedAnomalyConfigStatusChange oldMigratedFields, Builder builder) {
+    if (oldMigratedFields.getModsecGlobalConfig().hasDisabled()
+        && !oldMigratedFields.getGlobalModsecConfigChange().hasDisabled()) {
+      builder
+          .getGlobalModsecConfigChangeBuilder()
+          .setDisabled(oldMigratedFields.getModsecGlobalConfig().getDisabled());
+    }
+
+    if (oldMigratedFields.getModsecGlobalConfig().hasEnabledForExitSpans()
+        && !oldMigratedFields.getGlobalModsecConfigChange().hasEnabledForExitSpans()) {
+      builder
+          .getGlobalModsecConfigChangeBuilder()
+          .setEnabledForExitSpans(
+              oldMigratedFields.getModsecGlobalConfig().getEnabledForExitSpans());
+    }
+
+    if (oldMigratedFields.getModsecGlobalConfig().getMinConfidenceLevel()
+            != AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_UNSPECIFIED
+        && oldMigratedFields.getGlobalModsecConfigChange().getMinConfidenceLevel()
+            == AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_UNSPECIFIED) {
+      builder
+          .getGlobalModsecConfigChangeBuilder()
+          .setMinConfidenceLevel(oldMigratedFields.getModsecGlobalConfig().getMinConfidenceLevel());
+    }
+  }
+
+  private ScopedAnomalyConfigStatusChange migrateToOldScopedAnomalyConfigStatusChange(
+      ScopedAnomalyConfigStatusChange scopedAnomalyConfigStatusChange) {
     ScopedAnomalyConfigStatusChange.Builder builder =
         ScopedAnomalyConfigStatusChange.newBuilder(scopedAnomalyConfigStatusChange);
     if (scopedAnomalyConfigStatusChange.getConfigStatus().hasDisabled()) {
@@ -392,7 +429,7 @@ public class GlobalAnomalyConfigStatusManagerImpl
     }
 
     if (scopedAnomalyConfigStatusChange.hasMinConfidenceLevel()) {
-      if (!scopedAnomalyConfigStatusChange
+      if (scopedAnomalyConfigStatusChange
           .getModsecGlobalConfig()
           .getMinConfidenceLevel()
           .equals(AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_UNSPECIFIED)) {
