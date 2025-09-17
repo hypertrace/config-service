@@ -437,6 +437,7 @@ traceableConfigServiceConfig:
       migrationDisabled: true
   astConfigService:
     defaultPurgeDuration: 30d
+    defaultScanRetentionLimitPerSuite: 10
     defaultAstFeatureConfig:
       astEnabled: true
       astReplayConfig:

@@ -319,6 +319,7 @@ data:
     }
     ast.config.service = {
       defaultPurgeDuration = {{ .Values.traceableConfigServiceConfig.astConfigService.defaultPurgeDuration }}
+      defaultScanRetentionLimitPerSuite = {{ .Values.traceableConfigServiceConfig.astConfigService.defaultScanRetentionLimitPerSuite }}
       defaultAstFeatureConfig = {
         astEnabled = {{ .Values.traceableConfigServiceConfig.astConfigService.defaultAstFeatureConfig.astEnabled }}
         astReplayConfig = {
