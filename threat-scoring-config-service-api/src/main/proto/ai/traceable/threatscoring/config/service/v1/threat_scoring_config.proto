@@ -27,6 +27,7 @@ message ThreatActivityConfidenceScoringConfig {
   ThreatActivityConfidenceMatrixConfig threat_activity_confidence_matrix_config = 1;
   ScoringLevelConfig previous_activity_event_count_level_config = 2;
   ScoringLevelConfig previous_unique_params_count_level_config = 3;
+  ScoringLevelConfig response_variation_count_level_config = 4;
 }
 
 //to be added later
