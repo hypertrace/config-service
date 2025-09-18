@@ -10,7 +10,6 @@ import static org.mockito.Mockito.mock;
 
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesTarget;
 import ai.traceable.blocking.config.service.common.rules.ModsecRulesData;
-import ai.traceable.customsignature.config.service.v1.Category;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureInlineRule;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
@@ -59,7 +58,6 @@ public class CustomSignatureRulesFetcherTest {
                 .setFilter(
                     GetRulesFilter.newBuilder()
                         .setDisabled(false)
-                        .addCategories(Category.CATEGORY_CUSTOM_SIGNATURE)
                         .setRuleScope(
                             RuleScope.newBuilder()
                                 .setEnvironmentScope(EnvironmentScope.getDefaultInstance())))
@@ -80,7 +78,6 @@ public class CustomSignatureRulesFetcherTest {
                 .setFilter(
                     GetRulesFilter.newBuilder()
                         .setDisabled(false)
-                        .addCategories(Category.CATEGORY_CUSTOM_SIGNATURE)
                         .setRuleScope(
                             RuleScope.newBuilder()
                                 .setEnvironmentScope(
@@ -116,9 +113,8 @@ public class CustomSignatureRulesFetcherTest {
             argThat(
                 request ->
                     request.getServiceNamesCount() > 0
-                        && request.getRuleVersion() == CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS
-                        && request.getFilter().getCategories(0)
-                            == Category.CATEGORY_CUSTOM_SIGNATURE));
+                        && request.getRuleVersion()
+                            == CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS));
   }
 
   @Test

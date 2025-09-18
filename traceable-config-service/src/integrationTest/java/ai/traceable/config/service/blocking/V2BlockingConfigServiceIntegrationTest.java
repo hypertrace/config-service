@@ -1790,9 +1790,6 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                     customSignatureConfigServiceStub.createCustomSignatureRule(
                         CreateCustomSignatureRuleRequest.newBuilder()
                             .setName("rule-1")
-                            .setCategory(
-                                ai.traceable.customsignature.config.service.v1.Category
-                                    .CATEGORY_CUSTOM_SIGNATURE)
                             .setDefinition(
                                 RuleDefinition.newBuilder()
                                     .putAllLabels(Map.of("key", "value"))
