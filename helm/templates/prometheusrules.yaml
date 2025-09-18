@@ -62,7 +62,7 @@ spec:
           labels:
             severity: SEV2
             repository: config-service
-            team: devops
+            team: protection-waap
             {{- with .Values.prometheusRule.additionalRuleLabels }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -76,7 +76,7 @@ spec:
           labels:
             severity: SEV2
             repository: config-service
-            team: devops
+            team: protection-bot
             {{- with .Values.prometheusRule.additionalRuleLabels }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
