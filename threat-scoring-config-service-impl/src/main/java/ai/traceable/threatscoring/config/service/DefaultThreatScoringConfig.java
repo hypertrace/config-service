@@ -142,10 +142,12 @@ public class DefaultThreatScoringConfig {
                 .setPreviousUniqueParamsCount(
                     SCORING_LEVEL_MAP.getOrDefault(
                         values[3], ScoringLevel.SCORING_LEVEL_UNSPECIFIED))
-                .setNewActivityConfidence(
+                .setResponseVariationCount(
                     SCORING_LEVEL_MAP.getOrDefault(
                         values[4], ScoringLevel.SCORING_LEVEL_UNSPECIFIED))
-                .setResponseVariationCount(ScoringLevel.SCORING_LEVEL_UNSPECIFIED)
+                .setNewActivityConfidence(
+                    SCORING_LEVEL_MAP.getOrDefault(
+                        values[5], ScoringLevel.SCORING_LEVEL_UNSPECIFIED))
                 .build());
       }
 

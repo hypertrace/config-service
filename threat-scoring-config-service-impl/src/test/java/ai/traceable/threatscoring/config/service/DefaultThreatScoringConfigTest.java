@@ -78,22 +78,25 @@ class DefaultThreatScoringConfigTest {
       for (String previousActivity : possibleScoreWithNA) {
         for (String eventCount : possibleScore) {
           for (String uniqueParams : possibleScore) {
-            expectedPermutations.add(
-                String.join(
-                    ",",
-                    labelToEnum.get(currentEvent),
-                    labelToEnum.get(previousActivity),
-                    labelToEnum.get(eventCount),
-                    labelToEnum.get(uniqueParams)));
+            for (String responseVariationCount : possibleScoreWithNA) {
+              expectedPermutations.add(
+                  String.join(
+                      ",",
+                      labelToEnum.get(currentEvent),
+                      labelToEnum.get(previousActivity),
+                      labelToEnum.get(eventCount),
+                      labelToEnum.get(uniqueParams),
+                      labelToEnum.get(responseVariationCount)));
+            }
           }
         }
       }
     }
 
     assertEquals(
-        108,
+        432,
         expectedPermutations.size(),
-        "Expected 108 unique permutations of the confidence fields (CurrentEvent, PreviousActivity, EventCount, UniqueParams)");
+        "Expected 432 unique permutations of the confidence fields (CurrentEvent, PreviousActivity, EventCount, UniqueParams, ResponseVariationCount)");
 
     var mappingList =
         defaultThreatScoringConfig
@@ -112,14 +115,15 @@ class DefaultThreatScoringConfigTest {
                         mapping.getCurrentEventConfidence().toString(),
                         mapping.getPreviousActivityConfidence().toString(),
                         mapping.getPreviousActivityEventCount().toString(),
-                        mapping.getPreviousUniqueParamsCount().toString()))
+                        mapping.getPreviousUniqueParamsCount().toString(),
+                        mapping.getResponseVariationCount().toString()))
             .collect(Collectors.toList());
 
     Set<String> uniquePermutations = new HashSet<>(actualPermutations);
     assertEquals(
         actualPermutations.size(),
         uniquePermutations.size(),
-        "Duplicate entries found for the confidence fields (CurrentEvent, PreviousActivity, EventCount, UniqueParams)");
+        "Duplicate entries found for the confidence fields (CurrentEvent, PreviousActivity, EventCount, UniqueParams, ResponseVar)");
 
     assertEquals(
         expectedPermutations.size(),
