@@ -31,25 +31,25 @@ message AiAppCustomRuleData {
 
 message PiiDetectedInPromptRuleData {
   DatatypeCondition datatype_condition = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Datatype condition of the rule"];
-  ScopeCondition scope_condition = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Scope condition of the rule"];
+  repeated ScopeCondition scope_conditions = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of scope conditions of the rule"];
 }
 
 message AiRateLimitingRuleData {
   MatchOperatorCondition ai_model_types_condition = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "AI model types condition of the rule"];
   MatchOperatorCondition ai_vendors_condition = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "AI vendors condition of the rule"];
   ResourceAccessThresholdConfig threshold_config = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Threshold config of the rule"];
-  ScopeCondition scope_condition = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Scope condition of the rule"];
+  repeated ScopeCondition scope_conditions = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of scope conditions of the rule"];
 }
 
 message ModelGovernanceRuleData {
   MatchOperatorCondition ai_model_types_condition = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "AI model types condition of the rule"];
   MatchOperatorCondition ai_vendors_condition = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "AI vendors condition of the rule"];
-  ScopeCondition scope_condition = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Scope condition of the rule"];
+  repeated ScopeCondition scope_conditions = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of scope conditions of the rule"];
 }
 
 message AiInputExplosionRuleData {
   int32 input_character_limit = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Input character limit of the rule"];
-  ScopeCondition scope_condition = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Scope condition of the rule"];
+  repeated ScopeCondition scope_conditions = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of scope conditions of the rule"];
 }
 
 message RuleStatusDetails {
