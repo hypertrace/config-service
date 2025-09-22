@@ -440,6 +440,10 @@ message GqlaAnomalyConfig {
   optional double max_depth = 2;
   optional double max_duplicates = 3;
   optional double max_batches = 4;
+  optional string field_deny_list_regex = 5;
+  optional string operation_deny_list_regex = 6;
+  repeated string field_deny_list = 7;
+  repeated string operation_deny_list = 8;
 }
 
 message SpecialCharacterAnomalyConfig {

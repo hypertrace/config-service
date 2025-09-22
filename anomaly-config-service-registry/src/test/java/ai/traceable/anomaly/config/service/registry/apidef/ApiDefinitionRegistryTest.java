@@ -68,7 +68,7 @@ public class ApiDefinitionRegistryTest {
                               }
                             });
                   } else if (anomalyRuleInfo.getRuleId().equals(gqlaRuleId)) {
-                    assertEquals(9, anomalyRuleInfo.getSubRuleInfosCount());
+                    assertEquals(10, anomalyRuleInfo.getSubRuleInfosCount());
 
                     anomalyRuleInfo
                         .getSubRuleInfosList()

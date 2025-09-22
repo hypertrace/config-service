@@ -743,3 +743,28 @@
           - OWASP GraphQL Cheat Sheet - https://cheatsheetseries.owasp.org/cheatsheets/GraphQL_Cheat_Sheet.html
           - CWE-200: Information Exposure - https://cwe.mitre.org/data/definitions/200.html
           - OWASP API Security Top 10 - 2023 - API9:Improper Inventory Management - https://owasp.org/API-Security/editions/2023/en/0xa9-improper-inventory-management/
+
+    - ruleId: gqla_gdlb
+      ruleName: GraphQL Deny List Bypass
+      severityLevel: ANOMALY_SEVERITY_LEVEL_HIGH
+      eventLabels:
+        CWE: 693
+        OWASP_API_2023: API5
+        OWASP_API_2019: API5
+        MITRE_TACTIC: TA0009
+        MITRE_TECHNIQUE: T1592
+      eventDetails:
+        description: |
+          GraphQL DenyList Bypass occurs when an application relies only on a denylist (blocklist) of restricted fields, operations, or keywords but fails to enforce a positive security model. Attackers can bypass these filters by using aliases, field duplication, type casting, inline fragments, or alternative query constructs. This allows them to access sensitive data or perform unauthorized operations despite the presence of a denylist.
+        mitigation: |
+          Use an allowlist (positive security model) that defines explicitly permitted queries, fields, and operations.
+          Enforce schema-level authorization checks rather than relying on request filtering.
+          Normalize and validate incoming GraphQL queries before execution to prevent obfuscation (aliases, fragments, casing tricks).
+          Apply depth and complexity limits to reduce abuse via query transformations.
+          Perform continuous testing against evasions to ensure coverage.
+        impact: |
+          An attacker may successfully query restricted fields or execute disallowed operations, leading to information disclosure, privilege escalation, or data exfiltration. Since GraphQL allows multiple ways to represent queries, weak denylist approaches provide inconsistent protection and create exploitable gaps.
+        references: |
+          - GraphQL Security Best Practices - https://graphql.org/learn/security/
+          - OWASP GraphQL Cheat Sheet - https://cheatsheetseries.owasp.org/cheatsheets/GraphQL_Cheat_Sheet.html
+          - API5:2023 Broken Function Level Authorization - https://owasp.org/API-Security/editions/2023/en/0xa5-broken-function-level-authorization/
