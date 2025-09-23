@@ -101,29 +101,26 @@ class SnykIntegrationConfigRequestValidatorTest {
                 CreateSnykIntegrationRequest.newBuilder()
                     .setApiToken(EncryptedText.newBuilder().setKeyId("keyId").build())
                     .build()));
-    // TODO: Uncomment when implemented in request validator
-    //    assertInvalidArgStatusContaining(
-    //        "api_url",
-    //        () ->
-    //            requestValidator.validateOrThrow(
-    //                mockRequestContext,
-    //                CreateSnykIntegrationRequest.newBuilder()
-    //                    .setApiToken(
-    //
-    // EncryptedText.newBuilder().setKeyId("keyId").setValue("value").build())
-    //                    .setEndpoints(SnykEndpoints.newBuilder().setAppUrl("appUrl").build())
-    //                    .build()));
-    //    assertInvalidArgStatusContaining(
-    //        "app_url",
-    //        () ->
-    //            requestValidator.validateOrThrow(
-    //                mockRequestContext,
-    //                CreateSnykIntegrationRequest.newBuilder()
-    //                    .setApiToken(
-    //
-    // EncryptedText.newBuilder().setKeyId("keyId").setValue("value").build())
-    //                    .setEndpoints(SnykEndpoints.newBuilder().setApiUrl("apiUrl").build())
-    //                    .build()));
+    assertInvalidArgStatusContaining(
+        "SnykBaseUrls.api_base_url",
+        () ->
+            requestValidator.validateOrThrow(
+                mockRequestContext,
+                CreateSnykIntegrationRequest.newBuilder()
+                    .setApiToken(
+                        EncryptedText.newBuilder().setKeyId("keyId").setValue("value").build())
+                    .setSnykBaseUrls(SnykBaseUrls.newBuilder().setAppBaseUrl("appUrl").build())
+                    .build()));
+    assertInvalidArgStatusContaining(
+        "SnykBaseUrls.app_base_url",
+        () ->
+            requestValidator.validateOrThrow(
+                mockRequestContext,
+                CreateSnykIntegrationRequest.newBuilder()
+                    .setApiToken(
+                        EncryptedText.newBuilder().setKeyId("keyId").setValue("value").build())
+                    .setSnykBaseUrls(SnykBaseUrls.newBuilder().setApiBaseUrl("apiUrl").build())
+                    .build()));
 
     assertDoesNotThrow(
         () ->
@@ -173,29 +170,26 @@ class SnykIntegrationConfigRequestValidatorTest {
                 CreateSnykIntegrationRequest.newBuilder()
                     .setApiToken(EncryptedText.newBuilder().setKeyId("keyId").build())
                     .build()));
-    // TODO: Uncomment when implemented in request validator
-    //    assertInvalidArgStatusContaining(
-    //        "api_url",
-    //        () ->
-    //            requestValidator.validateOrThrow(
-    //                mockRequestContext,
-    //                CreateSnykIntegrationRequest.newBuilder()
-    //                    .setApiToken(
-    //
-    // EncryptedText.newBuilder().setKeyId("keyId").setValue("value").build())
-    //                    .setEndpoints(SnykEndpoints.newBuilder().setAppUrl("appUrl").build())
-    //                    .build()));
-    //    assertInvalidArgStatusContaining(
-    //        "app_url",
-    //        () ->
-    //            requestValidator.validateOrThrow(
-    //                mockRequestContext,
-    //                CreateSnykIntegrationRequest.newBuilder()
-    //                    .setApiToken(
-    //
-    // EncryptedText.newBuilder().setKeyId("keyId").setValue("value").build())
-    //                    .setEndpoints(SnykEndpoints.newBuilder().setApiUrl("apiUrl").build())
-    //                    .build()));
+    assertInvalidArgStatusContaining(
+        "SnykBaseUrls.api_base_url",
+        () ->
+            requestValidator.validateOrThrow(
+                mockRequestContext,
+                CreateSnykIntegrationRequest.newBuilder()
+                    .setApiToken(
+                        EncryptedText.newBuilder().setKeyId("keyId").setValue("value").build())
+                    .setSnykBaseUrls(SnykBaseUrls.newBuilder().setAppBaseUrl("appUrl").build())
+                    .build()));
+    assertInvalidArgStatusContaining(
+        "SnykBaseUrls.app_base_url",
+        () ->
+            requestValidator.validateOrThrow(
+                mockRequestContext,
+                CreateSnykIntegrationRequest.newBuilder()
+                    .setApiToken(
+                        EncryptedText.newBuilder().setKeyId("keyId").setValue("value").build())
+                    .setSnykBaseUrls(SnykBaseUrls.newBuilder().setApiBaseUrl("apiUrl").build())
+                    .build()));
 
     assertDoesNotThrow(
         () ->

@@ -27,13 +27,13 @@ public class SnykIntegrationConfigRequestValidator {
   public void validateOrThrow(RequestContext requestContext, CreateSnykIntegrationRequest request) {
     validateRequestContextOrThrow(requestContext);
     validateEncryptedText(request.getApiToken());
-    // validation for Snyk endpoints to be added after UI catches up
+    validateSnykEndpoints(request.getSnykBaseUrls());
   }
 
   public void validateOrThrow(RequestContext requestContext, UpdateSnykIntegrationRequest request) {
     validateRequestContextOrThrow(requestContext);
     validateEncryptedText(request.getApiToken());
-    // validation for Snyk endpoints to be added after UI catches up
+    validateSnykEndpoints(request.getSnykBaseUrls());
   }
 
   public void validateOrThrow(RequestContext requestContext, DeleteSnykIntegrationRequest request) {
