@@ -8,6 +8,7 @@ import ai.traceable.edge.config.service.supplier.EdgeDecisionEngineConfigSupplie
 import ai.traceable.edge.config.service.supplier.FlowConfigSupplier;
 import ai.traceable.edge.config.service.supplier.InvisibleCaptchaPolicySupplier;
 import ai.traceable.edge.config.service.supplier.WebAppEvaluationConfigContextSupplier;
+import ai.traceable.edge.config.service.supplier.api.resolution.url.pattern.trie.ApiIdResolverConfigSupplier;
 import ai.traceable.edge.config.service.supplier.filtering.config.context.PostDetectionFilteringConfigContextSupplier;
 import ai.traceable.edge.config.service.supplier.filtering.config.context.PreDetectionFilteringConfigContextSupplier;
 import ai.traceable.edge.config.service.v1.ConfigResponseElement;
@@ -43,7 +44,8 @@ public class TraceableEdgeConfigService
       FlowConfigSupplier flowConfigSupplier,
       WebAppEvaluationConfigContextSupplier webAppEvaluationConfigContextSupplier,
       PreDetectionFilteringConfigContextSupplier preDetectionFilteringConfigContextSupplier,
-      PostDetectionFilteringConfigContextSupplier postDetectionFilteringConfigContextSupplier) {
+      PostDetectionFilteringConfigContextSupplier postDetectionFilteringConfigContextSupplier,
+      ApiIdResolverConfigSupplier apiIdResolverConfigSupplier) {
     this.uuidGenerator = uuidGenerator;
     this.configSuppliersByType = new HashMap<>();
     this.configSuppliersByType.put(
@@ -66,6 +68,8 @@ public class TraceableEdgeConfigService
     this.configSuppliersByType.put(
         postDetectionFilteringConfigContextSupplier.getConfigType(),
         postDetectionFilteringConfigContextSupplier);
+    this.configSuppliersByType.put(
+        apiIdResolverConfigSupplier.getConfigType(), apiIdResolverConfigSupplier);
     // todo: use configSupplier to automatically instantiate the appropriate class.
     //    var configTypeSupplierConfigs = config.getConfigList(CONFIG_TYPES_CONFIG_NAME);
     //    for (var configTypeSupplierConfig : configTypeSupplierConfigs) {
@@ -110,7 +114,8 @@ public class TraceableEdgeConfigService
         }
         var agentCapabilities = requestElement.getAgentCapabilities();
         var responseElement =
-            configSupplier.getConfigs(requestContext, requestElement, agentCapabilities);
+            configSupplier.getConfigs(
+                requestContext, request.getEnvironment(), requestElement, agentCapabilities);
         responseElements.add(responseElement);
       }
       String hash =

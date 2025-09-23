@@ -39,6 +39,7 @@ public class CaptchaSiteKeyConfigSupplier implements TraceableEdgeConfigSupplier
   @Override
   public ConfigResponseElement getConfigs(
       RequestContext requestContext,
+      String environment,
       ConfigRequestElement requestElement,
       AgentCapabilities agentCapabilities) {
     var allCaptchaSiteKeyConfigs =

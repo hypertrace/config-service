@@ -18,6 +18,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.hypertrace.core.grpcutils.context.ContextualKey;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.entity.query.service.v1.ColumnIdentifier;
@@ -53,8 +54,13 @@ class EntityQueryServiceClientTest {
     when(entityQueryServiceConfig.getApiIdColumnName()).thenReturn("apiId");
     when(entityQueryServiceConfig.getApiNameColumnName()).thenReturn("apiName");
     when(entityQueryServiceConfig.getApiUrlPatternColumnName()).thenReturn("apiUrlPattern");
+    when(entityQueryServiceConfig.getApiTypeColumnName()).thenReturn("apiType");
+    when(entityQueryServiceConfig.getHttpMethodColumnName()).thenReturn("httpMethod");
     when(entityQueryServiceConfig.getApiResolvedUrlPatternsColumnName())
         .thenReturn("apiResolvedUrlPatterns");
+    when(entityQueryServiceConfig.getApiServiceNameColumnName()).thenReturn("apiServiceName");
+    when(entityQueryServiceConfig.getApiEnvironmentColumnName()).thenReturn("apiEnvironment");
+    when(entityQueryServiceConfig.getApiIsLearntStatusColumnName()).thenReturn("apiIsLearnt");
     when(entityQueryServiceConfig.getApiLabelsColumnName()).thenReturn("apiLabels");
     when(entityQueryServiceConfig.getTimeout()).thenReturn(Duration.of(10, ChronoUnit.SECONDS));
 
@@ -358,6 +364,165 @@ class EntityQueryServiceClientTest {
                     Value.newBuilder()
                         .addAllStringArray(List.of("labelId1"))
                         .setValueType(ValueType.STRING_ARRAY)));
+
+    return resultSetChunkBuilder.build();
+  }
+
+  @Test
+  void testClient_getAllLearntHttpApiEndpoints() {
+    String serviceName = "testServiceName";
+    String environment = "testEnv";
+    when(queryServiceBlockingStub
+            .withDeadlineAfter(10000L, TimeUnit.MILLISECONDS)
+            .execute(buildLearntApiQueryRequest(serviceName, environment, "HTTP")))
+        .thenReturn(List.of(getLearntApiEndpointsResultSetChunk()).iterator());
+
+    Stream<StreamingApiMappingProvider.HttpApiDetails> result =
+        entityQueryServiceClient.getAllLearntHttpApiEndpoints(
+            REQUEST_CONTEXT, serviceName, environment);
+
+    List<StreamingApiMappingProvider.HttpApiDetails> apiEntities =
+        result.collect(Collectors.toList());
+    assertEquals(2, apiEntities.size());
+
+    StreamingApiMappingProvider.HttpApiDetails firstApi = apiEntities.get(0);
+    assertEquals("learntApiId1", firstApi.getApiId());
+    assertEquals(List.of("/learnt/api1", "/learnt/api1/v2"), firstApi.getResolvedUrlPatterns());
+
+    StreamingApiMappingProvider.HttpApiDetails secondApi = apiEntities.get(1);
+    assertEquals("learntApiId2", secondApi.getApiId());
+    assertEquals(List.of("/learnt/api2"), secondApi.getResolvedUrlPatterns());
+  }
+
+  private static EntityQueryRequest buildLearntApiQueryRequest(
+      String serviceName, String environment, String apiType) {
+    // Match production code's filter structure: only RHS is set with the literal and operator EQ
+    Filter serviceNameFilter =
+        Filter.newBuilder()
+            .setOperator(Operator.EQ)
+            .setLhs(
+                Expression.newBuilder()
+                    .setColumnIdentifier(
+                        ColumnIdentifier.newBuilder().setColumnName("apiServiceName")))
+            .setRhs(
+                Expression.newBuilder()
+                    .setLiteral(
+                        LiteralConstant.newBuilder()
+                            .setValue(
+                                Value.newBuilder()
+                                    .setValueType(ValueType.STRING)
+                                    .setString(serviceName))))
+            .build();
+    Filter environmentFilter =
+        Filter.newBuilder()
+            .setOperator(Operator.EQ)
+            .setLhs(
+                Expression.newBuilder()
+                    .setColumnIdentifier(
+                        ColumnIdentifier.newBuilder().setColumnName("apiEnvironment")))
+            .setRhs(
+                Expression.newBuilder()
+                    .setLiteral(
+                        LiteralConstant.newBuilder()
+                            .setValue(
+                                Value.newBuilder()
+                                    .setValueType(ValueType.STRING)
+                                    .setString(environment))))
+            .build();
+    Filter apiTypeFilter =
+        Filter.newBuilder()
+            .setOperator(Operator.EQ)
+            .setLhs(
+                Expression.newBuilder()
+                    .setColumnIdentifier(ColumnIdentifier.newBuilder().setColumnName("apiType")))
+            .setRhs(
+                Expression.newBuilder()
+                    .setLiteral(
+                        LiteralConstant.newBuilder()
+                            .setValue(
+                                Value.newBuilder()
+                                    .setValueType(ValueType.STRING)
+                                    .setString(apiType))))
+            .build();
+    Filter isLearntFilter =
+        Filter.newBuilder()
+            .setLhs(
+                Expression.newBuilder()
+                    .setColumnIdentifier(
+                        ColumnIdentifier.newBuilder().setColumnName("apiIsLearnt")))
+            .setOperator(Operator.EQ)
+            .setRhs(
+                Expression.newBuilder()
+                    .setLiteral(
+                        LiteralConstant.newBuilder()
+                            .setValue(
+                                Value.newBuilder().setValueType(ValueType.BOOL).setBoolean(true))))
+            .build();
+
+    return EntityQueryRequest.newBuilder()
+        .setEntityType(EntityType.API.name())
+        .addSelection(
+            Expression.newBuilder()
+                .setColumnIdentifier(ColumnIdentifier.newBuilder().setColumnName("apiId")))
+        .addSelection(
+            Expression.newBuilder()
+                .setColumnIdentifier(ColumnIdentifier.newBuilder().setColumnName("httpMethod")))
+        .addSelection(
+            Expression.newBuilder()
+                .setColumnIdentifier(
+                    ColumnIdentifier.newBuilder().setColumnName("apiResolvedUrlPatterns")))
+        .setFilter(
+            Filter.newBuilder()
+                .setOperator(Operator.AND)
+                .addChildFilter(isLearntFilter)
+                .addChildFilter(serviceNameFilter)
+                .addChildFilter(environmentFilter)
+                .addChildFilter(apiTypeFilter))
+        .build();
+  }
+
+  private ResultSetChunk getLearntApiEndpointsResultSetChunk() {
+    ResultSetChunk.Builder resultSetChunkBuilder = ResultSetChunk.newBuilder();
+    List<String> columnNames = List.of("apiId", "httpMethod", "apiResolvedUrlPatterns");
+    List<ColumnMetadata> columnMetadataBuilders =
+        columnNames.stream()
+            .map(
+                (columnName) ->
+                    ColumnMetadata.newBuilder()
+                        .setColumnName(columnName)
+                        .setValueType(
+                            columnName.endsWith("s") ? ValueType.STRING_ARRAY : ValueType.STRING)
+                        .build())
+            .collect(Collectors.toUnmodifiableList());
+    resultSetChunkBuilder.setResultSetMetadata(
+        ResultSetMetadata.newBuilder().addAllColumnMetadata(columnMetadataBuilders));
+
+    resultSetChunkBuilder
+        .addRow(
+            Row.newBuilder()
+                .addColumn(
+                    Value.newBuilder().setString("learntApiId1").setValueType(ValueType.STRING))
+                .addColumn(Value.newBuilder().setString("method1").setValueType(ValueType.STRING))
+                .addColumn(
+                    Value.newBuilder()
+                        .addAllStringArray(List.of("/learnt/api1", "/learnt/api1/v2"))
+                        .setValueType(ValueType.STRING_ARRAY)))
+        .addRow(
+            Row.newBuilder()
+                .addColumn(
+                    Value.newBuilder().setString("learntApiId2").setValueType(ValueType.STRING))
+                .addColumn(Value.newBuilder().setString("method2").setValueType(ValueType.STRING))
+                .addColumn(
+                    Value.newBuilder()
+                        .addAllStringArray(List.of("/learnt/api2"))
+                        .setValueType(ValueType.STRING_ARRAY)))
+        // add a bad row (missing data) - this should get filtered out
+        .addRow(
+            Row.newBuilder()
+                .addColumn(
+                    Value.newBuilder().setString("learntApiId3").setValueType(ValueType.STRING))
+                .addColumn(
+                    Value.newBuilder().setString("/learnt/api3").setValueType(ValueType.STRING)));
 
     return resultSetChunkBuilder.build();
   }

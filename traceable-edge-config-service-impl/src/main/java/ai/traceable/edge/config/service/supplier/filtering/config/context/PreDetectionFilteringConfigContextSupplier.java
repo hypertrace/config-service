@@ -43,6 +43,7 @@ public class PreDetectionFilteringConfigContextSupplier implements TraceableEdge
   @Override
   public ConfigResponseElement getConfigs(
       RequestContext requestContext,
+      String environment,
       ConfigRequestElement requestElement,
       AgentCapabilities agentCapabilities) {
     List<ProtectionFilteringRulesFilter> filters = this.buildApplicableFilters(agentCapabilities);

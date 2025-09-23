@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package ai.traceable.edge.config.service.v1;
+
+option go_package = "github.com/Traceableai/config-service/gen/go/ai/traceable/edge/config/service/v1";
+option java_multiple_files = true;
+
+enum ApiType {
+  API_TYPE_UNSPECIFIED = 0;
+  API_TYPE_HTTP = 1;
+  API_TYPE_SOAP = 2;
+  API_TYPE_XML_RPC = 3;
+  API_TYPE_GRPC = 4;
+  API_TYPE_GRAPHQL = 5;
+}
+
+message ApiIdResolverData {
+  oneof config {
+    HttpApiIdResolverData http_api_id_resolver_data = 1; // we are going to use HttpApiIdResolverData for ApiTypes: API_TYPE_HTTP, API_TYPE_SOAP, API_TYPE_XML_RPC
+  }
+}
+
+message HttpApiIdResolverData {
+  repeated UrlSegmentTrieNode trie = 1;
+}
+
+message UrlSegmentTrieNode {
+  repeated UrlSegmentTrieNode children = 1;
+  string key = 2;
+  SegmentType type = 3;
+  ApiDetails api_details = 4; // only present at the leaf node
+}
+
+enum SegmentType {
+  SEGMENT_TYPE_UNSPECIFIED = 0;
+  SEGMENT_TYPE_LITERAL = 1;
+  SEGMENT_TYPE_PATTERN = 2;
+}
+
+message ApiDetails {
+  oneof details {
+    HttpDetails http_details = 1;
+  }
+}
+
+message HttpDetail {
+  string api_id = 1;
+  string http_method = 2;
+}
+
+message HttpDetails {
+  repeated HttpDetail http_details = 1;
+}

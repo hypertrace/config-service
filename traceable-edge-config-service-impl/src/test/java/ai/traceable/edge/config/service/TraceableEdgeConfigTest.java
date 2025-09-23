@@ -35,6 +35,36 @@ public class TraceableEdgeConfigTest {
                             + "  }\n"
                             + "  maxNumberOfActors = 10000")
                     .entrySet()),
+            "entity.fetcher.cache",
+            ImmutableMap.copyOf(
+                ConfigFactory.parseString(
+                        "  service.mapping.cache = {\n"
+                            + "    maxSize = 1000\n"
+                            + "    refreshAfterWriteDuration = 10m\n"
+                            + "    expireAfterWriteDuration = 1h\n"
+                            + "  }\n"
+                            + "  api.mapping.cache = {\n"
+                            + "    maxSize = 1000\n"
+                            + "    refreshAfterWriteDuration = 10m\n"
+                            + "    expireAfterAccessDuration = 1h\n"
+                            + "  }\n")
+                    .entrySet()),
+            "entity.service",
+            ImmutableMap.copyOf(
+                ConfigFactory.parseString(
+                        "config {\n"
+                            + "    host = localhost\n"
+                            + "    port = 50061\n"
+                            + "    timeout = 10s\n"
+                            + "  }\n"
+                            + "  attributeMap {\n"
+                            + "    service.id = \"SERVICE.id\"\n"
+                            + "    service.name = \"SERVICE.name\"\n"
+                            + "    service.environment = \"SERVICE.environment\"\n"
+                            + "    environment.id = \"ENVIRONMENT.id\"\n"
+                            + "    environment.name = \"ENVIRONMENT.name\"\n"
+                            + "  }")
+                    .entrySet()),
             "rate.limiting.service.config",
             ImmutableMap.copyOf(
                 ConfigFactory.parseString(

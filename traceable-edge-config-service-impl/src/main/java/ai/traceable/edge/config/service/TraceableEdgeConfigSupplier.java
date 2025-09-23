@@ -11,6 +11,7 @@ public interface TraceableEdgeConfigSupplier {
 
   ConfigResponseElement getConfigs(
       RequestContext requestContext,
+      String environment,
       ConfigRequestElement requestElement,
       AgentCapabilities agentCapabilities);
 }

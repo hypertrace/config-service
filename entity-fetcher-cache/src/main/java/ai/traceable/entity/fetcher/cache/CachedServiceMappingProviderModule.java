@@ -29,6 +29,7 @@ public class CachedServiceMappingProviderModule extends AbstractModule {
   protected void configure() {
     bind(CachedServiceMappingProvider.class).to(DefaultCachedServiceMappingProvider.class);
     bind(CachedApiMappingProvider.class).to(DefaultCachedApiMappingProvider.class);
+    bind(StreamingApiMappingProvider.class).to(DefaultStreamingApiMappingProvider.class);
     bind(Clock.class).toInstance(Clock.systemUTC());
   }
 

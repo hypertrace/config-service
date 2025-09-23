@@ -34,6 +34,8 @@ class DefaultCachedServiceMappingProvider implements CachedServiceMappingProvide
       Clock clock,
       CachedEntityFetcherConfig cachedEntityFetcherConfig) {
     this.entityQueryServiceClient = entityQueryServiceClient;
+    // reverseServiceEntitiesCache can be warmed up in the future by injecting values via the
+    // serviceEntitiesCache's loader
     this.serviceEntitiesCache =
         CacheBuilder.newBuilder()
             .expireAfterAccess(cachedEntityFetcherConfig.getExpireAfterAccessDuration())

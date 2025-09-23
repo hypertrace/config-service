@@ -8,6 +8,7 @@ import ai.traceable.edge.bot.config.service.v1.BotConfigServiceGrpc;
 import ai.traceable.edge.config.service.config.TraceableEdgeConfig;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionConfigServiceGrpc;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionConfigServiceGrpc.EdgeDecisionConfigServiceBlockingStub;
+import ai.traceable.entity.fetcher.cache.CachedServiceMappingProviderModule;
 import ai.traceable.policy.config.service.v1.TraceablePolicyConfigServiceGrpc;
 import ai.traceable.policy.config.service.v1.TraceablePolicyConfigServiceGrpc.TraceablePolicyConfigServiceBlockingStub;
 import ai.traceable.protection.rules.filtering.v1.ProtectionFilteringRulesProviderModule;
@@ -23,7 +24,8 @@ import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProvide
 
 public class TraceableEdgeConfigServiceModule extends AbstractModule {
   private final Channel channel;
-  private final TraceableEdgeConfig config;
+  private final Config config;
+  private final TraceableEdgeConfig edgeConfig;
   private final GrpcChannelRegistry grpcChannelRegistry;
   private final FeatureCachingClient featureCachingClient;
 
@@ -33,7 +35,8 @@ public class TraceableEdgeConfigServiceModule extends AbstractModule {
       GrpcChannelRegistry grpcChannelRegistry,
       FeatureCachingClient featureCachingClient) {
     this.channel = channel;
-    this.config = new TraceableEdgeConfig(config);
+    this.config = config;
+    this.edgeConfig = new TraceableEdgeConfig(config);
     this.grpcChannelRegistry = grpcChannelRegistry;
     this.featureCachingClient = featureCachingClient;
   }
@@ -43,11 +46,14 @@ public class TraceableEdgeConfigServiceModule extends AbstractModule {
     bind(Channel.class).toInstance(channel);
     bind(GrpcChannelRegistry.class).toInstance(grpcChannelRegistry);
     bind(Clock.class).toInstance(Clock.systemUTC());
-    bind(TraceableEdgeConfig.class).toInstance(config);
+    bind(TraceableEdgeConfig.class).toInstance(edgeConfig);
     bind(FeatureCachingClient.class).toInstance(featureCachingClient);
     bind(BindableService.class).to(TraceableEdgeConfigService.class);
 
     install(new ProtectionFilteringRulesProviderModule());
+    install(
+        new CachedServiceMappingProviderModule(
+            this.grpcChannelRegistry, this.config, "serviceMappingCache-edgeConfigService"));
   }
 
   @Provides

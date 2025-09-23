@@ -41,6 +41,7 @@ public class CloudBotDeploymentConfigSupplier implements TraceableEdgeConfigSupp
   @Override
   public ConfigResponseElement getConfigs(
       RequestContext requestContext,
+      String environment,
       ConfigRequestElement requestElement,
       AgentCapabilities agentCapabilities) {
     GetCloudBotDeploymentConfigsResponse botDeploymentConfigs =

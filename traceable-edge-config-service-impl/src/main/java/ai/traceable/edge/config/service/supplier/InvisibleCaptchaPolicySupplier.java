@@ -38,6 +38,7 @@ public class InvisibleCaptchaPolicySupplier implements TraceableEdgeConfigSuppli
   @Override
   public ConfigResponseElement getConfigs(
       RequestContext requestContext,
+      String environment,
       ConfigRequestElement requestElement,
       AgentCapabilities agentCapabilities) {
     var allPoliciesResponse =

@@ -38,6 +38,7 @@ public class ClientBotFingerprintPolicySupplier implements TraceableEdgeConfigSu
   @Override
   public ConfigResponseElement getConfigs(
       RequestContext requestContext,
+      String environment,
       ConfigRequestElement requestElement,
       AgentCapabilities agentCapabilities) {
     var allPoliciesResponse =

@@ -2,7 +2,9 @@ package ai.traceable.entity.fetcher.cache;
 
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider.ApiIdentifierEntity;
 import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider.ServiceIdentifierEntity;
+import ai.traceable.entity.fetcher.cache.StreamingApiMappingProvider.HttpApiDetails;
 import ai.traceable.entity.fetcher.cache.config.EntityQueryServiceConfig;
+import com.google.common.collect.Streams;
 import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.HashMap;
@@ -14,6 +16,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.ContextualKey;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.entity.query.service.v1.ColumnIdentifier;
@@ -24,10 +28,12 @@ import org.hypertrace.entity.query.service.v1.Filter;
 import org.hypertrace.entity.query.service.v1.LiteralConstant;
 import org.hypertrace.entity.query.service.v1.Operator;
 import org.hypertrace.entity.query.service.v1.ResultSetChunk;
+import org.hypertrace.entity.query.service.v1.Row;
 import org.hypertrace.entity.query.service.v1.Value;
 import org.hypertrace.entity.query.service.v1.ValueType;
 import org.hypertrace.entity.v1.entitytype.EntityType;
 
+@Slf4j
 class EntityQueryServiceClient {
   private final EntityQueryServiceConfig entityQueryServiceConfig;
   private final EntityQueryServiceBlockingStub entityQueryServiceBlockingStub;
@@ -40,6 +46,35 @@ class EntityQueryServiceClient {
     this.entityQueryServiceConfig = config;
     this.entityQueryServiceBlockingStub = entityQueryServiceBlockingStub;
     this.timeoutMillis = config.getTimeout().toMillis();
+  }
+
+  public Stream<HttpApiDetails> getAllLearntHttpApiEndpoints(
+      RequestContext requestContext, String serviceName, String environment) {
+    EntityQueryRequest serviceEntityQueryRequest =
+        buildLearntApiQueryRequest(serviceName, environment, ApiType.HTTP);
+    Iterator<ResultSetChunk> resultSetChunkIterator =
+        requestContext.call(
+            () ->
+                entityQueryServiceBlockingStub
+                    .withDeadlineAfter(timeoutMillis, TimeUnit.MILLISECONDS)
+                    .execute(serviceEntityQueryRequest));
+
+    // no Api has been learnt for this service-id
+    if (!resultSetChunkIterator.hasNext()) {
+      return Stream.empty();
+    }
+
+    int selectionCount = serviceEntityQueryRequest.getSelectionCount();
+    return Streams.stream(resultSetChunkIterator)
+        .map(ResultSetChunk::getRowList)
+        .flatMap(List::stream)
+        .filter(row -> hasExpectedColCount(row, selectionCount, requestContext, serviceName))
+        .map(
+            row ->
+                new HttpApiDetails(
+                    row.getColumn(0).getString(),
+                    row.getColumn(1).getString(),
+                    row.getColumn(2).getStringArrayList()));
   }
 
   Map<ContextualKey<String>, Optional<ServiceIdentifierEntity>> getServiceEntities(
@@ -231,6 +266,64 @@ class EntityQueryServiceClient {
         .build();
   }
 
+  private EntityQueryRequest buildLearntApiQueryRequest(
+      String serviceId, String environment, ApiType apiType) {
+    EntityQueryRequest.Builder requestBuilder =
+        getInitializedLearntApiQueryRequestBuilder(serviceId, environment, apiType);
+    switch (apiType) {
+      case SOAP:
+      case XML_RPC:
+      case HTTP:
+        // HTTP, SOAP and XML_RPC APIs have httpMethod and resolvedUrlPatterns columns
+        Expression httpMethodCol =
+            buildSelectionExpression(entityQueryServiceConfig.getHttpMethodColumnName());
+        Expression rUrlPattern =
+            buildSelectionExpression(
+                entityQueryServiceConfig.getApiResolvedUrlPatternsColumnName());
+        return requestBuilder.addSelection(httpMethodCol).addSelection(rUrlPattern).build();
+      case GRAPHQL:
+      case GRPC:
+      default:
+        throw new IllegalArgumentException("Unsupported API type: " + apiType);
+    }
+  }
+
+  private EntityQueryRequest.Builder getInitializedLearntApiQueryRequestBuilder(
+      String serviceName, String environment, ApiType apiType) {
+    Filter apiTypeFilter =
+        buildStringLiteralConstantEqualsFilter(
+            entityQueryServiceConfig.getApiTypeColumnName(), apiType.name());
+    Filter environmentFilter =
+        buildStringLiteralConstantEqualsFilter(
+            entityQueryServiceConfig.getApiEnvironmentColumnName(), environment);
+    Filter serviceNameFilter =
+        buildStringLiteralConstantEqualsFilter(
+            entityQueryServiceConfig.getApiServiceNameColumnName(), serviceName);
+    Filter isLearntFilter =
+        Filter.newBuilder()
+            .setLhs(
+                buildSelectionExpression(entityQueryServiceConfig.getApiIsLearntStatusColumnName()))
+            .setOperator(Operator.EQ)
+            .setRhs(
+                Expression.newBuilder()
+                    .setLiteral(
+                        LiteralConstant.newBuilder()
+                            .setValue(
+                                Value.newBuilder().setValueType(ValueType.BOOL).setBoolean(true))))
+            .build();
+
+    return EntityQueryRequest.newBuilder()
+        .setEntityType(EntityType.API.name())
+        .addSelection(buildSelectionExpression(entityQueryServiceConfig.getApiIdColumnName()))
+        .setFilter(
+            Filter.newBuilder()
+                .setOperator(Operator.AND)
+                .addChildFilter(isLearntFilter)
+                .addChildFilter(serviceNameFilter)
+                .addChildFilter(environmentFilter)
+                .addChildFilter(apiTypeFilter));
+  }
+
   private Expression buildSelectionExpression(String columnName) {
     return Expression.newBuilder()
         .setColumnIdentifier(ColumnIdentifier.newBuilder().setColumnName(columnName).build())
@@ -280,5 +373,44 @@ class EntityQueryServiceClient {
                                 .setValueType(ValueType.STRING_ARRAY)
                                 .addAllStringArray(apiLabelIds))))
         .build();
+  }
+
+  private Filter buildStringLiteralConstantEqualsFilter(String columnName, String stringLiteral) {
+    return Filter.newBuilder()
+        .setLhs(buildSelectionExpression(columnName))
+        .setOperator(Operator.EQ)
+        .setRhs(
+            Expression.newBuilder()
+                .setLiteral(
+                    LiteralConstant.newBuilder()
+                        .setValue(
+                            Value.newBuilder()
+                                .setValueType(ValueType.STRING)
+                                .setString(stringLiteral))))
+        .build();
+  }
+
+  private boolean hasExpectedColCount(
+      Row row, int expectedColCount, RequestContext requestContext, String serviceId) {
+    if (row.getColumnList().size() != expectedColCount) {
+      if (log.isDebugEnabled()) {
+        log.debug(
+            "The number of cols in the row ({}) is not equal to the number of selections {} for service-id {} for requestContext {}",
+            row,
+            expectedColCount,
+            serviceId,
+            requestContext);
+      }
+      return false;
+    }
+    return true;
+  }
+
+  enum ApiType {
+    HTTP,
+    SOAP,
+    XML_RPC,
+    GRPC,
+    GRAPHQL
   }
 }
