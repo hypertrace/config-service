@@ -154,16 +154,28 @@ public class AnomalyGlobalConfigServiceIntegrationTest
           getScopedAnomalyConfigStatus(requestContext, serviceConfigScope).getConfigStatus());
       scopedConfigs = getAllScopedAnomalyConfigStatusConfigs(requestContext);
       assertEquals(2, scopedConfigs.size());
-      assertEquals(apiConfigScope, scopedConfigs.get(0).getConfigScope());
-      assertEquals(expectedApiStatus, scopedConfigs.get(0).getConfigStatus());
+
+      // Find API scoped config
+      ScopedAnomalyConfigStatus apiScopedConfigResult =
+          scopedConfigs.stream()
+              .filter(sc -> sc.getConfigScope().equals(apiConfigScope))
+              .findFirst()
+              .orElseThrow(() -> new AssertionError("API scoped config not found"));
+      assertEquals(expectedApiStatus, apiScopedConfigResult.getConfigStatus());
       assertEquals(
           AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_MEDIUM,
-          scopedConfigs.get(0).getMinConfidenceLevel());
-      assertEquals(customerConfigScope, scopedConfigs.get(1).getConfigScope());
-      assertEquals(expectedCustomerStatus, scopedConfigs.get(1).getConfigStatus());
+          apiScopedConfigResult.getMinConfidenceLevel());
+
+      // Find Customer scoped config
+      ScopedAnomalyConfigStatus customerScopedConfigResult =
+          scopedConfigs.stream()
+              .filter(sc -> sc.getConfigScope().equals(customerConfigScope))
+              .findFirst()
+              .orElseThrow(() -> new AssertionError("Customer scoped config not found"));
+      assertEquals(expectedCustomerStatus, customerScopedConfigResult.getConfigStatus());
       assertEquals(
           AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_HIGH,
-          scopedConfigs.get(1).getMinConfidenceLevel());
+          customerScopedConfigResult.getMinConfidenceLevel());
     }
     {
       configStatusChange = AnomalyConfigStatusChange.newBuilder().setDisabled(true).build();
@@ -186,21 +198,39 @@ public class AnomalyGlobalConfigServiceIntegrationTest
           getScopedAnomalyConfigStatus(requestContext, apiConfigScope).getConfigStatus());
       scopedConfigs = getAllScopedAnomalyConfigStatusConfigs(requestContext);
       assertEquals(3, scopedConfigs.size());
-      assertEquals(serviceConfigScope, scopedConfigs.get(0).getConfigScope());
-      assertEquals(expectedServiceStatus, scopedConfigs.get(0).getConfigStatus());
+
+      // Find Service scoped config
+      ScopedAnomalyConfigStatus serviceScopedConfigResult =
+          scopedConfigs.stream()
+              .filter(sc -> sc.getConfigScope().equals(serviceConfigScope))
+              .findFirst()
+              .orElseThrow(() -> new AssertionError("Service scoped config not found"));
+      assertEquals(expectedServiceStatus, serviceScopedConfigResult.getConfigStatus());
       assertEquals(
           AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_HIGH,
-          scopedConfigs.get(0).getMinConfidenceLevel());
-      assertEquals(apiConfigScope, scopedConfigs.get(1).getConfigScope());
-      assertEquals(expectedApiStatus, scopedConfigs.get(1).getConfigStatus());
+          serviceScopedConfigResult.getMinConfidenceLevel());
+
+      // Find API scoped config
+      ScopedAnomalyConfigStatus apiScopedConfigResult =
+          scopedConfigs.stream()
+              .filter(sc -> sc.getConfigScope().equals(apiConfigScope))
+              .findFirst()
+              .orElseThrow(() -> new AssertionError("API scoped config not found"));
+      assertEquals(expectedApiStatus, apiScopedConfigResult.getConfigStatus());
       assertEquals(
           AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_MEDIUM,
-          scopedConfigs.get(1).getMinConfidenceLevel());
-      assertEquals(customerConfigScope, scopedConfigs.get(2).getConfigScope());
-      assertEquals(expectedCustomerStatus, scopedConfigs.get(2).getConfigStatus());
+          apiScopedConfigResult.getMinConfidenceLevel());
+
+      // Find Customer scoped config
+      ScopedAnomalyConfigStatus customerScopedConfigResult =
+          scopedConfigs.stream()
+              .filter(sc -> sc.getConfigScope().equals(customerConfigScope))
+              .findFirst()
+              .orElseThrow(() -> new AssertionError("Customer scoped config not found"));
+      assertEquals(expectedCustomerStatus, customerScopedConfigResult.getConfigStatus());
       assertEquals(
           AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_HIGH,
-          scopedConfigs.get(2).getMinConfidenceLevel());
+          customerScopedConfigResult.getMinConfidenceLevel());
     }
   }
 

@@ -36,12 +36,14 @@ import io.micrometer.core.instrument.Timer;
 import jakarta.inject.Inject;
 import java.time.Duration;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -120,7 +122,7 @@ public class GlobalAnomalyConfigStatusManagerImpl
       RequestContext requestContext, List<AnomalyConfigScope> applicableScopesList) {
     Map<String, ScopedAnomalyConfigStatusChange> configMap =
         getFilteredConfigMap(requestContext, applicableScopesList);
-    List<ScopedAnomalyConfigStatus> resolvedConfigs =
+    Map<AnomalyConfigScope, ScopedAnomalyConfigStatus> resolvedConfigsMap =
         configMap.values().stream()
             .map(
                 scopedAnomalyConfigStatusChange ->
@@ -131,12 +133,15 @@ public class GlobalAnomalyConfigStatusManagerImpl
                         anomalyConfigScopeUtils.getContextsWithIncreasingPriority(
                             getTenantId(requestContext),
                             scopedAnomalyConfigStatusChange.getConfigScope())))
-            .collect(Collectors.toList());
+            .collect(
+                Collectors.toMap(ScopedAnomalyConfigStatus::getConfigScope, Function.identity()));
     if (!configMap.containsKey(getTenantId(requestContext))) {
       AnomalyConfigStatus configStatus = getDefaultTierConfig(requestContext);
-      resolvedConfigs.add(
+      AnomalyConfigScope configScope = anomalyConfigScopeUtils.getDefaultCustomerConfigScope();
+      resolvedConfigsMap.put(
+          configScope,
           ScopedAnomalyConfigStatus.newBuilder()
-              .setConfigScope(anomalyConfigScopeUtils.getDefaultCustomerConfigScope())
+              .setConfigScope(configScope)
               .setConfigStatus(configStatus)
               .setMinConfidenceLevel(config.getMinConfidenceLevel())
               .setApiGlobalConfig(
@@ -163,7 +168,17 @@ public class GlobalAnomalyConfigStatusManagerImpl
                   GlobalGenAiConfig.newBuilder().setDisabled(config.isGenAiDisabled()))
               .build());
     }
-    return Collections.unmodifiableList(resolvedConfigs);
+
+    applicableScopesList.forEach(
+        anomalyConfigScope -> {
+          if (!resolvedConfigsMap.containsKey(anomalyConfigScope)) {
+            resolvedConfigsMap.put(
+                anomalyConfigScope,
+                getScopedAnomalyConfigStatus(requestContext, anomalyConfigScope));
+          }
+        });
+
+    return new ArrayList<>(resolvedConfigsMap.values());
   }
 
   @Override

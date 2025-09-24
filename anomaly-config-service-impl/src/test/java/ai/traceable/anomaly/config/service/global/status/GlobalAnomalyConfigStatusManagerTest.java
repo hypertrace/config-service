@@ -60,9 +60,13 @@ import io.grpc.stub.StreamObserver;
 import java.io.IOException;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
@@ -355,19 +359,32 @@ public class GlobalAnomalyConfigStatusManagerTest {
       scopedConfigs =
           configStatusManager.getAllScopedAnomalyConfigStatusConfigs(requestContext, List.of());
       assertEquals(2, scopedConfigs.size());
-      assertEquals(apiConfigScope, scopedConfigs.get(0).getConfigScope());
-      assertEquals(expectedApiStatus, scopedConfigs.get(0).getConfigStatus());
+
+      // Find API scoped config
+      ScopedAnomalyConfigStatus apiScopedConfigResult =
+          scopedConfigs.stream()
+              .filter(sc -> sc.getConfigScope().equals(apiConfigScope))
+              .findFirst()
+              .orElseThrow(() -> new AssertionError("API scoped config not found"));
+      assertEquals(expectedApiStatus, apiScopedConfigResult.getConfigStatus());
       assertEquals(
-          apiScopedConfig.getMinConfidenceLevel(), scopedConfigs.get(0).getMinConfidenceLevel());
+          apiScopedConfig.getMinConfidenceLevel(), apiScopedConfigResult.getMinConfidenceLevel());
       assertEquals(
           apiScopedConfig.getExcludedEventsConfig(),
-          scopedConfigs.get(0).getExcludedEventsConfig());
-      assertEquals(customerConfigScope, scopedConfigs.get(1).getConfigScope());
-      assertEquals(expectedCustomerStatus, scopedConfigs.get(1).getConfigStatus());
+          apiScopedConfigResult.getExcludedEventsConfig());
+
+      // Find Customer scoped config
+      ScopedAnomalyConfigStatus customerScopedConfigResult =
+          scopedConfigs.stream()
+              .filter(sc -> sc.getConfigScope().equals(customerConfigScope))
+              .findFirst()
+              .orElseThrow(() -> new AssertionError("Customer scoped config not found"));
+      assertEquals(expectedCustomerStatus, customerScopedConfigResult.getConfigStatus());
       assertEquals(
-          expectedCustomerMinConfidenceLevel, scopedConfigs.get(1).getMinConfidenceLevel());
+          expectedCustomerMinConfidenceLevel, customerScopedConfigResult.getMinConfidenceLevel());
       assertEquals(
-          expectedCustomerExcludedEventsConfig, scopedConfigs.get(1).getExcludedEventsConfig());
+          expectedCustomerExcludedEventsConfig,
+          customerScopedConfigResult.getExcludedEventsConfig());
     }
     {
       configStatusChange = AnomalyConfigStatusChange.newBuilder().setDisabled(true).build();
@@ -389,12 +406,16 @@ public class GlobalAnomalyConfigStatusManagerTest {
       scopedConfigs =
           configStatusManager.getAllScopedAnomalyConfigStatusConfigs(requestContext, List.of());
       assertEquals(3, scopedConfigs.size());
-      assertEquals(environmentConfigScope, scopedConfigs.get(0).getConfigScope());
-      assertEquals(expectedEnvironmentStatus, scopedConfigs.get(0).getConfigStatus());
-      assertEquals(apiConfigScope, scopedConfigs.get(1).getConfigScope());
-      assertEquals(expectedApiStatus, scopedConfigs.get(1).getConfigStatus());
-      assertEquals(customerConfigScope, scopedConfigs.get(2).getConfigScope());
-      assertEquals(expectedCustomerStatus, scopedConfigs.get(2).getConfigStatus());
+      Set<Map.Entry<AnomalyConfigScope, AnomalyConfigStatus>> expected =
+          Set.of(
+              new AbstractMap.SimpleEntry<>(environmentConfigScope, expectedEnvironmentStatus),
+              new AbstractMap.SimpleEntry<>(apiConfigScope, expectedApiStatus),
+              new AbstractMap.SimpleEntry<>(customerConfigScope, expectedCustomerStatus));
+      Set<Map.Entry<AnomalyConfigScope, AnomalyConfigStatus>> actual =
+          scopedConfigs.stream()
+              .map(sc -> new AbstractMap.SimpleEntry<>(sc.getConfigScope(), sc.getConfigStatus()))
+              .collect(Collectors.toSet());
+      assertEquals(expected, actual);
     }
     {
       configStatusChange = AnomalyConfigStatusChange.newBuilder().setDisabled(true).build();
@@ -423,14 +444,17 @@ public class GlobalAnomalyConfigStatusManagerTest {
       scopedConfigs =
           configStatusManager.getAllScopedAnomalyConfigStatusConfigs(requestContext, List.of());
       assertEquals(4, scopedConfigs.size());
-      assertEquals(environmentConfigScope, scopedConfigs.get(0).getConfigScope());
-      assertEquals(expectedEnvironmentStatus, scopedConfigs.get(0).getConfigStatus());
-      assertEquals(serviceConfigScope, scopedConfigs.get(1).getConfigScope());
-      assertEquals(expectedServiceStatus, scopedConfigs.get(1).getConfigStatus());
-      assertEquals(apiConfigScope, scopedConfigs.get(2).getConfigScope());
-      assertEquals(expectedApiStatus, scopedConfigs.get(2).getConfigStatus());
-      assertEquals(customerConfigScope, scopedConfigs.get(3).getConfigScope());
-      assertEquals(expectedCustomerStatus, scopedConfigs.get(3).getConfigStatus());
+      Set<Map.Entry<AnomalyConfigScope, AnomalyConfigStatus>> expected =
+          Set.of(
+              new AbstractMap.SimpleEntry<>(environmentConfigScope, expectedEnvironmentStatus),
+              new AbstractMap.SimpleEntry<>(serviceConfigScope, expectedServiceStatus),
+              new AbstractMap.SimpleEntry<>(apiConfigScope, expectedApiStatus),
+              new AbstractMap.SimpleEntry<>(customerConfigScope, expectedCustomerStatus));
+      Set<Map.Entry<AnomalyConfigScope, AnomalyConfigStatus>> actual =
+          scopedConfigs.stream()
+              .map(sc -> new AbstractMap.SimpleEntry<>(sc.getConfigScope(), sc.getConfigStatus()))
+              .collect(Collectors.toSet());
+      assertEquals(expected, actual);
     }
   }
 
