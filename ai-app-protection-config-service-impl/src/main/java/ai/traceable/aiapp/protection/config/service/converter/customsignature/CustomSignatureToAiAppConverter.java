@@ -1,10 +1,10 @@
 package ai.traceable.aiapp.protection.config.service.converter.customsignature;
 
-import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.AI_INPUT_EXPLOSION_TYPE;
+import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.AI_INPUT_EXPLOSION_THREAT_TYPE_ID;
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.GENAI_MODELS_ATTRIBUTE_KEY;
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.GENAI_PROMPT_SIZE_ATTRIBUTE_KEY;
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.GENAI_PROVIDERS_ATTRIBUTE_KEY;
-import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.MODEL_GOVERNANCE_TYPE;
+import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.MODEL_GOVERNANCE_THREAT_TYPE_ID;
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.THREAT_TYPE_ID_LABEL_KEY;
 
 import ai.traceable.aiapp.protection.config.service.v1.Action;
@@ -57,11 +57,11 @@ public class CustomSignatureToAiAppConverter {
             .setAction(convertAction(customSignatureRule.getEffect()));
 
     switch (threatTypeId) {
-      case MODEL_GOVERNANCE_TYPE:
+      case MODEL_GOVERNANCE_THREAT_TYPE_ID:
         aiAppRuleDataBuilder.setModelGovernanceRuleData(
             convertToModelGovernanceRuleData(customSignatureRule));
         break;
-      case AI_INPUT_EXPLOSION_TYPE:
+      case AI_INPUT_EXPLOSION_THREAT_TYPE_ID:
         aiAppRuleDataBuilder.setAiInputExplosionRuleData(
             convertToAiInputExplosionRuleData(customSignatureRule));
         break;

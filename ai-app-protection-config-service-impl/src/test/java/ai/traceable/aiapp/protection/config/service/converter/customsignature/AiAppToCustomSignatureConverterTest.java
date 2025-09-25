@@ -1,10 +1,10 @@
 package ai.traceable.aiapp.protection.config.service.converter.customsignature;
 
-import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.AI_INPUT_EXPLOSION_TYPE;
+import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.AI_INPUT_EXPLOSION_THREAT_TYPE_ID;
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.GENAI_MODELS_ATTRIBUTE_KEY;
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.GENAI_PROMPT_SIZE_ATTRIBUTE_KEY;
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.GENAI_PROVIDERS_ATTRIBUTE_KEY;
-import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.MODEL_GOVERNANCE_TYPE;
+import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.MODEL_GOVERNANCE_THREAT_TYPE_ID;
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.THREAT_TYPE_ID_LABEL_KEY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -139,7 +139,8 @@ class AiAppToCustomSignatureConverterTest {
     assertEquals("custom_value", result.getDefinition().getLabelsMap().get("custom_label"));
     assertEquals("production", result.getDefinition().getLabelsMap().get("environment"));
     assertEquals(
-        MODEL_GOVERNANCE_TYPE, result.getDefinition().getLabelsMap().get(THREAT_TYPE_ID_LABEL_KEY));
+        MODEL_GOVERNANCE_THREAT_TYPE_ID,
+        result.getDefinition().getLabelsMap().get(THREAT_TYPE_ID_LABEL_KEY));
 
     // Verify clause group
     assertTrue(result.getDefinition().hasClauseGroup());
@@ -265,7 +266,7 @@ class AiAppToCustomSignatureConverterTest {
     assertEquals(2, result.getDefinition().getLabelsMap().size()); // 1 event label + 1 threat type
     assertEquals("test_value", result.getDefinition().getLabelsMap().get("test_label"));
     assertEquals(
-        AI_INPUT_EXPLOSION_TYPE,
+        AI_INPUT_EXPLOSION_THREAT_TYPE_ID,
         result.getDefinition().getLabelsMap().get(THREAT_TYPE_ID_LABEL_KEY));
 
     // Verify clause group
@@ -375,7 +376,8 @@ class AiAppToCustomSignatureConverterTest {
     assertEquals(2, result.getDefinition().getLabelsMap().size()); // 1 event label + 1 threat type
     assertEquals("high", result.getDefinition().getLabelsMap().get("priority"));
     assertEquals(
-        MODEL_GOVERNANCE_TYPE, result.getDefinition().getLabelsMap().get(THREAT_TYPE_ID_LABEL_KEY));
+        MODEL_GOVERNANCE_THREAT_TYPE_ID,
+        result.getDefinition().getLabelsMap().get(THREAT_TYPE_ID_LABEL_KEY));
 
     // Verify clause group
     assertTrue(result.getDefinition().hasClauseGroup());
@@ -446,7 +448,7 @@ class AiAppToCustomSignatureConverterTest {
     assertTrue(result.hasDefinition());
     assertEquals(1, result.getDefinition().getLabelsMap().size()); // Only threat type label
     assertEquals(
-        AI_INPUT_EXPLOSION_TYPE,
+        AI_INPUT_EXPLOSION_THREAT_TYPE_ID,
         result.getDefinition().getLabelsMap().get(THREAT_TYPE_ID_LABEL_KEY));
 
     // Verify clause group

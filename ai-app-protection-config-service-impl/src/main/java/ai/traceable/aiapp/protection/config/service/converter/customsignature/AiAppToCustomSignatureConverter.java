@@ -1,10 +1,10 @@
 package ai.traceable.aiapp.protection.config.service.converter.customsignature;
 
-import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.AI_INPUT_EXPLOSION_TYPE;
+import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.AI_INPUT_EXPLOSION_THREAT_TYPE_ID;
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.GENAI_MODELS_ATTRIBUTE_KEY;
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.GENAI_PROMPT_SIZE_ATTRIBUTE_KEY;
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.GENAI_PROVIDERS_ATTRIBUTE_KEY;
-import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.MODEL_GOVERNANCE_TYPE;
+import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.MODEL_GOVERNANCE_THREAT_TYPE_ID;
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.THREAT_TYPE_ID_LABEL_KEY;
 
 import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRule;
@@ -124,9 +124,9 @@ public class AiAppToCustomSignatureConverter {
 
   private static String getRuleTypeForThreatTypeId(AiAppCustomRuleData aiAppRuleData) {
     if (aiAppRuleData.hasModelGovernanceRuleData()) {
-      return MODEL_GOVERNANCE_TYPE;
+      return MODEL_GOVERNANCE_THREAT_TYPE_ID;
     } else if (aiAppRuleData.hasAiInputExplosionRuleData()) {
-      return AI_INPUT_EXPLOSION_TYPE;
+      return AI_INPUT_EXPLOSION_THREAT_TYPE_ID;
     }
     throw new IllegalArgumentException(
         "Unsupported rule type for custom signature conversion: "

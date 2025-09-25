@@ -17,6 +17,7 @@ message AiAppRule {
   RuleStatus rule_status = 6 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Status of the rule"];
   repeated RuleScope overriding_child_scopes = 7 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Overriding child scopes of the rule"];
   bool overridden_default = 8 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "If the rule is overriding the default value"];
+  bool hidden = 9 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "If the rule is hidden from the customer"];
 }
 
 message AiAppSubRule {
@@ -36,6 +37,7 @@ message AiAppOotbRule {
   optional bool internal = 7 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "If the sub rule should generate internal events"];
   repeated RuleScope overriding_child_scopes = 8 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Overriding child scopes of the sub rule"];
   bool overridden_default = 9 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "If the sub rule is overriding the default value"];
+  bool hidden = 10 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "If the sub rule is hidden from the customer"];
 }
 
 message AiAppRuleUpdate {

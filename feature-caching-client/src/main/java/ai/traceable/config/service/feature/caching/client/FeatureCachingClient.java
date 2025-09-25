@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import ai.traceable.featureflag.v1.FeatureFlagServiceGrpc;
 import ai.traceable.featureflag.v1.FeatureFlagServiceGrpc.FeatureFlagServiceBlockingStub;
+import ai.traceable.featureflag.v1.FeatureFlagValue;
 import ai.traceable.featureflag.v1.GetCurrentFlagValuesRequest;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -11,9 +12,10 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -46,6 +48,8 @@ public class FeatureCachingClient {
   private static final boolean DEFAULT_PROTECTION_ENGINE_WEBAPP_PROTECTION_FLAG_VALUE = false;
   private static final boolean DEFAULT_PROTECTION_ENGINE_POST_DETECTION_FILTERING_FLAG_VALUE =
       false;
+  private static final Set<String> DEFAULT_HIDDEN_DEFENSE_AI_FEATURES_VALUE =
+      Collections.emptySet();
 
   private static final String DATA_CLASSIFICATION_ENHANCED_OBFUSCATION_FLAG =
       "data-classification.enhanced-obfuscation";
@@ -72,6 +76,8 @@ public class FeatureCachingClient {
       "protection-engine.webapp-protection";
   private static final String PROTECTION_ENGINE_POST_DETECTION_FILTERING_FLAG =
       "protection-engine.post-detection-filtering";
+  private static final String HIDDEN_DEFENSE_AI_FEATURES =
+      "graphql.security-settings.defense-ai.hidden";
 
   private static final List<String> ALL_FLAGS_TO_FETCH =
       List.of(
@@ -92,9 +98,10 @@ public class FeatureCachingClient {
           CONFIG_SERVICE_WAAP_RULES_VERSIONING,
           GENAI_DETECTION_V2_FLAG,
           PROTECTION_ENGINE_WEBAPP_PROTECTION_FLAG,
-          PROTECTION_ENGINE_POST_DETECTION_FILTERING_FLAG);
+          PROTECTION_ENGINE_POST_DETECTION_FILTERING_FLAG,
+          HIDDEN_DEFENSE_AI_FEATURES);
   private final FeatureFlagServiceBlockingStub featureFlagStub;
-  private final LoadingCache<ContextualKey<Void>, Map<String, Boolean>> featureFlagCache;
+  private final LoadingCache<ContextualKey<Void>, Map<String, FeatureFlagValue>> featureFlagCache;
   private final Duration featureFlagRequestTimeout;
 
   @Inject
@@ -117,12 +124,32 @@ public class FeatureCachingClient {
                         config.getThreadPoolSize(), this.buildThreadFactory())));
   }
 
+  public Set<String> getHiddenDefenseAiFeatures(RequestContext requestContext) {
+    try {
+      return requireNonNull(
+              this.featureFlagCache
+                  .get(requestContext.buildInternalContextualKey())
+                  .get(HIDDEN_DEFENSE_AI_FEATURES))
+          .getList()
+          .getValuesList()
+          .stream()
+          .map(FeatureFlagValue::getString)
+          .collect(Collectors.toSet());
+    } catch (Exception exception) {
+      log.error(
+          "Failed to retrieve current feature flag value for Hidden defense AI features",
+          exception);
+      return DEFAULT_HIDDEN_DEFENSE_AI_FEATURES_VALUE;
+    }
+  }
+
   public boolean isGenAiDetectionV2Enabled(RequestContext requestContext) {
     try {
       return requireNonNull(
-          this.featureFlagCache
-              .get(requestContext.buildInternalContextualKey())
-              .get(GENAI_DETECTION_V2_FLAG));
+              this.featureFlagCache
+                  .get(requestContext.buildInternalContextualKey())
+                  .get(GENAI_DETECTION_V2_FLAG))
+          .getBoolean();
     } catch (Exception exception) {
       log.error("Failed to retrieve current feature flag value for Genai Detection V2", exception);
       return DEFAULT_GENAI_DETECTION_V2_VALUE;
@@ -132,9 +159,10 @@ public class FeatureCachingClient {
   public boolean isThreatScoringNotificationRuleMigrationEnabled(RequestContext requestContext) {
     try {
       return requireNonNull(
-          this.featureFlagCache
-              .get(requestContext.buildInternalContextualKey())
-              .get(THREAT_SCORING_NOTIFICATION_RULE_MIGRATION_FLAG));
+              this.featureFlagCache
+                  .get(requestContext.buildInternalContextualKey())
+                  .get(THREAT_SCORING_NOTIFICATION_RULE_MIGRATION_FLAG))
+          .getBoolean();
     } catch (Exception exception) {
       log.error(
           "Failed to retrieve current feature flag value for Threat Scoring Notification Rule Migration",
@@ -146,9 +174,10 @@ public class FeatureCachingClient {
   public boolean isDataClassificationEnhancedObfuscationEnabled(RequestContext requestContext) {
     try {
       return requireNonNull(
-          this.featureFlagCache
-              .get(requestContext.buildInternalContextualKey())
-              .get(DATA_CLASSIFICATION_ENHANCED_OBFUSCATION_FLAG));
+              this.featureFlagCache
+                  .get(requestContext.buildInternalContextualKey())
+                  .get(DATA_CLASSIFICATION_ENHANCED_OBFUSCATION_FLAG))
+          .getBoolean();
     } catch (Exception exception) {
       log.error(
           "Failed to retrieve current feature flag value for Data Classification Enhanced Obfuscation",
@@ -160,9 +189,10 @@ public class FeatureCachingClient {
   public boolean areDataClassificationFilteredOverridesEnabled(RequestContext requestContext) {
     try {
       return requireNonNull(
-          this.featureFlagCache
-              .get(requestContext.buildInternalContextualKey())
-              .get(DATA_CLASSIFICATION_FILTERED_OVERRIDES_FLAG));
+              this.featureFlagCache
+                  .get(requestContext.buildInternalContextualKey())
+                  .get(DATA_CLASSIFICATION_FILTERED_OVERRIDES_FLAG))
+          .getBoolean();
     } catch (Exception exception) {
       log.error(
           "Failed to retrieve current feature flag value for Data Classification Filtered Overrides",
@@ -174,9 +204,10 @@ public class FeatureCachingClient {
   public boolean isIpqsEnabledForRegionToIpMapping(RequestContext requestContext) {
     try {
       return requireNonNull(
-          this.featureFlagCache
-              .get(requestContext.buildInternalContextualKey())
-              .get(IPQS_ENABLED_FLAG));
+              this.featureFlagCache
+                  .get(requestContext.buildInternalContextualKey())
+                  .get(IPQS_ENABLED_FLAG))
+          .getBoolean();
     } catch (Exception exception) {
       log.error("Failed to retrieve current feature flag value for IPQS", exception);
       return DEFAULT_IPQS_ENABLED_VALUE;
@@ -186,9 +217,10 @@ public class FeatureCachingClient {
   public boolean isUserAttributionV2Enabled(RequestContext requestContext) {
     try {
       return requireNonNull(
-          this.featureFlagCache
-              .get(requestContext.buildInternalContextualKey())
-              .get(USER_ATTRIBUTION_V2_FLAG));
+              this.featureFlagCache
+                  .get(requestContext.buildInternalContextualKey())
+                  .get(USER_ATTRIBUTION_V2_FLAG))
+          .getBoolean();
     } catch (Exception exception) {
       log.warn("Failed to retrieve current feature flag value for User Attribution V2", exception);
       return DEFAULT_USER_ATTRIBUTION_V2_FLAG_VALUE;
@@ -198,9 +230,10 @@ public class FeatureCachingClient {
   public boolean isUserAttributionV3Enabled(RequestContext requestContext) {
     try {
       return requireNonNull(
-          this.featureFlagCache
-              .get(requestContext.buildInternalContextualKey())
-              .get(USER_ATTRIBUTION_V3_FLAG));
+              this.featureFlagCache
+                  .get(requestContext.buildInternalContextualKey())
+                  .get(USER_ATTRIBUTION_V3_FLAG))
+          .getBoolean();
     } catch (Exception exception) {
       log.warn("Failed to retrieve current feature flag value for User Attribution V3", exception);
       return DEFAULT_USER_ATTRIBUTION_V3_FLAG_VALUE;
@@ -210,11 +243,12 @@ public class FeatureCachingClient {
   public boolean isDetectionExclusionV2EnabledForTenant(RequestContext requestContext) {
     try {
       return requireNonNull(
-          this.featureFlagCache
-              .get(
-                  RequestContext.forTenantId(requestContext.getTenantId().get())
-                      .buildInternalContextualKey())
-              .get(DETECTION_EXCLUSION_V2_FLAG));
+              this.featureFlagCache
+                  .get(
+                      RequestContext.forTenantId(requestContext.getTenantId().get())
+                          .buildInternalContextualKey())
+                  .get(DETECTION_EXCLUSION_V2_FLAG))
+          .getBoolean();
     } catch (Exception exception) {
       log.warn(
           "Failed to retrieve current feature flag value for Detection Exclusion V2", exception);
@@ -225,9 +259,10 @@ public class FeatureCachingClient {
   public boolean isTpaModSecProcessingDisabled(RequestContext requestContext) {
     try {
       return requireNonNull(
-          this.featureFlagCache
-              .get(requestContext.buildInternalContextualKey())
-              .get(TPA_MODSEC_PROCESSING_DISABLED));
+              this.featureFlagCache
+                  .get(requestContext.buildInternalContextualKey())
+                  .get(TPA_MODSEC_PROCESSING_DISABLED))
+          .getBoolean();
     } catch (Exception exception) {
       log.warn(
           "Failed to retrieve current feature flag value for TPA ModSec Processing", exception);
@@ -238,9 +273,10 @@ public class FeatureCachingClient {
   public boolean isTpaCorazaBasedEvaluationEnabled(RequestContext requestContext) {
     try {
       return requireNonNull(
-          this.featureFlagCache
-              .get(requestContext.buildInternalContextualKey())
-              .get(TPA_CORAZA_BASED_EVALUATION));
+              this.featureFlagCache
+                  .get(requestContext.buildInternalContextualKey())
+                  .get(TPA_CORAZA_BASED_EVALUATION))
+          .getBoolean();
     } catch (Exception exception) {
       log.warn(
           "Failed to retrieve current feature flag value for TPA ModSec Coraza Processing",
@@ -252,9 +288,10 @@ public class FeatureCachingClient {
   public boolean isTpaCrsMsgHideMatchValueEnabled(RequestContext requestContext) {
     try {
       return requireNonNull(
-          this.featureFlagCache
-              .get(requestContext.buildInternalContextualKey())
-              .get(TPA_CRS_MSG_HIDE_MATCH_VALUE));
+              this.featureFlagCache
+                  .get(requestContext.buildInternalContextualKey())
+                  .get(TPA_CRS_MSG_HIDE_MATCH_VALUE))
+          .getBoolean();
     } catch (Exception exception) {
       log.warn(
           "Failed to retrieve current feature flag value for TPA CRS Message Hide Match Value in modsec rules",
@@ -266,9 +303,10 @@ public class FeatureCachingClient {
   public boolean isTpaCustomRateLimitConfigEnabled(RequestContext requestContext) {
     try {
       return requireNonNull(
-          this.featureFlagCache
-              .get(requestContext.buildInternalContextualKey())
-              .get(TPA_CUSTOM_RATE_LIMIT_CONFIG));
+              this.featureFlagCache
+                  .get(requestContext.buildInternalContextualKey())
+                  .get(TPA_CUSTOM_RATE_LIMIT_CONFIG))
+          .getBoolean();
     } catch (Exception exception) {
       log.warn(
           "Failed to retrieve current feature flag value for TPA custom rate limit config",
@@ -280,9 +318,10 @@ public class FeatureCachingClient {
   public boolean isRaspInspectionEnabled(RequestContext requestContext) {
     try {
       return requireNonNull(
-          this.featureFlagCache
-              .get(requestContext.buildInternalContextualKey())
-              .get(RASP_INSPECTION));
+              this.featureFlagCache
+                  .get(requestContext.buildInternalContextualKey())
+                  .get(RASP_INSPECTION))
+          .getBoolean();
     } catch (Exception exception) {
       log.warn("Failed to retrieve current feature flag value for RASP Inspection", exception);
       return DEFAULT_RASP_INSPECTION;
@@ -292,9 +331,10 @@ public class FeatureCachingClient {
   public boolean isSessionIdentificationV2EnabledForTenant(RequestContext requestContext) {
     try {
       return requireNonNull(
-          this.featureFlagCache
-              .get(requestContext.buildInternalContextualKey())
-              .get(SESSION_IDENTIFICATION_V2_FLAG));
+              this.featureFlagCache
+                  .get(requestContext.buildInternalContextualKey())
+                  .get(SESSION_IDENTIFICATION_V2_FLAG))
+          .getBoolean();
     } catch (Exception exception) {
       log.warn(
           "Failed to retrieve current feature flag value for Session Identification V2", exception);
@@ -305,9 +345,10 @@ public class FeatureCachingClient {
   public boolean isEdgeDecisionEnabledForTenant(RequestContext requestContext) {
     try {
       return requireNonNull(
-          this.featureFlagCache
-              .get(requestContext.buildInternalContextualKey())
-              .get(TRACEABLE_EDGE_DECISION_FLAG));
+              this.featureFlagCache
+                  .get(requestContext.buildInternalContextualKey())
+                  .get(TRACEABLE_EDGE_DECISION_FLAG))
+          .getBoolean();
     } catch (Exception exception) {
       log.warn("Failed to retrieve current feature flag value for edge decision flag", exception);
       return DEFAULT_TRACEABLE_EDGE_DECISION_FLAG_VALUE;
@@ -317,9 +358,10 @@ public class FeatureCachingClient {
   public boolean isWAAPVersioningEnabledForTenant(RequestContext requestContext) {
     try {
       return requireNonNull(
-          this.featureFlagCache
-              .get(requestContext.buildInternalContextualKey())
-              .get(CONFIG_SERVICE_WAAP_RULES_VERSIONING));
+              this.featureFlagCache
+                  .get(requestContext.buildInternalContextualKey())
+                  .get(CONFIG_SERVICE_WAAP_RULES_VERSIONING))
+          .getBoolean();
     } catch (Exception exception) {
       log.warn("Failed to retrieve current feature flag value for WAAP versioning", exception);
       return DEFAULT_WAAP_VERSIONING_FLAG_VALUE;
@@ -329,9 +371,10 @@ public class FeatureCachingClient {
   public boolean isProtectionEngineWebAppProtectionEnabledForTenant(RequestContext requestContext) {
     try {
       return requireNonNull(
-          this.featureFlagCache
-              .get(requestContext.buildInternalContextualKey())
-              .get(PROTECTION_ENGINE_WEBAPP_PROTECTION_FLAG));
+              this.featureFlagCache
+                  .get(requestContext.buildInternalContextualKey())
+                  .get(PROTECTION_ENGINE_WEBAPP_PROTECTION_FLAG))
+          .getBoolean();
     } catch (Exception exception) {
       log.warn(
           "Failed to retrieve current feature flag value for Protection Engine Web App Protection",
@@ -344,9 +387,10 @@ public class FeatureCachingClient {
       RequestContext requestContext) {
     try {
       return requireNonNull(
-          this.featureFlagCache
-              .get(requestContext.buildInternalContextualKey())
-              .get(PROTECTION_ENGINE_POST_DETECTION_FILTERING_FLAG));
+              this.featureFlagCache
+                  .get(requestContext.buildInternalContextualKey())
+                  .get(PROTECTION_ENGINE_POST_DETECTION_FILTERING_FLAG))
+          .getBoolean();
     } catch (Exception exception) {
       log.warn(
           "Failed to retrieve current feature flag value for Protection Engine Post Detection Filtering",
@@ -362,9 +406,8 @@ public class FeatureCachingClient {
         .build();
   }
 
-  private Map<String, Boolean> getFeatureFlagMap(ContextualKey<?> key) {
-    return key
-        .callInContext(
+  private Map<String, FeatureFlagValue> getFeatureFlagMap(ContextualKey<?> key) {
+    return key.callInContext(
             () ->
                 this.featureFlagStub
                     .withDeadlineAfter(
@@ -373,10 +416,6 @@ public class FeatureCachingClient {
                         GetCurrentFlagValuesRequest.newBuilder()
                             .addAllFlagKeys(ALL_FLAGS_TO_FETCH)
                             .build()))
-        .getValuesMap()
-        .entrySet()
-        .stream()
-        .collect(
-            Collectors.toUnmodifiableMap(Entry::getKey, entry -> entry.getValue().getBoolean()));
+        .getValuesMap();
   }
 }

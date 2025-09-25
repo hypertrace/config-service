@@ -1,10 +1,10 @@
 package ai.traceable.aiapp.protection.config.service.converter.customsignature;
 
-import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.AI_INPUT_EXPLOSION_TYPE;
+import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.AI_INPUT_EXPLOSION_THREAT_TYPE_ID;
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.GENAI_MODELS_ATTRIBUTE_KEY;
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.GENAI_PROMPT_SIZE_ATTRIBUTE_KEY;
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.GENAI_PROVIDERS_ATTRIBUTE_KEY;
-import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.MODEL_GOVERNANCE_TYPE;
+import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.MODEL_GOVERNANCE_THREAT_TYPE_ID;
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.THREAT_TYPE_ID_LABEL_KEY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -45,7 +45,7 @@ class CustomSignatureToAiAppConverterTest {
   void testConvertFromCustomSignatureRule_ModelGovernance() {
     // Arrange
     Map<String, String> labels = new HashMap<>();
-    labels.put(THREAT_TYPE_ID_LABEL_KEY, MODEL_GOVERNANCE_TYPE);
+    labels.put(THREAT_TYPE_ID_LABEL_KEY, MODEL_GOVERNANCE_THREAT_TYPE_ID);
     labels.put("custom_label", "custom_value");
     labels.put("environment", "production");
 
@@ -193,7 +193,7 @@ class CustomSignatureToAiAppConverterTest {
     assertEquals(3, eventLabels.size()); // All labels including threat type
     assertEquals("custom_value", eventLabels.get("custom_label"));
     assertEquals("production", eventLabels.get("environment"));
-    assertEquals(MODEL_GOVERNANCE_TYPE, eventLabels.get(THREAT_TYPE_ID_LABEL_KEY));
+    assertEquals(MODEL_GOVERNANCE_THREAT_TYPE_ID, eventLabels.get(THREAT_TYPE_ID_LABEL_KEY));
 
     // Verify model governance rule data
     assertTrue(ruleData.hasModelGovernanceRuleData());
@@ -260,7 +260,7 @@ class CustomSignatureToAiAppConverterTest {
   void testConvertFromCustomSignatureRule_AiInputExplosion() {
     // Arrange
     Map<String, String> labels = new HashMap<>();
-    labels.put(THREAT_TYPE_ID_LABEL_KEY, AI_INPUT_EXPLOSION_TYPE);
+    labels.put(THREAT_TYPE_ID_LABEL_KEY, AI_INPUT_EXPLOSION_THREAT_TYPE_ID);
     labels.put("test_label", "test_value");
 
     // Create prompt size attribute condition
@@ -348,7 +348,7 @@ class CustomSignatureToAiAppConverterTest {
     Map<String, String> eventLabels = ruleData.getEventLabelsMap();
     assertEquals(2, eventLabels.size());
     assertEquals("test_value", eventLabels.get("test_label"));
-    assertEquals(AI_INPUT_EXPLOSION_TYPE, eventLabels.get(THREAT_TYPE_ID_LABEL_KEY));
+    assertEquals(AI_INPUT_EXPLOSION_THREAT_TYPE_ID, eventLabels.get(THREAT_TYPE_ID_LABEL_KEY));
 
     // Verify AI input explosion rule data
     assertTrue(ruleData.hasAiInputExplosionRuleData());
@@ -381,7 +381,7 @@ class CustomSignatureToAiAppConverterTest {
   void testConvertFromCustomSignatureRule_ModelGovernanceWithMarkForTesting() {
     // Arrange
     Map<String, String> labels = new HashMap<>();
-    labels.put(THREAT_TYPE_ID_LABEL_KEY, MODEL_GOVERNANCE_TYPE);
+    labels.put(THREAT_TYPE_ID_LABEL_KEY, MODEL_GOVERNANCE_THREAT_TYPE_ID);
 
     // Create AI vendors attribute condition only
     StringCondition vendorsKeyCondition =
@@ -483,7 +483,7 @@ class CustomSignatureToAiAppConverterTest {
   void testConvertFromCustomSignatureRule_AiInputExplosionWithAlert() {
     // Arrange
     Map<String, String> labels = new HashMap<>();
-    labels.put(THREAT_TYPE_ID_LABEL_KEY, AI_INPUT_EXPLOSION_TYPE);
+    labels.put(THREAT_TYPE_ID_LABEL_KEY, AI_INPUT_EXPLOSION_THREAT_TYPE_ID);
     labels.put("priority", "critical");
 
     // Create prompt size attribute condition
@@ -562,7 +562,7 @@ class CustomSignatureToAiAppConverterTest {
     Map<String, String> eventLabels = ruleData.getEventLabelsMap();
     assertEquals(2, eventLabels.size());
     assertEquals("critical", eventLabels.get("priority"));
-    assertEquals(AI_INPUT_EXPLOSION_TYPE, eventLabels.get(THREAT_TYPE_ID_LABEL_KEY));
+    assertEquals(AI_INPUT_EXPLOSION_THREAT_TYPE_ID, eventLabels.get(THREAT_TYPE_ID_LABEL_KEY));
 
     // Verify AI input explosion rule data
     assertTrue(ruleData.hasAiInputExplosionRuleData());
