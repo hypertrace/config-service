@@ -70,6 +70,7 @@ message DeleteAiAppRulesRequest {
 
 message ResetToDefault {
   repeated string rule_ids = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of rule IDs to be reset to default"];
+  RuleScope rule_scope = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Scope of the rules to be reset to default"];
 }
 
 message AiAppCustomRuleToDelete {

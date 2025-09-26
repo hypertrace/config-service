@@ -72,7 +72,7 @@ public final class AnomalyToAiAppRuleConverter {
       return new ArrayList<>();
     }
 
-    logger.info("Converting {} anomaly rule infos to AI app rules", anomalyRuleInfos.size());
+    logger.debug("Converting {} anomaly rule infos to AI app rules", anomalyRuleInfos.size());
 
     // Filter anomaly rule infos by event family - only convert GenAI rules to AiAppRule
     List<AnomalyRuleInfo> genAiRuleInfos =
@@ -90,7 +90,7 @@ public final class AnomalyToAiAppRuleConverter {
                     ruleInfo.getEventFamily() == AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC)
             .collect(Collectors.toMap(AnomalyRuleInfo::getRuleId, ruleInfo -> ruleInfo));
 
-    logger.info(
+    logger.debug(
         "Filtered {} GenAI rules and {} ModSec rules from {} total rules",
         genAiRuleInfos.size(),
         modsecRuleInfosById.size(),
@@ -144,8 +144,6 @@ public final class AnomalyToAiAppRuleConverter {
         logger.error("Failed to convert anomaly rule: {}", anomalyRuleInfo.getRuleId(), e);
       }
     }
-
-    logger.info("Successfully converted {} AI app rules", aiAppRules.size());
     return aiAppRules;
   }
 
@@ -566,9 +564,6 @@ public final class AnomalyToAiAppRuleConverter {
             threatRuleId);
       }
     }
-
-    logger.info(
-        "Converted {} ModSec rules to sub-rules for codeDetectedInPrompt", modsecSubRules.size());
     return modsecSubRules;
   }
 

@@ -31,8 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CustomSignatureToAiAppConverter {
 
-  public static AiAppCustomRule convertFromCustomSignatureRule(
-      CustomSignatureRule customSignatureRule) {
+  public AiAppCustomRule convertFromCustomSignatureRule(CustomSignatureRule customSignatureRule) {
     String threatTypeId =
         customSignatureRule.getDefinition().getLabelsMap().get(THREAT_TYPE_ID_LABEL_KEY);
     if (threatTypeId == null || threatTypeId.isEmpty()) {
@@ -77,7 +76,7 @@ public class CustomSignatureToAiAppConverter {
   }
 
   /** Converts custom signature rule to model governance rule data. */
-  private static ModelGovernanceRuleData convertToModelGovernanceRuleData(
+  private ModelGovernanceRuleData convertToModelGovernanceRuleData(
       CustomSignatureRule customSignatureRule) {
     ModelGovernanceRuleData.Builder builder = ModelGovernanceRuleData.newBuilder();
 
@@ -92,7 +91,7 @@ public class CustomSignatureToAiAppConverter {
   }
 
   /** Converts custom signature rule to AI input explosion rule data. */
-  private static AiInputExplosionRuleData convertToAiInputExplosionRuleData(
+  private AiInputExplosionRuleData convertToAiInputExplosionRuleData(
       CustomSignatureRule customSignatureRule) {
     AiInputExplosionRuleData.Builder builder = AiInputExplosionRuleData.newBuilder();
 
@@ -105,8 +104,7 @@ public class CustomSignatureToAiAppConverter {
     return builder.build();
   }
 
-  private static Action convertAction(
-      ai.traceable.customsignature.config.service.v1.RuleEffect effect) {
+  private Action convertAction(ai.traceable.customsignature.config.service.v1.RuleEffect effect) {
     Action.Builder builder = Action.newBuilder();
 
     // Check event type to determine if it's mark for testing or alert
@@ -130,7 +128,7 @@ public class CustomSignatureToAiAppConverter {
   }
 
   /** Converts custom signature event severity to AI app severity level. */
-  private static SeverityLevel convertEventSeverityToSeverityLevel(
+  private SeverityLevel convertEventSeverityToSeverityLevel(
       ai.traceable.customsignature.config.service.v1.EventSeverity eventSeverity) {
     switch (eventSeverity) {
       case EVENT_SEVERITY_LOW:
@@ -147,7 +145,7 @@ public class CustomSignatureToAiAppConverter {
   }
 
   /** Converts custom signature rule scope to AI app rule scope. */
-  private static RuleScope convertRuleScope(
+  private RuleScope convertRuleScope(
       ai.traceable.customsignature.config.service.v1.RuleScope customRuleScope) {
     RuleScope.Builder builder = RuleScope.newBuilder();
 
@@ -165,7 +163,7 @@ public class CustomSignatureToAiAppConverter {
     return builder.build();
   }
 
-  private static void extractAiConditionsFromClauseGroup(
+  private void extractAiConditionsFromClauseGroup(
       ClauseGroup clauseGroup, ModelGovernanceRuleData.Builder builder) {
 
     for (Clause clause : clauseGroup.getClausesList()) {
@@ -208,7 +206,7 @@ public class CustomSignatureToAiAppConverter {
     }
   }
 
-  private static void extractAiInputExplosionConditionsFromClauseGroup(
+  private void extractAiInputExplosionConditionsFromClauseGroup(
       ClauseGroup clauseGroup, AiInputExplosionRuleData.Builder builder) {
 
     for (Clause clause : clauseGroup.getClausesList()) {
@@ -253,7 +251,7 @@ public class CustomSignatureToAiAppConverter {
   }
 
   /** Converts StringCondition back to MatchOperatorCondition for attribute match conditions. */
-  private static MatchOperatorCondition reverseStringConditionToMatchOperator(
+  private MatchOperatorCondition reverseStringConditionToMatchOperator(
       ai.traceable.customsignature.config.service.v1.StringCondition stringCondition) {
 
     return MatchOperatorCondition.newBuilder()
@@ -262,7 +260,7 @@ public class CustomSignatureToAiAppConverter {
         .build();
   }
 
-  private static MatchOperator reverseCustomSignatureMatchOperatorToAiApp(
+  private MatchOperator reverseCustomSignatureMatchOperatorToAiApp(
       ai.traceable.customsignature.config.service.v1.MatchOperator customSignatureOperator) {
     switch (customSignatureOperator) {
       case MATCH_OPERATOR_EQUALS:
@@ -287,7 +285,7 @@ public class CustomSignatureToAiAppConverter {
   }
 
   /** Converts custom signature rule source to AI app rule creation source. */
-  private static RuleStatusDetails.RuleSource convertRuleSource(
+  private RuleStatusDetails.RuleSource convertRuleSource(
       ai.traceable.customsignature.config.service.v1.RuleSource customRuleSource) {
     switch (customRuleSource) {
       case RULE_SOURCE_CUSTOMER:
@@ -301,7 +299,7 @@ public class CustomSignatureToAiAppConverter {
     }
   }
 
-  private static ScopeCondition convertScopeExpressionToScopeCondition(
+  private ScopeCondition convertScopeExpressionToScopeCondition(
       ai.traceable.customsignature.config.service.v1.ScopeExpression scopeExpression) {
 
     if (scopeExpression

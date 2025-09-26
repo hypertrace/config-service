@@ -29,6 +29,9 @@ import org.junit.jupiter.api.Test;
 
 class AiAppToRateLimitingConverterTest {
 
+  private final AiAppToRateLimitingConverter aiAppToRateLimitingConverter =
+      new AiAppToRateLimitingConverter();
+
   @Test
   void testConvertPiiDetectedInPromptRule() {
     // Create simplified test data for PII detection rule
@@ -71,7 +74,7 @@ class AiAppToRateLimitingConverterTest {
 
     // Convert to rate limiting rule
     CreateRateLimitingRuleRequest request =
-        AiAppToRateLimitingConverter.convertToCreateRateLimitingRuleRequest(aiAppRuleData);
+        aiAppToRateLimitingConverter.convertToCreateRateLimitingRuleRequest(aiAppRuleData);
 
     // Verify basic conversion
     assertNotNull(request);
@@ -205,7 +208,7 @@ class AiAppToRateLimitingConverterTest {
 
     // Convert to rate limiting rule
     RateLimitingRuleData ruleData =
-        AiAppToRateLimitingConverter.convertToRateLimitingRule(aiAppRuleData);
+        aiAppToRateLimitingConverter.convertToRateLimitingRule(aiAppRuleData);
 
     // Verify basic conversion
     assertNotNull(ruleData);

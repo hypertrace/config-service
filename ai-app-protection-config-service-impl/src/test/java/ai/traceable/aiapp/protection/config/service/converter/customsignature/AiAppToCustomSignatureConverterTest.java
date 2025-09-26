@@ -38,6 +38,9 @@ import org.junit.jupiter.api.Test;
 
 class AiAppToCustomSignatureConverterTest {
 
+  private final AiAppToCustomSignatureConverter aiAppToCustomSignatureConverter =
+      new AiAppToCustomSignatureConverter();
+
   @Test
   void testConvertToCreateCustomSignatureRuleRequest_ModelGovernance() {
     // Arrange
@@ -122,7 +125,7 @@ class AiAppToCustomSignatureConverterTest {
 
     // Act
     CreateCustomSignatureRuleRequest result =
-        AiAppToCustomSignatureConverter.convertToCreateCustomSignatureRuleRequest(aiAppRuleData);
+        aiAppToCustomSignatureConverter.convertToCreateCustomSignatureRuleRequest(aiAppRuleData);
 
     // Assert
     assertNotNull(result);
@@ -250,7 +253,7 @@ class AiAppToCustomSignatureConverterTest {
 
     // Act
     CreateCustomSignatureRuleRequest result =
-        AiAppToCustomSignatureConverter.convertToCreateCustomSignatureRuleRequest(aiAppRuleData);
+        aiAppToCustomSignatureConverter.convertToCreateCustomSignatureRuleRequest(aiAppRuleData);
 
     // Assert
     assertNotNull(result);
@@ -358,7 +361,7 @@ class AiAppToCustomSignatureConverterTest {
 
     // Act
     CustomSignatureRule result =
-        AiAppToCustomSignatureConverter.convertToCustomSignatureRule(aiAppCustomRule);
+        aiAppToCustomSignatureConverter.convertToCustomSignatureRule(aiAppCustomRule);
 
     // Assert
     assertNotNull(result);
@@ -431,7 +434,7 @@ class AiAppToCustomSignatureConverterTest {
 
     // Act
     CustomSignatureRule result =
-        AiAppToCustomSignatureConverter.convertToCustomSignatureRule(aiAppCustomRule);
+        aiAppToCustomSignatureConverter.convertToCustomSignatureRule(aiAppCustomRule);
 
     // Assert
     assertNotNull(result);

@@ -35,19 +35,19 @@ import lombok.extern.slf4j.Slf4j;
 public class AiAppToRateLimitingConverter {
 
   /** Converts AI app custom rule data to a CreateRateLimitingRuleRequest for create operations */
-  public static CreateRateLimitingRuleRequest convertToCreateRateLimitingRuleRequest(
+  public CreateRateLimitingRuleRequest convertToCreateRateLimitingRuleRequest(
       AiAppCustomRuleData aiAppRuleData) {
     RateLimitingRuleData rateLimitingRuleData = buildRateLimitingRuleData(aiAppRuleData, true);
     return CreateRateLimitingRuleRequest.newBuilder().setData(rateLimitingRuleData).build();
   }
 
   /** Converts AI app custom rule data to a RateLimitingRule for upsert operations */
-  public static RateLimitingRuleData convertToRateLimitingRule(AiAppCustomRuleData aiAppRuleData) {
+  public RateLimitingRuleData convertToRateLimitingRule(AiAppCustomRuleData aiAppRuleData) {
     return buildRateLimitingRuleData(aiAppRuleData, false);
   }
 
   /** Builds the common RateLimitingRuleData from AiAppCustomRuleData */
-  private static RateLimitingRuleData buildRateLimitingRuleData(
+  private RateLimitingRuleData buildRateLimitingRuleData(
       AiAppCustomRuleData aiAppRuleData, boolean isCreateRequest) {
     RateLimitingRuleData.Builder rateLimitingRuleDataBuilder =
         RateLimitingRuleData.newBuilder()
@@ -78,8 +78,7 @@ public class AiAppToRateLimitingConverter {
     return rateLimitingRuleDataBuilder.build();
   }
 
-  private static RuleStatus convertRuleStatus(
-      AiAppCustomRuleData aiAppRuleData, boolean isCreateRequest) {
+  private RuleStatus convertRuleStatus(AiAppCustomRuleData aiAppRuleData, boolean isCreateRequest) {
     RuleStatus.Builder builder =
         RuleStatus.newBuilder()
             .setInternal(aiAppRuleData.getRuleStatusDetails().getInternal())
@@ -104,7 +103,7 @@ public class AiAppToRateLimitingConverter {
     return builder.build();
   }
 
-  private static RuleConfigScope convertRuleScope(
+  private RuleConfigScope convertRuleScope(
       ai.traceable.aiapp.protection.config.service.v1.RuleScope ruleScope) {
     RuleConfigScope.Builder builder = RuleConfigScope.newBuilder();
 
@@ -120,7 +119,7 @@ public class AiAppToRateLimitingConverter {
     return builder.build();
   }
 
-  private static void convertPiiDetectedInPromptRule(
+  private void convertPiiDetectedInPromptRule(
       AiAppCustomRuleData aiAppRuleData, RateLimitingRuleData.Builder builder) {
     PiiDetectedInPromptRuleData piiRuleData = aiAppRuleData.getPiiDetectedInPromptRuleData();
 
@@ -199,7 +198,7 @@ public class AiAppToRateLimitingConverter {
   }
 
   /** Converts AI app ScopeCondition to rate limiting ScopeCondition */
-  private static Condition convertScopeCondition(
+  private Condition convertScopeCondition(
       ai.traceable.aiapp.protection.config.service.v1.ScopeCondition aiAppScopeCondition) {
 
     // Convert AI app scope condition to rate limiting ScopeCondition
@@ -247,7 +246,7 @@ public class AiAppToRateLimitingConverter {
     return Condition.newBuilder().setLeafCondition(leafCondition).build();
   }
 
-  private static void convertAiRateLimitingRule(
+  private void convertAiRateLimitingRule(
       AiAppCustomRuleData aiAppCustomRuleData, RateLimitingRuleData.Builder builder) {
 
     AiRateLimitingRuleData aiRateLimitingData = aiAppCustomRuleData.getAiRateLimitingRuleData();
@@ -333,8 +332,8 @@ public class AiAppToRateLimitingConverter {
     }
   }
 
-  private static ai.traceable.ratelimiting.config.service.v2.UserAggregateType
-      convertUserAggregateType(UserAggregateType userAggregateType) {
+  private ai.traceable.ratelimiting.config.service.v2.UserAggregateType convertUserAggregateType(
+      UserAggregateType userAggregateType) {
     switch (userAggregateType) {
       case USER_AGGREGATE_TYPE_PER_USER:
         return ai.traceable.ratelimiting.config.service.v2.UserAggregateType
@@ -348,8 +347,8 @@ public class AiAppToRateLimitingConverter {
     }
   }
 
-  private static ai.traceable.ratelimiting.config.service.v2.ApiAggregateType
-      convertApiAggregateType(ApiAggregateType apiAggregateType) {
+  private ai.traceable.ratelimiting.config.service.v2.ApiAggregateType convertApiAggregateType(
+      ApiAggregateType apiAggregateType) {
     switch (apiAggregateType) {
       case API_AGGREGATE_TYPE_PER_ENDPOINT:
         return ai.traceable.ratelimiting.config.service.v2.ApiAggregateType
@@ -364,7 +363,7 @@ public class AiAppToRateLimitingConverter {
   }
 
   /** Converts AI app action to rate limiting action - reusable utility method */
-  private static ai.traceable.ratelimiting.config.service.v2.Action convertAction(Action action) {
+  private ai.traceable.ratelimiting.config.service.v2.Action convertAction(Action action) {
     ai.traceable.ratelimiting.config.service.v2.Action.Builder actionBuilder =
         ai.traceable.ratelimiting.config.service.v2.Action.newBuilder();
 
@@ -383,7 +382,7 @@ public class AiAppToRateLimitingConverter {
   }
 
   /** Converts AI app match operator to rate limiting match operator */
-  private static KeyValueCondition.MatchOperator convertMatchOperator(
+  private KeyValueCondition.MatchOperator convertMatchOperator(
       ai.traceable.aiapp.protection.config.service.v1.MatchOperator aiAppOperator) {
     switch (aiAppOperator) {
       case MATCH_OPERATOR_EQUALS:
@@ -408,7 +407,7 @@ public class AiAppToRateLimitingConverter {
   }
 
   /** Converts MatchOperatorCondition to rate limiting Condition */
-  private static Condition convertSpanAttributeCondition(
+  private Condition convertSpanAttributeCondition(
       MatchOperatorCondition matchOperatorCondition, String attributeName) {
 
     // Create key condition for the attribute name
@@ -430,7 +429,7 @@ public class AiAppToRateLimitingConverter {
             .setValue(matchOperatorCondition.getValue())
             .setOperator(convertMatchOperator(matchOperatorCondition.getOperator()));
 
-    // Create static value condition
+    // Create value condition
     KeyValueCondition.StaticValueCondition staticValueCondition =
         KeyValueCondition.StaticValueCondition.newBuilder()
             .setKeyCondition(keyConditionBuilder.build())
@@ -447,7 +446,7 @@ public class AiAppToRateLimitingConverter {
     return Condition.newBuilder().setLeafCondition(leafCondition).build();
   }
 
-  private static KeyValueCondition convertCustomLocationMatchingCondition(
+  private KeyValueCondition convertCustomLocationMatchingCondition(
       MatchOperatorCondition matchOperatorCondition) {
 
     // Create key match operator condition using the reusable converter
@@ -459,7 +458,7 @@ public class AiAppToRateLimitingConverter {
                     .setStringValue(matchOperatorCondition.getValue().getStringValue())
                     .build());
 
-    // Create static value condition
+    // Create value condition
     KeyValueCondition.StaticValueCondition staticValueCondition =
         KeyValueCondition.StaticValueCondition.newBuilder()
             .setKeyCondition(
@@ -472,8 +471,8 @@ public class AiAppToRateLimitingConverter {
     return KeyValueCondition.newBuilder().setStaticValueCondition(staticValueCondition).build();
   }
 
-  private static ai.traceable.ratelimiting.config.service.v2.Action.EventSeverity
-      convertSeverityLevel(SeverityLevel severityLevel) {
+  private ai.traceable.ratelimiting.config.service.v2.Action.EventSeverity convertSeverityLevel(
+      SeverityLevel severityLevel) {
     switch (severityLevel) {
       case SEVERITY_LEVEL_LOW:
         return ai.traceable.ratelimiting.config.service.v2.Action.EventSeverity.EVENT_SEVERITY_LOW;
@@ -491,7 +490,7 @@ public class AiAppToRateLimitingConverter {
     }
   }
 
-  private static String getThreatTypeIdLabel(AiAppCustomRuleData aiAppRuleData) {
+  private String getThreatTypeIdLabel(AiAppCustomRuleData aiAppRuleData) {
     if (aiAppRuleData.hasPiiDetectedInPromptRuleData()) {
       return PII_DETECTED_IN_PROMPT_THREAT_TYPE_ID;
     } else if (aiAppRuleData.hasAiRateLimitingRuleData()) {

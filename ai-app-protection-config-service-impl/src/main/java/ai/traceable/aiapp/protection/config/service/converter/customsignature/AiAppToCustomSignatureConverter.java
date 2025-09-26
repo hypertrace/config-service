@@ -28,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AiAppToCustomSignatureConverter {
 
-  public static CreateCustomSignatureRuleRequest convertToCreateCustomSignatureRuleRequest(
+  public CreateCustomSignatureRuleRequest convertToCreateCustomSignatureRuleRequest(
       AiAppCustomRuleData aiAppRuleData) {
 
     CreateCustomSignatureRuleRequest.Builder requestBuilder =
@@ -71,7 +71,7 @@ public class AiAppToCustomSignatureConverter {
     return requestBuilder.build();
   }
 
-  public static CustomSignatureRule convertToCustomSignatureRule(AiAppCustomRule aiAppCustomRule) {
+  public CustomSignatureRule convertToCustomSignatureRule(AiAppCustomRule aiAppCustomRule) {
 
     AiAppCustomRuleData customRuleData = aiAppCustomRule.getRuleData();
     // Set basic rule properties from AiAppCustomRule
@@ -122,7 +122,7 @@ public class AiAppToCustomSignatureConverter {
     return builder.build();
   }
 
-  private static String getRuleTypeForThreatTypeId(AiAppCustomRuleData aiAppRuleData) {
+  private String getRuleTypeForThreatTypeId(AiAppCustomRuleData aiAppRuleData) {
     if (aiAppRuleData.hasModelGovernanceRuleData()) {
       return MODEL_GOVERNANCE_THREAT_TYPE_ID;
     } else if (aiAppRuleData.hasAiInputExplosionRuleData()) {
@@ -134,7 +134,7 @@ public class AiAppToCustomSignatureConverter {
   }
 
   /** Builds clause group for model governance rule data. */
-  private static void buildModelGovernanceClauseGroup(
+  private void buildModelGovernanceClauseGroup(
       ai.traceable.aiapp.protection.config.service.v1.ModelGovernanceRuleData modelGovernanceData,
       ClauseGroup.Builder clauseGroupBuilder) {
 
@@ -165,7 +165,7 @@ public class AiAppToCustomSignatureConverter {
   }
 
   /** Builds clause group for AI input explosion rule data. */
-  private static void buildAiInputExplosionClauseGroup(
+  private void buildAiInputExplosionClauseGroup(
       ai.traceable.aiapp.protection.config.service.v1.AiInputExplosionRuleData aiInputExplosionData,
       ClauseGroup.Builder clauseGroupBuilder) {
 
@@ -202,7 +202,7 @@ public class AiAppToCustomSignatureConverter {
   }
 
   /** Builds an attribute match clause for AI model types and vendors. */
-  private static Clause buildAttributeMatchClause(
+  private Clause buildAttributeMatchClause(
       String attributeKey,
       ai.traceable.aiapp.protection.config.service.v1.MatchOperatorCondition matchCondition) {
 
@@ -230,7 +230,7 @@ public class AiAppToCustomSignatureConverter {
         .build();
   }
 
-  private static Clause convertScopeConditionToClause(
+  private Clause convertScopeConditionToClause(
       ai.traceable.aiapp.protection.config.service.v1.ScopeCondition scopeCondition) {
 
     if (scopeCondition
@@ -273,7 +273,7 @@ public class AiAppToCustomSignatureConverter {
   }
 
   /** Converts AI app rule scope to custom signature rule scope. */
-  private static RuleScope convertRuleScopeToCustomSignature(
+  private RuleScope convertRuleScopeToCustomSignature(
       ai.traceable.aiapp.protection.config.service.v1.RuleScope aiAppRuleScope) {
     RuleScope.Builder builder = RuleScope.newBuilder();
 
@@ -290,7 +290,7 @@ public class AiAppToCustomSignatureConverter {
   }
 
   /** Converts AI app action to custom signature rule effect. */
-  private static RuleEffect convertActionToRuleEffect(
+  private RuleEffect convertActionToRuleEffect(
       ai.traceable.aiapp.protection.config.service.v1.Action action) {
     RuleEffect.Builder builder = RuleEffect.newBuilder();
 
@@ -302,7 +302,7 @@ public class AiAppToCustomSignatureConverter {
   }
 
   /** Converts AI app severity level to custom signature event severity. */
-  private static ai.traceable.customsignature.config.service.v1.EventSeverity convertSeverityLevel(
+  private ai.traceable.customsignature.config.service.v1.EventSeverity convertSeverityLevel(
       ai.traceable.aiapp.protection.config.service.v1.SeverityLevel severityLevel) {
     switch (severityLevel) {
       case SEVERITY_LEVEL_LOW:
@@ -319,7 +319,7 @@ public class AiAppToCustomSignatureConverter {
     }
   }
 
-  private static MatchOperator convertMatchOperator(
+  private MatchOperator convertMatchOperator(
       ai.traceable.aiapp.protection.config.service.v1.MatchOperator matchOperator) {
     switch (matchOperator) {
       case MATCH_OPERATOR_EQUALS:

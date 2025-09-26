@@ -82,6 +82,7 @@ dependencies {
   implementation(projects.cloudBotDeploymentConfigServiceImpl)
   implementation(projects.dataParsingConfigServiceImpl)
   implementation(projects.attributeResolutionConfigServiceImpl)
+  implementation(projects.aiAppProtectionConfigServiceImpl)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

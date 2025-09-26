@@ -46,7 +46,7 @@ public class RateLimitingToAiAppConverter {
    * @return the converted AI app custom rule
    * @throws IllegalArgumentException if the threatTypeId label is missing or unsupported
    */
-  public static AiAppCustomRule convertFromRateLimitingRule(RateLimitingRule rateLimitingRule) {
+  public AiAppCustomRule convertFromRateLimitingRule(RateLimitingRule rateLimitingRule) {
     RateLimitingRuleData ruleData = rateLimitingRule.getData();
 
     // Extract threatTypeId from labels
@@ -63,12 +63,8 @@ public class RateLimitingToAiAppConverter {
             .setDescription(ruleData.getDescription())
             .setEnabled(ruleData.getEnabled())
             .putAllEventLabels(ruleData.getLabelsMap())
-            .setRuleStatusDetails(convertRuleStatusDetails(ruleData));
-
-    // Convert rule scope if present
-    if (ruleData.hasRuleConfigScope()) {
-      aiAppRuleDataBuilder.setRuleScope(convertRuleScope(ruleData.getRuleConfigScope()));
-    }
+            .setRuleStatusDetails(convertRuleStatusDetails(ruleData))
+            .setRuleScope(convertRuleScope(ruleData.getRuleConfigScope()));
 
     // Convert action from transaction action config or threshold action config
     if (ruleData.hasTransactionActionConfig()) {
@@ -102,7 +98,7 @@ public class RateLimitingToAiAppConverter {
   }
 
   /** Converts rate limiting rule data to PII detected in prompt rule data. */
-  private static PiiDetectedInPromptRuleData convertToPiiDetectedInPromptRuleData(
+  private PiiDetectedInPromptRuleData convertToPiiDetectedInPromptRuleData(
       RateLimitingRuleData ruleData) {
     PiiDetectedInPromptRuleData.Builder builder = PiiDetectedInPromptRuleData.newBuilder();
 
@@ -115,8 +111,7 @@ public class RateLimitingToAiAppConverter {
   }
 
   /** Converts rate limiting rule data to AI rate limiting rule data. */
-  private static AiRateLimitingRuleData convertToAiRateLimitingRuleData(
-      RateLimitingRuleData ruleData) {
+  private AiRateLimitingRuleData convertToAiRateLimitingRuleData(RateLimitingRuleData ruleData) {
     AiRateLimitingRuleData.Builder builder = AiRateLimitingRuleData.newBuilder();
 
     // Extract threshold config from threshold action configs
@@ -134,7 +129,7 @@ public class RateLimitingToAiAppConverter {
    * Extracts datatype and scope conditions from rate limiting condition for PII detection rules.
    * Reverses the logic from convertPiiDetectedInPromptRule in AiAppToRateLimitingConverter.
    */
-  private static void extractConditionsFromRateLimitingCondition(
+  private void extractConditionsFromRateLimitingCondition(
       Condition condition, PiiDetectedInPromptRuleData.Builder builder) {
 
     if (condition.hasLeafCondition()) {
@@ -153,7 +148,7 @@ public class RateLimitingToAiAppConverter {
    * limiting rules. Reverses the logic from convertAiRateLimitingRule in
    * AiAppToRateLimitingConverter.
    */
-  private static void extractConditionsFromRateLimitingCondition(
+  private void extractConditionsFromRateLimitingCondition(
       Condition condition, AiRateLimitingRuleData.Builder builder) {
 
     if (condition.hasLeafCondition()) {
@@ -171,7 +166,7 @@ public class RateLimitingToAiAppConverter {
    * Extracts conditions from a leaf condition for PII detection rules. Reverses the logic from the
    * forward converter.
    */
-  private static void extractFromLeafCondition(
+  private void extractFromLeafCondition(
       LeafCondition leafCondition, PiiDetectedInPromptRuleData.Builder builder) {
 
     if (leafCondition.hasDatatypeCondition()) {
@@ -218,7 +213,7 @@ public class RateLimitingToAiAppConverter {
    * Extracts AI conditions from a leaf condition for AI rate limiting rules. Reverses the logic
    * from convertSpanAttributeCondition in AiAppToRateLimitingConverter.
    */
-  private static void extractAiConditionsFromLeafCondition(
+  private void extractAiConditionsFromLeafCondition(
       LeafCondition leafCondition, AiRateLimitingRuleData.Builder builder) {
 
     if (leafCondition
@@ -261,7 +256,7 @@ public class RateLimitingToAiAppConverter {
    * Common method to convert rate limiting scope condition to AI app scope condition. Used by both
    * PII detection and AI rate limiting rule conversions.
    */
-  private static ScopeCondition convertRateLimitingScopeConditionToAiApp(
+  private ScopeCondition convertRateLimitingScopeConditionToAiApp(
       ai.traceable.ratelimiting.config.service.v2.ScopeCondition rateLimitingScopeCondition) {
 
     if (rateLimitingScopeCondition
@@ -295,7 +290,7 @@ public class RateLimitingToAiAppConverter {
   }
 
   /** Converts rate limiting rule status to AI app rule status details. */
-  private static RuleStatusDetails convertRuleStatusDetails(RateLimitingRuleData ruleData) {
+  private RuleStatusDetails convertRuleStatusDetails(RateLimitingRuleData ruleData) {
     RuleStatusDetails.Builder builder = RuleStatusDetails.newBuilder();
 
     switch (ruleData.getRuleStatus().getRuleCreationSource()) {
@@ -320,7 +315,7 @@ public class RateLimitingToAiAppConverter {
   }
 
   /** Converts rate limiting rule config scope to AI app rule scope. */
-  private static RuleScope convertRuleScope(RuleConfigScope ruleConfigScope) {
+  private RuleScope convertRuleScope(RuleConfigScope ruleConfigScope) {
     RuleScope.Builder builder = RuleScope.newBuilder();
 
     if (ruleConfigScope.hasEnvironmentScope()) {
@@ -338,7 +333,7 @@ public class RateLimitingToAiAppConverter {
   }
 
   /** Converts rate limiting action to AI app action. */
-  private static Action convertAction(
+  private Action convertAction(
       ai.traceable.ratelimiting.config.service.v2.Action rateLimitingAction) {
     Action.Builder builder = Action.newBuilder();
 
@@ -376,8 +371,7 @@ public class RateLimitingToAiAppConverter {
   }
 
   /** Converts rate limiting rule data to threshold config for AI rate limiting rules. */
-  private static ResourceAccessThresholdConfig convertThresholdConfig(
-      RateLimitingRuleData ruleData) {
+  private ResourceAccessThresholdConfig convertThresholdConfig(RateLimitingRuleData ruleData) {
     ResourceAccessThresholdConfig.Builder builder = ResourceAccessThresholdConfig.newBuilder();
 
     // Extract threshold information from ThresholdActionConfig
@@ -440,7 +434,7 @@ public class RateLimitingToAiAppConverter {
    * Reverses KeyValueCondition back to MatchOperatorCondition for custom location conditions.
    * Reverses the logic from convertCustomLocationMatchingCondition in AiAppToRateLimitingConverter.
    */
-  private static MatchOperatorCondition reverseKeyValueConditionToMatchOperator(
+  private MatchOperatorCondition reverseKeyValueConditionToMatchOperator(
       KeyValueCondition keyValueCondition) {
     MatchOperatorCondition.Builder builder = MatchOperatorCondition.newBuilder();
 
@@ -476,7 +470,7 @@ public class RateLimitingToAiAppConverter {
    * Reverses rate limiting MatchOperatorCondition back to AI app MatchOperatorCondition. Reverses
    * the logic from convertSpanAttributeCondition in AiAppToRateLimitingConverter.
    */
-  private static MatchOperatorCondition reverseRateLimitingMatchOperatorToAiApp(
+  private MatchOperatorCondition reverseRateLimitingMatchOperatorToAiApp(
       KeyValueCondition.MatchOperatorCondition rateLimitingMatchCondition) {
     MatchOperatorCondition.Builder builder = MatchOperatorCondition.newBuilder();
 
@@ -496,7 +490,7 @@ public class RateLimitingToAiAppConverter {
    * Reverses rate limiting match operator to AI app match operator. Reverses the logic from
    * convertMatchOperator in AiAppToRateLimitingConverter.
    */
-  private static MatchOperator reverseRateLimitingMatchOperatorToAiAppOperator(
+  private MatchOperator reverseRateLimitingMatchOperatorToAiAppOperator(
       KeyValueCondition.MatchOperator rateLimitingOperator) {
     switch (rateLimitingOperator) {
       case MATCH_OPERATOR_EQUALS:
