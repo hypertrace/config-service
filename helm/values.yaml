@@ -4095,6 +4095,20 @@ defaultVulnerabilityTrainingConfigs: |-
             autoResolutionConfig = {
                 disabled = false
             },
+            persistentCookieContainsSensitiveData = {
+                persistentCookiePiiTypeConfig = {
+                    minTotalOccurrences = 2,
+                    minPercent = 10
+                }
+            }
+        }
+    },
+    {
+        disabled = false,
+        vulnerabilityTrainingConfig = {
+            autoResolutionConfig = {
+                disabled = false
+            },
             serviceUsesBasicAuth = {
             }
         }

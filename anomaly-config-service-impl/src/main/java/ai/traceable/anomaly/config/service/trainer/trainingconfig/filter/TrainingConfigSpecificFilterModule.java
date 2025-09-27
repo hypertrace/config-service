@@ -34,6 +34,7 @@ import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTraini
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig.ConfigCase.OAUTH_IMPLICIT_GRANT_TYPE;
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig.ConfigCase.OPEN_REDIRECT;
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig.ConfigCase.PARAM_CONTAINS_SENSITIVE_DATA;
+import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig.ConfigCase.PERSISTENT_COOKIE_CONTAINS_SENSITIVE_DATA;
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig.ConfigCase.SENSITIVE_DATA_IN_ERROR_MESSAGE;
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig.ConfigCase.SERVER_VERSION_DISCLOSURE;
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig.ConfigCase.SERVICE_USES_BASIC_AUTH;
@@ -59,6 +60,7 @@ import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTypeFi
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTypeFilter.TypeCase.OAUTH_IMPLICIT_GRANT_TYPE_FILTER;
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTypeFilter.TypeCase.OPEN_REDIRECT_FILTER;
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTypeFilter.TypeCase.PARAM_CONTAINS_SENSITIVE_DATA_FILTER;
+import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTypeFilter.TypeCase.PERSISTENT_COOKIE_CONTAINS_SENSITIVE_DATA_FILTER;
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTypeFilter.TypeCase.SENSITIVE_DATA_IN_ERROR_MESSAGE_FILTER;
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTypeFilter.TypeCase.SERVER_VERSION_DISCLOSURE_FILTER;
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTypeFilter.TypeCase.SERVICE_USES_BASIC_AUTH_FILTER;
@@ -86,6 +88,13 @@ public class TrainingConfigSpecificFilterModule extends AbstractModule {
         .toInstance(
             new DefaultVulnerabilityTypeFilterMatcher(
                 PARAM_CONTAINS_SENSITIVE_DATA_FILTER, PARAM_CONTAINS_SENSITIVE_DATA));
+
+    vulnerabilityTypeFilterMatcherMultibinder
+        .addBinding()
+        .toInstance(
+            new DefaultVulnerabilityTypeFilterMatcher(
+                PERSISTENT_COOKIE_CONTAINS_SENSITIVE_DATA_FILTER,
+                PERSISTENT_COOKIE_CONTAINS_SENSITIVE_DATA));
 
     vulnerabilityTypeFilterMatcherMultibinder
         .addBinding()

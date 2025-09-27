@@ -86,9 +86,12 @@ message VulnerabilityTypeFilter {
     OAuthClientSecretInQueryParamsFilter oauth_client_secret_in_query_params_filter = 26;
     OAuthAntiCsrfCheckFilter oauth_anti_csrf_check_filter = 27;
     OAuthImplicitGrantTypeFilter oauth_implicit_grant_type_filter = 28;
+    PersistentCookieContainsSensitiveDataFilter persistent_cookie_contains_sensitive_data_filter = 29;
   }
 
   message ParamContainsSensitiveDataFilter {}
+
+  message PersistentCookieContainsSensitiveDataFilter {}
 
   message LackOfEncryptionFilter {}
 
@@ -425,6 +428,7 @@ message VulnerabilityTrainingConfig {
     OAuthClientSecretInQueryParamsTrainingConfig oauth_client_secret_in_query_params = 26;
     OAuthAntiCsrfCheckTrainingConfig oauth_anti_csrf_check = 27;
     OAuthImplicitGrantTypeTrainingConfig oauth_implicit_grant_type = 28;
+    PersistentCookieContainsSensitiveDataTrainingConfig persistent_cookie_contains_sensitive_data = 29;
   }
 }
 
@@ -717,6 +721,11 @@ message HstsSecurityHeaderTrainingConfig {}
 message CspSecurityHeaderTrainingConfig {}
 
 message DirectoryListingTrainingConfig {}
+
+message PersistentCookieContainsSensitiveDataTrainingConfig {
+  MinOccurrenceConfig persistent_cookie_pii_type_config = 1;
+  repeated ParamSensitivity param_sensitivities = 2;
+}
 
 message JavaSerializedObjectTrainingConfig {}
 
