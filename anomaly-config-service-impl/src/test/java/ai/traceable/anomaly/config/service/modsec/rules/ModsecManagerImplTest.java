@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigManager;
+import ai.traceable.anomaly.config.service.global.AnomalyGlobalConfigServiceConfig;
 import ai.traceable.anomaly.config.service.global.ruleinfo.WebAppRuleInfoProvider;
 import ai.traceable.anomaly.config.service.global.status.GlobalAnomalyConfigStatusManager;
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
@@ -51,6 +52,7 @@ class ModsecManagerImplTest {
   private static final String environmentId = "env-id";
 
   private ModsecRulesRegistry modsecRulesRegistry;
+  private AnomalyGlobalConfigServiceConfig config;
   private AnomalyDetectionConfigManager anomalyDetectionConfigManager;
   private GlobalAnomalyConfigStatusManager globalAnomalyConfigStatusManager;
   private ModsecManagerImpl modsecManager;
@@ -65,10 +67,12 @@ class ModsecManagerImplTest {
     globalAnomalyConfigStatusManager = mock(GlobalAnomalyConfigStatusManager.class);
     webAppRuleInfoProvider = mock(WebAppRuleInfoProvider.class);
     featureCachingClient = mock(FeatureCachingClient.class);
+    config = mock(AnomalyGlobalConfigServiceConfig.class);
 
     modsecManager =
         new ModsecManagerImpl(
             modsecRulesRegistry,
+            config,
             webAppRuleInfoProvider,
             featureCachingClient,
             anomalyDetectionConfigManager,
@@ -79,6 +83,35 @@ class ModsecManagerImplTest {
   @Test
   @DisplayName("Should return same rule type")
   void getModsecCrsRules() {
+    when(webAppRuleInfoProvider.getCrsRulesBlob(
+            List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR),
+            ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
+            Set.of(),
+            RuleVersion.getDefaultInstance(),
+            true))
+        .thenReturn("regular");
+    when(webAppRuleInfoProvider.getCrsRulesBlob(
+            List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE),
+            ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
+            Set.of(),
+            RuleVersion.getDefaultInstance(),
+            true))
+        .thenReturn("safe");
+    when(webAppRuleInfoProvider.getCrsRulesBlob(
+            List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK),
+            ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
+            Set.of(),
+            RuleVersion.getDefaultInstance(),
+            true))
+        .thenReturn("block");
+    when(webAppRuleInfoProvider.getCrsRulesBlob(
+            argThat(list -> list.size() > 1),
+            eq(ModsecRuleVersion.MODSEC_RULE_VERSION_V3),
+            eq(Set.of()),
+            eq(RuleVersion.getDefaultInstance()),
+            anyBoolean()))
+        .thenReturn("combined");
+
     when(modsecRulesRegistry.getModsecCrsRulesBlob(
             List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR),
             ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
@@ -107,6 +140,7 @@ class ModsecManagerImplTest {
             anyBoolean(),
             anyBoolean()))
         .thenReturn("combined");
+    when(config.getNewWebAppStableVersion()).thenReturn(RuleVersion.getDefaultInstance());
 
     {
       ModsecManager.ModsecCrsRules crsRules =
@@ -254,6 +288,7 @@ class ModsecManagerImplTest {
     modsecManager =
         new ModsecManagerImpl(
             modsecRulesRegistry,
+            config,
             webAppRuleInfoProvider,
             featureCachingClient,
             anomalyDetectionConfigManager,

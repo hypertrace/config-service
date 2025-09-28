@@ -1,6 +1,7 @@
 package ai.traceable.anomaly.config.service.modsec.rules;
 
 import ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigManager;
+import ai.traceable.anomaly.config.service.global.AnomalyGlobalConfigServiceConfig;
 import ai.traceable.anomaly.config.service.global.ruleinfo.WebAppRuleInfoProvider;
 import ai.traceable.anomaly.config.service.global.status.GlobalAnomalyConfigStatusManager;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
@@ -42,6 +43,7 @@ public class ModsecManagerImpl implements ModsecManager {
           .build();
 
   private final ModsecRulesRegistry modsecRulesRegistry;
+  private final AnomalyGlobalConfigServiceConfig config;
   private final WebAppRuleInfoProvider webAppRuleInfoProvider;
   private final FeatureCachingClient featureCachingClient;
   private final AnomalyDetectionConfigManager anomalyDetectionConfigManager;
@@ -50,11 +52,13 @@ public class ModsecManagerImpl implements ModsecManager {
   @Inject
   public ModsecManagerImpl(
       ModsecRulesRegistry modsecRulesRegistry,
+      AnomalyGlobalConfigServiceConfig config,
       WebAppRuleInfoProvider webAppRuleInfoProvider,
       FeatureCachingClient featureCachingClient,
       AnomalyDetectionConfigManager anomalyDetectionConfigManager,
       GlobalAnomalyConfigStatusManager globalAnomalyConfigStatusManager) {
     this.modsecRulesRegistry = modsecRulesRegistry;
+    this.config = config;
     this.webAppRuleInfoProvider = webAppRuleInfoProvider;
     this.featureCachingClient = featureCachingClient;
     this.anomalyDetectionConfigManager = anomalyDetectionConfigManager;
@@ -201,12 +205,12 @@ public class ModsecManagerImpl implements ModsecManager {
                             Set.of(),
                             ruleVersion,
                             includeDirectives);
-                      } else {
-                        return modsecRulesRegistry.getModsecCrsRulesBlob(
+                      } else { // fallback to latest stable version
+                        return webAppRuleInfoProvider.getCrsRulesBlob(
                             List.of(subRuleType),
                             modsecRuleVersion,
                             Set.of(),
-                            useTestModsecRules,
+                            config.getNewWebAppStableVersion(),
                             includeDirectives);
                       }
                     }));
@@ -220,8 +224,12 @@ public class ModsecManagerImpl implements ModsecManager {
                 subRuleTypes, modsecRuleVersion, Set.of(), ruleVersion, includeDirectives));
       } else {
         builder.aggregatedModsecBlob(
-            modsecRulesRegistry.getModsecCrsRulesBlob(
-                subRuleTypes, modsecRuleVersion, Set.of(), useTestModsecRules, includeDirectives));
+            webAppRuleInfoProvider.getCrsRulesBlob(
+                subRuleTypes,
+                modsecRuleVersion,
+                Set.of(),
+                config.getNewWebAppStableVersion(),
+                includeDirectives));
       }
     }
 
