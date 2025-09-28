@@ -62,7 +62,8 @@ public class ReportingConfigStore
                 filterByEnvironmentId(report, reportsFilter)
                     || filterByEnvironmentIds(reportConfiguration, reportsFilter))
         .filter(report -> filterByName(report, reportsFilter))
-        .filter(report -> filterByCreator(report, reportsFilter));
+        .filter(report -> filterByCreator(report, reportsFilter))
+        .filter(report -> filterByScheduleType(report, reportsFilter));
   }
 
   private boolean filterById(ReportConfiguration reportConfiguration, GetReportsFilter filter) {
@@ -105,5 +106,29 @@ public class ReportingConfigStore
       ReportConfiguration reportConfiguration, GetReportsFilter filter) {
     return filter.getCreatorsList().isEmpty()
         || filter.getCreatorsList().contains(reportConfiguration.getCreator());
+  }
+
+  private boolean filterByScheduleType(
+      ReportConfiguration reportConfiguration, GetReportsFilter filter) {
+    switch (filter.getReportScheduleType()) {
+      case REPORT_SCHEDULE_TYPE_UNSPECIFIED:
+        return true;
+      case REPORT_SCHEDULE_TYPE_ONE_TIME:
+        return isOneTimeReport(reportConfiguration);
+      case REPORT_SCHEDULE_TYPE_SCHEDULED:
+        return !isOneTimeReport(reportConfiguration);
+      default:
+        return true;
+    }
+  }
+
+  private boolean isOneTimeReport(ReportConfiguration reportConfiguration) {
+    return reportConfiguration.hasCommonConfigurationDetails()
+        && reportConfiguration.getCommonConfigurationDetails().hasSchedulingDetails()
+        && !reportConfiguration
+            .getCommonConfigurationDetails()
+            .getSchedulingDetails()
+            .getOneTimeJobId()
+            .isEmpty();
   }
 }

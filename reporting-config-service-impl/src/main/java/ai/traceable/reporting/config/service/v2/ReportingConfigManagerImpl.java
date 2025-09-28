@@ -27,7 +27,6 @@ public class ReportingConfigManagerImpl implements ReportingConfigManager {
             .setCreator(getReportCreator(requestContext).orElseThrow())
             .setCommonConfigurationDetails(commonConfigurationDetails)
             .build();
-
     return reportingConfigStore.upsertObject(requestContext, reportConfiguration).getData();
   }
 

@@ -26,14 +26,12 @@ public class ReportingConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       reportingConfigValidator.validateCreateReportConfigurationRequest(requestContext, request);
-
       CreateReportConfigurationResponse response =
           CreateReportConfigurationResponse.newBuilder()
               .setReportConfiguration(
                   reportingConfigManager.createReportConfiguration(
                       requestContext, request.getCommonConfigurationDetails()))
               .build();
-
       responseObserver.onNext(response);
       responseObserver.onCompleted();
     } catch (Exception e) {

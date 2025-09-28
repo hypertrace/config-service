@@ -26,6 +26,7 @@ message CommonConfigurationDetails {
 
 message SchedulingDetails {
   string scheduled_job_id = 1;
+  string one_time_job_id = 2;
 }
 
 message NotificationDetails {
@@ -39,6 +40,13 @@ message GetReportsFilter {
   repeated string names = 3;
   repeated string creators = 4;
   repeated string environment_ids = 5;
+  ReportScheduleType report_schedule_type = 6;
+}
+
+enum ReportScheduleType {
+  REPORT_SCHEDULE_TYPE_UNSPECIFIED = 0;
+  REPORT_SCHEDULE_TYPE_SCHEDULED = 1;
+  REPORT_SCHEDULE_TYPE_ONE_TIME = 2;
 }
 
 enum Format {
