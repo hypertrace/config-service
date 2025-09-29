@@ -23,8 +23,6 @@ import ai.traceable.anomaly.config.service.v1.global.GlobalModsecConfigChange;
 import ai.traceable.anomaly.config.service.v1.global.ModsecDefaultConfigsType;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatusChange;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.time.ZonedDateTime;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,6 +46,8 @@ public class ScopedGlobalConfigStatusChangeConverterTest {
         .thenReturn(ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_STANDARD_MONITORING);
     when(defaultConfig.getApiDefaultConfigsType())
         .thenReturn(ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED);
+    when(defaultConfig.getNewApiProtectionStableVersion()).thenReturn(getRuleVersion("2.2.0"));
+    when(defaultConfig.getOldApiProtectionStableVersion()).thenReturn(getRuleVersion("2.1.0"));
   }
 
   @Test
@@ -114,22 +114,6 @@ public class ScopedGlobalConfigStatusChangeConverterTest {
     assertEquals(
         RuleVersionType.RULE_VERSION_TYPE_STABLE,
         modSecGlobalConfig.getRuleVersionData().getCurrentVersion().getVersionType());
-  }
-
-  @Test
-  public void testIsNullOrDefaultHelpers()
-      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-    Method isNullOrDefaultModsec =
-        ScopedGlobalConfigStatusChangeConverter.class.getDeclaredMethod(
-            "isNullOrDefault", GlobalModsecConfigChange.class);
-    isNullOrDefaultModsec.setAccessible(true);
-    assertEquals(true, isNullOrDefaultModsec.invoke(null, (GlobalModsecConfigChange) null));
-    assertEquals(
-        true, isNullOrDefaultModsec.invoke(null, GlobalModsecConfigChange.getDefaultInstance()));
-    assertEquals(
-        false,
-        isNullOrDefaultModsec.invoke(
-            null, GlobalModsecConfigChange.newBuilder().setDisabled(true).build()));
   }
 
   @Test

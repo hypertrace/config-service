@@ -1,6 +1,9 @@
 package ai.traceable.anomaly.config.service.global.status;
 
 import ai.traceable.anomaly.config.service.v1.AnomalyConfidenceLevel;
+import ai.traceable.anomaly.config.service.v1.global.ApiDefaultConfigsType;
+import ai.traceable.anomaly.config.service.v1.global.ApiGlobalConfig;
+import ai.traceable.anomaly.config.service.v1.global.GlobalApiConfigChange;
 import ai.traceable.anomaly.config.service.v1.global.GlobalModsecConfigChange;
 import ai.traceable.anomaly.config.service.v1.global.ModsecDefaultConfigsType;
 import ai.traceable.anomaly.config.service.v1.global.ModsecGlobalConfig;
@@ -13,7 +16,9 @@ public class GlobalAnomalyConfigStatusUtils {
       ScopedAnomalyConfigStatusChange requestedConfig) {
 
     if (!requestedConfig.hasGlobalModsecConfigChange()
-        && !requestedConfig.hasModsecGlobalConfig()) {
+        && !requestedConfig.hasModsecGlobalConfig()
+        && !requestedConfig.hasApiGlobalConfig()
+        && !requestedConfig.hasGlobalApiConfigChange()) {
       return mergedConfig;
     }
     ScopedAnomalyConfigStatusChange.Builder builder = mergedConfig.toBuilder();
@@ -30,6 +35,20 @@ public class GlobalAnomalyConfigStatusUtils {
               .build());
       builder.setGlobalModsecConfigChange(
           getGlobalModsecConfigChange(builder.getModsecGlobalConfig()));
+    }
+
+    if (requestedConfig.hasGlobalApiConfigChange()) {
+      builder.setGlobalApiConfigChange(
+          getGlobalApiConfigChange(mergedConfig.getApiGlobalConfig()).toBuilder()
+              .mergeFrom(mergedConfig.getGlobalApiConfigChange())
+              .build());
+      builder.setApiGlobalConfig(getApiGlobalConfig(builder.getGlobalApiConfigChange()));
+    } else if (requestedConfig.hasApiGlobalConfig()) {
+      builder.setApiGlobalConfig(
+          getApiGlobalConfig(mergedConfig.getGlobalApiConfigChange()).toBuilder()
+              .mergeFrom(mergedConfig.getApiGlobalConfig())
+              .build());
+      builder.setGlobalApiConfigChange(getGlobalApiConfigChange(builder.getApiGlobalConfig()));
     }
 
     return builder.build();
@@ -63,6 +82,21 @@ public class GlobalAnomalyConfigStatusUtils {
     return builder.build();
   }
 
+  private static ApiGlobalConfig getApiGlobalConfig(GlobalApiConfigChange source) {
+    ApiGlobalConfig.Builder builder = ApiGlobalConfig.newBuilder();
+    if (source.hasDisabled()) {
+      builder.setDisabled(source.getDisabled());
+    }
+    if (source.hasEnabledForExitSpans()) {
+      builder.setEnabledForExitSpans(source.getEnabledForExitSpans());
+    }
+    ApiDefaultConfigsType configType = source.getDefaultConfigsType();
+    if (configType != ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_UNSPECIFIED) {
+      builder.setDefaultConfigsType(configType);
+    }
+    return builder.build();
+  }
+
   private static GlobalModsecConfigChange getGlobalModsecConfigChange(ModsecGlobalConfig source) {
     GlobalModsecConfigChange.Builder builder = GlobalModsecConfigChange.newBuilder();
 
@@ -89,6 +123,22 @@ public class GlobalAnomalyConfigStatusUtils {
     }
     if (source.hasModsecEvaluationEngineConfig()) {
       builder.setModsecEvaluationEngineConfig(source.getModsecEvaluationEngineConfig());
+    }
+    return builder.build();
+  }
+
+  private static GlobalApiConfigChange getGlobalApiConfigChange(ApiGlobalConfig source) {
+    GlobalApiConfigChange.Builder builder = GlobalApiConfigChange.newBuilder();
+
+    if (source.hasDisabled()) {
+      builder.setDisabled(source.getDisabled());
+    }
+    if (source.hasEnabledForExitSpans()) {
+      builder.setEnabledForExitSpans(source.getEnabledForExitSpans());
+    }
+    ApiDefaultConfigsType configType = source.getDefaultConfigsType();
+    if (configType != ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_UNSPECIFIED) {
+      builder.setDefaultConfigsType(configType);
     }
     return builder.build();
   }

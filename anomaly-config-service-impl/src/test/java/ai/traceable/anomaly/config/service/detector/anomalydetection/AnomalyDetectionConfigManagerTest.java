@@ -20,7 +20,6 @@ import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.Glo
 import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.ModsecConfigHandler;
 import ai.traceable.anomaly.config.service.global.ruleinfo.RuleInfoManager;
 import ai.traceable.anomaly.config.service.global.status.GlobalAnomalyConfigStatusManager;
-import ai.traceable.anomaly.config.service.global.version.RuleVersionManager;
 import ai.traceable.anomaly.config.service.registry.accounttakeover.AccountTakeoverRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.accounttakeover.AccountTakeoverRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
@@ -38,7 +37,7 @@ import ai.traceable.anomaly.config.service.v1.*;
 import ai.traceable.anomaly.config.service.v1.detector.*;
 import ai.traceable.anomaly.config.service.v1.detector.CredentialStuffingAnomalyDetectionConfig.ConfigCase;
 import ai.traceable.anomaly.config.service.v1.global.ApiDefaultConfigsType;
-import ai.traceable.anomaly.config.service.v1.global.ApiGlobalConfig;
+import ai.traceable.anomaly.config.service.v1.global.GlobalApiConfig;
 import ai.traceable.anomaly.config.service.v1.global.GlobalModsecConfig;
 import ai.traceable.anomaly.config.service.v1.global.ModsecDefaultConfigsType;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
@@ -68,7 +67,6 @@ import org.junit.jupiter.api.Test;
 public class AnomalyDetectionConfigManagerTest {
   private static Server mockServer;
   private static MockGenericConfigService mockConfigService;
-  private static Channel channelForMockServer;
   private ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub;
 
   private final ConfigConverter configConverter = new ConfigConverter();
@@ -83,7 +81,7 @@ public class AnomalyDetectionConfigManagerTest {
   private final AccountTakeoverRulesRegistry accountTakeoverRulesRegistry =
       new AccountTakeoverRulesRegistryImpl(configConverter);
   private final GenAiRulesRegistry genAiRulesRegistry = new GenAiRulesRegistryImpl(configConverter);
-  private AnomalyDetectionConfigHandler detectionConfigConverter =
+  private final AnomalyDetectionConfigHandler detectionConfigConverter =
       new AnomalyDetectionConfigHandler(
           apiDefinitionRegistry,
           sessionRulesRegistry,
@@ -131,24 +129,23 @@ public class AnomalyDetectionConfigManagerTest {
       ConfigFactory.parseResources(RESOLVED_DETECTION_CONFIGS_FILE_PATH);
   private static final Config globalResolvedDetectionConfigs =
       ConfigFactory.parseResources(GLOBAL_RESOLVED_DETECTION_CONFIGS_FILE_PATH);
-  private DetectorConfigServiceConfig detectorConfigServiceConfig;
   private AnomalyConfigScopeUtils anomalyConfigScopeUtils;
 
   private GlobalAnomalyConfigStatusManager globalAnomalyConfigStatusManager;
   private RuleInfoManager ruleInfoManager;
-  private RuleVersionManager ruleVersionManager;
   private GlobalTestingModeResolver globalTestingModeResolver;
 
   @BeforeEach
   public void setup() throws IOException {
     String serverName = InProcessServerBuilder.generateName();
-    channelForMockServer = InProcessChannelBuilder.forName(serverName).build();
+    Channel channelForMockServer = InProcessChannelBuilder.forName(serverName).build();
     mockServer = InProcessServerBuilder.forName(serverName).build().start();
     mockConfigService =
         new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
     mockConfigService.start();
     configServiceBlockingStub = ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
-    detectorConfigServiceConfig = mock(DetectorConfigServiceConfig.class);
+    DetectorConfigServiceConfig detectorConfigServiceConfig =
+        mock(DetectorConfigServiceConfig.class);
     anomalyConfigScopeUtils = new AnomalyConfigScopeUtils();
     globalTestingModeResolver = mock(GlobalTestingModeResolver.class);
     when(detectorConfigServiceConfig.getDefaultWafDetectionConfigs()).thenReturn(List.of());
@@ -166,8 +163,8 @@ public class AnomalyDetectionConfigManagerTest {
                     GlobalModsecConfig.newBuilder()
                         .setDefaultConfigsType(
                             ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_DEFAULT_ENABLED))
-                .setApiGlobalConfig(
-                    ApiGlobalConfig.newBuilder()
+                .setGlobalApiConfig(
+                    GlobalApiConfig.newBuilder()
                         .setDefaultConfigsType(
                             ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED))
                 .build());
@@ -179,13 +176,12 @@ public class AnomalyDetectionConfigManagerTest {
                     GlobalModsecConfig.newBuilder()
                         .setDefaultConfigsType(
                             ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_ALL_ENVIRONMENT))
-                .setApiGlobalConfig(
-                    ApiGlobalConfig.newBuilder()
+                .setGlobalApiConfig(
+                    GlobalApiConfig.newBuilder()
                         .setDefaultConfigsType(
                             ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED))
                 .build());
     ruleInfoManager = mock(RuleInfoManager.class);
-    ruleVersionManager = mock(RuleVersionManager.class);
     wafConfigResolver =
         new WafConfigResolver(
             ruleInfoManager, detectorConfigServiceConfig, new ModsecConfigHandler());
@@ -254,8 +250,8 @@ public class AnomalyDetectionConfigManagerTest {
                     GlobalModsecConfig.newBuilder()
                         .setDefaultConfigsType(
                             ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_ALL_ENVIRONMENT))
-                .setApiGlobalConfig(
-                    ApiGlobalConfig.newBuilder()
+                .setGlobalApiConfig(
+                    GlobalApiConfig.newBuilder()
                         .setDefaultConfigsType(
                             ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED))
                 .build());
@@ -322,7 +318,7 @@ public class AnomalyDetectionConfigManagerTest {
             .setConfigStatus(
                 AnomalyConfigStatus.newBuilder().setDisabled(true).setInternal(true).build())
             .setGlobalModsecConfig(GlobalModsecConfig.newBuilder().setDisabled(true).build())
-            .setApiGlobalConfig(ApiGlobalConfig.newBuilder().setDisabled(true).build())
+            .setGlobalApiConfig(GlobalApiConfig.newBuilder().setDisabled(true).build())
             .build();
     when(globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(
             any(RequestContext.class), any(AnomalyConfigScope.class)))
@@ -345,8 +341,8 @@ public class AnomalyDetectionConfigManagerTest {
                         .setDisabled(true)
                         .setDefaultConfigsType(
                             ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_ALL_ENVIRONMENT))
-                .setApiGlobalConfig(
-                    ApiGlobalConfig.newBuilder()
+                .setGlobalApiConfig(
+                    GlobalApiConfig.newBuilder()
                         .setDisabled(true)
                         .setDefaultConfigsType(
                             ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED))
@@ -491,8 +487,8 @@ public class AnomalyDetectionConfigManagerTest {
                     GlobalModsecConfig.newBuilder()
                         .setDefaultConfigsType(
                             ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_ALL_ENVIRONMENT))
-                .setApiGlobalConfig(
-                    ApiGlobalConfig.newBuilder()
+                .setGlobalApiConfig(
+                    GlobalApiConfig.newBuilder()
                         .setDefaultConfigsType(
                             ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED))
                 .build());
@@ -728,8 +724,8 @@ public class AnomalyDetectionConfigManagerTest {
                     GlobalModsecConfig.newBuilder()
                         .setDefaultConfigsType(
                             ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_STANDARD))
-                .setApiGlobalConfig(
-                    ApiGlobalConfig.newBuilder()
+                .setGlobalApiConfig(
+                    GlobalApiConfig.newBuilder()
                         .setDefaultConfigsType(
                             ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED))
                 .build());
@@ -1010,8 +1006,8 @@ public class AnomalyDetectionConfigManagerTest {
                     GlobalModsecConfig.newBuilder()
                         .setDefaultConfigsType(
                             ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_RECOMMENDED))
-                .setApiGlobalConfig(
-                    ApiGlobalConfig.newBuilder()
+                .setGlobalApiConfig(
+                    GlobalApiConfig.newBuilder()
                         .setDefaultConfigsType(
                             ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED))
                 .build());
@@ -1121,8 +1117,8 @@ public class AnomalyDetectionConfigManagerTest {
                     GlobalModsecConfig.newBuilder()
                         .setDefaultConfigsType(
                             ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_STRICT))
-                .setApiGlobalConfig(
-                    ApiGlobalConfig.newBuilder()
+                .setGlobalApiConfig(
+                    GlobalApiConfig.newBuilder()
                         .setDefaultConfigsType(
                             ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED))
                 .build());
@@ -1266,8 +1262,8 @@ public class AnomalyDetectionConfigManagerTest {
                         .setDefaultConfigsType(
                             ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_STANDARD)
                         .build())
-                .setApiGlobalConfig(
-                    ApiGlobalConfig.newBuilder()
+                .setGlobalApiConfig(
+                    GlobalApiConfig.newBuilder()
                         .setDefaultConfigsType(
                             ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED))
                 .build());
@@ -1278,8 +1274,8 @@ public class AnomalyDetectionConfigManagerTest {
                         .setDefaultConfigsType(
                             ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_STRICT)
                         .build())
-                .setApiGlobalConfig(
-                    ApiGlobalConfig.newBuilder()
+                .setGlobalApiConfig(
+                    GlobalApiConfig.newBuilder()
                         .setDefaultConfigsType(
                             ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED))
                 .build())
@@ -1352,8 +1348,8 @@ public class AnomalyDetectionConfigManagerTest {
                     GlobalModsecConfig.newBuilder()
                         .setDefaultConfigsType(
                             ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_ALL_ENVIRONMENT))
-                .setApiGlobalConfig(
-                    ApiGlobalConfig.newBuilder()
+                .setGlobalApiConfig(
+                    GlobalApiConfig.newBuilder()
                         .setDefaultConfigsType(
                             ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED))
                 .build());
@@ -1940,27 +1936,27 @@ public class AnomalyDetectionConfigManagerTest {
             .setConfigStatus(AnomalyConfigStatus.newBuilder().setDisabled(true).build())
             .setConfigScope(apiConfigScope)
             .setGlobalModsecConfig(GlobalModsecConfig.newBuilder().setDisabled(true).build())
-            .setApiGlobalConfig(ApiGlobalConfig.newBuilder().setDisabled(true).build())
+            .setGlobalApiConfig(GlobalApiConfig.newBuilder().setDisabled(true).build())
             .build();
     ScopedAnomalyConfigStatus scopedAnomalyConfigStatus2 =
         ScopedAnomalyConfigStatus.newBuilder()
             .setConfigStatus(AnomalyConfigStatus.newBuilder().setDisabled(true).build())
             .setGlobalModsecConfig(GlobalModsecConfig.newBuilder().setDisabled(true).build())
-            .setApiGlobalConfig(ApiGlobalConfig.newBuilder().setDisabled(true).build())
+            .setGlobalApiConfig(GlobalApiConfig.newBuilder().setDisabled(true).build())
             .setConfigScope(serviceConfigScope)
             .build();
     ScopedAnomalyConfigStatus scopedAnomalyConfigStatus3 =
         ScopedAnomalyConfigStatus.newBuilder()
             .setConfigStatus(AnomalyConfigStatus.newBuilder().setDisabled(true).build())
             .setGlobalModsecConfig(GlobalModsecConfig.newBuilder().setDisabled(true).build())
-            .setApiGlobalConfig(ApiGlobalConfig.newBuilder().setDisabled(true).build())
+            .setGlobalApiConfig(GlobalApiConfig.newBuilder().setDisabled(true).build())
             .setConfigScope(environmentConfigScope)
             .build();
     ScopedAnomalyConfigStatus scopedAnomalyConfigStatus4 =
         ScopedAnomalyConfigStatus.newBuilder()
             .setConfigStatus(AnomalyConfigStatus.newBuilder().setDisabled(true).build())
             .setGlobalModsecConfig(GlobalModsecConfig.newBuilder().setDisabled(true).build())
-            .setApiGlobalConfig(ApiGlobalConfig.newBuilder().setDisabled(true).build())
+            .setGlobalApiConfig(GlobalApiConfig.newBuilder().setDisabled(true).build())
             .setConfigScope(customerConfigScope)
             .build();
 

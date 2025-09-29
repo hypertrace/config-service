@@ -231,7 +231,7 @@ message RuleVersionDataChange {
   RuleVersion stable_version = 1;
   RuleVersion override_version = 2;
   RuleTestingMode rule_testing_mode = 3;
-  RuleVersion experimental_version = 4;
+  RuleVersion experimental_version = 4 [deprecated = true];
   NotificationConfig notification_config = 5;
 }
 
@@ -239,7 +239,7 @@ message RuleVersionData {
   RuleVersion current_version = 1;
   RuleVersion previous_version = 2;
   RuleTestingMode rule_testing_mode = 3;
-  RuleVersion experimental_version = 4;
+  RuleVersion experimental_version = 4 [deprecated = true];
 }
 
 message RuleVersion {

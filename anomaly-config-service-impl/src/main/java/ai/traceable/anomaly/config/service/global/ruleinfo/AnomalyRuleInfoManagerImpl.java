@@ -30,6 +30,7 @@ public class AnomalyRuleInfoManagerImpl implements RuleInfoManager {
   private final CredentialStuffingRulesRegistry credentialStuffingRulesRegistry;
   private final AccountTakeoverRulesRegistry accountTakeoverRulesRegistry;
   private final WebAppRuleInfoProvider webAppRuleInfoProvider;
+  private final ApiProtectionRuleInfoProvider apiProtectionRuleInfoProvider;
   private final AiAppRuleInfoProvider aiAppRuleInfoProvider;
   private final FeatureCachingClient featureCachingClient;
 
@@ -42,6 +43,7 @@ public class AnomalyRuleInfoManagerImpl implements RuleInfoManager {
       CredentialStuffingRulesRegistry credentialStuffingRulesRegistry,
       AccountTakeoverRulesRegistry accountTakeoverRulesRegistry,
       WebAppRuleInfoProvider webAppRuleInfoProvider,
+      ApiProtectionRuleInfoProvider apiProtectionRuleInfoProvider,
       AiAppRuleInfoProvider aiAppRuleInfoProvider,
       FeatureCachingClient featureCachingClient) {
     this.apiDefinitionRegistry = apiDefinitionRegistry;
@@ -51,6 +53,7 @@ public class AnomalyRuleInfoManagerImpl implements RuleInfoManager {
     this.credentialStuffingRulesRegistry = credentialStuffingRulesRegistry;
     this.accountTakeoverRulesRegistry = accountTakeoverRulesRegistry;
     this.webAppRuleInfoProvider = webAppRuleInfoProvider;
+    this.apiProtectionRuleInfoProvider = apiProtectionRuleInfoProvider;
     this.aiAppRuleInfoProvider = aiAppRuleInfoProvider;
     this.featureCachingClient = featureCachingClient;
   }
@@ -97,13 +100,21 @@ public class AnomalyRuleInfoManagerImpl implements RuleInfoManager {
             anomalyRuleTypeVersion -> {
               switch (anomalyRuleTypeVersion.getAnomalyEventFamily()) {
                 case ANOMALY_EVENT_FAMILY_API_DEF:
-                  ruleInfos.addAll(apiDefinitionRegistry.getApiDefRuleInfos().values());
+                  if (!anomalyRuleTypeVersion
+                      .getRuleVersion()
+                      .equals(RuleVersion.getDefaultInstance())) {
+                    ruleInfos.addAll(
+                        apiProtectionRuleInfoProvider.getApiProtectRuleInfo(
+                            anomalyRuleTypeVersion.getRuleVersion(),
+                            AnomalyEventFamily.ANOMALY_EVENT_FAMILY_API_DEF));
+                  } else {
+                    ruleInfos.addAll(apiDefinitionRegistry.getApiDefRuleInfos().values());
+                  }
                   break;
                 case ANOMALY_EVENT_FAMILY_MODSEC:
-                  if (anomalyRuleTypeVersion.getRuleVersion() != null
-                      && !anomalyRuleTypeVersion
-                          .getRuleVersion()
-                          .equals(RuleVersion.getDefaultInstance())) {
+                  if (!anomalyRuleTypeVersion
+                      .getRuleVersion()
+                      .equals(RuleVersion.getDefaultInstance())) {
                     ruleInfos.addAll(
                         webAppRuleInfoProvider.getWebAppRuleInfo(
                             anomalyRuleTypeVersion.getRuleVersion()));
@@ -115,16 +126,43 @@ public class AnomalyRuleInfoManagerImpl implements RuleInfoManager {
                   }
                   break;
                 case ANOMALY_EVENT_FAMILY_SESSION:
-                  ruleInfos.addAll(sessionRulesRegistry.getSessionRuleInfos().values());
+                  if (!anomalyRuleTypeVersion
+                      .getRuleVersion()
+                      .equals(RuleVersion.getDefaultInstance())) {
+                    ruleInfos.addAll(
+                        apiProtectionRuleInfoProvider.getApiProtectRuleInfo(
+                            anomalyRuleTypeVersion.getRuleVersion(),
+                            AnomalyEventFamily.ANOMALY_EVENT_FAMILY_SESSION));
+                  } else {
+                    ruleInfos.addAll(sessionRulesRegistry.getSessionRuleInfos().values());
+                  }
                   break;
                 case ANOMALY_EVENT_FAMILY_VOLUMETRIC:
-                  ruleInfos.addAll(volumetricRulesRegistry.getVolumetricRuleInfos().values());
+                  if (!anomalyRuleTypeVersion
+                      .getRuleVersion()
+                      .equals(RuleVersion.getDefaultInstance())) {
+                    ruleInfos.addAll(
+                        apiProtectionRuleInfoProvider.getApiProtectRuleInfo(
+                            anomalyRuleTypeVersion.getRuleVersion(),
+                            AnomalyEventFamily.ANOMALY_EVENT_FAMILY_VOLUMETRIC));
+                  } else {
+                    ruleInfos.addAll(volumetricRulesRegistry.getVolumetricRuleInfos().values());
+                  }
                   break;
                 case ANOMALY_EVENT_FAMILY_CREDENTIAL_STUFFING:
-                  ruleInfos.addAll(
-                      credentialStuffingRulesRegistry.getCredentialStuffingRuleInfos().values());
-                  ruleInfos.addAll(
-                      accountTakeoverRulesRegistry.getAccountTakeoverRuleInfos().values());
+                  if (!anomalyRuleTypeVersion
+                      .getRuleVersion()
+                      .equals(RuleVersion.getDefaultInstance())) {
+                    ruleInfos.addAll(
+                        apiProtectionRuleInfoProvider.getApiProtectRuleInfo(
+                            anomalyRuleTypeVersion.getRuleVersion(),
+                            AnomalyEventFamily.ANOMALY_EVENT_FAMILY_CREDENTIAL_STUFFING));
+                  } else {
+                    ruleInfos.addAll(
+                        credentialStuffingRulesRegistry.getCredentialStuffingRuleInfos().values());
+                    ruleInfos.addAll(
+                        accountTakeoverRulesRegistry.getAccountTakeoverRuleInfos().values());
+                  }
                   break;
                 case ANOMALY_EVENT_FAMILY_GEN_AI:
                   ruleInfos.addAll(aiAppRuleInfoProvider.getAiAppRuleInfo());

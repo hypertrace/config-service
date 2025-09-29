@@ -8,6 +8,7 @@ public class RuleInfoModule extends AbstractModule {
   protected void configure() {
     bind(RuleInfoManager.class).to(AnomalyRuleInfoManagerImpl.class);
     bind(WebAppRuleInfoProvider.class).to(WebAppRuleInfoProviderImpl.class);
+    bind(ApiProtectionRuleInfoProvider.class).to(ApiProtectionRuleInfoProviderImpl.class);
     bind(AiAppRuleInfoProvider.class).to(AiAppRuleInfoProviderImpl.class);
     install(new AiAppRulesProviderModule());
   }

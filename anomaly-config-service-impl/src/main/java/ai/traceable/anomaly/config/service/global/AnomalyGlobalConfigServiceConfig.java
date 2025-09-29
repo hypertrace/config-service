@@ -41,6 +41,14 @@ public class AnomalyGlobalConfigServiceConfig {
   private static final String API_DEFAULT_CONFIG_TYPE = "apiGlobalConfig.defaultConfigsType";
   private static final String API_EXIT_SPANS_EVAL_ENABLED_PATH =
       "apiGlobalConfig.exitSpansEvalEnabled";
+  private static final String NEW_API_PROTECTION_STABLE_VERSION =
+      "apiGlobalConfig.ruleVersion.newApiProtectionStableVersion";
+  private static final String NEW_API_PROTECTION_STABLE_VERSION_PUBLISHED_DATE =
+      "apiGlobalConfig.ruleVersion.newApiProtectionStableVersionPublishedDate";
+  private static final String OLD_API_PROTECTION_STABLE_VERSION_PUBLISHED_DATE =
+      "apiGlobalConfig.ruleVersion.oldApiProtectionStableVersionPublishedDate";
+  private static final String OLD_API_PROTECTION_STABLE_VERSION =
+      "apiGlobalConfig.ruleVersion.oldApiProtectionStableVersion";
   private static final String GEN_AI_DEFAULT_DISABLED = "globalGenAiConfig.disabled";
 
   @Getter private final boolean disabled;
@@ -51,6 +59,8 @@ public class AnomalyGlobalConfigServiceConfig {
   @Getter private final boolean modsecExitSpansEvalEnabled;
   @Getter private final RuleVersion newWebAppStableVersion;
   @Getter private final RuleVersion oldWebAppStableVersion;
+  @Getter private final RuleVersion newApiProtectionStableVersion;
+  @Getter private final RuleVersion oldApiProtectionStableVersion;
   @Getter private final int webAppRuleTestingModeRetentionDays;
   @Getter private final ModsecDefaultConfigsType envScopeModsecDefaultConfigsType;
   @Getter private final ApiDefaultConfigsType apiDefaultConfigsType;
@@ -76,6 +86,18 @@ public class AnomalyGlobalConfigServiceConfig {
             .setVersion(config.getString(OLD_WEBAPP_STABLE_VERSION))
             .setVersionType(RuleVersionType.RULE_VERSION_TYPE_STABLE)
             .setPublishedDate(config.getString(OLD_WEBAPP_STABLE_VERSION_PUBLISHED_DATE))
+            .build();
+    this.newApiProtectionStableVersion =
+        RuleVersion.newBuilder()
+            .setVersion(config.getString(NEW_API_PROTECTION_STABLE_VERSION))
+            .setVersionType(RuleVersionType.RULE_VERSION_TYPE_STABLE)
+            .setPublishedDate(config.getString(NEW_API_PROTECTION_STABLE_VERSION_PUBLISHED_DATE))
+            .build();
+    this.oldApiProtectionStableVersion =
+        RuleVersion.newBuilder()
+            .setVersion(config.getString(OLD_API_PROTECTION_STABLE_VERSION))
+            .setVersionType(RuleVersionType.RULE_VERSION_TYPE_STABLE)
+            .setPublishedDate(config.getString(OLD_API_PROTECTION_STABLE_VERSION_PUBLISHED_DATE))
             .build();
     this.webAppRuleTestingModeRetentionDays =
         config.hasPath(WEBAPP_RULE_TESTING_MODE_RETENTION_DAYS)

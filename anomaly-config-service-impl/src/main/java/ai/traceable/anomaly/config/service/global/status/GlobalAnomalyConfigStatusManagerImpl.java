@@ -2,6 +2,7 @@ package ai.traceable.anomaly.config.service.global.status;
 
 import static ai.traceable.anomaly.config.service.global.AnomalyGlobalConfigServiceConstants.GLOBAL_ANOMALY_CONFIG_NAMESPACE;
 import static ai.traceable.anomaly.config.service.global.AnomalyGlobalConfigServiceConstants.GLOBAL_ANOMALY_CONFIG_STATUS_RESOURCE_NAME;
+import static ai.traceable.anomaly.config.service.v1.RuleVersionType.RULE_VERSION_TYPE_STABLE;
 
 import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils;
 import ai.traceable.anomaly.config.service.common.license.LicenseInfoLoader;
@@ -17,8 +18,10 @@ import ai.traceable.anomaly.config.service.v1.RuleType;
 import ai.traceable.anomaly.config.service.v1.RuleVersion;
 import ai.traceable.anomaly.config.service.v1.RuleVersionConfigType;
 import ai.traceable.anomaly.config.service.v1.RuleVersionData;
-import ai.traceable.anomaly.config.service.v1.RuleVersionType;
+import ai.traceable.anomaly.config.service.v1.global.ApiDefaultConfigsType;
 import ai.traceable.anomaly.config.service.v1.global.ApiGlobalConfig;
+import ai.traceable.anomaly.config.service.v1.global.GlobalApiConfig;
+import ai.traceable.anomaly.config.service.v1.global.GlobalApiConfigChange;
 import ai.traceable.anomaly.config.service.v1.global.GlobalGenAiConfig;
 import ai.traceable.anomaly.config.service.v1.global.GlobalModsecConfig;
 import ai.traceable.anomaly.config.service.v1.global.GlobalModsecConfigChange;
@@ -27,7 +30,7 @@ import ai.traceable.anomaly.config.service.v1.global.ModsecGlobalConfig;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatusChange.Builder;
-import ai.traceable.license.metering.service.api.v1.LicenseInfo;
+import ai.traceable.license.metering.service.api.v1.LicenseInfo.Tier;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
 import io.micrometer.core.instrument.Tag;
@@ -51,7 +54,7 @@ import org.hypertrace.config.objectstore.ConfigObject;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
-import org.hypertrace.config.service.v1.ConfigServiceGrpc;
+import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.core.serviceframework.metrics.PlatformMetricsRegistry;
 
@@ -79,7 +82,7 @@ public class GlobalAnomalyConfigStatusManagerImpl
   @Inject
   public GlobalAnomalyConfigStatusManagerImpl(
       AnomalyGlobalConfigServiceConfig config,
-      ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
+      ConfigServiceBlockingStub configServiceBlockingStub,
       ScopedGlobalConfigStatusChangeConverter configConverter,
       AnomalyConfigScopeUtils anomalyConfigScopeUtils,
       LicenseInfoLoader licenseInfoLoader,
@@ -98,7 +101,7 @@ public class GlobalAnomalyConfigStatusManagerImpl
   @Override
   protected Optional<ScopedAnomalyConfigStatusChange> buildDataFromValue(Value value) {
     try {
-      return Optional.of(configConverter.convert(value));
+      return Optional.of(populateNewFields(configConverter.convert(value)));
     } catch (InvalidProtocolBufferException exception) {
       log.error("Unable to convert config to ScopedAnomalyConfigStatusChange for value: {}", value);
       return Optional.empty();
@@ -163,6 +166,22 @@ public class GlobalAnomalyConfigStatusManagerImpl
                       .setMinConfidenceLevel(config.getMinConfidenceLevel())
                       .setDefaultConfigsType(config.getModsecDefaultConfigsType())
                       .setEnabledForExitSpans(config.isModsecExitSpansEvalEnabled())
+                      .setRuleVersionData(
+                          RuleVersionData.newBuilder()
+                              .setCurrentVersion(config.getNewWebAppStableVersion())
+                              .setPreviousVersion(config.getOldWebAppStableVersion())
+                              .setRuleTestingMode(
+                                  RuleTestingMode.RULE_TESTING_MODE_ENABLED_FOR_NEW_RULES))
+                      .build())
+              .setGlobalApiConfig(
+                  GlobalApiConfig.newBuilder()
+                      .setDisabled(configStatus.getDisabled())
+                      .setDefaultConfigsType(config.getApiDefaultConfigsType())
+                      .setEnabledForExitSpans(config.isApiExitSpansEvalEnabled())
+                      .setRuleVersionData(
+                          RuleVersionData.newBuilder()
+                              .setCurrentVersion(config.getNewApiProtectionStableVersion())
+                              .setPreviousVersion(config.getOldApiProtectionStableVersion()))
                       .build())
               .setGlobalGenAiConfig(
                   GlobalGenAiConfig.newBuilder().setDisabled(config.isGenAiDisabled()))
@@ -279,7 +298,7 @@ public class GlobalAnomalyConfigStatusManagerImpl
       return ScopedAnomalyConfigStatusChange.getDefaultInstance();
     }
 
-    ScopedAnomalyConfigStatusChange.Builder updatedConfig = existingConfig.get().toBuilder();
+    Builder updatedConfig = existingConfig.get().toBuilder();
     boolean needsUpdate = false;
 
     for (RuleVersionConfigType configType : ruleVersionConfigTypes) {
@@ -309,8 +328,7 @@ public class GlobalAnomalyConfigStatusManagerImpl
       AnomalyConfigScope configScope,
       List<String> contextsWithIncreasingPriority) {
     AnomalyConfigStatusChange configStatusChange = AnomalyConfigStatusChange.getDefaultInstance();
-    ScopedAnomalyConfigStatusChange.Builder scopedAnomalyConfigBuilder =
-        ScopedAnomalyConfigStatusChange.newBuilder();
+    Builder scopedAnomalyConfigBuilder = ScopedAnomalyConfigStatusChange.newBuilder();
     for (String context : contextsWithIncreasingPriority) {
       if (configMap.containsKey(context)) {
         configStatusChange =
@@ -383,35 +401,69 @@ public class GlobalAnomalyConfigStatusManagerImpl
       ScopedAnomalyConfigStatusChange scopedAnomalyConfigStatusChange) {
     ScopedAnomalyConfigStatusChange oldMigratedFields =
         migrateToOldScopedAnomalyConfigStatusChange(scopedAnomalyConfigStatusChange);
-    ScopedAnomalyConfigStatusChange.Builder builder = oldMigratedFields.toBuilder();
+    Builder builder = oldMigratedFields.toBuilder();
     migrateToNewScopedAnomalyConfigStatusChange(oldMigratedFields, builder);
     return builder.build();
   }
 
   private void migrateToNewScopedAnomalyConfigStatusChange(
       ScopedAnomalyConfigStatusChange oldMigratedFields, Builder builder) {
-    if (oldMigratedFields.getModsecGlobalConfig().hasDisabled()
+
+    ModsecGlobalConfig modsecConfig = oldMigratedFields.getModsecGlobalConfig();
+    ApiGlobalConfig apiConfig = oldMigratedFields.getApiGlobalConfig();
+
+    GlobalModsecConfigChange.Builder modsecBuilder = builder.getGlobalModsecConfigChangeBuilder();
+    GlobalApiConfigChange.Builder apiBuilder = builder.getGlobalApiConfigChangeBuilder();
+
+    if (modsecConfig.hasDisabled()
         && !oldMigratedFields.getGlobalModsecConfigChange().hasDisabled()) {
-      builder
-          .getGlobalModsecConfigChangeBuilder()
-          .setDisabled(oldMigratedFields.getModsecGlobalConfig().getDisabled());
+      modsecBuilder.setDisabled(modsecConfig.getDisabled());
     }
 
-    if (oldMigratedFields.getModsecGlobalConfig().hasEnabledForExitSpans()
+    if (apiConfig.hasDisabled() && !oldMigratedFields.getGlobalApiConfigChange().hasDisabled()) {
+      apiBuilder.setDisabled(apiConfig.getDisabled());
+    }
+
+    if (modsecConfig.hasEnabledForExitSpans()
         && !oldMigratedFields.getGlobalModsecConfigChange().hasEnabledForExitSpans()) {
-      builder
-          .getGlobalModsecConfigChangeBuilder()
-          .setEnabledForExitSpans(
-              oldMigratedFields.getModsecGlobalConfig().getEnabledForExitSpans());
+      modsecBuilder.setEnabledForExitSpans(modsecConfig.getEnabledForExitSpans());
     }
 
-    if (oldMigratedFields.getModsecGlobalConfig().getMinConfidenceLevel()
+    if (apiConfig.hasEnabledForExitSpans()
+        && !oldMigratedFields.getGlobalApiConfigChange().hasEnabledForExitSpans()) {
+      apiBuilder.setEnabledForExitSpans(apiConfig.getEnabledForExitSpans());
+    }
+
+    if (modsecConfig.hasBlockingAvailableForRegularRules()
+        && !oldMigratedFields.getGlobalModsecConfigChange().hasBlockingAvailableForRegularRules()) {
+      modsecBuilder.setBlockingAvailableForRegularRules(
+          modsecConfig.getBlockingAvailableForRegularRules());
+    }
+
+    if (modsecConfig.getMinConfidenceLevel()
             != AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_UNSPECIFIED
         && oldMigratedFields.getGlobalModsecConfigChange().getMinConfidenceLevel()
             == AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_UNSPECIFIED) {
-      builder
-          .getGlobalModsecConfigChangeBuilder()
-          .setMinConfidenceLevel(oldMigratedFields.getModsecGlobalConfig().getMinConfidenceLevel());
+      modsecBuilder.setMinConfidenceLevel(modsecConfig.getMinConfidenceLevel());
+    }
+
+    if (apiConfig.getDefaultConfigsType()
+            != ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_UNSPECIFIED
+        && oldMigratedFields.getGlobalApiConfigChange().getDefaultConfigsType()
+            == ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_UNSPECIFIED) {
+      apiBuilder.setDefaultConfigsType(apiConfig.getDefaultConfigsType());
+    }
+
+    if (modsecConfig.getDefaultConfigsType()
+            != ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_UNSPECIFIED
+        && oldMigratedFields.getGlobalModsecConfigChange().getDefaultConfigsType()
+            == ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_UNSPECIFIED) {
+      modsecBuilder.setDefaultConfigsType(modsecConfig.getDefaultConfigsType());
+    }
+
+    if (modsecConfig.hasModsecEvaluationEngineConfig()
+        && !oldMigratedFields.getGlobalModsecConfigChange().hasModsecEvaluationEngineConfig()) {
+      modsecBuilder.setModsecEvaluationEngineConfig(modsecConfig.getModsecEvaluationEngineConfig());
     }
   }
 
@@ -461,7 +513,7 @@ public class GlobalAnomalyConfigStatusManagerImpl
       return config.getConfigStatus(licenseInfoLoader.getLicenseTier(requestContext));
     } catch (ExecutionException e) {
       log.warn("Unable to retrieve license tier for tenant:{}", getTenantId(requestContext), e);
-      return config.getConfigStatus(LicenseInfo.Tier.TIER_UNSPECIFIED);
+      return config.getConfigStatus(Tier.TIER_UNSPECIFIED);
     }
   }
 
@@ -530,8 +582,7 @@ public class GlobalAnomalyConfigStatusManagerImpl
     }
   }
 
-  private boolean clearStableVersion(
-      ScopedAnomalyConfigStatusChange.Builder config, RuleType ruleType) {
+  private boolean clearStableVersion(Builder config, RuleType ruleType) {
     if (ruleType == RuleType.RULE_TYPE_WEB_APPLICATION
         && config.getGlobalModsecConfigChange().getRuleVersionDataChange().hasStableVersion()) {
       config
@@ -550,8 +601,7 @@ public class GlobalAnomalyConfigStatusManagerImpl
     return false;
   }
 
-  private boolean clearOverrideVersion(
-      ScopedAnomalyConfigStatusChange.Builder config, RuleType ruleType) {
+  private boolean clearOverrideVersion(Builder config, RuleType ruleType) {
     if (ruleType == RuleType.RULE_TYPE_WEB_APPLICATION
         && config.getGlobalModsecConfigChange().getRuleVersionDataChange().hasOverrideVersion()) {
       config
@@ -570,8 +620,7 @@ public class GlobalAnomalyConfigStatusManagerImpl
     return false;
   }
 
-  private boolean clearExperimentalVersion(
-      ScopedAnomalyConfigStatusChange.Builder config, RuleType ruleType) {
+  private boolean clearExperimentalVersion(Builder config, RuleType ruleType) {
     if (ruleType == RuleType.RULE_TYPE_WEB_APPLICATION
         && config
             .getGlobalModsecConfigChange()
@@ -645,8 +694,7 @@ public class GlobalAnomalyConfigStatusManagerImpl
       ScopedAnomalyConfigStatusChange scopedAnomalyConfigStatusChange,
       NotificationConfig notificationConfig,
       RuleType ruleType) {
-    ScopedAnomalyConfigStatusChange.Builder configBuilder =
-        scopedAnomalyConfigStatusChange.toBuilder();
+    Builder configBuilder = scopedAnomalyConfigStatusChange.toBuilder();
     if (ruleType.equals(RuleType.RULE_TYPE_WEB_APPLICATION)) {
       GlobalModsecConfigChange.Builder globalModsecConfigBuilder =
           configBuilder.getGlobalModsecConfigChangeBuilder();
@@ -666,7 +714,7 @@ public class GlobalAnomalyConfigStatusManagerImpl
           && globalModsecRuleVersionData
               .getCurrentVersion()
               .getVersionType()
-              .equals(RuleVersionType.RULE_VERSION_TYPE_STABLE)
+              .equals(RULE_VERSION_TYPE_STABLE)
           && isDateAfter(
               globalModsecRuleVersionData.getCurrentVersion().getPublishedDate(),
               globalModsecRuleVersionData.getPreviousVersion().getPublishedDate());
@@ -687,5 +735,69 @@ public class GlobalAnomalyConfigStatusManagerImpl
     ZonedDateTime dateTime1 = ZonedDateTime.parse(date1);
     ZonedDateTime dateTime2 = ZonedDateTime.parse(date2);
     return dateTime1.isAfter(dateTime2);
+  }
+
+  private static ScopedAnomalyConfigStatusChange populateNewFields(
+      ScopedAnomalyConfigStatusChange existing) {
+
+    if (existing.hasGlobalModsecConfigChange() && existing.hasGlobalApiConfigChange()) {
+      return existing;
+    }
+
+    ModsecGlobalConfig modsecGlobalConfig = existing.getModsecGlobalConfig();
+    ApiGlobalConfig apiGlobalConfig = existing.getApiGlobalConfig();
+
+    GlobalModsecConfigChange.Builder modsecBuilder = GlobalModsecConfigChange.newBuilder();
+    GlobalApiConfigChange.Builder apiBuilder = GlobalApiConfigChange.newBuilder();
+
+    ScopedAnomalyConfigStatusChange.Builder builder = existing.toBuilder();
+
+    if (!existing.hasGlobalModsecConfigChange()) {
+      if (modsecGlobalConfig.hasDisabled()) {
+        modsecBuilder.setDisabled(modsecGlobalConfig.getDisabled());
+      }
+      if (modsecGlobalConfig.hasEnabledForExitSpans()) {
+        modsecBuilder.setEnabledForExitSpans(modsecGlobalConfig.getEnabledForExitSpans());
+      }
+      if (!modsecGlobalConfig
+          .getDefaultConfigsType()
+          .equals(ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_UNSPECIFIED)) {
+        modsecBuilder.setDefaultConfigsType(modsecGlobalConfig.getDefaultConfigsType());
+      }
+      if (!modsecGlobalConfig
+          .getMinConfidenceLevel()
+          .equals(AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_UNSPECIFIED)) {
+        modsecBuilder.setMinConfidenceLevel(modsecGlobalConfig.getMinConfidenceLevel());
+      }
+
+      if (modsecGlobalConfig.hasBlockingAvailableForRegularRules()) {
+        modsecBuilder.setBlockingAvailableForRegularRules(
+            modsecGlobalConfig.getBlockingAvailableForRegularRules());
+      }
+      if (modsecGlobalConfig.hasModsecEvaluationEngineConfig()) {
+        modsecBuilder.setModsecEvaluationEngineConfig(
+            modsecGlobalConfig.getModsecEvaluationEngineConfig());
+      }
+
+      builder.setGlobalModsecConfigChange(modsecBuilder.build());
+    }
+
+    if (!existing.hasGlobalApiConfigChange()) {
+      if (apiGlobalConfig.hasDisabled()) {
+        apiBuilder.setDisabled(apiGlobalConfig.getDisabled());
+      }
+      if (apiGlobalConfig.hasEnabledForExitSpans()) {
+        apiBuilder.setEnabledForExitSpans(apiGlobalConfig.getEnabledForExitSpans());
+      }
+      if (!apiGlobalConfig
+          .getDefaultConfigsType()
+          .equals(ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_UNSPECIFIED)) {
+        apiBuilder.setDefaultConfigsType(apiGlobalConfig.getDefaultConfigsType());
+      }
+
+      builder.setGlobalApiConfigChange(apiBuilder.build());
+    }
+
+    return builder.build();
   }
 }

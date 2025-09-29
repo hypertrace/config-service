@@ -25,14 +25,20 @@ import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyEnvironmentScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyParamScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
+import ai.traceable.anomaly.config.service.v1.RuleTestingMode;
 import ai.traceable.anomaly.config.service.v1.RuleType;
 import ai.traceable.anomaly.config.service.v1.RuleVersion;
 import ai.traceable.anomaly.config.service.v1.RuleVersionConfigType;
+import ai.traceable.anomaly.config.service.v1.RuleVersionData;
 import ai.traceable.anomaly.config.service.v1.RuleVersionDataChange;
 import ai.traceable.anomaly.config.service.v1.RuleVersionType;
 import ai.traceable.anomaly.config.service.v1.StringList;
+import ai.traceable.anomaly.config.service.v1.global.ApiDefaultConfigsType;
+import ai.traceable.anomaly.config.service.v1.global.ApiGlobalConfig;
 import ai.traceable.anomaly.config.service.v1.global.ExcludedEventsGenerationConfig;
+import ai.traceable.anomaly.config.service.v1.global.GlobalApiConfig;
 import ai.traceable.anomaly.config.service.v1.global.GlobalApiConfigChange;
+import ai.traceable.anomaly.config.service.v1.global.GlobalModsecConfig;
 import ai.traceable.anomaly.config.service.v1.global.GlobalModsecConfigChange;
 import ai.traceable.anomaly.config.service.v1.global.ModsecDefaultConfigsType;
 import ai.traceable.anomaly.config.service.v1.global.ModsecGlobalConfig;
@@ -58,15 +64,18 @@ import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import java.io.IOException;
+import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
@@ -159,6 +168,10 @@ public class GlobalAnomalyConfigStatusManagerTest {
                     + "  modsecGlobalConfig.ruleVersion.oldWebAppStableVersion = \"1.0.0\"\n"
                     + "  modsecGlobalConfig.ruleVersion.oldWebAppStableVersionPublishedDate = \"2023-01-01T00:00:00Z\"\n"
                     + "apiGlobalConfig.exitSpansEvalEnabled = false\n"
+                    + "  apiGlobalConfig.ruleVersion.newApiProtectionStableVersion = \"1.0.0\"\n"
+                    + "  apiGlobalConfig.ruleVersion.newApiProtectionStableVersionPublishedDate = \"2023-01-01T00:00:00Z\"\n"
+                    + "  apiGlobalConfig.ruleVersion.oldApiProtectionStableVersion = \"1.0.0\"\n"
+                    + "  apiGlobalConfig.ruleVersion.oldApiProtectionStableVersionPublishedDate = \"2023-01-01T00:00:00Z\"\n"
                     + "  globalGenAiConfig.disabled = true\n"
                     + "  licenseTiers = [\n"
                     + "    {\n"
@@ -459,6 +472,269 @@ public class GlobalAnomalyConfigStatusManagerTest {
   }
 
   @Test
+  public void test_getScopedAnomalyConfigStatus_extra_cases() {
+    String tenantId = "tenant";
+    RequestContext requestContext = RequestContext.forTenantId(tenantId);
+
+    ScopedAnomalyConfigStatusChange customerScoped =
+        ScopedAnomalyConfigStatusChange.newBuilder()
+            .setConfigScope(
+                AnomalyConfigScope.newBuilder()
+                    .setCustomerScope(AnomalyCustomerScope.getDefaultInstance()))
+            .setConfigStatus(AnomalyConfigStatusChange.newBuilder().setDisabled(true).build())
+            .setModsecGlobalConfig(ModsecGlobalConfig.newBuilder().setDisabled(false))
+            .build();
+
+    ScopedAnomalyConfigStatusChange environment1 =
+        ScopedAnomalyConfigStatusChange.newBuilder()
+            .setConfigScope(
+                AnomalyConfigScope.newBuilder()
+                    .setEnvironmentScope(
+                        AnomalyEnvironmentScope.newBuilder().setEnvironmentId("env1")))
+            .setConfigStatus(AnomalyConfigStatusChange.newBuilder().setDisabled(false).build())
+            .build();
+    ScopedAnomalyConfigStatusChange environment2 =
+        ScopedAnomalyConfigStatusChange.newBuilder()
+            .setConfigScope(
+                AnomalyConfigScope.newBuilder()
+                    .setEnvironmentScope(
+                        AnomalyEnvironmentScope.newBuilder().setEnvironmentId("env2")))
+            .setConfigStatus(AnomalyConfigStatusChange.newBuilder().setDisabled(true).build())
+            .setModsecGlobalConfig(
+                ModsecGlobalConfig.newBuilder()
+                    .setDisabled(true)
+                    .setBlockingAvailableForRegularRules(true))
+            .build();
+
+    ScopedAnomalyConfigStatusChange environment3 =
+        ScopedAnomalyConfigStatusChange.newBuilder()
+            .setConfigScope(
+                AnomalyConfigScope.newBuilder()
+                    .setEnvironmentScope(
+                        AnomalyEnvironmentScope.newBuilder().setEnvironmentId("env3")))
+            .setConfigStatus(AnomalyConfigStatusChange.newBuilder().setDisabled(true).build())
+            .build();
+
+    List<ContextualConfigObject<ScopedAnomalyConfigStatusChange>> rules =
+        List.of(
+            createSampleContextualConfigObject(
+                customerScoped, "tenant", Instant.now().minusSeconds(100)),
+            createSampleContextualConfigObject(
+                environment1, "env1", Instant.now().minusSeconds(150)),
+            createSampleContextualConfigObject(
+                environment2, "env2", Instant.now().minusSeconds(250)),
+            createSampleContextualConfigObject(
+                environment3, "env3", Instant.now().minusSeconds(350)));
+
+    when(configStatusManager.getAllObjects(requestContext)).thenReturn(rules);
+
+    ScopedAnomalyConfigStatus scopedAnomalyConfigStatus =
+        configStatusManager.getScopedAnomalyConfigStatus(requestContext, customerConfigScope);
+    assertTrue(scopedAnomalyConfigStatus.getConfigScope().hasCustomerScope());
+    assertTrue(scopedAnomalyConfigStatus.getConfigStatus().getDisabled());
+    assertEquals(
+        AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_MEDIUM,
+        scopedAnomalyConfigStatus.getMinConfidenceLevel());
+    assertFalse(scopedAnomalyConfigStatus.getModsecGlobalConfig().getDisabled());
+    assertEquals(
+        ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_STANDARD_MONITORING,
+        scopedAnomalyConfigStatus.getModsecGlobalConfig().getDefaultConfigsType());
+    assertEquals(
+        AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_MEDIUM,
+        scopedAnomalyConfigStatus.getModsecGlobalConfig().getMinConfidenceLevel());
+    assertFalse(scopedAnomalyConfigStatus.getModsecGlobalConfig().getEnabledForExitSpans());
+    assertTrue(scopedAnomalyConfigStatus.getApiGlobalConfig().getDisabled());
+    assertEquals(
+        ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED,
+        scopedAnomalyConfigStatus.getApiGlobalConfig().getDefaultConfigsType());
+    assertFalse(scopedAnomalyConfigStatus.getApiGlobalConfig().getEnabledForExitSpans());
+    GlobalModsecConfig gmc = scopedAnomalyConfigStatus.getGlobalModsecConfig();
+    assertEquals(
+        ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_STANDARD_MONITORING,
+        gmc.getDefaultConfigsType());
+    assertEquals(
+        AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_MEDIUM, gmc.getMinConfidenceLevel());
+    assertEquals(false, gmc.getEnabledForExitSpans());
+    assertEquals(false, gmc.getDisabled());
+    assertEquals(false, gmc.getBlockingAvailableForRegularRules());
+
+    RuleVersionData gmcRuleVersionData = gmc.getRuleVersionData();
+    assertEquals("1.0.0", gmcRuleVersionData.getCurrentVersion().getVersion());
+    assertEquals("1.0.0", gmcRuleVersionData.getPreviousVersion().getVersion());
+    assertEquals(
+        RuleTestingMode.RULE_TESTING_MODE_ENABLED_FOR_NEW_RULES,
+        gmcRuleVersionData.getRuleTestingMode());
+
+    GlobalApiConfig gac = scopedAnomalyConfigStatus.getGlobalApiConfig();
+    assertTrue(gac.getDisabled());
+    assertEquals(
+        ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED,
+        gac.getDefaultConfigsType());
+    assertEquals("1.0.0", gac.getRuleVersionData().getCurrentVersion().getVersion());
+    assertEquals("1.0.0", gac.getRuleVersionData().getPreviousVersion().getVersion());
+    assertTrue(scopedAnomalyConfigStatus.getGlobalGenAiConfig().getDisabled());
+
+    List<ScopedAnomalyConfigStatus> scopedAnomalyConfigStatuses =
+        configStatusManager.getAllScopedAnomalyConfigStatusConfigs(requestContext, List.of());
+    assertEquals(4, scopedAnomalyConfigStatuses.size());
+    ScopedAnomalyConfigStatus testEnv1Scope =
+        scopedAnomalyConfigStatuses.stream()
+            .filter(s -> s.getConfigScope().getEnvironmentScope().getEnvironmentId().equals("env3"))
+            .findFirst()
+            .orElseThrow();
+    ScopedAnomalyConfigStatus testEnv2Scope =
+        scopedAnomalyConfigStatuses.stream()
+            .filter(s -> s.getConfigScope().getEnvironmentScope().getEnvironmentId().equals("env2"))
+            .findFirst()
+            .orElseThrow();
+    ScopedAnomalyConfigStatus testEnv3Scope =
+        scopedAnomalyConfigStatuses.stream()
+            .filter(s -> s.getConfigScope().getEnvironmentScope().getEnvironmentId().equals("env1"))
+            .findFirst()
+            .orElseThrow();
+    assertTrue(testEnv1Scope.getConfigScope().hasEnvironmentScope());
+    assertEquals("env3", testEnv1Scope.getConfigScope().getEnvironmentScope().getEnvironmentId());
+    assertTrue(testEnv1Scope.getConfigStatus().getDisabled());
+    assertEquals(
+        AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_MEDIUM,
+        testEnv1Scope.getMinConfidenceLevel());
+    assertFalse(testEnv1Scope.getModsecGlobalConfig().getDisabled());
+    assertEquals(
+        ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_ALL_ENVIRONMENT,
+        testEnv1Scope.getModsecGlobalConfig().getDefaultConfigsType());
+    assertEquals(
+        AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_MEDIUM,
+        testEnv1Scope.getModsecGlobalConfig().getMinConfidenceLevel());
+    assertFalse(testEnv1Scope.getModsecGlobalConfig().getEnabledForExitSpans());
+    assertTrue(testEnv1Scope.getApiGlobalConfig().getDisabled());
+    assertEquals(
+        ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED,
+        testEnv1Scope.getApiGlobalConfig().getDefaultConfigsType());
+    assertFalse(testEnv1Scope.getApiGlobalConfig().getEnabledForExitSpans());
+    assertTrue(testEnv2Scope.getConfigScope().hasEnvironmentScope());
+    assertEquals("env2", testEnv2Scope.getConfigScope().getEnvironmentScope().getEnvironmentId());
+    assertTrue(testEnv2Scope.getConfigStatus().getDisabled());
+    assertEquals(
+        AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_MEDIUM,
+        testEnv2Scope.getMinConfidenceLevel());
+    assertTrue(testEnv2Scope.getModsecGlobalConfig().getDisabled());
+    assertTrue(testEnv2Scope.getModsecGlobalConfig().getBlockingAvailableForRegularRules());
+    assertEquals(
+        ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_ALL_ENVIRONMENT,
+        testEnv2Scope.getModsecGlobalConfig().getDefaultConfigsType());
+    assertEquals(
+        AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_MEDIUM,
+        testEnv2Scope.getModsecGlobalConfig().getMinConfidenceLevel());
+    assertFalse(testEnv2Scope.getModsecGlobalConfig().getEnabledForExitSpans());
+    assertTrue(testEnv2Scope.getApiGlobalConfig().getDisabled());
+    assertEquals(
+        ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED,
+        testEnv2Scope.getApiGlobalConfig().getDefaultConfigsType());
+    assertFalse(testEnv2Scope.getApiGlobalConfig().getEnabledForExitSpans());
+    assertTrue(testEnv3Scope.getConfigScope().hasEnvironmentScope());
+    assertEquals("env1", testEnv3Scope.getConfigScope().getEnvironmentScope().getEnvironmentId());
+    assertFalse(testEnv3Scope.getConfigStatus().getDisabled());
+    assertEquals(
+        AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_MEDIUM,
+        testEnv3Scope.getMinConfidenceLevel());
+    assertFalse(testEnv3Scope.getModsecGlobalConfig().getDisabled());
+    assertFalse(testEnv3Scope.getGlobalModsecConfig().getDisabled());
+    assertEquals(
+        ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_ALL_ENVIRONMENT,
+        testEnv3Scope.getModsecGlobalConfig().getDefaultConfigsType());
+    assertEquals(
+        ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_ALL_ENVIRONMENT,
+        testEnv3Scope.getGlobalModsecConfig().getDefaultConfigsType());
+    assertEquals(
+        AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_MEDIUM,
+        testEnv3Scope.getModsecGlobalConfig().getMinConfidenceLevel());
+    assertEquals(
+        AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_MEDIUM,
+        testEnv3Scope.getGlobalModsecConfig().getMinConfidenceLevel());
+    assertFalse(testEnv3Scope.getModsecGlobalConfig().getEnabledForExitSpans());
+    assertFalse(testEnv3Scope.getGlobalModsecConfig().getEnabledForExitSpans());
+    assertFalse(testEnv3Scope.getApiGlobalConfig().getDisabled());
+    assertEquals(
+        ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED,
+        testEnv3Scope.getApiGlobalConfig().getDefaultConfigsType());
+    assertFalse(testEnv3Scope.getApiGlobalConfig().getEnabledForExitSpans());
+
+    ScopedAnomalyConfigStatusChange environmentApi1 =
+        ScopedAnomalyConfigStatusChange.newBuilder()
+            .setConfigScope(
+                AnomalyConfigScope.newBuilder()
+                    .setEnvironmentScope(
+                        AnomalyEnvironmentScope.newBuilder().setEnvironmentId("apiEnv1")))
+            .setConfigStatus(AnomalyConfigStatusChange.newBuilder().setDisabled(false).build())
+            .setApiGlobalConfig(
+                ApiGlobalConfig.newBuilder()
+                    .setDisabled(false)
+                    .setDefaultConfigsType(
+                        ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED)
+                    .setEnabledForExitSpans(true))
+            .build();
+
+    ScopedAnomalyConfigStatusChange environmentApi2 =
+        ScopedAnomalyConfigStatusChange.newBuilder()
+            .setConfigScope(
+                AnomalyConfigScope.newBuilder()
+                    .setEnvironmentScope(
+                        AnomalyEnvironmentScope.newBuilder().setEnvironmentId("apiEnv2")))
+            .setConfigStatus(AnomalyConfigStatusChange.newBuilder().setDisabled(true).build())
+            .setApiGlobalConfig(
+                ApiGlobalConfig.newBuilder()
+                    .setDisabled(true)
+                    .setDefaultConfigsType(
+                        ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_UNSPECIFIED)
+                    .setEnabledForExitSpans(false))
+            .build();
+    rules = new ArrayList<>(rules);
+    rules.addAll(
+        List.of(
+            createSampleContextualConfigObject(
+                environmentApi1, "apiEnv1", Instant.now().minusSeconds(45)),
+            createSampleContextualConfigObject(
+                environmentApi2, "apiEnv2", Instant.now().minusSeconds(55))));
+    when(configStatusManager.getAllObjects(requestContext)).thenReturn(rules);
+    scopedAnomalyConfigStatuses =
+        configStatusManager.getAllScopedAnomalyConfigStatusConfigs(requestContext, List.of());
+    ScopedAnomalyConfigStatus apiEnv1Status =
+        scopedAnomalyConfigStatuses.stream()
+            .filter(
+                s -> s.getConfigScope().getEnvironmentScope().getEnvironmentId().equals("apiEnv1"))
+            .findFirst()
+            .orElseThrow();
+
+    assertFalse(apiEnv1Status.getApiGlobalConfig().getDisabled());
+    assertEquals(
+        ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED,
+        apiEnv1Status.getApiGlobalConfig().getDefaultConfigsType());
+    assertEquals(
+        ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED,
+        apiEnv1Status.getGlobalApiConfig().getDefaultConfigsType());
+    assertTrue(apiEnv1Status.getApiGlobalConfig().getEnabledForExitSpans());
+    assertTrue(apiEnv1Status.getGlobalApiConfig().getEnabledForExitSpans());
+    ScopedAnomalyConfigStatus apiEnv2Status =
+        scopedAnomalyConfigStatuses.stream()
+            .filter(
+                s -> s.getConfigScope().getEnvironmentScope().getEnvironmentId().equals("apiEnv2"))
+            .findFirst()
+            .orElseThrow();
+
+    assertTrue(apiEnv2Status.getApiGlobalConfig().getDisabled());
+    assertEquals(
+        ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED,
+        apiEnv2Status.getApiGlobalConfig().getDefaultConfigsType());
+    assertEquals(
+        ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED,
+        apiEnv2Status.getGlobalApiConfig().getDefaultConfigsType());
+    assertFalse(apiEnv2Status.getApiGlobalConfig().getEnabledForExitSpans());
+    assertFalse(apiEnv2Status.getGlobalApiConfig().getEnabledForExitSpans());
+    assertTrue(apiEnv2Status.getApiGlobalConfig().getDisabled());
+    assertTrue(apiEnv2Status.getGlobalApiConfig().getDisabled());
+  }
+
+  @Test
   void test_getUnresolvedScopedAnomalyConfigStatus() throws InvalidProtocolBufferException {
     String tenantId = "tenant";
     RequestContext requestContext = RequestContext.forTenantId(tenantId);
@@ -577,9 +853,15 @@ public class GlobalAnomalyConfigStatusManagerTest {
           result.getGlobalModsecConfigChange().getMinConfidenceLevel(),
           result.getMinConfidenceLevel());
       assertEquals(ANOMALY_CONFIDENCE_LEVEL_LOW, result.getMinConfidenceLevel());
-      assertEquals(true, result.getConfigStatus().getDisabled());
-      assertEquals(true, result.getModsecGlobalConfig().getDisabled());
-      assertEquals(true, result.getGlobalModsecConfigChange().getDisabled());
+      assertTrue(result.getConfigStatus().getDisabled());
+      assertTrue(result.getModsecGlobalConfig().getDisabled());
+      assertTrue(result.getGlobalModsecConfigChange().getDisabled());
+      assertEquals(
+          result.getGlobalApiConfigChange().getDisabled(),
+          result.getApiGlobalConfig().getDisabled());
+      assertTrue(result.getApiGlobalConfig().getDisabled());
+      assertEquals(
+          result.getGlobalApiConfigChange().getDisabled(), result.getConfigStatus().getDisabled());
     }
   }
 
@@ -1049,6 +1331,10 @@ public class GlobalAnomalyConfigStatusManagerTest {
                 + "modsecGlobalConfig.ruleVersion.oldWebAppStableVersion = \"1.0.0\"\n"
                 + "modsecGlobalConfig.ruleVersion.oldWebAppStableVersionPublishedDate = \"2023-01-01T00:00:00Z\"\n"
                 + "apiGlobalConfig.exitSpansEvalEnabled = false\n"
+                + "  apiGlobalConfig.ruleVersion.newApiProtectionStableVersion = \"1.0.0\"\n"
+                + "  apiGlobalConfig.ruleVersion.newApiProtectionStableVersionPublishedDate = \"2023-01-01T00:00:00Z\"\n"
+                + "  apiGlobalConfig.ruleVersion.oldApiProtectionStableVersion = \"1.0.0\"\n"
+                + "  apiGlobalConfig.ruleVersion.oldApiProtectionStableVersionPublishedDate = \"2023-01-01T00:00:00Z\"\n"
                 + "globalGenAiConfig.disabled = true\n"
                 + "licenseTiers = [\n"
                 + "    {\n"
@@ -1116,6 +1402,10 @@ public class GlobalAnomalyConfigStatusManagerTest {
                 + "modsecGlobalConfig.ruleVersion.oldWebAppStableVersion = \"1.0.0\"\n"
                 + "modsecGlobalConfig.ruleVersion.oldWebAppStableVersionPublishedDate = \"2023-01-01T00:00:00Z\"\n"
                 + "apiGlobalConfig.exitSpansEvalEnabled = false\n"
+                + "  apiGlobalConfig.ruleVersion.newApiProtectionStableVersion = \"1.0.0\"\n"
+                + "  apiGlobalConfig.ruleVersion.newApiProtectionStableVersionPublishedDate = \"2023-01-01T00:00:00Z\"\n"
+                + "  apiGlobalConfig.ruleVersion.oldApiProtectionStableVersion = \"1.0.0\"\n"
+                + "  apiGlobalConfig.ruleVersion.oldApiProtectionStableVersionPublishedDate = \"2023-01-01T00:00:00Z\"\n"
                 + "globalGenAiConfig.disabled = true\n"
                 + "licenseTiers = [\n"
                 + "    {\n"
@@ -1175,6 +1465,10 @@ public class GlobalAnomalyConfigStatusManagerTest {
                 + "modsecGlobalConfig.ruleVersion.oldWebAppStableVersion = \"1.0.0\"\n"
                 + "modsecGlobalConfig.ruleVersion.oldWebAppStableVersionPublishedDate = \"2023-01-01T00:00:00Z\"\n"
                 + "apiGlobalConfig.exitSpansEvalEnabled = false\n"
+                + "apiGlobalConfig.ruleVersion.newApiProtectionStableVersion = \"1.0.0\"\n"
+                + "apiGlobalConfig.ruleVersion.newApiProtectionStableVersionPublishedDate = \"2023-01-01T00:00:00Z\"\n"
+                + "apiGlobalConfig.ruleVersion.oldApiProtectionStableVersion = \"1.0.0\"\n"
+                + "apiGlobalConfig.ruleVersion.oldApiProtectionStableVersionPublishedDate = \"2023-01-01T00:00:00Z\"\n"
                 + "globalGenAiConfig.disabled = true\n"
                 + "licenseTiers = [\n"
                 + "    {\n"
@@ -1234,6 +1528,10 @@ public class GlobalAnomalyConfigStatusManagerTest {
                 + "modsecGlobalConfig.ruleVersion.oldWebAppStableVersion = \"1.0.0\"\n"
                 + "modsecGlobalConfig.ruleVersion.oldWebAppStableVersionPublishedDate = \"2023-01-01T00:00:00Z\"\n"
                 + "apiGlobalConfig.exitSpansEvalEnabled = false\n"
+                + "  apiGlobalConfig.ruleVersion.newApiProtectionStableVersion = \"1.0.0\"\n"
+                + "  apiGlobalConfig.ruleVersion.newApiProtectionStableVersionPublishedDate = \"2023-01-01T00:00:00Z\"\n"
+                + "  apiGlobalConfig.ruleVersion.oldApiProtectionStableVersion = \"1.0.0\"\n"
+                + "  apiGlobalConfig.ruleVersion.oldApiProtectionStableVersionPublishedDate = \"2023-01-01T00:00:00Z\"\n"
                 + "globalGenAiConfig.disabled = true\n"
                 + "licenseTiers = [\n"
                 + "    {\n"
@@ -1425,6 +1723,52 @@ public class GlobalAnomalyConfigStatusManagerTest {
                       headers.get(
                           Metadata.Key.of("x-tenant-id", Metadata.ASCII_STRING_MARSHALLER))));
       return Contexts.interceptCall(ctx, call, headers, next);
+    }
+  }
+
+  private static SampleContextualConfigObject<ScopedAnomalyConfigStatusChange>
+      createSampleContextualConfigObject(
+          ScopedAnomalyConfigStatusChange scopedAnomalyConfigStatusChange,
+          String context,
+          Instant lastUpdatedTimestamp) {
+
+    return new SampleContextualConfigObject<>(
+        scopedAnomalyConfigStatusChange, context, Instant.now(), lastUpdatedTimestamp);
+  }
+
+  private static class SampleContextualConfigObject<T> implements ContextualConfigObject<T> {
+
+    private final T data;
+    private final String context;
+    private final Instant creationTimestamp;
+    private final Instant lastUpdatedTimestamp;
+
+    SampleContextualConfigObject(
+        T data, String context, Instant creationTimestamp, Instant lastUpdatedTimestamp) {
+      this.data = data;
+      this.context = context;
+      this.creationTimestamp = creationTimestamp;
+      this.lastUpdatedTimestamp = lastUpdatedTimestamp;
+    }
+
+    @Override
+    public T getData() {
+      return data;
+    }
+
+    @Override
+    public Instant getCreationTimestamp() {
+      return creationTimestamp;
+    }
+
+    @Override
+    public Instant getLastUpdatedTimestamp() {
+      return lastUpdatedTimestamp;
+    }
+
+    @Override
+    public String getContext() {
+      return context;
     }
   }
 }

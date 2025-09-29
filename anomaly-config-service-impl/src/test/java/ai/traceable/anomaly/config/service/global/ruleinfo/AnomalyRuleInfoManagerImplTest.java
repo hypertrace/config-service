@@ -27,6 +27,7 @@ import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.modsecurity.utils.ModsecRuleUtils;
 import ai.traceable.protection.rules.aiapp.v1.AiAppRulesProvider;
+import ai.traceable.protection.rules.apiprotect.v1.ApiProtectionRulesProvider;
 import ai.traceable.protection.rules.webapp.v1.WebAppProtectionRulesProvider;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +43,7 @@ class AnomalyRuleInfoManagerImplTest {
   private CredentialStuffingRulesRegistryImpl credentialStuffingRulesRegistry;
   private AccountTakeoverRulesRegistry accountTakeoverRulesRegistry;
   private WebAppRuleInfoProvider webAppRuleInfoProvider;
+  private ApiProtectionRuleInfoProvider apiProtectionRuleInfoProvider;
   private AiAppRuleInfoProvider aiAppRuleInfoProvider;
   private FeatureCachingClient featureCachingClient;
   private RuleInfoManager ruleInfoManager;
@@ -56,6 +58,7 @@ class AnomalyRuleInfoManagerImplTest {
     credentialStuffingRulesRegistry = mock(CredentialStuffingRulesRegistryImpl.class);
     accountTakeoverRulesRegistry = mock(AccountTakeoverRulesRegistry.class);
     webAppRuleInfoProvider = mock(WebAppRuleInfoProvider.class);
+    apiProtectionRuleInfoProvider = mock(ApiProtectionRuleInfoProvider.class);
     aiAppRuleInfoProvider = mock(AiAppRuleInfoProvider.class);
     featureCachingClient = mock(FeatureCachingClient.class);
     ruleInfoManager =
@@ -67,6 +70,7 @@ class AnomalyRuleInfoManagerImplTest {
             credentialStuffingRulesRegistry,
             accountTakeoverRulesRegistry,
             webAppRuleInfoProvider,
+            apiProtectionRuleInfoProvider,
             aiAppRuleInfoProvider,
             featureCachingClient);
     requestContext = RequestContext.forTenantId("default tenant");
@@ -160,6 +164,7 @@ class AnomalyRuleInfoManagerImplTest {
     AnomalyGlobalConfigServiceConfig config = mock(AnomalyGlobalConfigServiceConfig.class);
     WebAppProtectionRulesProvider webAppProtectionRulesProvider =
         mock(WebAppProtectionRulesProvider.class);
+    ApiProtectionRulesProvider apiProtectionRulesProvider = mock(ApiProtectionRulesProvider.class);
     AiAppRulesProvider aiAppRulesProvider = mock(AiAppRulesProvider.class);
     when(featureCachingClient.isWAAPVersioningEnabledForTenant(any())).thenReturn(false);
     ModsecRuleUtils modsecRuleUtils = new ModsecRuleUtils();
@@ -174,6 +179,7 @@ class AnomalyRuleInfoManagerImplTest {
             new CredentialStuffingRulesRegistryImpl(configConverter),
             new AccountTakeoverRulesRegistryImpl(configConverter),
             new WebAppRuleInfoProviderImpl(webAppProtectionRulesProvider, modsecRuleUtils),
+            new ApiProtectionRuleInfoProviderImpl(apiProtectionRulesProvider),
             new AiAppRuleInfoProviderImpl(aiAppRulesProvider),
             featureCachingClient);
 

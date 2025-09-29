@@ -249,7 +249,7 @@ public class AnomalyDetectionConfigManagerImpl
                     Collections.emptyList()))
             .addAllAnomalyDetectionConfigs(
                 getDefaultApiProtectionDetectionConfigs(
-                    scopedAnomalyConfigStatus.getApiGlobalConfig().getDefaultConfigsType()))
+                    scopedAnomalyConfigStatus.getGlobalApiConfig().getDefaultConfigsType()))
             .addAllAnomalyDetectionConfigs(defaultGenAiDetectionConfigs)
             .build());
 
@@ -431,7 +431,7 @@ public class AnomalyDetectionConfigManagerImpl
                       Collections.emptyList()))
               .addAllAnomalyDetectionConfigs(
                   getDefaultApiProtectionDetectionConfigs(
-                      globalScopedAnomalyConfigStatus.getApiGlobalConfig().getDefaultConfigsType()))
+                      globalScopedAnomalyConfigStatus.getGlobalApiConfig().getDefaultConfigsType()))
               .addAllAnomalyDetectionConfigs(defaultGenAiDetectionConfigs)
               .build();
       // tenant resolution not needed as env profile is at higher precedence
@@ -448,7 +448,7 @@ public class AnomalyDetectionConfigManagerImpl
                       contextsWithIncreasingPriority))
               .addAllAnomalyDetectionConfigs(
                   getDefaultApiProtectionDetectionConfigs(
-                      globalScopedAnomalyConfigStatus.getApiGlobalConfig().getDefaultConfigsType()))
+                      globalScopedAnomalyConfigStatus.getGlobalApiConfig().getDefaultConfigsType()))
               .addAllAnomalyDetectionConfigs(defaultGenAiDetectionConfigs)
               .build();
     }
@@ -489,7 +489,7 @@ public class AnomalyDetectionConfigManagerImpl
             .orElse(false);
     boolean apiGlobalConfigDisabled =
         globalConfigStatus
-            .flatMap(status -> Optional.of(status.getApiGlobalConfig().getDisabled()))
+            .flatMap(status -> Optional.of(status.getGlobalApiConfig().getDisabled()))
             .orElse(false);
     boolean genAiGlobalConfigDisabled =
         globalConfigStatus

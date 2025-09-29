@@ -9,6 +9,9 @@ import ai.traceable.anomaly.config.service.v1.RuleVersion;
 import ai.traceable.anomaly.config.service.v1.RuleVersionData;
 import ai.traceable.anomaly.config.service.v1.RuleVersionDataChange;
 import ai.traceable.anomaly.config.service.v1.global.ApiDefaultConfigsType;
+import ai.traceable.anomaly.config.service.v1.global.ApiGlobalConfig;
+import ai.traceable.anomaly.config.service.v1.global.GlobalApiConfig;
+import ai.traceable.anomaly.config.service.v1.global.GlobalApiConfigChange;
 import ai.traceable.anomaly.config.service.v1.global.GlobalGenAiConfig;
 import ai.traceable.anomaly.config.service.v1.global.GlobalModsecConfig;
 import ai.traceable.anomaly.config.service.v1.global.GlobalModsecConfigChange;
@@ -95,6 +98,7 @@ public class ScopedGlobalConfigStatusChangeConverter {
                         ? config.getApiGlobalConfig().getEnabledForExitSpans()
                         : defaultConfig.isApiExitSpansEvalEnabled())
                 .build())
+        .setGlobalApiConfig(getGlobalApiConfig(config, defaultConfig))
         .setGlobalGenAiConfig(
             GlobalGenAiConfig.newBuilder()
                 .setDisabled(
@@ -219,10 +223,64 @@ public class ScopedGlobalConfigStatusChangeConverter {
     return builder.build();
   }
 
+  private GlobalApiConfig getGlobalApiConfig(
+      final ScopedAnomalyConfigStatusChange config,
+      final AnomalyGlobalConfigServiceConfig defaultConfig) {
+    GlobalApiConfigChange globalApiConfigChange = config.getGlobalApiConfigChange();
+    Map.Entry<RuleVersion, RuleVersion> ruleVersions =
+        getRuleVersions(
+            defaultConfig.getNewApiProtectionStableVersion(),
+            defaultConfig.getOldApiProtectionStableVersion(),
+            -1, // we don't have testing mode for API rules so using -1 to ignore retention days
+            globalApiConfigChange.getRuleVersionDataChange().getOverrideVersion(),
+            globalApiConfigChange.getRuleVersionDataChange().getStableVersion());
+    GlobalApiConfig.Builder builder = GlobalApiConfig.newBuilder();
+
+    if (isNullOrDefault(globalApiConfigChange)) {
+      ApiGlobalConfig apiGlobalConfig = config.getApiGlobalConfig();
+      builder
+          .setDisabled(
+              apiGlobalConfig.hasDisabled()
+                  ? apiGlobalConfig.getDisabled()
+                  : defaultConfig.isDisabled())
+          .setEnabledForExitSpans(
+              apiGlobalConfig.hasEnabledForExitSpans()
+                  ? apiGlobalConfig.getEnabledForExitSpans()
+                  : defaultConfig.isModsecExitSpansEvalEnabled())
+          .setDefaultConfigsType(
+              apiGlobalConfig.getDefaultConfigsType()
+                      == ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_UNSPECIFIED
+                  ? defaultConfig.getApiDefaultConfigsType()
+                  : apiGlobalConfig.getDefaultConfigsType());
+    } else {
+      builder
+          .setDisabled(
+              globalApiConfigChange.hasDisabled()
+                  ? globalApiConfigChange.getDisabled()
+                  : defaultConfig.isDisabled())
+          .setEnabledForExitSpans(
+              globalApiConfigChange.hasEnabledForExitSpans()
+                  ? globalApiConfigChange.getEnabledForExitSpans()
+                  : defaultConfig.isModsecExitSpansEvalEnabled())
+          .setDefaultConfigsType(
+              globalApiConfigChange.getDefaultConfigsType()
+                      == ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_UNSPECIFIED
+                  ? defaultConfig.getApiDefaultConfigsType()
+                  : globalApiConfigChange.getDefaultConfigsType());
+    }
+    RuleVersionData.Builder ruleVersionDataBuilder = RuleVersionData.newBuilder();
+    ruleVersionDataBuilder
+        .setCurrentVersion(ruleVersions.getKey())
+        .setPreviousVersion(ruleVersions.getValue())
+        .build();
+    builder.setRuleVersionData(ruleVersionDataBuilder.build());
+    return builder.build();
+  }
+
   private static Map.Entry<RuleVersion, RuleVersion> getRuleVersions(
       final RuleVersion newStableVersion,
       final RuleVersion oldStableVersion,
-      final long webAppRuleTestingModeRetentionDays,
+      final long ruleTestingModeRetentionDays,
       final RuleVersion overrideVersion,
       final RuleVersion currentStableVersion) {
 
@@ -234,8 +292,7 @@ public class ScopedGlobalConfigStatusChangeConverter {
       return new SimpleEntry<>(newStableVersion, oldStableVersion);
     }
 
-    if (isWithinRetentionDays(
-        newStableVersion.getPublishedDate(), webAppRuleTestingModeRetentionDays)) {
+    if (isWithinRetentionDays(newStableVersion.getPublishedDate(), ruleTestingModeRetentionDays)) {
       if (isNotNullOrDefault(currentStableVersion)
           && (currentStableVersion.equals(newStableVersion)
               || currentStableVersion.equals(oldStableVersion))) {
@@ -249,15 +306,15 @@ public class ScopedGlobalConfigStatusChangeConverter {
   }
 
   private static boolean isWithinRetentionDays(
-      String newStableVersionDate, long webAppRuleTestingModeRetentionDays) {
-    if (newStableVersionDate.isEmpty() || webAppRuleTestingModeRetentionDays <= 0) {
+      String newStableVersionDate, long ruleTestingModeRetentionDays) {
+    if (newStableVersionDate.isEmpty() || ruleTestingModeRetentionDays <= 0) {
       return false;
     }
     try {
       ZonedDateTime newStableVersionDateTime = ZonedDateTime.parse(newStableVersionDate);
       ZonedDateTime currentDateTime = ZonedDateTime.now();
       return Duration.between(newStableVersionDateTime, currentDateTime).toDays()
-          <= webAppRuleTestingModeRetentionDays;
+          <= ruleTestingModeRetentionDays;
     } catch (Exception e) {
       log.error("Error parsing dates for newStableVersionDate: {}", newStableVersionDate, e);
       return false;
@@ -267,6 +324,11 @@ public class ScopedGlobalConfigStatusChangeConverter {
   private static boolean isNullOrDefault(final GlobalModsecConfigChange globalModsecConfigChange) {
     return globalModsecConfigChange == null
         || globalModsecConfigChange.equals(GlobalModsecConfigChange.getDefaultInstance());
+  }
+
+  private static boolean isNullOrDefault(final GlobalApiConfigChange globalApiConfigChange) {
+    return globalApiConfigChange == null
+        || globalApiConfigChange.equals(GlobalApiConfigChange.getDefaultInstance());
   }
 
   private static boolean isNotNullOrDefault(final RuleVersion ruleVersion) {

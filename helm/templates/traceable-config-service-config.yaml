@@ -439,6 +439,12 @@ data:
       apiGlobalConfig {
         defaultConfigsType = {{ .Values.anomalyConfigServiceConfig.global.apiGlobalConfig.defaultConfigsType }}
         exitSpansEvalEnabled = {{ .Values.anomalyConfigServiceConfig.global.apiGlobalConfig.exitSpansEvalEnabled }}
+         ruleVersion {
+            newApiProtectionStableVersion = {{ .Values.anomalyConfigServiceConfig.global.apiGlobalConfig.newApiProtectionStableVersion }}
+            newApiProtectionStableVersionPublishedDate = {{ .Values.anomalyConfigServiceConfig.global.apiGlobalConfig.newApiProtectionStableVersionPublishedDate | quote }}
+            oldApiProtectionStableVersion = {{ .Values.anomalyConfigServiceConfig.global.apiGlobalConfig.oldApiProtectionStableVersion }}
+            oldApiProtectionStableVersionPublishedDate = {{ .Values.anomalyConfigServiceConfig.global.apiGlobalConfig.oldApiProtectionStableVersionPublishedDate | quote }}
+        }
       }
     }
     trainer.config.service = {
