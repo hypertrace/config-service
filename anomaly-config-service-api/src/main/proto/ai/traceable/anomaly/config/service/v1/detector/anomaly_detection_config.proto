@@ -6,6 +6,7 @@ package ai.traceable.anomaly.config.service.v1.detector;
 import "ai/traceable/anomaly/config/service/v1/anomaly_config.proto";
 import "ai/traceable/anomaly/config/service/v1/modsec/anomaly_modsec_config.proto";
 import "google/protobuf/duration.proto";
+import "google/protobuf/struct.proto";
 
 option java_multiple_files = true;
 
@@ -139,6 +140,7 @@ message AnomalyDetectionConfig {
     CredentialStuffingAnomalyDetectionConfig credential_anomaly_detection_config = 12 [deprecated = true];
     AccountTakeoverAnomalyDetectionConfig account_takeover_anomaly_detection_config = 13;
     GenAiAnomalyDetectionConfig gen_ai_anomaly_detection_config = 14;
+    ApiProtectAnomalyDetectionConfig api_protect_anomaly_detection_config = 15;
   }
 }
 
@@ -341,6 +343,17 @@ message CredentialStuffingTuningConfig {
   int64 failed_login_percentage_threshold = 5;
 }
 
+message ApiProtectAnomalyDetectionConfig {
+  oneof config {
+    ApiProtectAnomalyRuleConfig api_protect_anomaly_rule = 1;
+  }
+}
+
+message ApiProtectAnomalyRuleConfig {
+  string anomaly_rule_id = 1;
+  repeated AnomalySubRuleConfig sub_rule_configs = 2;
+}
+
 message ModsecurityAllDetectionConfig {
   StringList excluded_params = 1;
   optional bool enabled_on_all_entry_spans = 2;
@@ -538,6 +551,7 @@ message AnomalySubRuleConfig {
   optional bool blocking_enabled = 4 [deprecated = true];
   optional bool internal = 5;
   AnomalyRuleAction anomaly_rule_action = 6;
+  map<string, google.protobuf.Value> config_params = 7;
 }
 
 message ParamValueTypeModsecExclude {
