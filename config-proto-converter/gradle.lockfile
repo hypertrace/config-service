@@ -2,7 +2,7 @@
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
 com.fasterxml.jackson:jackson-bom:2.16.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-com.google.api.grpc:proto-google-common-protos:2.41.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+com.google.api.grpc:proto-google-common-protos:2.59.2=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.google.code.findbugs:jsr305:3.0.2=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.google.code.gson:gson:2.13.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.google.errorprone:error_prone_annotations:2.38.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
@@ -10,19 +10,20 @@ com.google.guava:failureaccess:1.0.1=compileClasspath,testCompileClasspath
 com.google.guava:failureaccess:1.0.2=runtimeClasspath,testRuntimeClasspath
 com.google.guava:guava-parent:32.1.2-jre=compileClasspath,testCompileClasspath
 com.google.guava:guava:32.1.2-jre=compileClasspath,testCompileClasspath
-com.google.guava:guava:33.2.1-android=runtimeClasspath,testRuntimeClasspath
+com.google.guava:guava:33.3.1-android=runtimeClasspath,testRuntimeClasspath
 com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-com.google.j2objc:j2objc-annotations:2.8=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+com.google.j2objc:j2objc-annotations:2.8=compileClasspath,testCompileClasspath
+com.google.j2objc:j2objc-annotations:3.0.0=runtimeClasspath,testRuntimeClasspath
 com.google.protobuf:protobuf-java-util:3.25.8=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.google.protobuf:protobuf-java:3.25.8=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-io.grpc:grpc-api:1.68.3=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-io.grpc:grpc-bom:1.68.3=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-io.grpc:grpc-protobuf-lite:1.68.3=runtimeClasspath,testRuntimeClasspath
-io.grpc:grpc-protobuf:1.68.3=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+io.grpc:grpc-api:1.75.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+io.grpc:grpc-bom:1.75.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+io.grpc:grpc-protobuf-lite:1.75.0=runtimeClasspath,testRuntimeClasspath
+io.grpc:grpc-protobuf:1.75.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 io.netty:netty-bom:4.1.125.Final=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.checkerframework:checker-qual:3.33.0=compileClasspath,testCompileClasspath
-org.checkerframework:checker-qual:3.42.0=runtimeClasspath,testRuntimeClasspath
+org.checkerframework:checker-qual:3.43.0=runtimeClasspath,testRuntimeClasspath
 org.eclipse.jetty:jetty-bom:11.0.24=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-org.hypertrace.bom:hypertrace-bom:0.3.62=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.hypertrace.bom:hypertrace-bom:0.3.64=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.kafkastreams.framework:kafka-bom:0.6.3=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 empty=annotationProcessor

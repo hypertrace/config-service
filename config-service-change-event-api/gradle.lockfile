@@ -4,11 +4,11 @@
 com.fasterxml.jackson:jackson-bom:2.16.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.github.luben:zstd-jni:1.5.6-3=runtimeClasspath,testRuntimeClasspath
 com.google.protobuf:protobuf-java:3.25.8=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-io.grpc:grpc-bom:1.68.3=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+io.grpc:grpc-bom:1.75.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 io.netty:netty-bom:4.1.125.Final=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.apache.kafka:kafka-clients:7.7.0-ccs=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.eclipse.jetty:jetty-bom:11.0.24=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-org.hypertrace.bom:hypertrace-bom:0.3.62=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.hypertrace.bom:hypertrace-bom:0.3.64=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.kafkastreams.framework:kafka-bom:0.6.3=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.lz4:lz4-java:1.8.0=runtimeClasspath,testRuntimeClasspath
 org.slf4j:slf4j-api:2.0.7=runtimeClasspath,testRuntimeClasspath
