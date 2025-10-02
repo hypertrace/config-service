@@ -2,15 +2,19 @@ package ai.traceable.anomaly.config.service.detector.anomalydetection.handler;
 
 import static ai.traceable.anomaly.config.service.common.AnomalyConfigServiceUtils.mergeConfigs;
 
+import ai.traceable.anomaly.config.service.common.AnomalySubRuleConfigUtils;
 import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistry;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.VolumetricAnomalyDetectionConfig;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +24,7 @@ class VolumetricDetectionConfigHandler {
   private static final Logger LOGGER =
       LoggerFactory.getLogger(VolumetricDetectionConfigHandler.class);
   private final Map<String, VolumetricAnomalyDetectionConfig> volumetricRuleIdToConfigMap;
+  private final String UNDER_SCORE = "_";
 
   VolumetricDetectionConfigHandler(VolumetricRulesRegistry volumetricRulesRegistry) {
     this.volumetricRuleIdToConfigMap = volumetricRulesRegistry.getVolumetricRuleIdToConfigMap();
@@ -77,7 +82,9 @@ class VolumetricDetectionConfigHandler {
               }
             });
 
-    return new ArrayList<>(ruleIdToConfigMap.values());
+    return new ArrayList<>(
+        populateNewFields(
+            ruleIdToConfigMap.values(), preferredConfig.getAnomalyDetectionConfigsList()));
   }
 
   List<AnomalyDetectionConfig> deleteWholeAnomalyDetectionConfig(
@@ -123,6 +130,81 @@ class VolumetricDetectionConfigHandler {
       List<AnomalyDetectionConfig> detectionConfigs) {
     return detectionConfigs.stream()
         .filter(AnomalyDetectionConfig::hasVolumetricAnomalyDetectionConfig)
+        .collect(Collectors.toList());
+  }
+
+  private List<AnomalyDetectionConfig> populateNewFields(
+      Collection<AnomalyDetectionConfig> mergedConfigs,
+      List<AnomalyDetectionConfig> preferredConfigs) {
+    if (mergedConfigs.isEmpty() || preferredConfigs.isEmpty()) {
+      return new ArrayList<>(mergedConfigs);
+    }
+
+    Map<String, AnomalySubRuleConfig> preferredSubRuleConfigs =
+        preferredConfigs.stream()
+            .flatMap(
+                config ->
+                    config
+                        .getVolumetricAnomalyDetectionConfig()
+                        .getSubRuleConfigs()
+                        .getSubRuleConfigsMap()
+                        .values()
+                        .stream())
+            .collect(Collectors.toMap(AnomalySubRuleConfig::getSubRuleId, Function.identity()));
+
+    Map<String, AnomalySubRuleConfig> mergedSubRuleConfigs =
+        mergedConfigs.stream()
+            .flatMap(
+                config ->
+                    config
+                        .getVolumetricAnomalyDetectionConfig()
+                        .getSubRuleConfigs()
+                        .getSubRuleConfigsMap()
+                        .values()
+                        .stream())
+            .collect(Collectors.toMap(AnomalySubRuleConfig::getSubRuleId, Function.identity()));
+    Map<String, AnomalySubRuleConfig> resultMap = new HashMap<>();
+    for (AnomalySubRuleConfig mergedConfig : mergedSubRuleConfigs.values()) {
+      if (preferredSubRuleConfigs.get(mergedConfig.getSubRuleId()) != null) {
+        AnomalySubRuleConfig preferredConfig =
+            preferredSubRuleConfigs.get(mergedConfig.getSubRuleId());
+        resultMap.put(
+            mergedConfig.getSubRuleId(),
+            AnomalySubRuleConfigUtils.handleMergedConfigChange(mergedConfig, preferredConfig));
+      } else {
+        resultMap.put(
+            mergedConfig.getSubRuleId(), AnomalySubRuleConfigUtils.populateNewFields(mergedConfig));
+      }
+    }
+    if (resultMap.isEmpty()) {
+      return new ArrayList<>(mergedConfigs);
+    }
+
+    return mergedConfigs.stream()
+        .map(
+            config -> {
+              String ruleId = config.getVolumetricAnomalyDetectionConfig().getAnomalyRuleId();
+              Map<String, AnomalySubRuleConfig> ruleSpecificSubRules =
+                  resultMap.entrySet().stream()
+                      .filter(entry -> entry.getKey().startsWith(ruleId + UNDER_SCORE))
+                      .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+              if (ruleSpecificSubRules.isEmpty()) {
+                return config;
+              }
+
+              return AnomalyDetectionConfig.newBuilder(config)
+                  .setVolumetricAnomalyDetectionConfig(
+                      config.getVolumetricAnomalyDetectionConfig().toBuilder()
+                          .setSubRuleConfigs(
+                              config
+                                  .getVolumetricAnomalyDetectionConfig()
+                                  .getSubRuleConfigs()
+                                  .toBuilder()
+                                  .clearSubRuleConfigs()
+                                  .putAllSubRuleConfigs(ruleSpecificSubRules))
+                          .build())
+                  .build();
+            })
         .collect(Collectors.toList());
   }
 }
