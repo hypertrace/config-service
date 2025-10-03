@@ -3678,6 +3678,12 @@ defaultModsecDetectionConfigs: |-
                           "crs_9420190", "crs_9420230", "crs_9420291", "crs_9420360", "crs_942160", "crs_942240",
                           "crs_942250", "crs_942270", "crs_942280", "crs_942290", "crs_942500"]
               }
+            },
+            {
+              paramValueType = PARAM_VALUE_TYPE_JAVASCRIPT
+              excludedModsecRuleIds = {
+                values = ["crs_941140", "crs_941250", "crs_941160", "crs_941170", "crs_941190", "crs_941310", "crs_941100", "crs_934100"]
+              }
             }
           ]
         }
