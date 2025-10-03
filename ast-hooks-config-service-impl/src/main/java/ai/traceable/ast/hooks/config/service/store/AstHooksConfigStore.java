@@ -4,10 +4,14 @@ import static ai.traceable.ast.hooks.config.service.store.AstHookConfigConstants
 
 import ai.traceable.ast.hooks.config.service.v1.AstHook;
 import ai.traceable.ast.hooks.config.service.v1.GetAstHookFilter;
+import ai.traceable.ast.hooks.config.service.v1.HookScope;
 import com.google.protobuf.Value;
 import io.grpc.Status;
 import jakarta.inject.Inject;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import org.hypertrace.config.objectstore.IdentifiedObjectStoreWithFilter;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
@@ -64,5 +68,42 @@ public class AstHooksConfigStore
   public AstHook getAstHook(RequestContext requestContext, String id) {
     return getData(requestContext, id)
         .orElseThrow(() -> Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers()));
+  }
+
+  public List<AstHook> getAllConfigDataWithScopeFilter(
+      RequestContext requestContext, HookScope requestScope) {
+    List<AstHook> allHooks = getAllConfigData(requestContext);
+
+    // No filtering if user scope is not specified - fallback to all hooks
+    if (requestScope == null || !requestScope.hasEnvironmentScope()) {
+      return allHooks;
+    }
+
+    Set<String> allowedEnvironmentIds =
+        Set.copyOf(requestScope.getEnvironmentScope().getEnvironmentIdsList());
+
+    // Filter hooks to only include those the user has environment access to
+    return allHooks.stream()
+        .filter(hook -> isHookAccessibleToUser(hook, allowedEnvironmentIds))
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  private boolean isHookAccessibleToUser(AstHook hook, Set<String> userAllowedEnvironments) {
+    // Deny access to hooks without proper environment scope configuration
+    if (!hook.getHookDetails().hasScope()
+        || !hook.getHookDetails().getScope().hasEnvironmentScope()) {
+      return false;
+    }
+
+    Set<String> hookEnvironmentIds =
+        Set.copyOf(hook.getHookDetails().getScope().getEnvironmentScope().getEnvironmentIdsList());
+
+    // Deny access to hooks with empty environment scope (invalid configuration )
+    if (hookEnvironmentIds.isEmpty()) {
+      return false;
+    }
+
+    // Grant access only if user has permission to ALL environments required by the hook
+    return userAllowedEnvironments.containsAll(hookEnvironmentIds);
   }
 }
