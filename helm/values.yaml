@@ -365,7 +365,7 @@ traceableConfigServiceConfig:
       ruleVersion: MODSEC_RULE_VERSION_V3
     edsConversionEnabled: false
     ruleEvaluationPoints:
-      migrationDisabled: true
+      migrationDisabled: false
     #    defaultCustomSignatureRules: |-
     #    [
     #     {
@@ -423,12 +423,12 @@ traceableConfigServiceConfig:
     changeLog4:
       migrationDisabled: true
     ruleEvaluationPoints:
-      migrationDisabled: true
+      migrationDisabled: false
   rateLimitingConfigService:
     changeLog1:
       migrationDisabled: true
     ruleEvaluationPoints:
-      migrationDisabled: true
+      migrationDisabled: false
   iprangeConfigService:
     changeLog1:
       migrationDisabled: true
