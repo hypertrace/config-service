@@ -345,18 +345,21 @@ public class GlobalAnomalyConfigStatusManagerImpl
                 configConverter.merge(configStatusChange, getDefaultTierConfig(requestContext)))
             .toBuilder();
     if (canSendNotification(requestContext, builder.getGlobalModsecConfig().getRuleVersionData())) {
-      checkAndUpsertNotificationConfig(
-          requestContext,
-          builder.getGlobalModsecConfig().getRuleVersionData().getCurrentVersion(),
-          RuleType.RULE_TYPE_WEB_APPLICATION,
-          configMap.getOrDefault(
-              requestContext.getTenantId().orElseThrow(),
-              ScopedAnomalyConfigStatusChange.newBuilder()
-                  .setConfigScope(
-                      AnomalyConfigScope.newBuilder()
-                          .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
-                          .build())
-                  .build()));
+      ScopedAnomalyConfigStatusChange updatedScopedAnomalyConfigStatusChange =
+          checkAndUpsertNotificationConfig(
+              requestContext,
+              builder.getGlobalModsecConfig().getRuleVersionData().getCurrentVersion(),
+              RuleType.RULE_TYPE_WEB_APPLICATION,
+              configMap.getOrDefault(
+                  requestContext.getTenantId().orElseThrow(),
+                  ScopedAnomalyConfigStatusChange.newBuilder()
+                      .setConfigScope(
+                          AnomalyConfigScope.newBuilder()
+                              .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
+                              .build())
+                      .build()));
+      configMap.put(
+          requestContext.getTenantId().orElseThrow(), updatedScopedAnomalyConfigStatusChange);
     }
     // default profile should not fall back to tenant level for an env, it should always use env
     // level value if present or the default value
@@ -635,15 +638,16 @@ public class GlobalAnomalyConfigStatusManagerImpl
     return false;
   }
 
-  private void checkAndUpsertNotificationConfig(
+  private ScopedAnomalyConfigStatusChange checkAndUpsertNotificationConfig(
       RequestContext requestContext,
       RuleVersion ruleVersion,
       RuleType ruleType,
       ScopedAnomalyConfigStatusChange scopedAnomalyConfigStatusChange) {
     if (ruleVersion.equals(RuleVersion.getDefaultInstance())
         || ruleVersion.getPublishedDate().isEmpty()
+        || scopedAnomalyConfigStatusChange == null
         || !scopedAnomalyConfigStatusChange.getConfigScope().hasCustomerScope()) {
-      return;
+      return scopedAnomalyConfigStatusChange;
     }
     try {
       ZonedDateTime publishedDate = ZonedDateTime.parse(ruleVersion.getPublishedDate());
@@ -675,9 +679,10 @@ public class GlobalAnomalyConfigStatusManagerImpl
         updated = true;
       }
       if (updated) {
-        updateVersionInConfig(
+        return updateVersionInConfig(
             requestContext, scopedAnomalyConfigStatusChange, builder.build(), ruleType);
       }
+      return scopedAnomalyConfigStatusChange;
     } catch (Exception e) {
       log.error(
           "Error while checking and updating notification config for rule version: {}, rule type: {}, scoped anomaly config status change: {} for tenantId: {}",
@@ -687,9 +692,10 @@ public class GlobalAnomalyConfigStatusManagerImpl
           getTenantId(requestContext),
           e);
     }
+    return scopedAnomalyConfigStatusChange;
   }
 
-  private void updateVersionInConfig(
+  private ScopedAnomalyConfigStatusChange updateVersionInConfig(
       RequestContext requestContext,
       ScopedAnomalyConfigStatusChange scopedAnomalyConfigStatusChange,
       NotificationConfig notificationConfig,
@@ -703,7 +709,7 @@ public class GlobalAnomalyConfigStatusManagerImpl
           .setNotificationConfig(notificationConfig);
       configBuilder.setGlobalModsecConfigChange(globalModsecConfigBuilder.build());
     }
-    updateScopedAnomalyConfigStatus(requestContext, configBuilder.build());
+    return updateScopedAnomalyConfigStatus(requestContext, configBuilder.build());
   }
 
   private boolean canSendNotification(
