@@ -16,9 +16,11 @@ import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
+import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.MatchOperator;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
+import ai.traceable.customsignature.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.customsignature.config.service.v1.RuleSource;
 import ai.traceable.customsignature.config.service.v1.ScopeExpression;
@@ -292,10 +294,16 @@ public class AiAppToCustomSignatureConverter {
   /** Converts AI app action to custom signature rule effect. */
   private RuleEffect convertActionToRuleEffect(
       ai.traceable.aiapp.protection.config.service.v1.Action action) {
-    RuleEffect.Builder builder = RuleEffect.newBuilder();
+    RuleEffect.Builder builder =
+        RuleEffect.newBuilder()
+            .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM);
 
     if (action.hasAlert()) {
+      builder.setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION);
       builder.setEventSeverity(convertSeverityLevel(action.getAlert().getSeverityLevel()));
+    }
+    if (action.hasMarkForTesting()) {
+      builder.setEventType(EventType.EVENT_TYPE_TESTING_DETECTION);
     }
 
     return builder.build();
