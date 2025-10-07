@@ -60,7 +60,7 @@ public class DashboardAccessUtils {
     return principals.stream()
         .anyMatch(
             principal ->
-                (principal.hasUserEmail() && userEmail.equals(principal.getUserEmail()))
+                (principal.hasUserEmail() && userEmail.equalsIgnoreCase(principal.getUserEmail()))
                     || principal.hasAllAuthenticatedUsers());
   }
 
