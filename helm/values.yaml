@@ -151,6 +151,9 @@ bucketPrefix: traceable-saas
 s3.config:
   - fs.s3a.endpoint: "s3-us-west-2.amazonaws.com"
 
+# to be removed after gcp to aws migration
+umask: ""
+
 hypertraceConfigServiceTimeout: 10s
 iamServiceAccountSecret: gcs-iam-secret
 

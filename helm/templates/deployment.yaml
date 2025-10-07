@@ -118,6 +118,13 @@ spec:
         - name: {{ .Chart.Name }}
           image: "{{ $.Values.image.registry }}/{{ .Values.image.repository }}:{{ default $.Chart.AppVersion $.Values.image.tagOverride }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.umask }}
+          command: ["/bin/sh", "-ce"]
+          args:
+            - |
+              umask {{ .Values.umask }}
+              ./run
+          {{- end }}
           ports:
             - name: {{ .Values.internalContainerPortName }}
               containerPort: {{ .Values.internalContainerPort }}
