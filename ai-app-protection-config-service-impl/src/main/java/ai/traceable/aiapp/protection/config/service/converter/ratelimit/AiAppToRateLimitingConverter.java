@@ -86,16 +86,12 @@ public class AiAppToRateLimitingConverter {
 
     if (isCreateRequest) {
       switch (aiAppRuleData.getRuleStatusDetails().getRuleCreationSource()) {
-        case RULE_SOURCE_DEFAULT:
-          builder.setRuleCreationSource(RuleStatus.RuleSource.RULE_SOURCE_DEFAULT);
-          break;
-        case RULE_SOURCE_CUSTOMER:
-          builder.setRuleCreationSource(RuleStatus.RuleSource.RULE_SOURCE_CUSTOMER);
-          break;
         case RULE_SOURCE_TRACEABLE:
           builder.setRuleCreationSource(RuleStatus.RuleSource.RULE_SOURCE_TRACEABLE);
           break;
+        case RULE_SOURCE_CUSTOMER:
         default:
+          builder.setRuleCreationSource(RuleStatus.RuleSource.RULE_SOURCE_CUSTOMER);
           break;
       }
     }

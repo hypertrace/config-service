@@ -9,6 +9,7 @@ import static ai.traceable.aiapp.protection.config.service.converter.AiAppConver
 
 import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRule;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRuleData;
+import ai.traceable.aiapp.protection.config.service.v1.RuleStatusDetails;
 import ai.traceable.aiapp.protection.config.service.v1.ScopeCondition;
 import ai.traceable.customsignature.config.service.v1.AttributeKeyValueExpression;
 import ai.traceable.customsignature.config.service.v1.Category;
@@ -41,7 +42,7 @@ public class AiAppToCustomSignatureConverter {
             .setInternal(aiAppRuleData.getRuleStatusDetails().getInternal())
             .setEffect(convertActionToRuleEffect(aiAppRuleData.getAction()))
             .setCategory(Category.CATEGORY_AI_APP_PROTECTION)
-            .setRuleSource(RuleSource.RULE_SOURCE_CUSTOMER);
+            .setRuleSource(convert(aiAppRuleData.getRuleStatusDetails().getRuleCreationSource()));
 
     // Build rule definition
     RuleDefinition.Builder definitionBuilder =
@@ -73,6 +74,16 @@ public class AiAppToCustomSignatureConverter {
     return requestBuilder.build();
   }
 
+  private RuleSource convert(RuleStatusDetails.RuleSource ruleSource) {
+    switch (ruleSource) {
+      case RULE_SOURCE_TRACEABLE:
+        return RuleSource.RULE_SOURCE_TRACEABLE;
+      case RULE_SOURCE_CUSTOMER:
+      default:
+        return RuleSource.RULE_SOURCE_CUSTOMER;
+    }
+  }
+
   public CustomSignatureRule convertToCustomSignatureRule(AiAppCustomRule aiAppCustomRule) {
 
     AiAppCustomRuleData customRuleData = aiAppCustomRule.getRuleData();
@@ -85,8 +96,7 @@ public class AiAppToCustomSignatureConverter {
             .setDisabled(!customRuleData.getEnabled())
             .setHidden(customRuleData.getRuleStatusDetails().getHidden())
             .setInternal(customRuleData.getRuleStatusDetails().getInternal())
-            .setCategory(Category.CATEGORY_AI_APP_PROTECTION)
-            .setRuleSource(RuleSource.RULE_SOURCE_CUSTOMER);
+            .setCategory(Category.CATEGORY_AI_APP_PROTECTION);
 
     // Convert the rule data using existing logic
     AiAppCustomRuleData ruleData = aiAppCustomRule.getRuleData();

@@ -262,7 +262,7 @@ class AiAppToCustomSignatureConverterTest {
     assertFalse(result.getHidden());
     assertTrue(result.getInternal());
     assertEquals(Category.CATEGORY_AI_APP_PROTECTION, result.getCategory());
-    assertEquals(RuleSource.RULE_SOURCE_CUSTOMER, result.getRuleSource());
+    assertEquals(RuleSource.RULE_SOURCE_TRACEABLE, result.getRuleSource());
 
     // Verify rule definition
     assertTrue(result.hasDefinition());
@@ -372,7 +372,6 @@ class AiAppToCustomSignatureConverterTest {
     assertTrue(result.getHidden());
     assertFalse(result.getInternal());
     assertEquals(Category.CATEGORY_AI_APP_PROTECTION, result.getCategory());
-    assertEquals(RuleSource.RULE_SOURCE_CUSTOMER, result.getRuleSource());
 
     // Verify rule definition
     assertTrue(result.hasDefinition());
@@ -445,7 +444,6 @@ class AiAppToCustomSignatureConverterTest {
     assertFalse(result.getHidden());
     assertTrue(result.getInternal());
     assertEquals(Category.CATEGORY_AI_APP_PROTECTION, result.getCategory());
-    assertEquals(RuleSource.RULE_SOURCE_CUSTOMER, result.getRuleSource());
 
     // Verify rule definition
     assertTrue(result.hasDefinition());
