@@ -151,6 +151,7 @@ class AnomalyToAiAppRuleConverterTest {
             .orElseThrow();
 
     assertEquals("custom-rule-1", customSubRule.getCustomRule().getRuleId());
+    assertEquals(4, customSubRule.getCustomRule().getRuleData().getEventLabelsMap().size());
 
     // Verify second rule (Input Explosion)
     AiAppRule inputExplosionRule =

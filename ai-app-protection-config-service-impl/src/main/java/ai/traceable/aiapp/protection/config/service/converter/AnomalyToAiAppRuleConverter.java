@@ -3,6 +3,7 @@ package ai.traceable.aiapp.protection.config.service.converter;
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.THREAT_TYPE_ID_LABEL_KEY;
 
 import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRule;
+import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRuleData;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppOotbRule;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppRule;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppSubRule;
@@ -11,7 +12,13 @@ import ai.traceable.aiapp.protection.config.service.v1.RuleAction;
 import ai.traceable.aiapp.protection.config.service.v1.RuleScope;
 import ai.traceable.aiapp.protection.config.service.v1.RuleStatus;
 import ai.traceable.aiapp.protection.config.service.v1.SeverityLevel;
-import ai.traceable.anomaly.config.service.v1.*;
+import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
+import ai.traceable.anomaly.config.service.v1.AnomalyEnvironmentScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyEventFamily;
+import ai.traceable.anomaly.config.service.v1.AnomalyRuleAction;
+import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
+import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.CodeDetectedInPromptAnomalyDetectionConfig;
@@ -465,6 +472,7 @@ public final class AnomalyToAiAppRuleConverter {
     if (matchingCustomRules != null && !matchingCustomRules.isEmpty()) {
       List<AiAppSubRule> customSubRules =
           matchingCustomRules.stream()
+              .map(rule -> updateCustomRuleLabels(rule, anomalyRuleInfo.getEventLabelsMap()))
               .map(this::convertCustomRuleToSubRule)
               .collect(Collectors.toList());
       allSubRules.addAll(customSubRules);
@@ -663,6 +671,13 @@ public final class AnomalyToAiAppRuleConverter {
       return genAiConfig.getSubRuleConfigs().getSubRuleConfigsMap();
     }
     return new HashMap<>();
+  }
+
+  private AiAppCustomRule updateCustomRuleLabels(
+      AiAppCustomRule customRule, Map<String, String> labels) {
+    AiAppCustomRuleData customRuleData =
+        customRule.getRuleData().toBuilder().putAllEventLabels(labels).build();
+    return customRule.toBuilder().setRuleData(customRuleData).build();
   }
 
   /** Converts a custom rule to a sub rule. */
