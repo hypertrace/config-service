@@ -170,24 +170,14 @@ public class ValidatorUtils {
           "The first-level MatchOperator in LhsRhsKeysCondition must be one of: EQUALS, NOT_EQUAL, CONTAINS, or NOT_CONTAIN.");
     }
 
-    KeyValueCondition.MatchOperatorCondition lhsKeyMatchOperatorCondition =
-        lhsRhsKeysCondition.getLhsKeyCondition().getKeyMatchOperatorCondition();
-    KeyValueCondition.MatchOperatorCondition rhsKeyMatchOperatorCondition =
-        lhsRhsKeysCondition.getRhsKeyCondition().getKeyMatchOperatorCondition();
-    if (UNSUPPORTED_LHS_RHS_KEYS_CONDITION_OPERATORS.contains(
-            lhsKeyMatchOperatorCondition.getOperator())
-        || UNSUPPORTED_LHS_RHS_KEYS_CONDITION_OPERATORS.contains(
-            rhsKeyMatchOperatorCondition.getOperator())) {
-      throwInvalidArgumentException(
-          "GREATER_THAN and LESS_THAN match operators are unsupported in LhsRhsKeysCondition");
-    }
-    validateMatchOperatorCondition(lhsKeyMatchOperatorCondition);
-    validateMatchOperatorCondition(rhsKeyMatchOperatorCondition);
+    Type lhsKeyConditionType = lhsRhsKeysCondition.getLhsKeyCondition().getKeyType();
+    Type rhsKeyConditionType = lhsRhsKeysCondition.getRhsKeyCondition().getKeyType();
+    validateKeyConditionMatchOperatorForLhsRhsCondition(
+        lhsRhsKeysCondition.getLhsKeyCondition(), lhsKeyConditionType);
+    validateKeyConditionMatchOperatorForLhsRhsCondition(
+        lhsRhsKeysCondition.getRhsKeyCondition(), rhsKeyConditionType);
 
-    if (lhsRhsKeysCondition
-            .getLhsKeyCondition()
-            .getKeyType()
-            .equals(lhsRhsKeysCondition.getRhsKeyCondition().getKeyType())
+    if (lhsKeyConditionType.equals(rhsKeyConditionType)
         && lhsRhsKeysCondition
             .getLhsKeyCondition()
             .equals(lhsRhsKeysCondition.getRhsKeyCondition())) {
@@ -195,6 +185,27 @@ public class ValidatorUtils {
           String.format(
               "Invalid condition for type %s:%n %s , LHS key condition and RHS key condition shouldn't be the same.",
               getName(lhsRhsKeysCondition), printMessage(lhsRhsKeysCondition)));
+    }
+  }
+
+  private void validateKeyConditionMatchOperatorForLhsRhsCondition(
+      KeyValueCondition.KeyCondition keyCondition, Type keyConditionType) {
+    if (!KEY_NULL_CONDITION_TYPES.contains(keyConditionType)) {
+      KeyValueCondition.MatchOperatorCondition keyMatchOperatorCondition =
+          keyCondition.getKeyMatchOperatorCondition();
+      if (UNSUPPORTED_LHS_RHS_KEYS_CONDITION_OPERATORS.contains(
+          keyMatchOperatorCondition.getOperator())) {
+        throwInvalidArgumentException(
+            "GREATER_THAN and LESS_THAN match operators are unsupported in LhsRhsKeysCondition");
+      }
+      validateMatchOperatorCondition(keyMatchOperatorCondition);
+    } else {
+      if (keyCondition.hasKeyMatchOperatorCondition()) {
+        throwInvalidArgumentException(
+            String.format(
+                "Invalid condition for type %s:%n %s , KeyMatchOperatorCondition should not be present for key null type: %s",
+                getName(keyCondition), printMessage(keyCondition), keyConditionType));
+      }
     }
   }
 

@@ -3,12 +3,15 @@ package ai.traceable.ratelimiting.config.service.v2.rules;
 import static ai.traceable.ratelimiting.config.service.v2.Action.MatchCategory.MATCH_CATEGORY_REQUEST;
 import static ai.traceable.ratelimiting.config.service.v2.CompositeCondition.LogicalOperator.LOGICAL_OPERATOR_AND;
 import static ai.traceable.ratelimiting.config.service.v2.IpLocationType.IP_LOCATION_TYPE_HOSTING_PROVIDER;
+import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_HOST;
+import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_HTTP_METHOD;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_QUERY_PARAMETER;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_REQUEST_BODY_PARAMETER;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_REQUEST_COOKIE;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_REQUEST_HEADER;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_REQUEST_HEADERS_COUNT;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_RESPONSE_HEADERS_COUNT;
+import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_URL;
 import static ai.traceable.ratelimiting.config.service.v2.ScopeCondition.EntityType.ENTITY_TYPE_API;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -3204,6 +3207,38 @@ public class RateLimitingRulesValidatorTest {
             MatchOperator.MATCH_OPERATOR_NOT_CONTAIN,
             "rhs-key-value-4");
     assertDoesNotThrow(() -> validatorUtils.validateKeyValueCondition(keyValueCondition4));
+
+    // key null condition types for both lhs and rhs conditions
+    KeyValueCondition keyValueCondition5 =
+        KeyValueCondition.newBuilder()
+            .setLhsRhsCondition(
+                KeyValueCondition.LhsRhsKeysCondition.newBuilder()
+                    .setLhsKeyCondition(
+                        KeyValueCondition.KeyCondition.newBuilder().setKeyType(TYPE_URL))
+                    .setRhsKeyCondition(
+                        KeyValueCondition.KeyCondition.newBuilder().setKeyType(TYPE_HOST))
+                    .setLhsRhsMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS))
+            .build();
+    assertDoesNotThrow(() -> validatorUtils.validateKeyValueCondition(keyValueCondition5));
+
+    // key null condition type for lhs and key value condition type for rhs
+    KeyValueCondition keyValueCondition6 =
+        KeyValueCondition.newBuilder()
+            .setLhsRhsCondition(
+                KeyValueCondition.LhsRhsKeysCondition.newBuilder()
+                    .setLhsKeyCondition(
+                        KeyValueCondition.KeyCondition.newBuilder().setKeyType(TYPE_HTTP_METHOD))
+                    .setRhsKeyCondition(
+                        KeyValueCondition.KeyCondition.newBuilder()
+                            .setKeyType(TYPE_REQUEST_HEADER)
+                            .setKeyMatchOperatorCondition(
+                                KeyValueCondition.MatchOperatorCondition.newBuilder()
+                                    .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
+                                    .setValue(
+                                        Value.newBuilder().setStringValue("rhs-key-value-5"))))
+                    .setLhsRhsMatchOperator(MatchOperator.MATCH_OPERATOR_NOT_EQUAL))
+            .build();
+    assertDoesNotThrow(() -> validatorUtils.validateKeyValueCondition(keyValueCondition6));
   }
 
   @Test
