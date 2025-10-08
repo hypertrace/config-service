@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package ai.traceable.agent.action.config.service.v1;
+
+import "ai/traceable/agent/action/config/service/v1/agent_action_config.proto";
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+
+service AgentActionConfigService {
+  rpc CreateAgentAction(CreateAgentActionRequest) returns (CreateAgentActionResponse);
+  rpc GetAgentActions(GetAgentActionsRequest) returns (GetAgentActionsResponse);
+  rpc UpdateAgentAction(UpdateAgentActionRequest) returns (UpdateAgentActionResponse);
+  rpc DeleteAgentAction(DeleteAgentActionRequest) returns (DeleteAgentActionResponse);
+}
+
+message CreateAgentActionRequest {
+  AgentActionInput action = 1;
+}
+
+message CreateAgentActionResponse {
+  AgentAction action = 1;
+}
+
+message GetAgentActionsRequest {
+  GetAgentActionsFilter filter = 1;
+}
+
+message GetAgentActionsResponse {
+  repeated AgentAction actions = 1;
+}
+
+message UpdateAgentActionRequest {
+  string id = 1;
+  AgentActionInput action = 2;
+}
+
+message UpdateAgentActionResponse {
+  AgentAction action = 1;
+}
+
+message DeleteAgentActionRequest {
+  string id = 1;
+}
+
+message DeleteAgentActionResponse {}
+
+message AgentActionInput {
+  repeated AgentActionDetails details = 1;
+  google.protobuf.Timestamp expiration_timestamp = 2;
+  // scope of agents for this action.
+  AgentScope scope = 3;
+}

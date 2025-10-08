@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+package ai.traceable.agent.action.config.service.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+
+message AgentAction {
+  string id = 1;
+  repeated AgentActionDetails details = 2;
+  google.protobuf.Timestamp expiration_timestamp = 3;
+  // scope of agents for this action.
+  AgentScope scope = 4;
+}
+
+message AgentActionDetails {
+  oneof details {
+    ConfigMutationAction update_config_action = 2;
+    FetchDebugInformationAction fetch_debug_information_action = 3;
+    RestartAgentAction restart_agent_action = 4;
+  }
+}
+
+message ConfigMutationAction {
+  // list of environment key, value pairs to be applied on an agent instance.
+  map<string, string> environment_variables = 1;
+}
+
+message FetchDebugInformationAction {}
+
+message RestartAgentAction {}
+
+message AgentScope {
+  // name of the targeted deployment.
+  // This is just to group different agent instances on data collection side
+  // and doesn't necessarily match the actual deployment name or id.
+  optional string deployment_name = 1;
+  // id unique to the specific agent instance.
+  optional string service_instance_id = 2;
+  // name of module (agent) requesting for configs.
+  optional string module_name = 3;
+  // version of module (agent) requesting for configs.
+  optional string module_version = 4;
+}
+
+message GetAgentActionsFilter {
+  CompositeFilter filter = 1;
+}
+
+message CompositeFilter {
+  LogicalOperator operator = 1;
+  repeated Filter filter = 2;
+
+  enum LogicalOperator {
+    LOGICAL_OPERATOR_UNSPECIFIED = 0;
+    LOGICAL_OPERATOR_AND = 1;
+    LOGICAL_OPERATOR_OR = 2;
+  }
+}
+
+message Filter {
+  oneof filter {
+    CompositeFilter children = 1;
+    LeafFilter leaf = 2;
+  }
+}
+
+message LeafFilter {
+  oneof scope {
+    string deployment_name = 1;
+    string service_instance_id = 2;
+    string module_name = 3;
+    string module_version = 4;
+  }
+}
