@@ -292,3 +292,7 @@ message HookScope {
 message EnvironmentScope {
   repeated string environment_ids = 1;
 }
+
+message Filter {
+  repeated string environment_ids = 1;
+}
