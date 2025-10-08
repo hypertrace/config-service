@@ -57,6 +57,10 @@ class UserDefinedJwtExtractionRuleStore
       return Optional.empty();
     }
 
+    if (!filter.getIdsList().isEmpty() && !filter.getIdsList().contains(data.getId())) {
+      return Optional.empty();
+    }
+
     if (!filter.hasScope() || !data.hasScope()) {
       return Optional.of(data);
     }

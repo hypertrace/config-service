@@ -18,6 +18,7 @@ message JwtExtractionRuleScope {
 message JwtExtractionRuleFilter {
   JwtExtractionRuleScope scope = 1;
   optional bool disabled = 2;
+  repeated string ids = 3;
 }
 
 message JwtExtractionRule {
