@@ -15,6 +15,7 @@ import ai.traceable.customsignature.config.service.v1.AttributeKeyValueExpressio
 import ai.traceable.customsignature.config.service.v1.Category;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
+import ai.traceable.customsignature.config.service.v1.ClauseOperator;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.EventType;
@@ -53,7 +54,8 @@ public class AiAppToCustomSignatureConverter {
     definitionBuilder.putLabels(THREAT_TYPE_ID_LABEL_KEY, threatTypeId);
 
     // Build clause group based on rule type
-    ClauseGroup.Builder clauseGroupBuilder = ClauseGroup.newBuilder();
+    ClauseGroup.Builder clauseGroupBuilder =
+        ClauseGroup.newBuilder().setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND);
 
     if (aiAppRuleData.hasModelGovernanceRuleData()) {
       buildModelGovernanceClauseGroup(
@@ -110,7 +112,8 @@ public class AiAppToCustomSignatureConverter {
     definitionBuilder.putLabels(THREAT_TYPE_ID_LABEL_KEY, threatTypeId);
 
     // Build clause group based on rule type using existing logic
-    ClauseGroup.Builder clauseGroupBuilder = ClauseGroup.newBuilder();
+    ClauseGroup.Builder clauseGroupBuilder =
+        ClauseGroup.newBuilder().setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND);
 
     if (ruleData.hasModelGovernanceRuleData()) {
       buildModelGovernanceClauseGroup(ruleData.getModelGovernanceRuleData(), clauseGroupBuilder);
