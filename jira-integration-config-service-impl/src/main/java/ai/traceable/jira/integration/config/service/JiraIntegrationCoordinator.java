@@ -136,13 +136,37 @@ public class JiraIntegrationCoordinator {
 
   public void deleteIntegration(
       RequestContext requestContext, DeleteJiraIntegrationRequest request) {
+    // Find all additional configurations linked to the integration ID
+    List<String> configIds =
+        jiraAdditionalConfigurationCoordinator
+            .getJiraAdditionalConfiguration(
+                requestContext,
+                GetProjectIssueConfigurationsFilter.newBuilder()
+                    .addIntegrationIds(request.getJiraIntegrationId())
+                    .build())
+            .stream()
+            .map(JiraProjectIssueConfiguration::getConfigurationId)
+            .collect(Collectors.toList());
+
+    // Delete all associated configurations if any exist
+    if (!configIds.isEmpty()) {
+      jiraAdditionalConfigurationCoordinator.deleteProjectIssueConfiguration(
+          DeleteProjectIssueConfigurationRequest.newBuilder()
+              .addAllConfigurationIds(configIds)
+              .build(),
+          requestContext);
+    }
+
+    // Delete the integration itself
     jiraIntegrationStore
         .deleteObject(requestContext, request.getJiraIntegrationId())
         .orElseThrow(
             () ->
                 Status.NOT_FOUND
                     .withDescription(
-                        "Unable to delete Jira-Integration with given Id as it does not exist")
+                        String.format(
+                            "Unable to delete Jira integration with id: %s",
+                            request.getJiraIntegrationId()))
                     .asRuntimeException());
   }
 

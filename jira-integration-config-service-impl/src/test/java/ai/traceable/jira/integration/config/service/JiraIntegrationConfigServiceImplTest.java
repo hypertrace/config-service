@@ -389,6 +389,8 @@ class JiraIntegrationConfigServiceImplTest {
   @Tag("useMockUpsert")
   @Tag("useMockGet")
   @Tag("useMockDelete")
+  @Tag("useMockDeleteAll")
+  @Tag("useMockGetAll")
   void deleteJiraIntegrationTest() {
     RequestContext requestContext = RequestContext.forTenantId(TENANT_ID);
     JiraIntegration jiraIntegration1 = dummyJiraIntegration(1, "env1");
@@ -408,6 +410,50 @@ class JiraIntegrationConfigServiceImplTest {
             .build();
     assertDoesNotThrow(() -> stub.deleteJiraIntegration(deleteJiraIntegrationRequest1));
     assertFalse(jiraIntegrationStore.getData(requestContext, jiraIntegration1.getId()).isPresent());
+
+    //
+    JiraIntegration jiraIntegration2 = dummyJiraIntegration(2, "env2");
+    jiraIntegrationStore.upsertObject(requestContext, jiraIntegration2);
+    JiraStatusMapping jiraStatusMappingCommon1 =
+        CreateJiraStatusMapping(
+            "Under Review", TraceableEntityStatus.TRACEABLE_ENTITY_STATUS_ISSUES_COMMON_FIXED);
+    JiraStatusMapping jiraStatusMappingCommon2 =
+        CreateJiraStatusMapping(
+            "Open", TraceableEntityStatus.TRACEABLE_ENTITY_STATUS_ISSUES_COMMON_UNDER_REVIEW);
+    JiraStatusMapping jiraStatusMappingSpecificEntityType1 =
+        CreateJiraStatusMapping(
+            "To do", TraceableEntityStatus.TRACEABLE_ENTITY_STATUS_AST_VULNERABILITY_ACCEPTED_RISK);
+    JiraStatusMapping jiraStatusMappingSpecificEntityType2 =
+        CreateJiraStatusMapping(
+            "Done", TraceableEntityStatus.TRACEABLE_ENTITY_STATUS_AST_VULNERABILITY_FIXED);
+    JiraProjectIssueConfiguration jiraProjectIssueConfiguration =
+        createDummyJiraProjectIssueConfiguration(
+            List.of(
+                jiraStatusMappingCommon1,
+                jiraStatusMappingCommon2,
+                jiraStatusMappingSpecificEntityType1,
+                jiraStatusMappingSpecificEntityType2),
+            jiraIntegration2.getId());
+    JiraProjectIssueConfiguration jiraProjectIssueConfiguration1 =
+        createDummyJiraProjectIssueConfiguration(
+            List.of(
+                jiraStatusMappingCommon1,
+                jiraStatusMappingCommon2,
+                jiraStatusMappingSpecificEntityType1,
+                jiraStatusMappingSpecificEntityType2),
+            jiraIntegration2.getId());
+    jiraAdditionalConfigurationStore.upsertObject(requestContext, jiraProjectIssueConfiguration);
+    jiraAdditionalConfigurationStore.upsertObject(requestContext, jiraProjectIssueConfiguration1);
+    DeleteJiraIntegrationRequest deleteJiraIntegrationRequest2 =
+        DeleteJiraIntegrationRequest.newBuilder()
+            .setJiraIntegrationId(jiraIntegration2.getId())
+            .build();
+    assertDoesNotThrow(() -> stub.deleteJiraIntegration(deleteJiraIntegrationRequest2));
+    assertFalse(
+        jiraAdditionalConfigurationStore
+            .getData(requestContext, jiraIntegration2.getId())
+            .isPresent());
+    assertFalse(jiraIntegrationStore.getData(requestContext, jiraIntegration2.getId()).isPresent());
   }
 
   @Test

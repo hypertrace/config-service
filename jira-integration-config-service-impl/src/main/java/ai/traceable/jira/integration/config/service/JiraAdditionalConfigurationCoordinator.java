@@ -180,7 +180,7 @@ class JiraAdditionalConfigurationCoordinator {
     if (this.getJiraAdditionalConfiguration(
             requestContext,
             GetProjectIssueConfigurationsFilter.newBuilder()
-                .setIntegrationId(request.getIntegrationId())
+                .addIntegrationIds(request.getIntegrationId())
                 .setIssueType(request.getIssueType())
                 .setProjectId(request.getProjectId())
                 .build())
