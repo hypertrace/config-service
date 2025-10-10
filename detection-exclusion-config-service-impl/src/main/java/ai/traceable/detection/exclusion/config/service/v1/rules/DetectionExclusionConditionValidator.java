@@ -240,16 +240,15 @@ public class DetectionExclusionConditionValidator {
           "LhsKeyMetadataMatchCondition cannot be the same as RhsKeyMetadataMatchCondition.");
     }
 
-    if (UNSUPPORTED_OPERATORS_FOR_LHS_RHS_KEYS_CONDITION.contains(
-            lhsKeyMetadataMatchCondition.getMatchCondition().getOperator())
-        || UNSUPPORTED_OPERATORS_FOR_LHS_RHS_KEYS_CONDITION.contains(
-            rhsKeyMetadataMatchCondition.getMatchCondition().getOperator())) {
+    validateKeyMetadataMatchConditionOfLhsRhsCondition(lhsKeyMetadataMatchCondition);
+    validateKeyMetadataMatchConditionOfLhsRhsCondition(rhsKeyMetadataMatchCondition);
+  }
+
+  private void validateMatchConditionOperatorForLhsOrRhsCondition(MatchOperator matchOperator) {
+    if (UNSUPPORTED_OPERATORS_FOR_LHS_RHS_KEYS_CONDITION.contains(matchOperator)) {
       throwInvalidArgumentException(
           "GREATER_THAN and LESS_THAN match operators are unsupported in LhsRhsKeysCondition");
     }
-
-    validateKeyMetadataMatchCondition(lhsKeyMetadataMatchCondition);
-    validateKeyMetadataMatchCondition(rhsKeyMetadataMatchCondition);
   }
 
   private void validateRequestScannerTypeCondition(
@@ -650,11 +649,20 @@ public class DetectionExclusionConditionValidator {
     }
   }
 
-  private void validateKeyMetadataMatchCondition(
+  private void validateKeyMetadataMatchConditionOfLhsRhsCondition(
       KeyMetadataMatchCondition keyMetadataMatchCondition) {
     validateNonDefaultPresenceOrThrow(
         keyMetadataMatchCondition, KeyMetadataMatchCondition.METADATA_FIELD_NUMBER);
-    if (keyMetadataMatchCondition.hasMatchCondition()) {
+    KeyMetadata keyMetadata = keyMetadataMatchCondition.getMetadata();
+    if (KEY_NULL_METADATA.contains(keyMetadata) && keyMetadataMatchCondition.hasMatchCondition()) {
+      throwInvalidArgumentException(
+          String.format(
+              "Key match condition should not be present for key null meta data : %s",
+              keyMetadataMatchCondition.getMetadata()));
+    }
+    if (!KEY_NULL_METADATA.contains(keyMetadata)) {
+      validateMatchConditionOperatorForLhsOrRhsCondition(
+          keyMetadataMatchCondition.getMatchCondition().getOperator());
       validateMatchCondition(keyMetadataMatchCondition.getMatchCondition());
     }
   }

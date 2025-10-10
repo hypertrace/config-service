@@ -1274,6 +1274,48 @@ class DetectionExclusionConditionValidatorTest {
               conditionValidator.validateRuleCondition(
                   Collections.emptyList(), detectionExclusionCondition));
     }
+
+    // key null condition types in both lhs and rhs key conditions
+    {
+      DetectionExclusionCondition detectionExclusionCondition =
+          DetectionExclusionCondition.newBuilder()
+              .setLhsRhsKeysCondition(
+                  LhsRhsKeysCondition.newBuilder()
+                      .setLhsKeyCondition(
+                          KeyMetadataMatchCondition.newBuilder()
+                              .setMetadata(KeyMetadata.KEY_METADATA_URL))
+                      .setRhsKeyCondition(
+                          KeyMetadataMatchCondition.newBuilder()
+                              .setMetadata(KeyMetadata.KEY_METADATA_USER_AGENT))
+                      .setLhsRhsMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS))
+              .build();
+      assertDoesNotThrow(
+          () ->
+              conditionValidator.validateRuleCondition(
+                  Collections.emptyList(), detectionExclusionCondition));
+    }
+
+    // key null condition in the lhs only
+    {
+      DetectionExclusionCondition detectionExclusionCondition =
+          DetectionExclusionCondition.newBuilder()
+              .setLhsRhsKeysCondition(
+                  LhsRhsKeysCondition.newBuilder()
+                      .setLhsKeyCondition(
+                          KeyMetadataMatchCondition.newBuilder()
+                              .setMetadata(KeyMetadata.KEY_METADATA_HOST))
+                      .setRhsKeyCondition(
+                          getKeyMetadataMatchCondition(
+                              KeyMetadata.KEY_METADATA_REQUEST_HEADER,
+                              MatchOperator.MATCH_OPERATOR_MATCHES_REGEX,
+                              "request-header-value"))
+                      .setLhsRhsMatchOperator(MatchOperator.MATCH_OPERATOR_NOT_EQUAL))
+              .build();
+      assertDoesNotThrow(
+          () ->
+              conditionValidator.validateRuleCondition(
+                  Collections.emptyList(), detectionExclusionCondition));
+    }
   }
 
   private LhsRhsKeysCondition getLhsRhsKeysCondition(
