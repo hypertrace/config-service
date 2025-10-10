@@ -72,7 +72,7 @@ public class AstHooksConfigServiceImpl extends AstHooksConfigServiceImplBase {
     try {
       List<AstHook> astHooks =
           astHooksConfigStore.getAllConfigDataWithScopeFilter(
-              RequestContext.CURRENT.get(), request.getScope());
+              RequestContext.CURRENT.get(), request.getScope(), request.getFilter());
       GetAllAstHooksResponse response =
           GetAllAstHooksResponse.newBuilder().addAllAstHooks(astHooks).build();
       responseObserver.onNext(response);

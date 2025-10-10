@@ -3,11 +3,13 @@ package ai.traceable.ast.hooks.config.service.store;
 import static ai.traceable.ast.hooks.config.service.store.AstHookConfigConstants.AST_HOOKS_CONFIG_RESOURCE_NAMESPACE;
 
 import ai.traceable.ast.hooks.config.service.v1.AstHook;
+import ai.traceable.ast.hooks.config.service.v1.Filter;
 import ai.traceable.ast.hooks.config.service.v1.GetAstHookFilter;
 import ai.traceable.ast.hooks.config.service.v1.HookScope;
 import com.google.protobuf.Value;
 import io.grpc.Status;
 import jakarta.inject.Inject;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -71,13 +73,8 @@ public class AstHooksConfigStore
   }
 
   public List<AstHook> getAllConfigDataWithScopeFilter(
-      RequestContext requestContext, HookScope requestScope) {
+      RequestContext requestContext, HookScope requestScope, Filter filter) {
     List<AstHook> allHooks = getAllConfigData(requestContext);
-
-    // No filtering if user scope is not specified - fallback to all hooks
-    if (requestScope == null || !requestScope.hasEnvironmentScope()) {
-      return allHooks;
-    }
 
     Set<String> allowedEnvironmentIds =
         Set.copyOf(requestScope.getEnvironmentScope().getEnvironmentIdsList());
@@ -85,10 +82,16 @@ public class AstHooksConfigStore
     // Filter hooks to only include those the user has environment access to
     return allHooks.stream()
         .filter(hook -> isHookAccessibleToUser(hook, allowedEnvironmentIds))
+        .filter(hook -> isHookRequestedInFilter(hook, filter))
         .collect(Collectors.toUnmodifiableList());
   }
 
   private boolean isHookAccessibleToUser(AstHook hook, Set<String> userAllowedEnvironments) {
+
+    if (userAllowedEnvironments.isEmpty()) {
+      return true;
+    }
+
     // Deny access to hooks without proper environment scope configuration
     if (!hook.getHookDetails().hasScope()
         || !hook.getHookDetails().getScope().hasEnvironmentScope()) {
@@ -103,7 +106,25 @@ public class AstHooksConfigStore
       return false;
     }
 
-    // Grant access only if user has permission to ALL environments required by the hook
+    // Grant access only if user has permission to all environment required by the hook
     return userAllowedEnvironments.containsAll(hookEnvironmentIds);
+  }
+
+  private boolean isHookRequestedInFilter(AstHook hook, Filter filter) {
+    // If no filter is provided, include all hooks
+    if (filter == null || filter.getEnvironmentIdsList().isEmpty()) {
+      return true;
+    }
+
+    // Check if hook has proper environment scope configuration -> All Env Scoped
+    if (!hook.getHookDetails().hasScope()
+        || !hook.getHookDetails().getScope().hasEnvironmentScope()) {
+      return true;
+    }
+
+    // Include hook if any of its environments match the filter environments
+    return !Collections.disjoint(
+        hook.getHookDetails().getScope().getEnvironmentScope().getEnvironmentIdsList(),
+        filter.getEnvironmentIdsList());
   }
 }
