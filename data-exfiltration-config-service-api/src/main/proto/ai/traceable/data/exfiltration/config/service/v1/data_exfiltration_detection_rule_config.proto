@@ -4,7 +4,9 @@ package ai.traceable.data.exfiltration.config.service.v1;
 
 option java_multiple_files = true;
 
-message GetDataExfiltrationDetectionRulesRequest {}
+message GetDataExfiltrationDetectionRulesRequest {
+  DataExfiltrationDetectionRulesFilter filter = 1;
+}
 
 message GetDataExfiltrationDetectionRulesResponse {
   repeated DataExfiltrationDetectionRuleConfig configs = 1;
@@ -42,6 +44,10 @@ message DataExfiltrationDetectionRuleData {
   repeated Scope scopes = 2;
   repeated DataScope data_scopes = 3;
   DetectionConfigStatus config_status = 4;
+}
+
+message DataExfiltrationDetectionRulesFilter {
+  repeated Scope scopes = 2;
 }
 
 message DetectionConfigStatus {

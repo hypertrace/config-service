@@ -2,6 +2,7 @@ package ai.traceable.data.exfiltration.config.service.detection.rule;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import ai.traceable.config.utils.UuidGenerator;
@@ -10,6 +11,7 @@ import ai.traceable.data.exfiltration.config.service.v1.DataExfiltrationDetectio
 import ai.traceable.data.exfiltration.config.service.v1.DataExfiltrationDetectionRuleConfigServiceGrpc;
 import ai.traceable.data.exfiltration.config.service.v1.DataExfiltrationDetectionRuleConfigServiceGrpc.DataExfiltrationDetectionRuleConfigServiceBlockingStub;
 import ai.traceable.data.exfiltration.config.service.v1.DataExfiltrationDetectionRuleData;
+import ai.traceable.data.exfiltration.config.service.v1.DataExfiltrationDetectionRulesFilter;
 import ai.traceable.data.exfiltration.config.service.v1.DataScope;
 import ai.traceable.data.exfiltration.config.service.v1.DeleteDataExfiltrationDetectionRuleRequest;
 import ai.traceable.data.exfiltration.config.service.v1.DetectionConfigStatus;
@@ -123,6 +125,133 @@ class DataExfiltrationDetectionRulesConfigServiceImplTest {
                 GetDataExfiltrationDetectionRulesRequest.newBuilder().build())
             .getConfigsList()
             .size());
+  }
+
+  @Test
+  void testGetWithScopeFilterReturnsOnlyMatchingConfigs() {
+    // Create config with env scope env-match
+    DataExfiltrationDetectionRuleConfig configMatch =
+        dataExfiltrationDetectionRuleConfigServiceBlockingStub
+            .createDataExfiltrationDetectionRule(
+                CreateDataExfiltrationDetectionRuleRequest.newBuilder()
+                    .setRuleData(
+                        DataExfiltrationDetectionRuleData.newBuilder()
+                            .setName("rule-env-match")
+                            .addScopes(
+                                Scope.newBuilder()
+                                    .setEnvironmentScope(
+                                        EnvironmentScope.newBuilder().setId("env-match"))
+                                    .build()))
+                    .build())
+            .getConfig();
+
+    // Create another config with env scope env-other
+    dataExfiltrationDetectionRuleConfigServiceBlockingStub.createDataExfiltrationDetectionRule(
+        CreateDataExfiltrationDetectionRuleRequest.newBuilder()
+            .setRuleData(
+                DataExfiltrationDetectionRuleData.newBuilder()
+                    .setName("rule-env-other")
+                    .addScopes(
+                        Scope.newBuilder()
+                            .setEnvironmentScope(EnvironmentScope.newBuilder().setId("env-other"))
+                            .build()))
+            .build());
+
+    // Filter by env-match
+    GetDataExfiltrationDetectionRulesRequest request =
+        GetDataExfiltrationDetectionRulesRequest.newBuilder()
+            .setFilter(
+                DataExfiltrationDetectionRulesFilter.newBuilder()
+                    .addScopes(
+                        Scope.newBuilder()
+                            .setEnvironmentScope(EnvironmentScope.newBuilder().setId("env-match"))
+                            .build())
+                    .build())
+            .build();
+
+    List<DataExfiltrationDetectionRuleConfig> configs =
+        dataExfiltrationDetectionRuleConfigServiceBlockingStub
+            .getDataExfiltrationDetectionRules(request)
+            .getConfigsList();
+
+    assertEquals(1, configs.size());
+    assertEquals(configMatch.getId(), configs.get(0).getId());
+  }
+
+  @Test
+  void testGetWithScopeFilterAnyMatchAcrossMultipleFilterScopes() {
+    // Create config with service scope svc-1
+    DataExfiltrationDetectionRuleConfig config =
+        dataExfiltrationDetectionRuleConfigServiceBlockingStub
+            .createDataExfiltrationDetectionRule(
+                CreateDataExfiltrationDetectionRuleRequest.newBuilder()
+                    .setRuleData(
+                        DataExfiltrationDetectionRuleData.newBuilder()
+                            .setName("rule-svc-1")
+                            .addScopes(
+                                Scope.newBuilder()
+                                    .setServiceScope(EntityScope.newBuilder().setEntityId("svc-1"))
+                                    .build()))
+                    .build())
+            .getConfig();
+
+    // Filter includes a non-matching env and a matching service scope
+    GetDataExfiltrationDetectionRulesRequest request =
+        GetDataExfiltrationDetectionRulesRequest.newBuilder()
+            .setFilter(
+                DataExfiltrationDetectionRulesFilter.newBuilder()
+                    .addScopes(
+                        Scope.newBuilder()
+                            .setEnvironmentScope(EnvironmentScope.newBuilder().setId("no-match"))
+                            .build())
+                    .addScopes(
+                        Scope.newBuilder()
+                            .setServiceScope(EntityScope.newBuilder().setEntityId("svc-1"))
+                            .build())
+                    .build())
+            .build();
+
+    List<DataExfiltrationDetectionRuleConfig> configs =
+        dataExfiltrationDetectionRuleConfigServiceBlockingStub
+            .getDataExfiltrationDetectionRules(request)
+            .getConfigsList();
+
+    assertEquals(1, configs.size());
+    assertEquals(config.getId(), configs.get(0).getId());
+  }
+
+  @Test
+  void testGetWithScopeFilterNoMatchReturnsEmpty() {
+    // Create config with env scope env-A
+    dataExfiltrationDetectionRuleConfigServiceBlockingStub.createDataExfiltrationDetectionRule(
+        CreateDataExfiltrationDetectionRuleRequest.newBuilder()
+            .setRuleData(
+                DataExfiltrationDetectionRuleData.newBuilder()
+                    .setName("rule-env-A")
+                    .addScopes(
+                        Scope.newBuilder()
+                            .setEnvironmentScope(EnvironmentScope.newBuilder().setId("env-A"))
+                            .build()))
+            .build());
+
+    // Filter for env-B (no match)
+    GetDataExfiltrationDetectionRulesRequest request =
+        GetDataExfiltrationDetectionRulesRequest.newBuilder()
+            .setFilter(
+                DataExfiltrationDetectionRulesFilter.newBuilder()
+                    .addScopes(
+                        Scope.newBuilder()
+                            .setEnvironmentScope(EnvironmentScope.newBuilder().setId("env-B"))
+                            .build())
+                    .build())
+            .build();
+
+    List<DataExfiltrationDetectionRuleConfig> configs =
+        dataExfiltrationDetectionRuleConfigServiceBlockingStub
+            .getDataExfiltrationDetectionRules(request)
+            .getConfigsList();
+
+    assertTrue(configs.isEmpty());
   }
 
   private DataExfiltrationDetectionRuleData getSampleData() {

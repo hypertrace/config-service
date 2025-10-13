@@ -1,6 +1,7 @@
 package ai.traceable.data.exfiltration.config.service.detection.rule;
 
 import ai.traceable.data.exfiltration.config.service.v1.DataExfiltrationDetectionRuleConfig;
+import ai.traceable.data.exfiltration.config.service.v1.DataExfiltrationDetectionRulesFilter;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
 import io.grpc.Channel;
@@ -8,7 +9,7 @@ import jakarta.inject.Inject;
 import java.util.Optional;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.hypertrace.config.objectstore.IdentifiedObjectStore;
+import org.hypertrace.config.objectstore.IdentifiedObjectStoreWithFilter;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
@@ -16,7 +17,8 @@ import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProvide
 
 @Slf4j
 public class DataExfiltrationDetectionRulesStore
-    extends IdentifiedObjectStore<DataExfiltrationDetectionRuleConfig> {
+    extends IdentifiedObjectStoreWithFilter<
+        DataExfiltrationDetectionRuleConfig, DataExfiltrationDetectionRulesFilter> {
 
   private static final String DATA_EXFILTRATION_DETECTION_RULE_CONFIG =
       "dataExfiltrationDetectionRuleConfig";
@@ -57,5 +59,20 @@ public class DataExfiltrationDetectionRulesStore
   @Override
   protected String getContextFromData(DataExfiltrationDetectionRuleConfig data) {
     return data.getId();
+  }
+
+  @Override
+  protected Optional<DataExfiltrationDetectionRuleConfig> filterConfigData(
+      DataExfiltrationDetectionRuleConfig data, DataExfiltrationDetectionRulesFilter filter) {
+    if (filter.getScopesList().isEmpty()) {
+      return Optional.of(data);
+    }
+
+    // if any of the scopes match we will return the config
+    return Optional.of(data)
+        .filter(
+            config ->
+                filter.getScopesList().stream()
+                    .anyMatch(scope -> config.getRuleData().getScopesList().contains(scope)));
   }
 }

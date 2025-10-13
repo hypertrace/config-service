@@ -14,9 +14,7 @@ import ai.traceable.data.exfiltration.config.service.v1.UpdateDataExfiltrationDe
 import com.google.inject.Inject;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.hypertrace.config.objectstore.ConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
@@ -47,9 +45,8 @@ public class DataExfiltrationDetectionRulesConfigServiceImpl
       responseObserver.onNext(
           GetDataExfiltrationDetectionRulesResponse.newBuilder()
               .addAllConfigs(
-                  dataExfiltrationDetectionRulesStore.getAllObjects(requestContext).stream()
-                      .map(ConfigObject::getData)
-                      .collect(Collectors.toList()))
+                  dataExfiltrationDetectionRulesStore.getAllConfigData(
+                      requestContext, request.getFilter()))
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
