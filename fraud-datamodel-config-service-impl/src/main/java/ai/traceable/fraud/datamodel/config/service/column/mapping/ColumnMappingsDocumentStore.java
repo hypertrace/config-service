@@ -98,6 +98,22 @@ public class ColumnMappingsDocumentStore implements ColumnMappingsStore {
     return columnMappingDocs;
   }
 
+  @Override
+  public void deleteColumnMappings(
+      RequestContext requestContext, List<ColumnMappingsDocument> mappingsToDelete) {
+    String tenantId = getTenantId(requestContext);
+    for (ColumnMappingsDocument mapping : mappingsToDelete) {
+      ColumnMappingsKey key =
+          new ColumnMappingsKey(
+              tenantId,
+              mapping.getObjectKind(),
+              mapping.getObjectTypeId(),
+              mapping.getFieldName(),
+              mapping.getColumnId());
+      this.collection.delete(key);
+    }
+  }
+
   private List<ColumnMappingsDocument> getColumnMappingsInternal(
       RequestContext requestContext,
       ObjectKind objectKind,

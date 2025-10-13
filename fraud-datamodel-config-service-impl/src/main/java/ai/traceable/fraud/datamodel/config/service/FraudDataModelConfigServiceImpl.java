@@ -501,7 +501,7 @@ public class FraudDataModelConfigServiceImpl
         .getObjectType(
             requestContext,
             FraudDataModelUtils.getObjectTypeReference(
-                ObjectKind.OBJECT_KIND_RELATIONSHIP, eventType.getId()))
+                ObjectKind.OBJECT_KIND_EVENT, eventType.getId()))
         .map(objectType -> this.updateAndGetObjectType(requestContext, eventType, objectType))
         .orElseGet(() -> createAndGetObjectType(requestContext, eventType));
   }

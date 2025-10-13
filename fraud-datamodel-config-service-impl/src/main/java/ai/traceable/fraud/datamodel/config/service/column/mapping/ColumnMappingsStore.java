@@ -20,4 +20,7 @@ public interface ColumnMappingsStore {
 
   List<ColumnMappingsDocument> deleteColumnMappings(
       RequestContext requestContext, ObjectKind objectKind, String objectTypeId) throws IOException;
+
+  void deleteColumnMappings(
+      RequestContext requestContext, List<ColumnMappingsDocument> mappingsToDelete);
 }

@@ -16,6 +16,7 @@ import io.grpc.Status;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -108,25 +109,77 @@ public class ColumnMapperDelegateImpl implements ColumnMapperDelegate {
         columnMappingsStore.getColumnMappings(requestContext, kind, typeId);
     Map<String, ColumnMappingsDocument> fieldMap = new HashMap<>();
     Map<String, ColumnMappingsDocument> colMap = new HashMap<>();
+    Set<String> processedFields = new HashSet<>();
+
     for (ColumnMappingsDocument currMapping : currMappings) {
       fieldMap.put(currMapping.getFieldName(), currMapping);
       colMap.put(currMapping.getColumnId(), currMapping);
     }
-    List<ColumnMappingsDocument> newMappings = new ArrayList<>();
+
+    List<ColumnMappingsDocument> mappingsToUpsert = new ArrayList<>();
+    List<ColumnMappingsDocument> mappingsToDelete = new ArrayList<>();
+
+    // Process all fields in the new object type
     for (Map.Entry<String, InternalFieldMetadata> entry : fields.getFieldsMetaMap().entrySet()) {
       String fieldName = entry.getKey();
-      // first, check if this key is already mapped
-      if (fieldMap.containsKey(fieldName)) {
-        continue;
-      }
       InternalFieldMetadata fieldMeta = entry.getValue();
-      ColumnMappingsDocument columnMappingsDocument =
-          buildObjectTypeColumnMappings(requestContext, kind, typeId, fieldName, fieldMeta, colMap);
-      newMappings.add(columnMappingsDocument);
+      processedFields.add(fieldName);
+
+      if (fieldMap.containsKey(fieldName)) {
+        // Check if metadata has changed and needs update
+        ColumnMappingsDocument existingMapping = fieldMap.get(fieldName);
+        if (!existingMapping.getInternalFieldMetadata().equals(fieldMeta)) {
+          // Metadata changed, update the mapping
+          log.info(
+              "Field metadata changed for field: {} in type: {}, updating mapping",
+              fieldName,
+              typeId);
+          ColumnMappingsDocument updatedMapping =
+              new ColumnMappingsDocument(
+                  existingMapping.getTenantId(),
+                  existingMapping.getObjectKind(),
+                  existingMapping.getObjectTypeId(),
+                  existingMapping.getFieldName(),
+                  existingMapping.getColumnId(),
+                  fieldMeta);
+          mappingsToUpsert.add(updatedMapping);
+        }
+      } else {
+        // New field, create mapping
+        log.debug("Adding new column mapping for field: {} in type: {}", fieldName, typeId);
+        ColumnMappingsDocument columnMappingsDocument =
+            buildObjectTypeColumnMappings(
+                requestContext, kind, typeId, fieldName, fieldMeta, colMap);
+        mappingsToUpsert.add(columnMappingsDocument);
+      }
     }
-    if (!newMappings.isEmpty()) {
-      columnMappingsStore.addColumnMappings(requestContext, newMappings);
+
+    // Find fields that were removed (exist in current mappings but not in new fields)
+    for (ColumnMappingsDocument currMapping : currMappings) {
+      if (!processedFields.contains(currMapping.getFieldName())) {
+        log.info(
+            "Field {} was removed from type: {}, marking for deletion",
+            currMapping.getFieldName(),
+            typeId);
+        mappingsToDelete.add(currMapping);
+      }
     }
+
+    // Delete removed field mappings
+    if (!mappingsToDelete.isEmpty()) {
+      log.info(
+          "Deleting {} column mappings for removed fields in type: {}",
+          mappingsToDelete.size(),
+          typeId);
+      columnMappingsStore.deleteColumnMappings(requestContext, mappingsToDelete);
+    }
+
+    // Upsert new and updated mappings in a single call
+    if (!mappingsToUpsert.isEmpty()) {
+      log.info("Upserting {} column mappings for type: {}", mappingsToUpsert.size(), typeId);
+      columnMappingsStore.addColumnMappings(requestContext, mappingsToUpsert);
+    }
+
     return columnMappingsStore.getColumnMappings(requestContext, kind, typeId);
   }
 
