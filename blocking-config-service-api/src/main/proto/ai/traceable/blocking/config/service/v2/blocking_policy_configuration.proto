@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package ai.traceable.blocking.config.service.v2;
 
+import "ai/traceable/blocking/config/service/v2/ip_resolution_strategy.proto";
 import "google/protobuf/struct.proto";
 
 option go_package = "github.com/Traceableai/config-service/blocking/v2";
@@ -13,6 +14,7 @@ message BlockingPolicyConfiguration {
   // in the precedence-order of evaluation
   repeated BlockingDetails blocking_details_list = 1;
   repeated ExclusionRule exclusion_rules = 2;
+  IPResolutionStrategy ip_resolution_strategy = 3;
 }
 
 message BlockingDetails {

@@ -1,0 +1,124 @@
+syntax = "proto3";
+
+package ai.traceable.blocking.config.service.v2;
+
+option go_package = "github.com/Traceableai/config-service/blocking/v2";
+option java_multiple_files = true;
+
+message IPResolutionStrategy {
+  // If true, all extracted IPs (from all sources) will be evaluated for blocking decisions (block if any match).
+  // If false, only the first extracted IP (based on source precedence) will be evaluated for blocking.
+  // Note: For detection only the first extracted IP is used, regardless of this flag.
+  bool evaluate_all_ips_for_blocking = 1;
+
+  // Ordered list of sources to check for client IP, in precedence order (first match wins).
+  repeated IPSource sources = 2;
+}
+
+message IPSource {
+  string source_attribute_name = 1; // ex: http.request.header.x-forwarded-for or net.peer.ip
+  ParsingStrategy parsing_strategy = 2;
+}
+
+// Defines how to extract an IP address from a given attribute
+message ParsingStrategy {
+  // Note: For both X-Forwarded-For and Forwarded headers, the first IP address is considered the original client IP.
+  // See RFC 7239 (https://datatracker.ietf.org/doc/html/rfc7239) for Forwarded header details.
+  // For X-Forwarded-For, see: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For
+
+  // Example: To extract from "X-Forwarded-For: 1.2.3.4, 5.6.7.8"
+  //   source_attribute_name: "http.request.header.x-forwarded-for"
+  //   parsing_strategy: {
+  //     split_delimiter: ","
+  //     extraction_rule: {
+  //       raw_ip: {}
+  //     }
+  //   }
+  //
+  // Example: Select the last external IP from "X-Forwarded-For", ignoring internal/private ranges
+  //   Header value: "X-Forwarded-For: 10.0.0.1, 172.16.0.5, 8.8.8.8, 203.0.113.9"
+  //   source_attribute_name: "http.request.header.x-forwarded-for"
+  //   parsing_strategy: {
+  //     split_delimiter: ","
+  //     remove_internal_ips: true
+  //     preferred_index: -1 // selects 203.0.113.9 (right-most after internal IPs removed)
+  //     extraction_rule: { raw_ip: {} }
+  //   }
+  //
+  // Example: To extract from "Forwarded: for=1.2.3.4;proto=https"
+  //   source_attribute_name: "http.request.header.forwarded"
+  //   parsing_strategy: {
+  //     split_delimiter: ";"
+  //     extraction_rule: {
+  //       keyword_based: {
+  //         prefix: "for="
+  //         suffix: ""
+  //       }
+  //     }
+  //   }
+  // Example: To extract IPv6 from "Forwarded: for=\"[2001:db8:cafe::17]:1234\";proto=https"
+  //   source_attribute_name: "http.request.header.forwarded"
+  //   parsing_strategy: {
+  //     split_delimiter: ";"
+  //     extraction_rule: {
+  //       keyword_based: {
+  //         prefix: "for=\"["
+  //         suffix: "]"
+  //       }
+  //     }
+  //   }
+  // Example: To extract the first external IP from "X-Forwarded-For", ignoring internal/private ranges
+  //   Header value: "X-Forwarded-For: 10.0.0.1, 172.16.0.5, 8.8.8.8, 203.0.113.9"
+  //   source_attribute_name: "http.request.header.x-forwarded-for"
+  //   parsing_strategy: {
+  //     split_delimiter: ","
+  //     remove_internal_ips: true
+  //     preferred_index: 0 // selects 8.8.8.8 (first external IP after internal IPs removed)
+  //     extraction_rule: { raw_ip: {} }
+  //   }
+  //
+  // Example: Use regex to extract IPs from multiple Forwarded items (handles quotes/brackets/ports)
+  //   Header value: "Forwarded: for=\"1.2.3.4\";proto=https, for=\"[2001:db8::1]:443\""
+  //   source_attribute_name: "http.request.header.forwarded"
+  //   parsing_strategy: {
+  //     split_delimiter: ","
+  //     extraction_rule: {
+  //       regex_based: {
+  //         pattern: "for=\"?\[?([A-Fa-f0-9:.]+)\]?(:\\d+)?\"?"
+  //         capture_group: 1
+  //         case_insensitive: true
+  //       }
+  //     }
+  //   }
+  // Split the original string using this delimiter (e.g., ",")
+  string split_delimiter = 1;
+  bool remove_internal_ips = 2; // applied after splitting
+  int32 preferred_index = 3; // selected after removing internal ips if enabled
+  // Strategy to extract IP from each token
+  oneof extraction_rule {
+    KeywordBasedExtraction keyword_based = 4;
+    RawIPExtraction raw_ip = 5;
+    RegexBasedExtraction regex_based = 6;
+  }
+}
+
+// For keyword-based IP extraction like "for=1.2.3.4"
+message KeywordBasedExtraction {
+  string prefix = 1;
+  string suffix = 2;
+}
+
+// For regex-based extraction where a pattern extracts the IP from each token
+// Notes:
+// - pattern should capture the IP in the specified capture group; if capture_group == 0, the entire match is used.
+// - case_insensitive true is equivalent to (?i) in many engines.
+// Example pattern handling quotes/brackets/ports in Forwarded:
+//   (?i)for=\"?\[?([A-Fa-f0-9:.]+)\]?(:\d+)?\"?
+message RegexBasedExtraction {
+  string pattern = 1; // regex pattern applied to each token
+  uint32 capture_group = 2; // 0 = whole match; otherwise selects the Nth capture group
+  bool case_insensitive = 3;
+}
+
+// For simple cases where the value itself is the IP address
+message RawIPExtraction {}
