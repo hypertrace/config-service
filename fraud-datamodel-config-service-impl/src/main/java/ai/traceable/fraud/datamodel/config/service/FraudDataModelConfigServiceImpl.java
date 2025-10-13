@@ -341,10 +341,14 @@ public class FraudDataModelConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       validator.validateRequestContext(requestContext);
+      List<String> typeIds = request.getTypesFilter().getTypeIdsList();
       List<ObjectType> allTypes =
           fraudObjectTypesStore.getAllObjectTypes(requestContext, ObjectKind.OBJECT_KIND_ENTITY);
       GetEntityTypesResponse.Builder entitiesResponse = GetEntityTypesResponse.newBuilder();
       for (ObjectType type : allTypes) {
+        if (!typeIds.isEmpty() && !typeIds.contains(type.getEntityType().getId())) {
+          continue;
+        }
         entitiesResponse.addEntityTypes(type.getEntityType());
       }
       responseObserver.onNext(entitiesResponse.build());
@@ -362,12 +366,16 @@ public class FraudDataModelConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       validator.validateRequestContext(requestContext);
+      List<String> typeIds = request.getTypesFilter().getTypeIdsList();
       List<ObjectType> allTypes =
           fraudObjectTypesStore.getAllObjectTypes(
               requestContext, ObjectKind.OBJECT_KIND_RELATIONSHIP);
       GetRelationshipTypesResponse.Builder relationshipsResponse =
           GetRelationshipTypesResponse.newBuilder();
       for (ObjectType type : allTypes) {
+        if (!typeIds.isEmpty() && !typeIds.contains(type.getRelationshipType().getId())) {
+          continue;
+        }
         relationshipsResponse.addRelationshipTypes(type.getRelationshipType());
       }
       responseObserver.onNext(relationshipsResponse.build());
@@ -384,10 +392,14 @@ public class FraudDataModelConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       validator.validateRequestContext(requestContext);
+      List<String> typeIds = request.getTypesFilter().getTypeIdsList();
       List<ObjectType> allTypes =
           fraudObjectTypesStore.getAllObjectTypes(requestContext, ObjectKind.OBJECT_KIND_EVENT);
       GetEventTypesResponse.Builder eventTypesResponse = GetEventTypesResponse.newBuilder();
       for (ObjectType type : allTypes) {
+        if (!typeIds.isEmpty() && !typeIds.contains(type.getEventType().getId())) {
+          continue;
+        }
         eventTypesResponse.addEventTypes(type.getEventType());
       }
       responseObserver.onNext(eventTypesResponse.build());
@@ -404,10 +416,14 @@ public class FraudDataModelConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       validator.validateRequestContext(requestContext);
+      List<String> typeIds = request.getTypesFilter().getTypeIdsList();
       List<ObjectType> allTypes =
           fraudObjectTypesStore.getAllObjectTypes(requestContext, ObjectKind.OBJECT_KIND_METRIC);
       GetMetricTypesResponse.Builder metricsResponse = GetMetricTypesResponse.newBuilder();
       for (ObjectType type : allTypes) {
+        if (!typeIds.isEmpty() && !typeIds.contains(type.getMetricType().getId())) {
+          continue;
+        }
         metricsResponse.addMetricTypes(type.getMetricType());
       }
       responseObserver.onNext(metricsResponse.build());
@@ -424,10 +440,14 @@ public class FraudDataModelConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       validator.validateRequestContext(requestContext);
+      List<String> typeIds = request.getTypesFilter().getTypeIdsList();
       List<ObjectType> allTypes =
           fraudObjectTypesStore.getAllObjectTypes(requestContext, ObjectKind.OBJECT_KIND_BASELINE);
       GetBaselineTypesResponse.Builder baselinesResponse = GetBaselineTypesResponse.newBuilder();
       for (ObjectType type : allTypes) {
+        if (!typeIds.isEmpty() && !typeIds.contains(type.getBaselineType().getId())) {
+          continue;
+        }
         baselinesResponse.addBaselineTypes(type.getBaselineType());
       }
       responseObserver.onNext(baselinesResponse.build());
