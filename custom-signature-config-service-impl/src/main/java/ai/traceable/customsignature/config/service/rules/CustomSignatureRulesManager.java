@@ -13,7 +13,6 @@ import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import ai.traceable.customsignature.config.service.v1.IpAddressExpression;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.platform.utils.ip.IpAddressParsingUtils;
-import io.grpc.Status;
 import jakarta.inject.Inject;
 import java.time.Duration;
 import java.util.List;
@@ -93,8 +92,7 @@ public class CustomSignatureRulesManager implements RulesManager {
       RequestContext requestContext, String id) {
     return rulesStore
         .deleteObject(requestContext, id)
-        .map(DeletedContextualConfigObject::getDeletedData)
-        .orElseThrow(() -> Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers()));
+        .flatMap(DeletedContextualConfigObject::getDeletedData);
   }
 
   private Optional<CustomSignatureRule> getCustomSignatureRule(

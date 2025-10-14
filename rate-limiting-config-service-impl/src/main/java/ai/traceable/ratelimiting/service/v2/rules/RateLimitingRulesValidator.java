@@ -462,8 +462,6 @@ public class RateLimitingRulesValidator implements RulesValidator {
   }
 
   private void validateMarkForTestingAction(Action.MarkForTesting markForTesting) {
-    validateNonDefaultPresenceOrThrow(
-        markForTesting, Action.MarkForTesting.EVENT_SEVERITY_FIELD_NUMBER);
     if (markForTesting.hasAgentRuleEffect()) {
       validategentRuleEffect(markForTesting.getAgentRuleEffect());
     }
