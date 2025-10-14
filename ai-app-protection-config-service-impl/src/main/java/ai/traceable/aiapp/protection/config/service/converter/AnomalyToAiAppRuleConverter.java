@@ -540,6 +540,7 @@ public final class AnomalyToAiAppRuleConverter {
     List<AiAppSubRule> modsecSubRules = new ArrayList<>();
 
     if (codeDetectedConfig == null || codeDetectedConfig.getThreatRuleConfigsList().isEmpty()) {
+      logger.error("No sub rules found for codeDetectedInPrompt");
       return modsecSubRules;
     }
 

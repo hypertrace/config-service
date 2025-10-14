@@ -568,8 +568,13 @@ public class AiAppProtectionConfigServiceImpl
     GetScopedAnomalyDetectionConfigResponse response =
         context.call(() -> detectorConfigService.getScopedAnomalyDetectionConfig(request));
 
-    log.debug("Successfully fetched scoped anomaly detection config");
-    return response.getScopedAnomalyDetectionConfig();
+    ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig =
+        response.getScopedAnomalyDetectionConfig();
+    log.debug(
+        "Successfully fetched scoped anomaly detection config : {} for config scope : {}",
+        scopedAnomalyDetectionConfig,
+        configScope);
+    return scopedAnomalyDetectionConfig;
   }
 
   /** Fetches all unresolved scoped anomaly detection configs from DetectorConfigService. */

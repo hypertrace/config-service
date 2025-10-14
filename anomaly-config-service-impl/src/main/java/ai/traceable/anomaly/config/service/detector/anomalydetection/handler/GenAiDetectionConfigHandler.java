@@ -6,9 +6,16 @@ import ai.traceable.anomaly.config.service.common.AnomalySubRuleConfigUtils;
 import ai.traceable.anomaly.config.service.registry.genai.GenAiRulesRegistry;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
+import ai.traceable.anomaly.config.service.v1.detector.CodeDetectedInPromptAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.CodeDetectedInPromptThreatRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.GenAiAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -69,6 +76,11 @@ public class GenAiDetectionConfigHandler {
                 AnomalyDetectionConfig mergedDetectionConfig =
                     (AnomalyDetectionConfig)
                         mergeConfigs(detectionConfig, configCaseMap.get(configCase));
+                if (configCase.equals(
+                    GenAiAnomalyDetectionConfig.ConfigCase.CODE_DETECTED_IN_PROMPT)) {
+                  mergedDetectionConfig =
+                      resolveCodeDetectedInPromptConfig(mergedDetectionConfig, detectionConfig);
+                }
                 configCaseMap.put(configCase, mergedDetectionConfig);
               } else {
                 configCaseMap.put(configCase, detectionConfig);
@@ -78,6 +90,30 @@ public class GenAiDetectionConfigHandler {
     return new ArrayList<>(
         populateNewFields(
             configCaseMap.values(), preferredConfig.getAnomalyDetectionConfigsList()));
+  }
+
+  // code detected in prompt has a list of threat rule configs, need to always use the fallback list
+  // as the generic merge ends up populating the preferred list always which will be empty in this
+  // case
+  private AnomalyDetectionConfig resolveCodeDetectedInPromptConfig(
+      AnomalyDetectionConfig mergedConfig, AnomalyDetectionConfig fallbackConfig) {
+    List<CodeDetectedInPromptThreatRuleConfig> threatRuleConfigs =
+        fallbackConfig
+            .getGenAiAnomalyDetectionConfig()
+            .getCodeDetectedInPrompt()
+            .getThreatRuleConfigsList();
+    CodeDetectedInPromptAnomalyDetectionConfig codeDetectedInPromptAnomalyDetectionConfig =
+        mergedConfig.getGenAiAnomalyDetectionConfig().getCodeDetectedInPrompt().toBuilder()
+            .clearThreatRuleConfigs()
+            .addAllThreatRuleConfigs(threatRuleConfigs)
+            .build();
+    GenAiAnomalyDetectionConfig genAiAnomalyDetectionConfig =
+        mergedConfig.getGenAiAnomalyDetectionConfig().toBuilder()
+            .setCodeDetectedInPrompt(codeDetectedInPromptAnomalyDetectionConfig)
+            .build();
+    return mergedConfig.toBuilder()
+        .setGenAiAnomalyDetectionConfig(genAiAnomalyDetectionConfig)
+        .build();
   }
 
   List<AnomalyDetectionConfig> deleteWholeAnomalyDetectionConfig(
