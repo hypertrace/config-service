@@ -58,6 +58,10 @@ class UserDefinedAuthDetectionRuleStore
       return Optional.of(data);
     }
 
+    if (!filter.getIdsList().isEmpty() && !filter.getIdsList().contains(data.getId())) {
+      return Optional.empty();
+    }
+
     if (!Collections.disjoint(
         filter.getScope().getEnvironmentNamesList(), data.getScope().getEnvironmentNamesList())) {
       return Optional.of(data);

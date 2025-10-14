@@ -10,6 +10,7 @@ message GetAuthDetectionRulesRequest {
 
 message AuthDetectionRuleFilter {
   AuthDetectionRuleScope scope = 1;
+  repeated string ids = 2;
 }
 
 message AuthDetectionRuleScope {
