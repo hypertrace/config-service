@@ -1,0 +1,100 @@
+# AI-Powered Auto-Fix for CI Failures
+# 
+# Purpose: Automatically detect and fix CI failures on PRs
+# 
+# IMPORTANT: This workflow triggers automatically when build and validate fails!
+# To disable: rename file or set the job condition to 'if: false'
+
+name: AI Autofix - Auto-Trigger on CI Failures
+
+on:
+  workflow_run:
+    workflows: ["build and validate"]  # The exact name of the workflow to monitor
+    types: [completed]
+
+permissions:
+  contents: write
+  actions: read
+  pull-requests: write
+  checks: read
+
+concurrency:
+  group: autofix-${{ github.event.workflow_run.head_branch }}-${{ github.event.workflow_run.head_repository.id }}
+  cancel-in-progress: true
+
+jobs:
+  ai-autofix:
+    runs-on: self-hosted-x64-small
+    # Only run on failures
+    if: github.event.workflow_run.conclusion == 'failure'
+    timeout-minutes: 60
+    
+    steps:
+      - name: Calculate simple repository name
+        id: repo-basename
+        shell: bash
+        run: |
+          echo "value=$(basename ${{ github.repository }})" >> $GITHUB_OUTPUT
+      
+      - name: Get Token from Github App
+        uses: tibdex/github-app-token@v2
+        id: generate-token
+        with:
+          app_id: ${{ secrets.GH_CI_APP_ID }}
+          private_key: ${{ secrets.GH_CI_APP_PRIVATE_KEY }}
+          repositories: >-
+            [${{ toJson(steps.repo-basename.outputs.value) }}]
+      
+      - name: Checkout code at failed commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+          # IMPORTANT: Use GitHub App token to trigger CI on autofix PRs
+          # GITHUB_TOKEN won't trigger workflows (security feature)
+          token: ${{ steps.generate-token.outputs.token }}
+          submodules: recursive
+      
+      - name: Checkout Traceable actions
+        uses: actions/checkout@v4
+        with:
+          repository: traceableai/github-actions
+          ssh-key: ${{ secrets.GH_ACTION_READ_KEY }}
+          path: .github/actions
+      
+      - name: Setup gradle auth
+        uses: ./.github/actions/gradle-setup
+      
+      - name: Run Harness AI Autofix
+        uses: ./.github/actions/harness-ai-autofix
+        with:
+          workflow_run_id: ${{ github.event.workflow_run.id }}
+          workflow_run_name: ${{ github.event.workflow_run.name }}
+          workflow_run_head_sha: ${{ github.event.workflow_run.head_sha }}
+          workflow_run_conclusion: ${{ github.event.workflow_run.conclusion }}
+          repository: ${{ github.repository }}
+          max_retries: '3'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          ci_trigger_token: ${{ steps.generate-token.outputs.token }}
+          gcp_service_account_key: ${{ secrets.AUTOFIX_GCP_SERVICE_ACCOUNT_KEY }}
+
+  notify-success:
+    runs-on: self-hosted-x64-small
+    if: github.event.workflow_run.conclusion == 'success'
+    
+    steps:
+      - name: Checkout Traceable actions
+        uses: actions/checkout@v4
+        with:
+          repository: traceableai/github-actions
+          ssh-key: ${{ secrets.GH_ACTION_READ_KEY }}
+          path: .github/actions
+      
+      - name: Post success notifications
+        uses: ./.github/actions/harness-ai-autofix-notify
+        with:
+          repository: ${{ github.repository }}
+          head_branch: ${{ github.event.workflow_run.head_branch }}
+          workflow_run_url: ${{ github.event.workflow_run.html_url }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
