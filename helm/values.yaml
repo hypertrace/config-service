@@ -3310,21 +3310,15 @@ defaultModsecDetectionConfigs: |-
           subRuleConfigs = [
               {
                   subRuleId = "crs_9310100"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               },
               {
                   subRuleId = "crs_931100"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               },
               {
                   subRuleId = "crs_931110"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               }
           ]
         }
@@ -3337,21 +3331,15 @@ defaultModsecDetectionConfigs: |-
           subRuleConfigs = [
               {
                   subRuleId = "crs_9300120"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               },
               {
                   subRuleId = "crs_9300130"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               },
               {
                   subRuleId = "crs_9300140"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               }
           ]
         }
@@ -3364,9 +3352,7 @@ defaultModsecDetectionConfigs: |-
           subRuleConfigs = [
               {
                   subRuleId = "crs_10100100"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               }
           ]
         }
@@ -3379,9 +3365,7 @@ defaultModsecDetectionConfigs: |-
           subRuleConfigs = [
               {
                   subRuleId = "crs_1020120"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               }
           ]
         }
@@ -3394,75 +3378,51 @@ defaultModsecDetectionConfigs: |-
           subRuleConfigs = [
               {
                   subRuleId = "crs_933100"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               },
               {
                   subRuleId = "crs_933110"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               },
               {
                   subRuleId = "crs_933120"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               },
               {
                   subRuleId = "crs_933130"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               },
               {
                   subRuleId = "crs_933140"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               },
               {
                   subRuleId = "crs_933150"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               },
               {
                   subRuleId = "crs_933160"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               },
               {
                   subRuleId = "crs_933170"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               },
               {
                   subRuleId = "crs_933180"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               },
               {
                   subRuleId = "crs_933200"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               },
               {
                   subRuleId = "crs_933210"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               },
               {
                   subRuleId = "crs_9330010"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               }
           ]
         }
@@ -3475,9 +3435,7 @@ defaultModsecDetectionConfigs: |-
           subRuleConfigs = [
               {
                   subRuleId = "crs_941420"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               }
           ]
         }
@@ -3490,39 +3448,27 @@ defaultModsecDetectionConfigs: |-
           subRuleConfigs = [
               {
                   subRuleId = "crs_9320090"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               },
               {
                   subRuleId = "crs_9320510"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               },
               {
                   subRuleId = "crs_9320110"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               },
               {
                   subRuleId = "crs_9320100"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               },
               {
                   subRuleId = "crs_9320200"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               },
               {
                   subRuleId = "crs_9320105"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               }
           ]
         }
@@ -3535,27 +3481,19 @@ defaultModsecDetectionConfigs: |-
           subRuleConfigs = [
               {
                   subRuleId = "crs_9210330"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               },
               {
                   subRuleId = "crs_9210011"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               },
               {
                   subRuleId = "crs_9210210"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               },
               {
                   subRuleId = "crs_9210200"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               }
           ]
         }
@@ -3568,15 +3506,11 @@ defaultModsecDetectionConfigs: |-
           subRuleConfigs = [
               {
                   subRuleId = "crs_9420360"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               },
               {
                   subRuleId = "crs_942360"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               }
           ]
         }
@@ -3589,21 +3523,15 @@ defaultModsecDetectionConfigs: |-
           subRuleConfigs = [
               {
                   subRuleId = "crs_1030100"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               },
               {
                   subRuleId = "crs_1030110"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               },
               {
                   subRuleId = "crs_1030120"
-                  configStatus = {
-                      disabled = true
-                  }
+                  anomalyRuleAction = "ANOMALY_RULE_ACTION_DISABLE"
               }
           ]
         }

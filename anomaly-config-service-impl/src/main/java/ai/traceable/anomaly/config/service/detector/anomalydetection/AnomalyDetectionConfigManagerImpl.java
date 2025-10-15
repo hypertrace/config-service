@@ -295,7 +295,10 @@ public class AnomalyDetectionConfigManagerImpl
   @Override
   protected Optional<ScopedAnomalyDetectionConfig> buildDataFromValue(Value value) {
     try {
-      return Optional.of(anomalyDetectionConfigHandler.convert(value));
+      return Optional.of(
+          anomalyDetectionConfigHandler.merge(
+              anomalyDetectionConfigHandler.convert(value),
+              ScopedAnomalyDetectionConfig.getDefaultInstance()));
     } catch (InvalidProtocolBufferException e) {
       log.error("Unable to convert config to ScopedAnomalyDetectionConfig for value: {}", value);
       return Optional.empty();

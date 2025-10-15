@@ -7,6 +7,7 @@ import ai.traceable.anomaly.config.service.detector.DetectorConfigServiceConfig;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.ModsecConfigHandler;
 import ai.traceable.anomaly.config.service.global.ruleinfo.RuleInfoManager;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
+import ai.traceable.anomaly.config.service.v1.AnomalyRuleAction;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
 import ai.traceable.anomaly.config.service.v1.RuleVersion;
@@ -173,6 +174,7 @@ public class WafConfigResolver {
     return AnomalySubRuleConfig.newBuilder()
         .setSubRuleId(subRuleInfo.getRuleId())
         .setConfigStatus(AnomalyConfigStatusChange.newBuilder().setDisabled(true).build())
+        .setAnomalyRuleAction(AnomalyRuleAction.ANOMALY_RULE_ACTION_DISABLE)
         .build();
   }
 
@@ -181,6 +183,7 @@ public class WafConfigResolver {
         .setSubRuleId(subRuleInfo.getRuleId())
         .setConfigStatus(AnomalyConfigStatusChange.newBuilder().setDisabled(false).build())
         .setBlockingEnabled(false)
+        .setAnomalyRuleAction(AnomalyRuleAction.ANOMALY_RULE_ACTION_MONITOR)
         .build();
   }
 
@@ -188,6 +191,7 @@ public class WafConfigResolver {
     return AnomalySubRuleConfig.newBuilder()
         .setSubRuleId(subRuleInfo.getRuleId())
         .setBlockingEnabled(true)
+        .setAnomalyRuleAction(AnomalyRuleAction.ANOMALY_RULE_ACTION_BLOCK)
         .build();
   }
 
