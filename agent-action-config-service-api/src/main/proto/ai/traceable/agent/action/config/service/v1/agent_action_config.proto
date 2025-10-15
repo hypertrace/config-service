@@ -8,7 +8,7 @@ option java_multiple_files = true;
 
 message AgentAction {
   string id = 1;
-  repeated AgentActionDetails details = 2;
+  repeated AgentActionDetails action_details = 2;
   google.protobuf.Timestamp expiration_timestamp = 3;
   // scope of agents for this action.
   AgentScope scope = 4;

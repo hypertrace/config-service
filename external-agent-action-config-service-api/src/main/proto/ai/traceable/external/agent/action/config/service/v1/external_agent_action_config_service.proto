@@ -58,11 +58,15 @@ message AgentAction {
   string hash = 1;
   // expiration duration for the action, once expired the agents shouldn't try to take this action.
   int64 expiration_epoch_millis = 2;
+  // details of the actions to be taken.
+  repeated AgentActionDetails action_details = 3;
+}
 
-  oneof action {
-    ConfigMutationAction update_config_action = 3;
-    FetchDebugInformationAction fetch_debug_information_action = 4;
-    RestartAgentAction restart_agent_action = 5;
+message AgentActionDetails {
+  oneof details {
+    ConfigMutationAction update_config_action = 1;
+    FetchDebugInformationAction fetch_debug_information_action = 2;
+    RestartAgentAction restart_agent_action = 3;
   }
 }
 
