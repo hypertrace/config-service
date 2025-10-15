@@ -16,9 +16,9 @@ message AgentAction {
 
 message AgentActionDetails {
   oneof details {
-    ConfigMutationAction update_config_action = 2;
-    FetchDebugInformationAction fetch_debug_information_action = 3;
-    RestartAgentAction restart_agent_action = 4;
+    ConfigMutationAction update_config_action = 1;
+    FetchDebugInformationAction fetch_debug_information_action = 2;
+    RestartAgentAction restart_agent_action = 3;
   }
 }
 
@@ -50,7 +50,7 @@ message GetAgentActionsFilter {
 
 message CompositeFilter {
   LogicalOperator operator = 1;
-  repeated Filter filter = 2;
+  repeated Filter filters = 2;
 
   enum LogicalOperator {
     LOGICAL_OPERATOR_UNSPECIFIED = 0;
@@ -67,10 +67,8 @@ message Filter {
 }
 
 message LeafFilter {
-  oneof scope {
-    string deployment_name = 1;
-    string service_instance_id = 2;
-    string module_name = 3;
-    string module_version = 4;
-  }
+  optional string deployment_name = 1;
+  optional string service_instance_id = 2;
+  optional string module_name = 3;
+  optional string module_version = 4;
 }

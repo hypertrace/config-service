@@ -8,6 +8,7 @@ breaking:
     - WIRE_JSON
   ignore:
    - external-agent-action-config-service-api/src/main/proto
+   - agent-action-config-service-api/src/main/proto
 modules:
   - path: anomaly-config-service-api/src/main/proto
   - path: anomaly-scoring-config-service-api/src/main/proto
