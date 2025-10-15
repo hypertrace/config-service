@@ -407,20 +407,21 @@ class ClauseGroupValidatorTest {
             lhsRhsKeysExpressionClause3, EventType.EVENT_TYPE_NORMAL_DETECTION);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
 
-    // value only MatchKeys (using the now deprecated flow)
+    // key-null MatchKeys (using the now deprecated flow)
     Clause lhsRhsKeysExpressionClause4 =
-        getLhsRhsKeysExpressionClause(
-            MatchOperator.MATCH_OPERATOR_CONTAINS,
-            MatchKey.MATCH_KEY_HEADER_VALUE,
-            MatchOperator.MATCH_OPERATOR_MATCHES_REGEX,
-            "lhs-match-value-2",
-            MatchKey.MATCH_KEY_COOKIE_VALUE,
-            MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX,
-            "rhs-match-value-2");
+        Clause.newBuilder()
+            .setLhsRhsKeysExpression(
+                LhsRhsKeysExpression.newBuilder()
+                    .setLhsKeyExpression(
+                        MatchExpression.newBuilder().setMatchKey(MatchKey.MATCH_KEY_URL))
+                    .setRhsKeyExpression(
+                        MatchExpression.newBuilder().setMatchKey(MatchKey.MATCH_KEY_HTTP_METHOD))
+                    .setMatchOperator(MatchOperator.MATCH_OPERATOR_NOT_EQUAL))
+            .build();
     status =
         clauseGroupValidator.validateClause(
             lhsRhsKeysExpressionClause4, EventType.EVENT_TYPE_NORMAL_DETECTION);
-    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertEquals(Status.OK.getCode(), status.getCode());
 
     // LhsKeyExpression is present, but RhsKeyExpression isn't (using the now deprecated flow)
     Clause lhsRhsKeysExpression5 =
@@ -491,8 +492,50 @@ class ClauseGroupValidatorTest {
             lhsRhsKeysExpressionClause8, EventType.EVENT_TYPE_NORMAL_DETECTION);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
 
-    // valid case 1 (using the now deprecated flow)
+    // valid case 1 of different categories of match keys of the now deprecated flow
     Clause lhsRhsKeysExpressionClause9 =
+        Clause.newBuilder()
+            .setLhsRhsKeysExpression(
+                LhsRhsKeysExpression.newBuilder()
+                    .setLhsKeyExpression(
+                        MatchExpression.newBuilder()
+                            .setMatchKey(MatchKey.MATCH_KEY_COOKIE_NAME)
+                            .setMatchCategory(MatchCategory.MATCH_CATEGORY_REQUEST)
+                            .setMatchOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
+                            .setValue(Value.newBuilder().setStringValue("cookie-name-regex")))
+                    .setRhsKeyExpression(
+                        MatchExpression.newBuilder().setMatchKey(MatchKey.MATCH_KEY_HOST))
+                    .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS))
+            .build();
+    status =
+        clauseGroupValidator.validateClause(
+            lhsRhsKeysExpressionClause9, EventType.EVENT_TYPE_NORMAL_DETECTION);
+    assertEquals(Status.OK.getCode(), status.getCode());
+
+    // valid case 2 of different categories of match keys of the newly added flow
+    Clause lhsRhsKeysExpressionClause10 =
+        Clause.newBuilder()
+            .setLhsRhsKeysExpression(
+                LhsRhsKeysExpression.newBuilder()
+                    .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                    .setKeyLhsExpression(
+                        MatchExpression.newBuilder()
+                            .setMatchKey(MatchKey.MATCH_KEY_STATUS_CODE)
+                            .setMatchCategory(MatchCategory.MATCH_CATEGORY_RESPONSE))
+                    .setKeyRhsExpression(
+                        MatchExpression.newBuilder()
+                            .setMatchCategory(MatchCategory.MATCH_CATEGORY_REQUEST)
+                            .setMatchKey(MatchKey.MATCH_KEY_HEADER_NAME)
+                            .setMatchOperator(MatchOperator.MATCH_OPERATOR_CONTAINS)
+                            .setValue(Value.newBuilder().setStringValue("header-name-str"))))
+            .build();
+    status =
+        clauseGroupValidator.validateClause(
+            lhsRhsKeysExpressionClause10, EventType.EVENT_TYPE_NORMAL_DETECTION);
+    assertEquals(Status.OK.getCode(), status.getCode());
+
+    // valid case 3 (using the now deprecated flow)
+    Clause lhsRhsKeysExpressionClause11 =
         getLhsRhsKeysExpressionClause(
             MatchOperator.MATCH_OPERATOR_EQUALS,
             MatchKey.MATCH_KEY_HEADER_NAME,
@@ -503,11 +546,11 @@ class ClauseGroupValidatorTest {
             "rhs-match-value-3");
     status =
         clauseGroupValidator.validateClause(
-            lhsRhsKeysExpressionClause9, EventType.EVENT_TYPE_NORMAL_DETECTION);
+            lhsRhsKeysExpressionClause11, EventType.EVENT_TYPE_NORMAL_DETECTION);
     assertEquals(Status.OK.getCode(), status.getCode());
 
-    // valid case 2 (using the newly added oneof fields)
-    Clause lhsRhsKeysExpressionClause10 =
+    // valid case 4 (using the newly added oneof fields)
+    Clause lhsRhsKeysExpressionClause12 =
         Clause.newBuilder()
             .setLhsRhsKeysExpression(
                 LhsRhsKeysExpression.newBuilder()
@@ -523,7 +566,7 @@ class ClauseGroupValidatorTest {
             .build();
     status =
         clauseGroupValidator.validateClause(
-            lhsRhsKeysExpressionClause10, EventType.EVENT_TYPE_NORMAL_DETECTION);
+            lhsRhsKeysExpressionClause12, EventType.EVENT_TYPE_NORMAL_DETECTION);
     assertEquals(Status.OK.getCode(), status.getCode());
   }
 

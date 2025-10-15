@@ -2,6 +2,7 @@ package ai.traceable.customsignature.config.service.rules;
 
 import static ai.traceable.customsignature.config.service.v1.IpAddressExpressionType.IP_ADDRESS_EXPRESSION_TYPE_ALL_EXTERNAL;
 import static ai.traceable.customsignature.config.service.v1.IpAddressExpressionType.IP_ADDRESS_EXPRESSION_TYPE_ALL_INTERNAL;
+import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_BODY;
 import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_BODY_PARAMETER_VALUE;
 import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_BODY_SIZE;
 import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_COOKIES_COUNT;
@@ -13,6 +14,7 @@ import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_
 import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_PARAMETER_VALUE;
 import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_QUERY_PARAMETER_VALUE;
 import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_QUERY_PARAMS_COUNT;
+import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_STATUS_CODE;
 import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_URL;
 import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_USER_AGENT;
 import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_CONTAINS;
@@ -83,18 +85,6 @@ public class ClauseGroupValidator {
           MATCH_KEY_HTTP_METHOD,
           MATCH_KEY_USER_AGENT);
 
-  private static final Set<MatchKey> VALUE_ONLY_MATCH_KEYS =
-      Set.of(
-          MATCH_KEY_HEADER_VALUE,
-          MATCH_KEY_PARAMETER_VALUE,
-          MATCH_KEY_QUERY_PARAMETER_VALUE,
-          MATCH_KEY_BODY_PARAMETER_VALUE,
-          MATCH_KEY_COOKIE_VALUE,
-          MATCH_KEY_BODY_SIZE,
-          MATCH_KEY_QUERY_PARAMS_COUNT,
-          MATCH_KEY_HEADERS_COUNT,
-          MATCH_KEY_COOKIES_COUNT);
-
   private static final Set<MatchOperator> NUMERIC_MATCH_OPERATORS =
       Set.of(MATCH_OPERATOR_LESS_THAN, MATCH_OPERATOR_GREATER_THAN);
 
@@ -107,6 +97,24 @@ public class ClauseGroupValidator {
 
   private static final Set<MatchOperator> UNSUPPORTED_OPERATORS_FOR_LHS_RHS_EXPRESSIONS =
       Set.of(MATCH_OPERATOR_LESS_THAN, MATCH_OPERATOR_GREATER_THAN);
+
+  private static final Set<MatchKey> KEY_NULL_MATCH_KEYS =
+      Set.of(
+          MATCH_KEY_URL,
+          MATCH_KEY_HOST,
+          MATCH_KEY_HTTP_METHOD,
+          MATCH_KEY_USER_AGENT,
+          MATCH_KEY_STATUS_CODE,
+          MATCH_KEY_HEADER_VALUE,
+          MATCH_KEY_PARAMETER_VALUE,
+          MATCH_KEY_QUERY_PARAMETER_VALUE,
+          MATCH_KEY_BODY_PARAMETER_VALUE,
+          MATCH_KEY_COOKIE_VALUE,
+          MATCH_KEY_BODY,
+          MATCH_KEY_BODY_SIZE,
+          MATCH_KEY_QUERY_PARAMS_COUNT,
+          MATCH_KEY_HEADERS_COUNT,
+          MATCH_KEY_COOKIES_COUNT);
 
   public Status validateClauseGroup(ClauseGroup clauseGroup, EventType eventType) {
     if (clauseGroup.getClauseOperator() == ClauseOperator.CLAUSE_OPERATOR_UNSPECIFIED) {
@@ -147,7 +155,7 @@ public class ClauseGroupValidator {
   public Status validateClause(Clause clause, EventType eventType) {
     switch (clause.getClauseCase()) {
       case MATCH_EXPRESSION:
-        return validateMatchExpression(clause.getMatchExpression(), eventType);
+        return validateMatchExpression(clause.getMatchExpression(), eventType, false);
       case KEY_VALUE_EXPRESSION:
         return validateKeyValueExpression(clause.getKeyValueExpression());
       case ATTRIBUTE_KEY_VALUE_EXPRESSION:
@@ -403,7 +411,8 @@ public class ClauseGroupValidator {
     return Status.OK;
   }
 
-  private Status validateMatchExpression(MatchExpression matchExpression, EventType eventType) {
+  private Status validateMatchExpression(
+      MatchExpression matchExpression, EventType eventType, boolean isLhsRhsExpression) {
     MatchKey matchKey = matchExpression.getMatchKey();
     MatchOperator matchOperator = matchExpression.getMatchOperator();
 
@@ -413,8 +422,13 @@ public class ClauseGroupValidator {
     }
 
     if (MatchOperator.MATCH_OPERATOR_UNSPECIFIED.equals(matchOperator)) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "Custom Signature Rule match expression should have a valid match operator.");
+      // if it's either a vanilla match expression or
+      // a lhs rhs based match expression with a match key that is not in the KEY_NULL_MATCH_KEYS
+      // list
+      if (!isLhsRhsExpression || !KEY_NULL_MATCH_KEYS.contains(matchKey)) {
+        return Status.INVALID_ARGUMENT.withDescription(
+            "Custom Signature Rule match expression should have a valid match operator.");
+      }
     }
 
     if (matchExpression.getMatchCategory().equals(MatchCategory.MATCH_CATEGORY_RESPONSE)
@@ -432,7 +446,13 @@ public class ClauseGroupValidator {
     }
 
     if (matchExpression.getMatchValue().isEmpty() && !matchExpression.hasValue()) {
-      return Status.INVALID_ARGUMENT.withDescription("Both matchValue and Value cannot be empty.");
+      // if it's either a vanilla match expression or
+      // a lhs rhs based match expression with a match key that is not in the KEY_NULL_MATCH_KEYS
+      // list
+      if (!isLhsRhsExpression || !KEY_NULL_MATCH_KEYS.contains(matchKey)) {
+        return Status.INVALID_ARGUMENT.withDescription(
+            "Both matchValue and Value cannot be empty.");
+      }
     }
 
     if (isInvalidMathematicalOperation(matchExpression)) {
@@ -639,15 +659,6 @@ public class ClauseGroupValidator {
     MatchExpression lhsKeyExpression = lhsRhsKeysExpression.getLhsKeyExpression();
     MatchExpression rhsKeyExpression = lhsRhsKeysExpression.getRhsKeyExpression();
 
-    status = validateForValueOnlyMatchKeys(lhsKeyExpression.getMatchKey());
-    if (status != Status.OK) {
-      return status;
-    }
-    status = validateForValueOnlyMatchKeys(rhsKeyExpression.getMatchKey());
-    if (status != Status.OK) {
-      return status;
-    }
-
     if (lhsKeyExpression.equals(rhsKeyExpression)) {
       return Status.INVALID_ARGUMENT.withDescription(
           "LhsKeyExpression cannot be the same as RhsKeyExpression.");
@@ -662,12 +673,19 @@ public class ClauseGroupValidator {
       return status;
     }
 
-    status = validateMatchExpression(lhsKeyExpression, eventType);
-    if (status != Status.OK) {
+    if (!KEY_NULL_MATCH_KEYS.contains(lhsKeyExpression.getMatchKey())) {
+      status = validateMatchExpression(lhsKeyExpression, eventType, true);
+      if (status != Status.OK) {
+        return status;
+      }
+    }
+
+    if (!KEY_NULL_MATCH_KEYS.contains(rhsKeyExpression.getMatchKey())) {
+      status = validateMatchExpression(rhsKeyExpression, eventType, true);
       return status;
     }
-    status = validateMatchExpression(rhsKeyExpression, eventType);
-    return status;
+
+    return Status.OK;
   }
 
   private Status validateLhsRhsFieldsPresence(LhsRhsKeysExpression lhsRhsKeysExpression) {
@@ -715,16 +733,17 @@ public class ClauseGroupValidator {
           isLhsExpression
               ? lhsRhsKeysExpression.getKeyLhsExpression()
               : lhsRhsKeysExpression.getKeyRhsExpression();
-      status = validateForValueOnlyMatchKeys(matchExpression.getMatchKey());
-      if (status != Status.OK) {
-        return status;
-      }
       status = validateUnsupportedOperatorsForLhsRhsExpressions(matchExpression.getMatchOperator());
       if (status != Status.OK) {
         return status;
       }
-      status = validateMatchExpression(matchExpression, eventType);
-      return status;
+
+      if (!KEY_NULL_MATCH_KEYS.contains(matchExpression.getMatchKey())) {
+        status = validateMatchExpression(matchExpression, eventType, true);
+        return status;
+      }
+
+      return Status.OK;
 
     } else if (isLhsExpression
         ? lhsRhsKeysExpression.hasAttributeLhsExpression()
@@ -741,14 +760,6 @@ public class ClauseGroupValidator {
       return status;
     }
 
-    return Status.OK;
-  }
-
-  private Status validateForValueOnlyMatchKeys(MatchKey matchKey) {
-    if (VALUE_ONLY_MATCH_KEYS.contains(matchKey)) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "Comparison operations cannot be performed with value-only match keys.");
-    }
     return Status.OK;
   }
 
