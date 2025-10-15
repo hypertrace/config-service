@@ -383,7 +383,7 @@ class AiAppToCustomSignatureConverterTest {
 
     // Verify clause group
     assertTrue(result.getDefinition().hasClauseGroup());
-    assertEquals(1, result.getDefinition().getClauseGroup().getClausesCount());
+    assertEquals(2, result.getDefinition().getClauseGroup().getClausesCount());
 
     Clause clause = result.getDefinition().getClauseGroup().getClauses(0);
     assertTrue(clause.hasAttributeKeyValueExpression());
@@ -396,6 +396,15 @@ class AiAppToCustomSignatureConverterTest {
         ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_MATCHES_REGEX,
         attrExpr.getValueCondition().getOperator());
     assertEquals("claude-.*", attrExpr.getValueCondition().getValue());
+
+    clause = result.getDefinition().getClauseGroup().getClauses(1);
+    assertTrue(clause.hasAttributeKeyValueExpression());
+    attrExpr = clause.getAttributeKeyValueExpression();
+    assertEquals(GENAI_PROVIDERS_ATTRIBUTE_KEY, attrExpr.getKeyCondition().getValue());
+    assertEquals(
+        ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_EQUALS,
+        attrExpr.getKeyCondition().getOperator());
+    assertFalse(attrExpr.hasValueCondition());
 
     // Verify rule effect
     assertTrue(result.hasEffect());

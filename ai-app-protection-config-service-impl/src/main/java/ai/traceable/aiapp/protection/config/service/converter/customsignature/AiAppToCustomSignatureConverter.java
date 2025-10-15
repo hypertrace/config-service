@@ -9,6 +9,7 @@ import static ai.traceable.aiapp.protection.config.service.converter.AiAppConver
 
 import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRule;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRuleData;
+import ai.traceable.aiapp.protection.config.service.v1.MatchOperatorCondition;
 import ai.traceable.aiapp.protection.config.service.v1.RuleStatusDetails;
 import ai.traceable.aiapp.protection.config.service.v1.ScopeCondition;
 import ai.traceable.customsignature.config.service.v1.AttributeKeyValueExpression;
@@ -154,20 +155,16 @@ public class AiAppToCustomSignatureConverter {
       ClauseGroup.Builder clauseGroupBuilder) {
 
     // Add AI model types condition using attribute match
-    if (modelGovernanceData.hasAiModelTypesCondition()) {
-      Clause modelTypesClause =
-          buildAttributeMatchClause(
-              GENAI_MODELS_ATTRIBUTE_KEY, modelGovernanceData.getAiModelTypesCondition());
-      clauseGroupBuilder.addClauses(modelTypesClause);
-    }
+    Clause modelTypesClause =
+        buildAttributeMatchClause(
+            GENAI_MODELS_ATTRIBUTE_KEY, modelGovernanceData.getAiModelTypesCondition());
+    clauseGroupBuilder.addClauses(modelTypesClause);
 
     // Add AI vendors condition using attribute match
-    if (modelGovernanceData.hasAiVendorsCondition()) {
-      Clause vendorsClause =
-          buildAttributeMatchClause(
-              GENAI_PROVIDERS_ATTRIBUTE_KEY, modelGovernanceData.getAiVendorsCondition());
-      clauseGroupBuilder.addClauses(vendorsClause);
-    }
+    Clause vendorsClause =
+        buildAttributeMatchClause(
+            GENAI_PROVIDERS_ATTRIBUTE_KEY, modelGovernanceData.getAiVendorsCondition());
+    clauseGroupBuilder.addClauses(vendorsClause);
 
     // Add scope conditions
     for (ai.traceable.aiapp.protection.config.service.v1.ScopeCondition scopeCondition :
@@ -218,8 +215,7 @@ public class AiAppToCustomSignatureConverter {
 
   /** Builds an attribute match clause for AI model types and vendors. */
   private Clause buildAttributeMatchClause(
-      String attributeKey,
-      ai.traceable.aiapp.protection.config.service.v1.MatchOperatorCondition matchCondition) {
+      String attributeKey, MatchOperatorCondition matchCondition) {
 
     // Build key condition
     StringCondition.Builder keyConditionBuilder =
@@ -228,17 +224,18 @@ public class AiAppToCustomSignatureConverter {
                 ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_EQUALS)
             .setValue(attributeKey);
 
-    // Build value condition with the match operator and value from AI app condition
-    StringCondition.Builder valueConditionBuilder =
-        StringCondition.newBuilder()
-            .setOperator(convertMatchOperator(matchCondition.getOperator()))
-            .setValue(matchCondition.getValue().getStringValue());
-
     // Build AttributeKeyValueExpression
     AttributeKeyValueExpression.Builder attributeExpressionBuilder =
-        AttributeKeyValueExpression.newBuilder()
-            .setKeyCondition(keyConditionBuilder.build())
-            .setValueCondition(valueConditionBuilder.build());
+        AttributeKeyValueExpression.newBuilder().setKeyCondition(keyConditionBuilder.build());
+
+    if (!matchCondition.equals(MatchOperatorCondition.getDefaultInstance())) {
+      // Build value condition with the match operator and value from AI app condition
+      StringCondition.Builder valueConditionBuilder =
+          StringCondition.newBuilder()
+              .setOperator(convertMatchOperator(matchCondition.getOperator()))
+              .setValue(matchCondition.getValue().getStringValue());
+      attributeExpressionBuilder.setValueCondition(valueConditionBuilder);
+    }
 
     return Clause.newBuilder()
         .setAttributeKeyValueExpression(attributeExpressionBuilder.build())

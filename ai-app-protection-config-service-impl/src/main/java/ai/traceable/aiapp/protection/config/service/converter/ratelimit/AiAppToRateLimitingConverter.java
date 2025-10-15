@@ -251,20 +251,16 @@ public class AiAppToRateLimitingConverter {
     List<Condition> conditions = new ArrayList<>();
 
     // Convert AI model types condition
-    if (aiRateLimitingData.hasAiModelTypesCondition()) {
-      Condition modelTypesCondition =
-          convertSpanAttributeCondition(
-              aiRateLimitingData.getAiModelTypesCondition(), GENAI_MODELS_ATTRIBUTE_KEY);
-      conditions.add(modelTypesCondition);
-    }
+    Condition modelTypesCondition =
+        convertSpanAttributeCondition(
+            aiRateLimitingData.getAiModelTypesCondition(), GENAI_MODELS_ATTRIBUTE_KEY);
+    conditions.add(modelTypesCondition);
 
     // Convert AI vendors condition
-    if (aiRateLimitingData.hasAiVendorsCondition()) {
-      Condition vendorsCondition =
-          convertSpanAttributeCondition(
-              aiRateLimitingData.getAiVendorsCondition(), GENAI_PROVIDERS_ATTRIBUTE_KEY);
-      conditions.add(vendorsCondition);
-    }
+    Condition vendorsCondition =
+        convertSpanAttributeCondition(
+            aiRateLimitingData.getAiVendorsCondition(), GENAI_PROVIDERS_ATTRIBUTE_KEY);
+    conditions.add(vendorsCondition);
 
     // Convert scope conditions if present (now using plural scope_conditions field)
     for (ai.traceable.aiapp.protection.config.service.v1.ScopeCondition scopeCondition :
@@ -419,22 +415,22 @@ public class AiAppToRateLimitingConverter {
                             .build())
                     .build());
 
-    // Create value match operator condition using the reusable converter
-    KeyValueCondition.MatchOperatorCondition.Builder valueConditionBuilder =
-        KeyValueCondition.MatchOperatorCondition.newBuilder()
-            .setValue(matchOperatorCondition.getValue())
-            .setOperator(convertMatchOperator(matchOperatorCondition.getOperator()));
-
     // Create value condition
-    KeyValueCondition.StaticValueCondition staticValueCondition =
-        KeyValueCondition.StaticValueCondition.newBuilder()
-            .setKeyCondition(keyConditionBuilder.build())
-            .setValueMatchOperatorCondition(valueConditionBuilder.build())
-            .build();
+    KeyValueCondition.StaticValueCondition.Builder staticValueConditionBuilder =
+        KeyValueCondition.StaticValueCondition.newBuilder().setKeyCondition(keyConditionBuilder);
+
+    if (!matchOperatorCondition.equals(MatchOperatorCondition.getDefaultInstance())) {
+      // Create value match operator condition using the reusable converter
+      KeyValueCondition.MatchOperatorCondition.Builder valueConditionBuilder =
+          KeyValueCondition.MatchOperatorCondition.newBuilder()
+              .setValue(matchOperatorCondition.getValue())
+              .setOperator(convertMatchOperator(matchOperatorCondition.getOperator()));
+      staticValueConditionBuilder.setValueMatchOperatorCondition(valueConditionBuilder);
+    }
 
     // Create key-value condition
     KeyValueCondition keyValueCondition =
-        KeyValueCondition.newBuilder().setStaticValueCondition(staticValueCondition).build();
+        KeyValueCondition.newBuilder().setStaticValueCondition(staticValueConditionBuilder).build();
 
     LeafCondition leafCondition =
         LeafCondition.newBuilder().setKeyValueCondition(keyValueCondition).build();
