@@ -277,6 +277,7 @@ message ApiNamingRuleConfig {
     ApiSpecBasedConfig api_spec_based_config = 2;
     AstScanBasedConfig ast_scan_based_config = 3;
     JobBasedConfig job_based_config = 4;
+    GenAiBasedConfig gen_ai_based_config = 5;
   }
 }
 
@@ -286,6 +287,7 @@ enum ApiNamingRuleConfigType {
   API_NAMING_RULE_CONFIG_TYPE_SEGMENT_MATCHING_BASED_CONFIG = 1;
   API_NAMING_RULE_CONFIG_TYPE_API_SPEC_BASED_CONFIG = 2;
   API_NAMING_RULE_CONFIG_TYPE_AST_SCAN_BASED_CONFIG = 3;
+  API_NAMING_RULE_CONFIG_TYPE_GEN_AI_BASED_CONFIG = 4;
 }
 
 message ApiNamingRulesFilter {
@@ -322,6 +324,11 @@ message ApiSpecBasedConfig {
   repeated string api_spec_ids = 4;
   repeated string regexes = 2;
   repeated string values = 3;
+}
+
+message GenAiBasedConfig {
+  repeated string regexes = 1;
+  repeated string values = 2;
 }
 
 message AstScanBasedConfig {

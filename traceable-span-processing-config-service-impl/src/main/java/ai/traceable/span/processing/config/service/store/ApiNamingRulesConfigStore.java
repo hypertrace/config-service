@@ -2,9 +2,11 @@ package ai.traceable.span.processing.config.service.store;
 
 import static ai.traceable.span.processing.config.service.v1.ApiNamingRuleConfig.RuleConfigCase.API_SPEC_BASED_CONFIG;
 import static ai.traceable.span.processing.config.service.v1.ApiNamingRuleConfig.RuleConfigCase.AST_SCAN_BASED_CONFIG;
+import static ai.traceable.span.processing.config.service.v1.ApiNamingRuleConfig.RuleConfigCase.GEN_AI_BASED_CONFIG;
 import static ai.traceable.span.processing.config.service.v1.ApiNamingRuleConfig.RuleConfigCase.SEGMENT_MATCHING_BASED_CONFIG;
 import static ai.traceable.span.processing.config.service.v1.ApiNamingRuleConfigType.API_NAMING_RULE_CONFIG_TYPE_API_SPEC_BASED_CONFIG;
 import static ai.traceable.span.processing.config.service.v1.ApiNamingRuleConfigType.API_NAMING_RULE_CONFIG_TYPE_AST_SCAN_BASED_CONFIG;
+import static ai.traceable.span.processing.config.service.v1.ApiNamingRuleConfigType.API_NAMING_RULE_CONFIG_TYPE_GEN_AI_BASED_CONFIG;
 import static ai.traceable.span.processing.config.service.v1.ApiNamingRuleConfigType.API_NAMING_RULE_CONFIG_TYPE_SEGMENT_MATCHING_BASED_CONFIG;
 import static ai.traceable.span.processing.config.service.v1.Field.FIELD_ENVIRONMENT_NAME;
 
@@ -52,6 +54,7 @@ public class ApiNamingRulesConfigStore
                   SEGMENT_MATCHING_BASED_CONFIG)
               .put(API_NAMING_RULE_CONFIG_TYPE_API_SPEC_BASED_CONFIG, API_SPEC_BASED_CONFIG)
               .put(API_NAMING_RULE_CONFIG_TYPE_AST_SCAN_BASED_CONFIG, AST_SCAN_BASED_CONFIG)
+              .put(API_NAMING_RULE_CONFIG_TYPE_GEN_AI_BASED_CONFIG, GEN_AI_BASED_CONFIG)
               .build();
 
   private final TimestampConverter timestampConverter;
