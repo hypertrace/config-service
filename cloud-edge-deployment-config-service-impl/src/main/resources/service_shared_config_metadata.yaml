@@ -138,7 +138,7 @@
   displayName: "Retry Attempts"
   constraint:
     intRange:
-      min: 1
+      min: 0
       max: 100
   configPermission:
     read: CONFIG_ACCESS_TYPE_GLOBAL
@@ -153,7 +153,7 @@
   displayName: "Retry Timeout(s)"
   constraint:
     intRange:
-      min: 1
+      min: 0
       max: 600
   configPermission:
     read: CONFIG_ACCESS_TYPE_GLOBAL
@@ -161,7 +161,7 @@
   identifiers:
     - chartName: ""
       chartPath: ""
-  default_value: 5
+  default_value: 30
 
 - configKey: "requestTimeout"
   description: "Timeout for the entire request"
@@ -176,4 +176,4 @@
   identifiers:
     - chartName: ""
       chartPath: ""
-  default_value: 30
+  default_value: 100

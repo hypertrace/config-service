@@ -56,11 +56,11 @@ spec:
         - alert: CloudEdgeDeploymentConfigStatusChange
           annotations:
             summary: 'Cloud Edge Deployment Config Status Change'
-            message: 'Cloud Edge Deployment Config status changed to {{`{{ $labels.deploymentStatus}}`}} for config id: {{`{{ $labels.configId}}`}} for customer: {{`{{ $labels.tenantId }}`}}'
-          expr: sum(cloud_edge_deployment_status_action_timer_seconds_max) by (tenantId, configId, deploymentStatus) > 0
+            message: 'Cloud Edge Deployment Config status changed to {{`{{ $labels.deploymentStatus}}`}} for deployment id: {{`{{ $labels.deploymentId}}`}} for customer: {{`{{ $labels.tenantId }}`}}'
+          expr: sum(cloud_edge_deployment_status_action_timer_seconds_max) by (tenantId, deploymentId, deploymentStatus) > 0
           for: 0m
           labels:
-            severity: SEV2
+            severity: SEV1
             repository: config-service
             team: protection-waap
             {{- with .Values.prometheusRule.additionalRuleLabels }}
