@@ -17,6 +17,7 @@ import ai.traceable.edge.config.service.v1.GetConfigsResponse;
 import ai.traceable.edge.config.service.v1.TraceableEdgeConfigServiceGrpc;
 import ai.traceable.edge.config.service.validation.RequestValidator;
 import com.google.inject.Inject;
+import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -99,6 +100,12 @@ public class TraceableEdgeConfigService
       GetConfigsRequest request, StreamObserver<GetConfigsResponse> responseObserver) {
     var requestElements = request.getConfigRequestsList();
     GetConfigsResponse.Builder responseBuilder = GetConfigsResponse.newBuilder();
+
+    // Enable gRPC compression for large responses
+    if (responseObserver instanceof ServerCallStreamObserver) {
+      ((ServerCallStreamObserver<GetConfigsResponse>) responseObserver).setCompression("gzip");
+    }
+
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       RequestValidator.validateRequestContext(requestContext);
