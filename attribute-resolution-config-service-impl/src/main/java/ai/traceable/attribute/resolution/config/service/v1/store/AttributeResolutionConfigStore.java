@@ -18,8 +18,8 @@ public class AttributeResolutionConfigStore
     extends IdentifiedObjectStoreWithFilter<
         AttributeResolutionConfig, GetAttributeResolutionConfigsFilter> {
 
-  private static final String NAMESPACE = "attribute-resolution-config";
-  private static final String RESOURCE_NAME = "attribute-resolution-config-resource";
+  private static final String NAMESPACE = "attributeResolutionConfig";
+  private static final String RESOURCE_NAME = "attributeResolutionConfigResource";
 
   @Inject
   public AttributeResolutionConfigStore(
