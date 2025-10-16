@@ -16,6 +16,7 @@ import ai.traceable.edge.config.service.v1.GetConfigsRequest;
 import ai.traceable.edge.config.service.v1.GetConfigsResponse;
 import ai.traceable.edge.config.service.v1.TraceableEdgeConfigServiceGrpc;
 import ai.traceable.edge.config.service.validation.RequestValidator;
+import com.google.common.util.concurrent.RateLimiter;
 import com.google.inject.Inject;
 import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
@@ -33,6 +34,7 @@ public class TraceableEdgeConfigService
   private static final String TENANT_ID_KEY = "tenant-id";
   private final UuidGenerator uuidGenerator;
   private final Map<String, TraceableEdgeConfigSupplier> configSuppliersByType;
+  private static final RateLimiter LOG_RATE_LIMITER = RateLimiter.create(1 / 300f); // 1 in 5 mins
 
   @Inject
   public TraceableEdgeConfigService(
@@ -134,7 +136,11 @@ public class TraceableEdgeConfigService
       if (!request.getPreviousHash().equals(hash)) {
         responseBuilder.addAllConfigResponses(responseElements);
       }
-      responseObserver.onNext(responseBuilder.build());
+      GetConfigsResponse response = responseBuilder.build();
+      if (LOG_RATE_LIMITER.tryAcquire()) {
+        log.debug("Get Configs RPC response size: {} bytes", response.getSerializedSize());
+      }
+      responseObserver.onNext(response);
       responseObserver.onCompleted();
     } catch (RuntimeException e) {
       log.error("Get Configs RPC failed for request:{}", request, e);
