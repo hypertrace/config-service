@@ -258,4 +258,38 @@ public class ModsecClauseConverterImplTest {
     assertEquals(
         MatchOperator.MATCH_OPERATOR_MATCHES_REGEX, clause.getMatchExpression().getMatchOperator());
   }
+
+  @Test
+  void testConvert_SimpleUserAgentMatchCondition() {
+    DetectionExclusionRule detectionExclusionRule =
+        DetectionExclusionRule.newBuilder()
+            .setRuleInfo(
+                DetectionExclusionRuleInfo.newBuilder()
+                    .addConditions(
+                        DetectionExclusionCondition.newBuilder()
+                            .setAttributeMatchCondition(
+                                SpanAttributeMatchCondition.newBuilder()
+                                    .setKeyMatchCondition(
+                                        KeyMetadataMatchCondition.newBuilder()
+                                            .setMetadata(KeyMetadata.KEY_METADATA_USER_AGENT))
+                                    .setValueMatchCondition(
+                                        MatchCondition.newBuilder()
+                                            .setOperator(
+                                                ai.traceable.detection.exclusion.config.service.v1
+                                                    .MatchOperator.MATCH_OPERATOR_EQUALS)
+                                            .setValue(
+                                                Value.newBuilder()
+                                                    .setStringValue("user-agent-val"))))))
+            .build();
+
+    List<Clause> modsecClauses =
+        modsecClauseConverter.convert(requestContext, detectionExclusionRule).getClauses();
+
+    assertEquals(1, modsecClauses.size());
+    Clause clause = modsecClauses.get(0);
+    assertEquals(MatchKey.MATCH_KEY_HEADER_NAME, clause.getMatchExpression().getMatchKey());
+    assertEquals("user-agent-val", clause.getMatchExpression().getMatchValue());
+    assertEquals(
+        MatchOperator.MATCH_OPERATOR_EQUALS, clause.getMatchExpression().getMatchOperator());
+  }
 }
