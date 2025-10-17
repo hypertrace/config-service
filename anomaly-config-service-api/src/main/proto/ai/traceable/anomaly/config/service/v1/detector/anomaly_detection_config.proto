@@ -655,3 +655,21 @@ message ResponseDurationAnomalyConfig {
   optional int32 max_duration_ratio = 2;
   optional bool enabled_for_internal_ips = 3;
 }
+
+message ConfigMetadata {
+  string key = 1;
+  ConfigValueMetadata config_value_metadata = 2;
+}
+
+message ConfigValueMetadata {
+  ConfigValueType type = 1;
+}
+
+enum ConfigValueType {
+  CONFIG_VALUE_TYPE_UNSPECIFIED = 0;
+  CONFIG_VALUE_TYPE_NUMBER = 1;
+  CONFIG_VALUE_TYPE_STRING = 2;
+  CONFIG_VALUE_TYPE_BOOL = 3;
+  CONFIG_VALUE_TYPE_ARRAY = 4;
+  CONFIG_VALUE_TYPE_OBJECT = 5;
+}
