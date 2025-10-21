@@ -20,11 +20,13 @@ import com.google.common.util.concurrent.RateLimiter;
 import com.google.inject.Inject;
 import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.zip.GZIPOutputStream;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -137,14 +139,39 @@ public class TraceableEdgeConfigService
         responseBuilder.addAllConfigResponses(responseElements);
       }
       GetConfigsResponse response = responseBuilder.build();
-      if (LOG_RATE_LIMITER.tryAcquire()) {
-        log.debug("Get Configs RPC response size: {} bytes", response.getSerializedSize());
+      if (log.isDebugEnabled() && LOG_RATE_LIMITER.tryAcquire()) {
+        int uncompressedSize = response.getSerializedSize();
+        if (uncompressedSize > 0) {
+          int compressedSize = getCompressedSize(response);
+          List<String> configTypes =
+              responseElements.stream()
+                  .map(ConfigResponseElement::getConfigType)
+                  .collect(Collectors.toList());
+          log.debug(
+              "Get Configs RPC, configTypes: {}, response size - uncompressed: {} bytes, compressed: {} bytes, compression ratio: {}",
+              configTypes,
+              uncompressedSize,
+              compressedSize,
+              String.format("%.2f%%", (1 - (double) compressedSize / uncompressedSize) * 100));
+        }
       }
       responseObserver.onNext(response);
       responseObserver.onCompleted();
     } catch (RuntimeException e) {
       log.error("Get Configs RPC failed for request:{}", request, e);
       responseObserver.onError(e);
+    }
+  }
+
+  private int getCompressedSize(GetConfigsResponse response) {
+    try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+        GZIPOutputStream gzipStream = new GZIPOutputStream(byteStream)) {
+      response.writeTo(gzipStream);
+      gzipStream.finish();
+      return byteStream.size();
+    } catch (Exception e) {
+      log.warn("Failed to calculate compressed size", e);
+      return -1;
     }
   }
 }
