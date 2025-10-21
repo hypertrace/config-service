@@ -369,6 +369,8 @@ traceableConfigServiceConfig:
     edsConversionEnabled: false
     ruleEvaluationPoints:
       migrationDisabled: false
+    ruleCategory:
+      migrationDisabled: true
     #    defaultCustomSignatureRules: |-
     #    [
     #     {

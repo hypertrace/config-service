@@ -549,4 +549,6 @@ enum IpAbuseVelocity {
 message CustomSignatureMigrationConfig {
   // migration with respect to rule evaluation points
   bool rule_evaluation_points_migration_completed = 1;
+  // migrate rule category of existing custom signature rules
+  bool rule_category_migration_completed = 2;
 }

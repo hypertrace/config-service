@@ -1,7 +1,7 @@
 package ai.traceable.customsignature.config.service.rules;
 
-import static ai.traceable.customsignature.config.service.rules.CustomSignatureRulesStore.CUSTOM_SIGNATURE_RULE_CONFIG_NAMESPACE;
-import static ai.traceable.customsignature.config.service.rules.CustomSignatureRulesStore.CUSTOM_SIGNATURE_RULE_CONFIG_RESOURCE_NAME;
+import static ai.traceable.customsignature.config.service.CustomSignatureConstants.CUSTOM_SIGNATURE_RULE_CONFIG_NAMESPACE;
+import static ai.traceable.customsignature.config.service.CustomSignatureConstants.CUSTOM_SIGNATURE_RULE_CONFIG_RESOURCE_NAME;
 import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_NOT_EQUAL;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;

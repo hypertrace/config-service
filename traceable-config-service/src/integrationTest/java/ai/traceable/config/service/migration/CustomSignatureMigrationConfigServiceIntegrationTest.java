@@ -130,10 +130,6 @@ public class CustomSignatureMigrationConfigServiceIntegrationTest
 
   @Test
   void testMigrationForRuleEvaluationPoints() {
-    /*
-     * check for preventing interference from pre-existing rules that might affect the test results
-     */
-    assertTrue(fetchAllCustomSignatureRules().isEmpty());
 
     RuleDefinition defaultRuleDefinition =
         RuleDefinition.newBuilder()

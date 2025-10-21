@@ -67,13 +67,12 @@ public class CustomSignatureConfigServiceImpl
     try {
       RequestContext context = RequestContext.CURRENT.get();
       rulesValidator.validate(request);
-      List<CustomSignatureRule> rules =
-          rulesManager.getCustomSignatureRules(context, request.getFilter());
-      List<CustomSignatureRule> rulesWithRuleEvaluationPointsSet =
-          ruleMigrationManager.migrateRules(rules);
+
+      ruleMigrationManager.migrateCustomSignatureRules(context);
+
       responseObserver.onNext(
           GetCustomSignatureRulesResponse.newBuilder()
-              .addAllRules(rulesWithRuleEvaluationPointsSet)
+              .addAllRules(rulesManager.getCustomSignatureRules(context, request.getFilter()))
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {

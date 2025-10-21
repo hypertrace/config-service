@@ -1,5 +1,8 @@
 package ai.traceable.customsignature.config.service.rules;
 
+import static ai.traceable.customsignature.config.service.CustomSignatureConstants.CUSTOM_SIGNATURE_RULE_CONFIG_NAMESPACE;
+import static ai.traceable.customsignature.config.service.CustomSignatureConstants.CUSTOM_SIGNATURE_RULE_CONFIG_RESOURCE_NAME;
+
 import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceConfig;
 import ai.traceable.customsignature.config.service.v1.AttributeKeyValueExpression;
 import ai.traceable.customsignature.config.service.v1.Category;
@@ -42,9 +45,6 @@ public class CustomSignatureRulesStore
 
   private final CustomSignatureRuleConverter customSignatureRuleConverter;
   private final List<CustomSignatureRule> defaultCustomSignatureRules;
-  public static final String CUSTOM_SIGNATURE_RULE_CONFIG_NAMESPACE = "customSignatureRule";
-  public static final String CUSTOM_SIGNATURE_RULE_CONFIG_RESOURCE_NAME =
-      "customSignatureRuleConfig";
 
   private static final Set<ContextualKey<Void>> PROCESSED_RULE_TENANT_IDS = new HashSet<>();
 

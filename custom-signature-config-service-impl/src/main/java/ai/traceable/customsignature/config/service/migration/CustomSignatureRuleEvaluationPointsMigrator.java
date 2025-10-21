@@ -8,6 +8,7 @@ import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.EventType;
+import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import ai.traceable.customsignature.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleRequest;
@@ -17,7 +18,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class CustomSignatureRuleEvaluationPointsMigrator {
@@ -56,8 +56,10 @@ public class CustomSignatureRuleEvaluationPointsMigrator {
                 .build());
   }
 
-  public List<CustomSignatureRule> migrateRules(List<CustomSignatureRule> existingRules) {
-    return existingRules.stream().map(this::migrateRule).collect(Collectors.toList());
+  public void migrateRules(RequestContext requestContext) {
+    customSignatureRulesManager
+        .getCustomSignatureRules(requestContext, GetRulesFilter.getDefaultInstance())
+        .forEach(this::migrateRule);
   }
 
   private <T> T migrateRequest(
@@ -80,9 +82,9 @@ public class CustomSignatureRuleEvaluationPointsMigrator {
     return requestUpdater.apply(request, updatedEffect);
   }
 
-  private CustomSignatureRule migrateRule(CustomSignatureRule rule) {
+  private void migrateRule(CustomSignatureRule rule) {
     if (Objects.isNull(rule)) {
-      return null;
+      return;
     }
 
     if (!rule.hasEffect() || rule.getEffect().getRuleEvaluationPointsList().isEmpty()) {
@@ -101,10 +103,7 @@ public class CustomSignatureRuleEvaluationPointsMigrator {
       CustomSignatureRule migratedRule = ruleBuilder.build();
       customSignatureRulesManager.updateCustomSignatureRule(
           RequestContext.CURRENT.get(), migratedRule);
-      return migratedRule;
     }
-
-    return rule;
   }
 
   private List<RuleEvaluationPoint> getRuleEvaluationPoints(

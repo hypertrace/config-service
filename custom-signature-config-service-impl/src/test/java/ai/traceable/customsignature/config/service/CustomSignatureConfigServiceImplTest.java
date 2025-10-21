@@ -76,8 +76,6 @@ class CustomSignatureConfigServiceImplTest {
             featureCachingClient,
             customSignatureConfigServiceConfig,
             mockRuleMigrationManager);
-    when(mockRuleMigrationManager.migrateRules(any()))
-        .thenAnswer(invocation -> invocation.getArgument(0));
     when(mockRuleMigrationManager.migrateCreateCustomSignatureRuleRequest(any()))
         .thenAnswer(invocation -> invocation.getArgument(0));
     when(mockRuleMigrationManager.migrateUpdateCustomSignatureRuleRequest(any()))

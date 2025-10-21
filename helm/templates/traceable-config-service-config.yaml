@@ -141,6 +141,7 @@ data:
       {{- end }}
       edsConversionEnabled = {{ .Values.traceableConfigServiceConfig.customSignatureConfigService.edsConversionEnabled }}
       ruleEvaluationPoints.migrationDisabled = {{ .Values.traceableConfigServiceConfig.customSignatureConfigService.ruleEvaluationPoints.migrationDisabled }}
+      ruleCategory.migrationDisabled = {{ .Values.traceableConfigServiceConfig.customSignatureConfigService.ruleCategory.migrationDisabled }}
     }
     bot.config.service {
         default.policies = {{ toJson .Values.traceableConfigServiceConfig.botConfigService.defaultPolicies }}

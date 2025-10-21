@@ -33,8 +33,11 @@ public class CustomSignatureConfigServiceConfig {
   private static final String MIGRATION_DISABLED_KEY = "migrationDisabled";
   private static final String RULE_EVALUATION_POINTS_MIGRATION_DISABLED_KEY =
       "ruleEvaluationPoints." + MIGRATION_DISABLED_KEY;
+  private static final String RULE_CATEGORY_MIGRATION_DISABLED_KEY =
+      "ruleCategory." + MIGRATION_DISABLED_KEY;
 
   @Getter private final boolean ruleEvaluationPointsMigrationDisabled;
+  @Getter private final boolean ruleCategoryMigrationDisabled;
 
   public CustomSignatureConfigServiceConfig(Config config) {
     this.config =
@@ -45,6 +48,9 @@ public class CustomSignatureConfigServiceConfig {
     this.ruleEvaluationPointsMigrationDisabled =
         this.config.hasPath(RULE_EVALUATION_POINTS_MIGRATION_DISABLED_KEY)
             && this.config.getBoolean(RULE_EVALUATION_POINTS_MIGRATION_DISABLED_KEY);
+    this.ruleCategoryMigrationDisabled =
+        this.config.hasPath(RULE_CATEGORY_MIGRATION_DISABLED_KEY)
+            && this.config.getBoolean(RULE_CATEGORY_MIGRATION_DISABLED_KEY);
   }
 
   private List<CustomSignatureRule> loadDefaultCustomSignatureRules() {
