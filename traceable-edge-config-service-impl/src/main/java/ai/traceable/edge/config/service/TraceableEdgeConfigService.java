@@ -148,7 +148,9 @@ public class TraceableEdgeConfigService
                   .map(ConfigResponseElement::getConfigType)
                   .collect(Collectors.toList());
           log.debug(
-              "Get Configs RPC, configTypes: {}, response size - uncompressed: {} bytes, compressed: {} bytes, compression ratio: {}",
+              "tenantId: {}, env: {}, Get Configs RPC, configTypes: {}, response size - uncompressed: {} bytes, compressed: {} bytes, compression ratio: {}",
+              requestContext.getTenantId(),
+              request.getEnvironment(),
               configTypes,
               uncompressedSize,
               compressedSize,
