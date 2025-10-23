@@ -60,6 +60,76 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
       "unique_external_ip_addresses_min_count";
   private static final String DISALLOW_UNAUTHENTICATED_SESSIONS =
       "disallow_unauthenticated_sessions";
+
+  // rule-id
+  public static final String JWT_THREAT_TYPE_ID = "jwt";
+  public static final String GQLA_THREAT_TYPE_ID = "gqla";
+  public static final String SESSIONV_THREAT_TYPE_ID = "sessionv";
+  public static final String BOLA_THREAT_TYPE_ID = "bola";
+  public static final String USER_ID_BOLA_THREAT_TYPE_ID = "userIdBola";
+  public static final String BFLA_THREAT_TYPE_ID = "bfla";
+  public static final String MISSING_PARAM_THREAT_TYPE_ID = "missingParam";
+  public static final String SSRF_THREAT_TYPE_ID = "ssrf";
+  public static final String CONTENT_SIZE_THREAT_TYPE_ID = "contentSize";
+  public static final String CONTENT_TYPE_THREAT_TYPE_ID = "contentType";
+  public static final String CONTENT_EXPLOSION_THREAT_TYPE_ID = "contentExplosion";
+  public static final String SPECIAL_CHARACTER_THREAT_TYPE_ID = "specialCharacter";
+  public static final String INTEGER_THREAT_TYPE_ID = "integer";
+  public static final String DEVICE_THREAT_TYPE_ID = "device";
+  public static final String ENUM_THREAT_TYPE_ID = "enum";
+  public static final String UNKNOWN_PARAM_THREAT_TYPE_ID = "unknownParam";
+  public static final String TYPE_THREAT_TYPE_ID = "type";
+  public static final String HTTP_STATUS_THREAT_TYPE_ID = "httpStatus";
+  public static final String CONTENT_ANOMALY_THREAT_TYPE_ID = "contentAnomaly";
+  public static final String SCHEMA_VALIDATION_THREAT_TYPE_ID = "schemaValidation";
+  public static final String AUTHZ_THREAT_TYPE_ID = "authz";
+  public static final String AUTHN_THREAT_TYPE_ID = "authn";
+  public static final String PARAMETER_ANOMALY_THREAT_TYPE_ID = "parameterAnomaly";
+  public static final String JWT_EXP_SUB_RULE_ID = "jwt_exp";
+  public static final String JWT_NBF_SUB_RULE_ID = "jwt_nbf";
+  public static final String JWT_ISS_SUB_RULE_ID = "jwt_iss";
+  public static final String JWT_AUD_SUB_RULE_ID = "jwt_aud";
+  public static final String JWT_ALG_SUB_RULE_ID = "jwt_alg";
+  public static final String JWT_SIGN_SUB_RULE_ID = "jwt_sign";
+  public static final String JWT_ALBEAST_SUB_RULE_ID = "jwt_albeast";
+  public static final String JWT_JKU_SUB_RULE_ID = "jwt_jku";
+  public static final String GQLA_ABA_SUB_RULE_ID = "gqla_aba";
+  public static final String GQLA_DRQ_SUB_RULE_ID = "gqla_drq";
+  public static final String GQLA_FDA_SUB_RULE_ID = "gqla_fda";
+  public static final String GQLA_BQA_SUB_RULE_ID = "gqla_bqa";
+  public static final String GQLA_CF_SUB_RULE_ID = "gqla_cf";
+  public static final String GQLA_IQ_SUB_RULE_ID = "gqla_iq";
+  public static final String GQLA_RIQ_SUB_RULE_ID = "gqla_riq";
+  public static final String GQLA_FS_SUB_RULE_ID = "gqla_fs";
+  public static final String GQLA_GST_SUB_RULE_ID = "gqla_gst";
+  public static final String GQLA_GDLB_SUB_RULE_ID = "gqla_gdlb";
+  public static final String AUTHZ_BOLA_SUB_RULE_ID = "authz_obola";
+  public static final String AUTHZ_USER_ID_BOLA_SUB_RULE_ID = "authz_ubola";
+  public static final String AUTHZ_BFLA_SUB_RULE_ID = "authz_bfla";
+  public static final String AUTHZ_CSRF_SUB_RULE_ID = "authz_csrf";
+  public static final String AUTHN_AUA_SUB_RULE_ID = "authn_aua";
+  public static final String AUTHN_UA_SUB_RULE_ID = "authn_ua";
+  public static final String SESSIONV_LANDSPEED_SUB_RULE_ID = "sessionv_landspeed";
+  public static final String SESSIONV_EXPIRY_SUB_RULE_ID = "sessionv_expiry";
+  public static final String SCHEMA_VALIDATION_MREQP_SUB_RULE_ID = "schemaValidation_mreqp";
+  public static final String SCHEMA_VALIDATION_REQCTVE_SUB_RULE_ID = "schemaValidation_reqctve";
+  public static final String SCHEMA_VALIDATION_RESCTVE_SUB_RULE_ID = "schemaValidation_resctve";
+  public static final String SCHEMA_VALIDATION_REQIE_SUB_RULE_ID = "schemaValidation_reqie";
+  public static final String SCHEMA_VALIDATION_UREQP_SUB_RULE_ID = "schemaValidation_ureqp";
+  public static final String SCHEMA_VALIDATION_REQPTVE_SUB_RULE_ID = "schemaValidation_reqptve";
+  public static final String SCHEMA_VALIDATION_URESC_SUB_RULE_ID = "schemaValidation_uresc";
+  public static final String SSRF_UH_SUB_RULE_ID = "ssrf_uh";
+  public static final String SSRF_UP_SUB_RULE_ID = "ssrf_up";
+  public static final String SSRF_MH_SUB_RULE_ID = "ssrf_mh";
+  public static final String CONTENT_ANOMALY_UREQCL_SUB_RULE_ID = "contentAnomaly_ureqcl";
+  public static final String CONTENT_ANOMALY_URESCL_SUB_RULE_ID = "contentAnomaly_urescl";
+  public static final String CONTENT_ANOMALY_REQCTM_SUB_RULE_ID = "contentAnomaly_reqctm";
+  public static final String CONTENT_ANOMALY_REQCE_SUB_RULE_ID = "contentAnomaly_reqce";
+  public static final String PARAMETER_ANOMALY_SCT_SUB_RULE_ID = "parameterAnomaly_sct";
+  public static final String PARAMETER_ANOMALY_INTVOR_SUB_RULE_ID = "parameterAnomaly_intvor";
+  public static final String PARAMETER_ANOMALY_INTUNS_SUB_RULE_ID = "parameterAnomaly_intuns";
+  public static final String PARAMETER_ANOMALY_UUAD_SUB_RULE_ID = "parameterAnomaly_uuad";
+
   private static final Map<String, List<ConfigMetadata>> threatRuleIdToConfigMetadataMapping;
 
   static {
@@ -489,60 +559,69 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
 
     // jwt_exp mapping
     threatRuleIdToConfigMetadataMapping.put(
-        "jwt_exp", List.of(timeDifferenceBufferMillisConfigMetadata));
+        JWT_EXP_SUB_RULE_ID, List.of(timeDifferenceBufferMillisConfigMetadata));
 
     // jwt_nbf mapping
     threatRuleIdToConfigMetadataMapping.put(
-        "jwt_nbf", List.of(timeDifferenceBufferMillisConfigMetadata));
+        JWT_NBF_SUB_RULE_ID, List.of(timeDifferenceBufferMillisConfigMetadata));
 
     // jwt_iss mapping
-    threatRuleIdToConfigMetadataMapping.put("jwt_iss", List.of(minPercentSeenConfigMetadata));
+    threatRuleIdToConfigMetadataMapping.put(
+        JWT_ISS_SUB_RULE_ID, List.of(minPercentSeenConfigMetadata));
 
     // jwt_aud mapping
-    threatRuleIdToConfigMetadataMapping.put("jwt_aud", List.of(minPercentSeenConfigMetadata));
+    threatRuleIdToConfigMetadataMapping.put(
+        JWT_AUD_SUB_RULE_ID, List.of(minPercentSeenConfigMetadata));
 
     // jwt_alg mapping
-    threatRuleIdToConfigMetadataMapping.put("jwt_alg", List.of(minPercentSeenConfigMetadata));
+    threatRuleIdToConfigMetadataMapping.put(
+        JWT_ALG_SUB_RULE_ID, List.of(minPercentSeenConfigMetadata));
 
     // jwt_sign mapping
-    threatRuleIdToConfigMetadataMapping.put("jwt_sign", List.of(minPercentSeenConfigMetadata));
+    threatRuleIdToConfigMetadataMapping.put(
+        JWT_SIGN_SUB_RULE_ID, List.of(minPercentSeenConfigMetadata));
 
     // jwt_albeast mapping
-    threatRuleIdToConfigMetadataMapping.put("jwt_albeast", List.of(minPercentSeenConfigMetadata));
+    threatRuleIdToConfigMetadataMapping.put(
+        JWT_ALBEAST_SUB_RULE_ID, List.of(minPercentSeenConfigMetadata));
 
     // jwt_jku mapping
-    threatRuleIdToConfigMetadataMapping.put("jwt_jku", List.of(minPercentSeenConfigMetadata));
+    threatRuleIdToConfigMetadataMapping.put(
+        JWT_JKU_SUB_RULE_ID, List.of(minPercentSeenConfigMetadata));
 
     // gqla_aba mapping
-    threatRuleIdToConfigMetadataMapping.put("gqla_aba", List.of(maxAliasesConfigMetadata));
+    threatRuleIdToConfigMetadataMapping.put(
+        GQLA_ABA_SUB_RULE_ID, List.of(maxAliasesConfigMetadata));
 
     // gqla_drq mapping
-    threatRuleIdToConfigMetadataMapping.put("gqla_drq", List.of(maxDepthConfigMetadata));
+    threatRuleIdToConfigMetadataMapping.put(GQLA_DRQ_SUB_RULE_ID, List.of(maxDepthConfigMetadata));
 
     // gqla_fda mapping
-    threatRuleIdToConfigMetadataMapping.put("gqla_fda", List.of(maxDuplicatesConfigMetadata));
+    threatRuleIdToConfigMetadataMapping.put(
+        GQLA_FDA_SUB_RULE_ID, List.of(maxDuplicatesConfigMetadata));
 
     // gqla_bqa mapping
-    threatRuleIdToConfigMetadataMapping.put("gqla_bqa", List.of(maxBatchesConfigMetadata));
+    threatRuleIdToConfigMetadataMapping.put(
+        GQLA_BQA_SUB_RULE_ID, List.of(maxBatchesConfigMetadata));
 
     // gqla_cf mapping
-    threatRuleIdToConfigMetadataMapping.put("gqla_cf", List.of());
+    threatRuleIdToConfigMetadataMapping.put(GQLA_CF_SUB_RULE_ID, List.of());
 
     // gqla_iq mapping
-    threatRuleIdToConfigMetadataMapping.put("gqla_iq", List.of());
+    threatRuleIdToConfigMetadataMapping.put(GQLA_IQ_SUB_RULE_ID, List.of());
 
     // gqla_riq mapping
-    threatRuleIdToConfigMetadataMapping.put("gqla_riq", List.of());
+    threatRuleIdToConfigMetadataMapping.put(GQLA_RIQ_SUB_RULE_ID, List.of());
 
     // gqla_fs mapping
-    threatRuleIdToConfigMetadataMapping.put("gqla_fs", List.of());
+    threatRuleIdToConfigMetadataMapping.put(GQLA_FS_SUB_RULE_ID, List.of());
 
     // gqla_gst mapping
-    threatRuleIdToConfigMetadataMapping.put("gqla_gst", List.of());
+    threatRuleIdToConfigMetadataMapping.put(GQLA_GST_SUB_RULE_ID, List.of());
 
     // gqla_gdlb mapping
     threatRuleIdToConfigMetadataMapping.put(
-        "gqla_gdlb",
+        GQLA_GDLB_SUB_RULE_ID,
         List.of(
             fieldDenyListRegexConfigMetadata,
             fieldDenyListConfigMetadata,
@@ -551,11 +630,12 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
 
     // authz_bfla mapping
     threatRuleIdToConfigMetadataMapping.put(
-        "authz_bfla", List.of(minPercentSeenConfigMetadata, disabledForUnknownRolesConfigMetadata));
+        AUTHZ_BFLA_SUB_RULE_ID,
+        List.of(minPercentSeenConfigMetadata, disabledForUnknownRolesConfigMetadata));
 
     // authz_ubola mapping
     threatRuleIdToConfigMetadataMapping.put(
-        "authz_ubola",
+        AUTHZ_USER_ID_BOLA_SUB_RULE_ID,
         List.of(
             minCorrelationProbabilityConfigMetadata,
             userIdSourceConfigMetadata,
@@ -563,7 +643,7 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
 
     // authz_obola mapping
     threatRuleIdToConfigMetadataMapping.put(
-        "authz_obola",
+        AUTHZ_BOLA_SUB_RULE_ID,
         List.of(
             minCorrelationProbabilityConfigMetadata,
             pairwiseCorrelationProbabilityConfigMetadata,
@@ -576,7 +656,7 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
 
     // authz_csrf mapping
     threatRuleIdToConfigMetadataMapping.put(
-        "authz_csrf",
+        AUTHZ_CSRF_SUB_RULE_ID,
         List.of(
             minPercentSeenConfigMetadata,
             csrfRegexStrings,
@@ -586,7 +666,7 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
 
     // authn_aua mapping
     threatRuleIdToConfigMetadataMapping.put(
-        "authn_aua",
+        AUTHN_AUA_SUB_RULE_ID,
         List.of(
             minPercentSeenConfigMetadata,
             authRegexStrings,
@@ -596,7 +676,7 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
 
     // authn_ua mapping
     threatRuleIdToConfigMetadataMapping.put(
-        "authn_ua",
+        AUTHN_UA_SUB_RULE_ID,
         List.of(
             minPercentSeenConfigMetadata,
             authRegexStrings,
@@ -606,14 +686,14 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
 
     // sessionv_expiry mapping
     threatRuleIdToConfigMetadataMapping.put(
-        "sessionv_expiry",
+        SESSIONV_EXPIRY_SUB_RULE_ID,
         List.of(
             timeDifferenceBufferMillisConfigMetadata,
             disallowUnauthenticatedSessionsConfigMetadata));
 
     // sessionv_landspeed mapping
     threatRuleIdToConfigMetadataMapping.put(
-        "sessionv_landspeed",
+        SESSIONV_LANDSPEED_SUB_RULE_ID,
         List.of(
             disallowUnauthenticatedSessionsConfigMetadata,
             minIpReputationScoreConfigMetadata,
@@ -624,17 +704,20 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
 
     // ssrf_uh mapping
     threatRuleIdToConfigMetadataMapping.put(
-        "ssrf_uh", List.of(allowedDomainsConfigMetadata, requiredOccurrencesOfHostConfigMetadata));
+        SSRF_UH_SUB_RULE_ID,
+        List.of(allowedDomainsConfigMetadata, requiredOccurrencesOfHostConfigMetadata));
 
     // ssrf_up mapping
-    threatRuleIdToConfigMetadataMapping.put("ssrf_up", List.of(allowedProtocolsConfigMetadata));
+    threatRuleIdToConfigMetadataMapping.put(
+        SSRF_UP_SUB_RULE_ID, List.of(allowedProtocolsConfigMetadata));
 
     // ssrf_mh mapping
-    threatRuleIdToConfigMetadataMapping.put("ssrf_mh", List.of(allowedDomainsConfigMetadata));
+    threatRuleIdToConfigMetadataMapping.put(
+        SSRF_MH_SUB_RULE_ID, List.of(allowedDomainsConfigMetadata));
 
     // contentAnomaly_ureqcl mapping
     threatRuleIdToConfigMetadataMapping.put(
-        "contentAnomaly_ureqcl",
+        CONTENT_ANOMALY_UREQCL_SUB_RULE_ID,
         List.of(
             minPercentSeenConfigMetadata,
             maxDifferenceRatioConfigMetadata,
@@ -643,7 +726,7 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
 
     // contentAnomaly_urescl mapping
     threatRuleIdToConfigMetadataMapping.put(
-        "contentAnomaly_urescl",
+        CONTENT_ANOMALY_URESCL_SUB_RULE_ID,
         List.of(
             minPercentSeenConfigMetadata,
             maxDifferenceRatioConfigMetadata,
@@ -652,17 +735,17 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
 
     // contentAnomaly_reqctm mapping
     threatRuleIdToConfigMetadataMapping.put(
-        "contentAnomaly_reqctm",
+        CONTENT_ANOMALY_REQCTM_SUB_RULE_ID,
         List.of(modsecurityEnabledConfigMetadata, enabledForInternalIpsConfigMetadata));
 
     // contentAnomaly_reqce mapping
     threatRuleIdToConfigMetadataMapping.put(
-        "contentAnomaly_reqce",
+        CONTENT_ANOMALY_REQCE_SUB_RULE_ID,
         List.of(minPercentSeenConfigMetadata, maxDepthDifferenceAllowedConfigMetadata));
 
     // parameterAnomaly_sct mapping
     threatRuleIdToConfigMetadataMapping.put(
-        "parameterAnomaly_sct",
+        PARAMETER_ANOMALY_SCT_SUB_RULE_ID,
         List.of(
             excludeSpecialCharactersConfigMetadata,
             minPercentSeenConfigMetadata,
@@ -670,18 +753,18 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
 
     // parameterAnomaly_intvor mapping
     threatRuleIdToConfigMetadataMapping.put(
-        "parameterAnomaly_intvor", List.of(maxLengthDifferenceConfigMetadata));
+        PARAMETER_ANOMALY_INTVOR_SUB_RULE_ID, List.of(maxLengthDifferenceConfigMetadata));
 
     // parameterAnomaly_intuns mapping
-    threatRuleIdToConfigMetadataMapping.put("parameterAnomaly_intuns", List.of());
+    threatRuleIdToConfigMetadataMapping.put(PARAMETER_ANOMALY_INTUNS_SUB_RULE_ID, List.of());
 
     // parameterAnomaly_uuad mapping
     threatRuleIdToConfigMetadataMapping.put(
-        "parameterAnomaly_uuad", List.of(minPercentSeenConfigMetadata));
+        PARAMETER_ANOMALY_UUAD_SUB_RULE_ID, List.of(minPercentSeenConfigMetadata));
 
     // schemaValidation_reqctve mapping
     threatRuleIdToConfigMetadataMapping.put(
-        "schemaValidation_reqctve",
+        SCHEMA_VALIDATION_REQCTVE_SUB_RULE_ID,
         List.of(
             minPercentSeenConfigMetadata,
             modsecurityEnabledConfigMetadata,
@@ -689,7 +772,7 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
 
     // schemaValidation_resctve mapping
     threatRuleIdToConfigMetadataMapping.put(
-        "schemaValidation_resctve",
+        SCHEMA_VALIDATION_RESCTVE_SUB_RULE_ID,
         List.of(
             minPercentSeenConfigMetadata,
             modsecurityEnabledConfigMetadata,
@@ -697,7 +780,7 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
 
     // schemaValidation_reqie mapping
     threatRuleIdToConfigMetadataMapping.put(
-        "schemaValidation_reqie",
+        SCHEMA_VALIDATION_REQIE_SUB_RULE_ID,
         List.of(
             noAnomalyStrings,
             modsecurityEnabledConfigMetadata,
@@ -706,7 +789,7 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
 
     // schemaValidation_reqptve mapping
     threatRuleIdToConfigMetadataMapping.put(
-        "schemaValidation_reqptve",
+        SCHEMA_VALIDATION_REQPTVE_SUB_RULE_ID,
         List.of(
             noAnomalyStrings,
             modsecurityEnabledConfigMetadata,
@@ -714,7 +797,7 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
 
     // schemaValidation_uresc mapping
     threatRuleIdToConfigMetadataMapping.put(
-        "schemaValidation_uresc",
+        SCHEMA_VALIDATION_URESC_SUB_RULE_ID,
         List.of(
             validGrpcStatusCodesConfigMetadata,
             validHttpStatusCodesConfigMetadata,
@@ -722,7 +805,7 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
 
     // schemaValidation_ureqp mapping
     threatRuleIdToConfigMetadataMapping.put(
-        "schemaValidation_ureqp",
+        SCHEMA_VALIDATION_UREQP_SUB_RULE_ID,
         List.of(
             modsecurityEnabledConfigMetadata,
             enabledForInternalIpsConfigMetadata,
@@ -731,7 +814,7 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
 
     // schemaValidation_mreqp mapping
     threatRuleIdToConfigMetadataMapping.put(
-        "schemaValidation_mreqp",
+        SCHEMA_VALIDATION_MREQP_SUB_RULE_ID,
         List.of(
             minPercentSeenConfigMetadata,
             severeRegexStrings,

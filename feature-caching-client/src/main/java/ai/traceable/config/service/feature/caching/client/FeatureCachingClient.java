@@ -78,6 +78,8 @@ public class FeatureCachingClient {
       "protection-engine.post-detection-filtering";
   private static final String HIDDEN_DEFENSE_AI_FEATURES =
       "graphql.security-settings.defense-ai.hidden";
+  private static final String API_PROTECT_CONFIG_POLICIES_REVAMP_FLAG =
+      "api-protect.policies.revamp";
 
   private static final List<String> ALL_FLAGS_TO_FETCH =
       List.of(
@@ -99,6 +101,7 @@ public class FeatureCachingClient {
           GENAI_DETECTION_V2_FLAG,
           PROTECTION_ENGINE_WEBAPP_PROTECTION_FLAG,
           PROTECTION_ENGINE_POST_DETECTION_FILTERING_FLAG,
+          API_PROTECT_CONFIG_POLICIES_REVAMP_FLAG,
           HIDDEN_DEFENSE_AI_FEATURES);
   private final FeatureFlagServiceBlockingStub featureFlagStub;
   private final LoadingCache<ContextualKey<Void>, Map<String, FeatureFlagValue>> featureFlagCache;
@@ -153,6 +156,21 @@ public class FeatureCachingClient {
     } catch (Exception exception) {
       log.error("Failed to retrieve current feature flag value for Genai Detection V2", exception);
       return DEFAULT_GENAI_DETECTION_V2_VALUE;
+    }
+  }
+
+  public boolean isApiProtectConfigPoliciesRevampEnabled(RequestContext requestContext) {
+    try {
+      return requireNonNull(
+              this.featureFlagCache
+                  .get(requestContext.buildInternalContextualKey())
+                  .get(API_PROTECT_CONFIG_POLICIES_REVAMP_FLAG))
+          .getBoolean();
+    } catch (Exception exception) {
+      log.error(
+          "Failed to retrieve current feature flag value for API Protect Config Policies Revamp",
+          exception);
+      return false;
     }
   }
 

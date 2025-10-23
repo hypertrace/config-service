@@ -2,6 +2,7 @@ package ai.traceable.anomaly.config.service.detector;
 
 import ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigManager;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigValidator;
+import ai.traceable.anomaly.config.service.detector.migration.AnomalyDetectionMigrationManager;
 import ai.traceable.anomaly.config.service.v1.detector.DeleteScopedAnomalyDetectionConfigRequest;
 import ai.traceable.anomaly.config.service.v1.detector.DeleteScopedAnomalyDetectionConfigResponse;
 import ai.traceable.anomaly.config.service.v1.detector.DetectorConfigServiceGrpc;
@@ -31,13 +32,16 @@ public class DetectorConfigServiceImpl
     extends DetectorConfigServiceGrpc.DetectorConfigServiceImplBase {
   private final AnomalyDetectionConfigValidator configValidator;
   private final AnomalyDetectionConfigManager anomalyDetectionConfigManager;
+  private final AnomalyDetectionMigrationManager anomalyDetectionMigrationManager;
 
   @Inject
   public DetectorConfigServiceImpl(
       AnomalyDetectionConfigValidator configValidator,
-      AnomalyDetectionConfigManager anomalyDetectionConfigManager) {
+      AnomalyDetectionConfigManager anomalyDetectionConfigManager,
+      AnomalyDetectionMigrationManager anomalyDetectionMigrationManager) {
     this.configValidator = configValidator;
     this.anomalyDetectionConfigManager = anomalyDetectionConfigManager;
+    this.anomalyDetectionMigrationManager = anomalyDetectionMigrationManager;
   }
 
   @Override
@@ -51,7 +55,7 @@ public class DetectorConfigServiceImpl
       responseObserver.onError(status.asException());
       return;
     }
-
+    anomalyDetectionMigrationManager.migrateToApiProtectIfApplicable(RequestContext.CURRENT.get());
     try {
       GetScopedAnomalyDetectionConfigResponse response =
           GetScopedAnomalyDetectionConfigResponse.newBuilder()
@@ -80,7 +84,7 @@ public class DetectorConfigServiceImpl
       responseObserver.onError(status.asException());
       return;
     }
-
+    anomalyDetectionMigrationManager.migrateToApiProtectIfApplicable(RequestContext.CURRENT.get());
     try {
       GetGlobalResolvedScopedAnomalyDetectionConfigResponse response =
           GetGlobalResolvedScopedAnomalyDetectionConfigResponse.newBuilder()
@@ -100,6 +104,7 @@ public class DetectorConfigServiceImpl
   public void getAllGlobalResolvedScopedAnomalyDetectionConfigs(
       GetAllGlobalResolvedScopedAnomalyDetectionConfigsRequest request,
       StreamObserver<GetAllGlobalResolvedScopedAnomalyDetectionConfigsResponse> responseObserver) {
+    anomalyDetectionMigrationManager.migrateToApiProtectIfApplicable(RequestContext.CURRENT.get());
     try {
       GetAllGlobalResolvedScopedAnomalyDetectionConfigsResponse response =
           GetAllGlobalResolvedScopedAnomalyDetectionConfigsResponse.newBuilder()
@@ -119,6 +124,7 @@ public class DetectorConfigServiceImpl
   public void getAllScopedAnomalyDetectionConfigs(
       GetAllScopedAnomalyDetectionConfigsRequest request,
       StreamObserver<GetAllScopedAnomalyDetectionConfigsResponse> responseObserver) {
+    anomalyDetectionMigrationManager.migrateToApiProtectIfApplicable(RequestContext.CURRENT.get());
     try {
       GetAllScopedAnomalyDetectionConfigsResponse response =
           GetAllScopedAnomalyDetectionConfigsResponse.newBuilder()
@@ -147,7 +153,7 @@ public class DetectorConfigServiceImpl
       responseObserver.onError(status.asException());
       return;
     }
-
+    anomalyDetectionMigrationManager.migrateToApiProtectIfApplicable(RequestContext.CURRENT.get());
     try {
       GetUnresolvedScopedAnomalyDetectionConfigResponse response =
           GetUnresolvedScopedAnomalyDetectionConfigResponse.newBuilder()
@@ -167,6 +173,7 @@ public class DetectorConfigServiceImpl
   public void getAllUnresolvedScopedAnomalyDetectionConfigs(
       GetAllUnresolvedScopedAnomalyDetectionConfigsRequest request,
       StreamObserver<GetAllUnresolvedScopedAnomalyDetectionConfigsResponse> responseObserver) {
+    anomalyDetectionMigrationManager.migrateToApiProtectIfApplicable(RequestContext.CURRENT.get());
     try {
       GetAllUnresolvedScopedAnomalyDetectionConfigsResponse response =
           GetAllUnresolvedScopedAnomalyDetectionConfigsResponse.newBuilder()

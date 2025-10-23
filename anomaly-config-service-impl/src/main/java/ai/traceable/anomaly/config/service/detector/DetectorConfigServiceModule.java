@@ -2,6 +2,7 @@ package ai.traceable.anomaly.config.service.detector;
 
 import ai.traceable.anomaly.config.service.AnomalyConfigServiceConfig;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigModule;
+import ai.traceable.anomaly.config.service.detector.migration.AnomalyDetectionMigrationModule;
 import ai.traceable.anomaly.config.service.registry.accounttakeover.AccountTakeoverRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
 import ai.traceable.anomaly.config.service.registry.credentialstuffing.CredentialStuffingRulesRegistry;
@@ -26,6 +27,7 @@ public class DetectorConfigServiceModule extends AbstractModule {
         .annotatedWith(Names.named(bindableServiceAnnotation))
         .to(DetectorConfigServiceImpl.class);
     install(new AnomalyDetectionConfigModule());
+    install(new AnomalyDetectionMigrationModule());
   }
 
   @Provides

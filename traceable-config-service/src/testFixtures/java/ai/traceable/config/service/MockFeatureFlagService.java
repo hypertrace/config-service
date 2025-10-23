@@ -30,6 +30,18 @@ public class MockFeatureFlagService extends FeatureFlagServiceImplBase {
             .putValues(
                 "ui.detection-exclusions-v2",
                 FeatureFlagValue.newBuilder().setBoolean(false).build())
+            .putValues(
+                "config-service.waap-rules-versioning",
+                FeatureFlagValue.newBuilder().setBoolean(false).build())
+            .putValues(
+                "tpa.crs-msg-hide-match-value",
+                FeatureFlagValue.newBuilder().setBoolean(false).build())
+            .putValues(
+                "protection-engine.webapp-protection",
+                FeatureFlagValue.newBuilder().setBoolean(false).build())
+            .putValues(
+                "api-protect.policies.revamp",
+                FeatureFlagValue.newBuilder().setBoolean(false).build())
             .build());
     responseObserver.onCompleted();
   }

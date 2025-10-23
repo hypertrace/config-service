@@ -11,6 +11,7 @@ import static org.mockito.Mockito.verify;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigManager;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigManagerImpl;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigValidator;
+import ai.traceable.anomaly.config.service.detector.migration.AnomalyDetectionMigrationManager;
 import ai.traceable.anomaly.config.service.v1.detector.DeleteScopedAnomalyDetectionConfigRequest;
 import ai.traceable.anomaly.config.service.v1.detector.DeleteScopedAnomalyDetectionConfigResponse;
 import ai.traceable.anomaly.config.service.v1.detector.GetAllGlobalResolvedScopedAnomalyDetectionConfigsRequest;
@@ -37,8 +38,10 @@ public class DetectorConfigServiceImplTest {
       mock(AnomalyDetectionConfigValidator.class);
   private final AnomalyDetectionConfigManager configManager =
       mock(AnomalyDetectionConfigManagerImpl.class);
+  private final AnomalyDetectionMigrationManager anomalyDetectionMigrationManager =
+      mock(AnomalyDetectionMigrationManager.class);
   private final DetectorConfigServiceImpl detectorConfigService =
-      new DetectorConfigServiceImpl(validator, configManager);
+      new DetectorConfigServiceImpl(validator, configManager, anomalyDetectionMigrationManager);
 
   @Test
   void testGetScopedDetectionConfig() {
