@@ -83,6 +83,7 @@ dependencies {
   implementation(projects.dataParsingConfigServiceImpl)
   implementation(projects.attributeResolutionConfigServiceImpl)
   implementation(projects.aiAppProtectionConfigServiceImpl)
+  implementation(projects.agentActionConfigServiceImpl)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)
