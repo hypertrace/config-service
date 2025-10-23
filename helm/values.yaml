@@ -3617,6 +3617,18 @@ defaultModsecDetectionConfigs: |-
               excludedModsecRuleIds = {
                 values = ["crs_941140", "crs_941250", "crs_941160", "crs_941170", "crs_941190", "crs_941310", "crs_941100", "crs_934100"]
               }
+            },
+            {
+              paramValueType = PARAM_VALUE_TYPE_XML
+              excludedModsecRuleIds = {
+                values = ["crs_941250", "crs_941190", "crs_941100"]
+              }
+            },
+            {
+              paramValueType = PARAM_VALUE_TYPE_PATH
+              excludedModsecRuleIds = {
+                values = ["crs_9300120", "crs_9300130", "crs_9300140"]
+              }
             }
           ]
         }
