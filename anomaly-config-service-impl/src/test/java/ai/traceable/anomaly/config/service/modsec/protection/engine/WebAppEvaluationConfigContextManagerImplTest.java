@@ -352,11 +352,12 @@ class WebAppEvaluationConfigContextManagerImplTest {
     assertEquals(2, result.getWebAppEvaluationRulesContextsList().size());
     WebAppEvaluationRulesContext rulesContext1 = result.getWebAppEvaluationRulesContexts(0);
     assertEquals(API_SCOPE_CONTEXT, rulesContext1.getScopeContext());
-    assertEquals("sensitiveBlob", rulesContext1.getCrsRulesBlob());
+    assertEquals(HashUtil.calculateSHA256("sensitiveBlob"), rulesContext1.getCrsRulesBlobId());
 
     WebAppEvaluationRulesContext rulesContext2 = result.getWebAppEvaluationRulesContexts(1);
     assertEquals(ENVIRONMENT_SCOPE_CONTEXT, rulesContext2.getScopeContext());
-    assertEquals("onlyStandardRulesBlob", rulesContext2.getCrsRulesBlob());
+    assertEquals(
+        HashUtil.calculateSHA256("onlyStandardRulesBlob"), rulesContext2.getCrsRulesBlobId());
   }
 
   @Test
@@ -387,11 +388,11 @@ class WebAppEvaluationConfigContextManagerImplTest {
     assertEquals(2, result.getWebAppEvaluationRulesContextsList().size());
     WebAppEvaluationRulesContext rulesContext1 = result.getWebAppEvaluationRulesContexts(0);
     assertEquals(API_SCOPE_CONTEXT, rulesContext1.getScopeContext());
-    assertEquals("sensitiveBlob", rulesContext1.getCrsRulesBlob());
+    assertEquals(HashUtil.calculateSHA256("sensitiveBlob"), rulesContext1.getCrsRulesBlobId());
 
     WebAppEvaluationRulesContext rulesContext2 = result.getWebAppEvaluationRulesContexts(1);
     assertEquals(ENVIRONMENT_SCOPE_CONTEXT, rulesContext2.getScopeContext());
-    assertEquals("defaultBlob", rulesContext2.getCrsRulesBlob());
+    assertEquals(HashUtil.calculateSHA256("defaultBlob"), rulesContext2.getCrsRulesBlobId());
   }
 
   @Test
@@ -410,11 +411,12 @@ class WebAppEvaluationConfigContextManagerImplTest {
     assertEquals(2, result.getWebAppEvaluationRulesContextsList().size());
     WebAppEvaluationRulesContext rulesContext1 = result.getWebAppEvaluationRulesContexts(0);
     assertEquals(API_SCOPE_CONTEXT, rulesContext1.getScopeContext());
-    assertEquals("sensitiveBlob", rulesContext1.getCrsRulesBlob());
+    assertEquals(HashUtil.calculateSHA256("sensitiveBlob"), rulesContext1.getCrsRulesBlobId());
 
     WebAppEvaluationRulesContext rulesContext2 = result.getWebAppEvaluationRulesContexts(1);
     assertEquals(ENVIRONMENT_SCOPE_CONTEXT, rulesContext2.getScopeContext());
-    assertEquals("onlyStandardRulesBlob", rulesContext2.getCrsRulesBlob());
+    assertEquals(
+        HashUtil.calculateSHA256("onlyStandardRulesBlob"), rulesContext2.getCrsRulesBlobId());
   }
 
   @Test
@@ -430,11 +432,12 @@ class WebAppEvaluationConfigContextManagerImplTest {
     assertEquals(2, result.getWebAppEvaluationRulesContextsList().size());
     WebAppEvaluationRulesContext rulesContext1 = result.getWebAppEvaluationRulesContexts(0);
     assertEquals(API_SCOPE_CONTEXT, rulesContext1.getScopeContext());
-    assertEquals("sensitiveBlob", rulesContext1.getCrsRulesBlob());
+    assertEquals(HashUtil.calculateSHA256("sensitiveBlob"), rulesContext1.getCrsRulesBlobId());
 
     WebAppEvaluationRulesContext rulesContext2 = result.getWebAppEvaluationRulesContexts(1);
     assertEquals(ENVIRONMENT_SCOPE_CONTEXT, rulesContext2.getScopeContext());
-    assertEquals("onlyAggressiveRulesBlob", rulesContext2.getCrsRulesBlob());
+    assertEquals(
+        HashUtil.calculateSHA256("onlyAggressiveRulesBlob"), rulesContext2.getCrsRulesBlobId());
   }
 
   @Test

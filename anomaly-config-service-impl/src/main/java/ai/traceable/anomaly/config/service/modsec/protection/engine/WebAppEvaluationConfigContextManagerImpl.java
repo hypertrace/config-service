@@ -58,9 +58,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -87,6 +89,23 @@ public class WebAppEvaluationConfigContextManagerImpl
           AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK,
           AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE,
           AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR);
+  private static final Comparator<AnomalyConfigScope> ANOMALY_CONFIG_SCOPE_COMPARATOR =
+      Comparator.comparing(
+              (AnomalyConfigScope scope) ->
+                  SCOPE_ORDER.getOrDefault(scope.getScopeCase(), Integer.MAX_VALUE))
+          .thenComparing(
+              scope -> {
+                switch (scope.getScopeCase()) {
+                  case API_SCOPE:
+                    return scope.getApiScope().getId();
+                  case SERVICE_SCOPE:
+                    return scope.getServiceScope().getId();
+                  case ENVIRONMENT_SCOPE:
+                    return scope.getEnvironmentScope().getEnvironmentId();
+                  default:
+                    return "";
+                }
+              });
   private static final String EMPTY_STRING = "";
   private final ModsecManager modsecManager;
   private final ModsecRulesRegistry modsecRulesRegistry;
@@ -130,7 +149,8 @@ public class WebAppEvaluationConfigContextManagerImpl
       return WebAppEvaluationConfigContext.getDefaultInstance();
     }
     log.debug(
-        "Starting getWebAppEvaluationConfigContext with request: ruleEvaluationPoint={}, subRuleTypes={}",
+        "Starting getWebAppEvaluationConfigContext for tenant: {}, with request: ruleEvaluationPoint={}, subRuleTypes={}",
+        requestContext.getTenantId(),
         request.getRuleEvaluationPoint(),
         request.getSubRuleTypesList());
 
@@ -146,24 +166,7 @@ public class WebAppEvaluationConfigContextManagerImpl
         "Retrieved scopedAnomalyConfigStatusMap with {} entries",
         scopedAnomalyConfigStatusMap.size());
 
-    TreeSet<AnomalyConfigScope> configScopes =
-        new TreeSet<>(
-            Comparator.comparing(
-                    (AnomalyConfigScope scope) ->
-                        SCOPE_ORDER.getOrDefault(scope.getScopeCase(), Integer.MAX_VALUE))
-                .thenComparing(
-                    scope -> {
-                      switch (scope.getScopeCase()) {
-                        case API_SCOPE:
-                          return scope.getApiScope().getId();
-                        case SERVICE_SCOPE:
-                          return scope.getServiceScope().getId();
-                        case ENVIRONMENT_SCOPE:
-                          return scope.getEnvironmentScope().getEnvironmentId();
-                        default:
-                          return "";
-                      }
-                    }));
+    TreeSet<AnomalyConfigScope> configScopes = new TreeSet<>(ANOMALY_CONFIG_SCOPE_COMPARATOR);
     configScopes.addAll(scopedAnomalyDetectionConfigMap.keySet());
     configScopes.addAll(scopedAnomalyConfigStatusMap.keySet());
     log.debug("Combined config scopes: {} total scopes", configScopes.size());
@@ -171,10 +174,11 @@ public class WebAppEvaluationConfigContextManagerImpl
 
     List<WebAppEvaluationConfig> webAppEvaluationConfigs = new ArrayList<>();
     List<SecRuleProcessorConfig> secRuleProcessorConfigs = new ArrayList<>();
-    List<WebAppEvaluationRulesContext> webAppEvaluationRulesContextList = new ArrayList<>();
+    List<AnomalyConfigScope> configScopesWithEmptyBlob = new ArrayList<>();
     Map<AnomalyConfigScope, ScopeContext> scopeContextMap =
         getScopeContextMap(requestContext, configScopes);
     log.debug("Retrieved scope context map with {} entries", scopeContextMap.size());
+    Map<RulesContextArgs, List<AnomalyConfigScope>> rulesContextArgsToScopesMap = new HashMap<>();
 
     for (AnomalyConfigScope configScope : configScopes) {
       log.debug("Processing config scope: {}", configScope.getScopeCase());
@@ -209,10 +213,7 @@ public class WebAppEvaluationConfigContextManagerImpl
       // scope matching and just perform no-op blocking evaluations for it.
       if (anomalySubRuleTypes.isEmpty()) {
         log.debug("No anomaly sub rule types found, adding empty WebAppEvaluationRulesContext");
-        webAppEvaluationRulesContextList.add(
-            WebAppEvaluationRulesContext.newBuilder()
-                .setScopeContext(scopeContextMap.get(configScope))
-                .build());
+        configScopesWithEmptyBlob.add(configScope);
         continue;
       }
       if (!scopedAnomalyConfigStatus.equals(ScopedAnomalyConfigStatus.getDefaultInstance())) {
@@ -237,22 +238,28 @@ public class WebAppEvaluationConfigContextManagerImpl
         } else {
           log.debug("WebAppEvaluationConfig not present, skipping");
         }
-
-        webAppEvaluationRulesContextList.add(
-            getWebAppEvaluationRulesContext(
-                modsecRuleVersion,
-                anomalySubRuleTypes,
-                ruleVersion,
-                scopeContextMap.get(configScope)));
-        log.debug("Added WebAppEvaluationRulesContext");
+        computeIntermediateStateForWebAppEvaluationRulesContext(
+            modsecRuleVersion,
+            anomalySubRuleTypes,
+            ruleVersion,
+            configScope,
+            rulesContextArgsToScopesMap);
       }
     }
+    Map<String, String> crsBlobSha256ToCrsBlobMap = new HashMap<>();
+    List<WebAppEvaluationRulesContext> webAppEvaluationRulesContextList =
+        getWebAppEvaluationRulesContextList(
+            rulesContextArgsToScopesMap,
+            scopeContextMap,
+            configScopesWithEmptyBlob,
+            crsBlobSha256ToCrsBlobMap);
 
     WebAppEvaluationConfigContext result =
         WebAppEvaluationConfigContext.newBuilder()
             .addAllEvaluationConfigs(webAppEvaluationConfigs)
             .addAllSecRuleProcessorConfigs(secRuleProcessorConfigs)
             .addAllWebAppEvaluationRulesContexts(webAppEvaluationRulesContextList)
+            .putAllCrsRulesBlobIdToBlob(crsBlobSha256ToCrsBlobMap)
             .build();
 
     log.debug(
@@ -262,6 +269,86 @@ public class WebAppEvaluationConfigContextManagerImpl
         webAppEvaluationRulesContextList.size());
 
     return result;
+  }
+
+  private List<WebAppEvaluationRulesContext> getWebAppEvaluationRulesContextList(
+      Map<RulesContextArgs, List<AnomalyConfigScope>> rulesContextArgsToScopesMap,
+      Map<AnomalyConfigScope, ScopeContext> scopeContextMap,
+      List<AnomalyConfigScope> configScopesWithEmptyBlob,
+      Map<String, String> crsBlobSha256ToCrsBlobMap) {
+    if (log.isDebugEnabled()) {
+      int totalScopes = rulesContextArgsToScopesMap.values().stream().mapToInt(List::size).sum();
+      int totalRulesContextArgs = rulesContextArgsToScopesMap.size();
+      log.debug(
+          "getWebAppEvaluationRulesContextList called with totalScopes: {}, totalRulesContextArgs: {}, configScopesWithEmptyBlob: {}",
+          totalScopes,
+          totalRulesContextArgs,
+          configScopesWithEmptyBlob);
+    }
+    TreeMap<AnomalyConfigScope, String> scopeToCrsBlobSha256Map =
+        new TreeMap<>(ANOMALY_CONFIG_SCOPE_COMPARATOR);
+    for (Map.Entry<RulesContextArgs, List<AnomalyConfigScope>> entry :
+        rulesContextArgsToScopesMap.entrySet()) {
+      RulesContextArgs rulesContextArgs = entry.getKey();
+      List<AnomalyConfigScope> anomalyConfigScopes = entry.getValue();
+      String crsBlob =
+          getCrsBlob(
+              rulesContextArgs.getModsecRuleVersion(),
+              rulesContextArgs.getAnomalySubRuleTypes(),
+              rulesContextArgs.getRuleVersion());
+      String crsBlobSha256 = HashUtil.calculateSHA256(crsBlob);
+      crsBlobSha256ToCrsBlobMap.put(crsBlobSha256, crsBlob);
+      anomalyConfigScopes.forEach(scope -> scopeToCrsBlobSha256Map.put(scope, crsBlobSha256));
+    }
+    if (!configScopesWithEmptyBlob.isEmpty()) {
+      String sha256ForEmptyBlob = HashUtil.calculateSHA256(EMPTY_STRING);
+      configScopesWithEmptyBlob.forEach(
+          scope -> scopeToCrsBlobSha256Map.put(scope, sha256ForEmptyBlob));
+      crsBlobSha256ToCrsBlobMap.put(sha256ForEmptyBlob, EMPTY_STRING);
+    }
+    List<WebAppEvaluationRulesContext> webAppEvaluationRulesContextList = new ArrayList<>();
+    for (Map.Entry<AnomalyConfigScope, String> entry : scopeToCrsBlobSha256Map.entrySet()) {
+      webAppEvaluationRulesContextList.add(
+          WebAppEvaluationRulesContext.newBuilder()
+              .setScopeContext(scopeContextMap.get(entry.getKey()))
+              .setCrsRulesBlobId(entry.getValue())
+              .build());
+    }
+    return webAppEvaluationRulesContextList;
+  }
+
+  private String getCrsBlob(
+      ModsecRuleVersion modsecRuleVersion,
+      List<AnomalySubRuleType> anomalySubRuleTypes,
+      RuleVersion ruleVersion) {
+    log.debug(
+        "getCrsBlob called with modsecRuleVersion={}, anomalySubRuleTypes={}, ruleVersion={}",
+        modsecRuleVersion,
+        anomalySubRuleTypes,
+        ruleVersion);
+    return modsecManager
+        .getModsecCrsRules(anomalySubRuleTypes, modsecRuleVersion, false, ruleVersion, false)
+        .getAggregatedModsecBlob();
+  }
+
+  private void computeIntermediateStateForWebAppEvaluationRulesContext(
+      ModsecRuleVersion modsecRuleVersion,
+      List<AnomalySubRuleType> anomalySubRuleTypes,
+      RuleVersion ruleVersion,
+      AnomalyConfigScope configScope,
+      Map<RulesContextArgs, List<AnomalyConfigScope>> rulesContextArgsToScopesMap) {
+    // Note: This method computes intermediate state for web app evaluation rules context.
+    // rulesContextArgsToScopesMap - is the intermediate state. The purpose of this state is to
+    // group the scopes by rules context args. This is used to de-dup the crs-blob related
+    // operations performed - fetching crs-blob & computing its sha-256 hash.
+    log.debug(
+        "computeIntermediateStateForWebAppEvaluationRulesContext called for configScope: {}",
+        configScope);
+    RulesContextArgs rulesContextArgs =
+        new RulesContextArgs(modsecRuleVersion, anomalySubRuleTypes, ruleVersion);
+    List<AnomalyConfigScope> anomalyConfigScopes =
+        rulesContextArgsToScopesMap.computeIfAbsent(rulesContextArgs, k -> new ArrayList<>());
+    anomalyConfigScopes.add(configScope);
   }
 
   private List<AnomalySubRuleType> getAnomalySubRuleTypes(
@@ -304,27 +391,6 @@ public class WebAppEvaluationConfigContextManagerImpl
     return subRuleTypes.isEmpty()
         ? allowedTypes
         : subRuleTypes.stream().filter(allowedTypes::contains).collect(Collectors.toList());
-  }
-
-  private WebAppEvaluationRulesContext getWebAppEvaluationRulesContext(
-      ModsecRuleVersion modsecRuleVersion,
-      List<AnomalySubRuleType> anomalySubRuleTypes,
-      RuleVersion ruleVersion,
-      ScopeContext scopeContext) {
-    log.debug(
-        "getWebAppEvaluationRulesContext called with modsecRuleVersion={}, anomalySubRuleTypes={}, ruleVersion={}",
-        modsecRuleVersion,
-        anomalySubRuleTypes,
-        ruleVersion);
-
-    String crsRulesBlob =
-        modsecManager
-            .getModsecCrsRules(anomalySubRuleTypes, modsecRuleVersion, false, ruleVersion, false)
-            .getAggregatedModsecBlob();
-    return WebAppEvaluationRulesContext.newBuilder()
-        .setScopeContext(scopeContext)
-        .setCrsRulesBlob(crsRulesBlob)
-        .build();
   }
 
   private Optional<WebAppEvaluationConfig> getWebAppEvaluationConfig(
@@ -708,5 +774,16 @@ public class WebAppEvaluationConfigContextManagerImpl
       return ruleId.substring(4);
     }
     return ruleId;
+  }
+
+  /**
+   * Helper class to uniquely identify the combination of args/variables that affect the contents of
+   * crs rules blob for any scope.
+   */
+  @Value
+  static class RulesContextArgs {
+    ModsecRuleVersion modsecRuleVersion;
+    List<AnomalySubRuleType> anomalySubRuleTypes;
+    RuleVersion ruleVersion;
   }
 }
