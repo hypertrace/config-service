@@ -1088,4 +1088,12 @@ message UserIdData {
 
 message ResponseDurationTrainingConfig {
   ThresholdFamilyConfig threshold_family_config = 1;
+  repeated DistributionMetric metrics_to_estimate = 2;
+
+  enum DistributionMetric {
+    DISTRIBUTION_METRIC_UNSPECIFIED = 0;
+    DISTRIBUTION_METRIC_MEAN = 1;
+    DISTRIBUTION_METRIC_VARIANCE = 2;
+    DISTRIBUTION_METRIC_QUANTILES = 3;
+  }
 }
