@@ -1,6 +1,7 @@
 package ai.traceable.ast.hooks.config.service.store;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -11,6 +12,7 @@ import ai.traceable.ast.hooks.config.service.v1.EnvironmentScope;
 import ai.traceable.ast.hooks.config.service.v1.Filter;
 import ai.traceable.ast.hooks.config.service.v1.HookScope;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
@@ -125,9 +127,11 @@ class AstHooksConfigStoreTest {
         spyAstHooksConfigStore.getAllConfigDataWithScopeFilter(
             mockRequestContext, mockRequestScope, filter);
 
-    // Assert: Should only return hook2 (user lacks access to env3 needed for hook1)
-    assertEquals(1, result.size());
-    assertEquals("hook2", result.get(0).getId());
+    // Assert: Should return both hooks (user has access to env1 from hook1 and env2 from hook2)
+    assertEquals(2, result.size());
+    Set<String> hookIds = result.stream().map(AstHook::getId).collect(Collectors.toSet());
+    assertTrue(hookIds.contains("hook1"));
+    assertTrue(hookIds.contains("hook2"));
   }
 
   @Test
@@ -154,9 +158,11 @@ class AstHooksConfigStoreTest {
         spyAstHooksConfigStore.getAllConfigDataWithScopeFilter(
             mockRequestContext, mockRequestScope, filter);
 
-    // Assert: Should only return valid hook (invalid scope hooks are denied access)
-    assertEquals(1, result.size());
-    assertEquals("valid-hook", result.get(0).getId());
+    // Assert: Should return both hooks (empty scope hooks are allowed)
+    assertEquals(2, result.size());
+    Set<String> hookIds = result.stream().map(AstHook::getId).collect(Collectors.toSet());
+    assertTrue(hookIds.contains("valid-hook"));
+    assertTrue(hookIds.contains("no-scope-hook"));
   }
 
   // Helper method for creating test hooks

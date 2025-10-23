@@ -88,26 +88,20 @@ public class AstHooksConfigStore
 
   private boolean isHookAccessibleToUser(AstHook hook, Set<String> userAllowedEnvironments) {
 
-    if (userAllowedEnvironments.isEmpty()) {
-      return true;
-    }
-
-    // Deny access to hooks without proper environment scope configuration
-    if (!hook.getHookDetails().hasScope()
-        || !hook.getHookDetails().getScope().hasEnvironmentScope()) {
-      return false;
-    }
-
     Set<String> hookEnvironmentIds =
         Set.copyOf(hook.getHookDetails().getScope().getEnvironmentScope().getEnvironmentIdsList());
 
-    // Deny access to hooks with empty environment scope (invalid configuration )
-    if (hookEnvironmentIds.isEmpty()) {
-      return false;
+    // Empty userAllowed -> Global access (allow all hooks)
+    // Empty hook scope -> Global hooks accessible to all users
+    if (userAllowedEnvironments.isEmpty()
+        || !hook.getHookDetails().hasScope()
+        || !hook.getHookDetails().getScope().hasEnvironmentScope()
+        || hookEnvironmentIds.isEmpty()) {
+      return true;
     }
 
-    // Grant access only if user has permission to all environment required by the hook
-    return userAllowedEnvironments.containsAll(hookEnvironmentIds);
+    // Grant access if user has permission to at least one environment required by the hook
+    return !Collections.disjoint(userAllowedEnvironments, hookEnvironmentIds);
   }
 
   private boolean isHookRequestedInFilter(AstHook hook, Filter filter) {
