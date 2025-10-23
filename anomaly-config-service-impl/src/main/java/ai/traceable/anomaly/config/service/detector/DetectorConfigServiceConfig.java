@@ -9,13 +9,20 @@ import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry
 import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistry;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class DetectorConfigServiceConfig {
   private static final String MODSEC_DETECTION_CONFIGS_PATH = "modsecDetectionConfigs";
+  private static final String API_PROTECT_DETECTION_DEFAULT_CONFIGS_PATH =
+      "api-protect-threat-rule-configs.conf";
+  private static final String API_PROTECT_DETECTION_CONFIGS_PATH =
+      "apiProtectThreatRuleIdToConfigMap";
   private static final String API_DEFINITION_DETECTION_CONFIGS_PATH =
       "apiDefinitionDetectionConfigs";
   private static final String SESSION_DEFINITION_DETECTION_CONFIGS_PATH =
@@ -29,7 +36,8 @@ public class DetectorConfigServiceConfig {
       "accountTakeoverDetectionConfigs";
 
   private final List<AnomalyDetectionConfig> wafDetectionConfigs;
-  private final List<AnomalyDetectionConfig> apiProtectionDetectionConfigs;
+  private final List<AnomalyDetectionConfig> apiProtectDetectionConfigs;
+  private final List<AnomalyDetectionConfig> deprecatedApiProtectionDetectionConfigs;
   private final List<AnomalyDetectionConfig> genAiDetectionConfigs;
 
   private final ConfigConverter configConverter = new ConfigConverter();
@@ -42,6 +50,7 @@ public class DetectorConfigServiceConfig {
       CredentialStuffingRulesRegistry credentialStuffingRulesRegistry,
       AccountTakeoverRulesRegistry accountTakeoverRulesRegistry,
       GenAiRulesRegistry genAiRulesRegistry) {
+    this.apiProtectDetectionConfigs = loadApiProtectDetectionConfigs();
     this.wafDetectionConfigs =
         configConverter.convertToAnomalyDetectionConfigs(
             config.getConfigList(MODSEC_DETECTION_CONFIGS_PATH));
@@ -56,8 +65,8 @@ public class DetectorConfigServiceConfig {
                             .build())
                 .collect(Collectors.toList()));
 
-    List<AnomalyDetectionConfig> apiProtectionDetectionConfigs = new ArrayList<>();
-    apiProtectionDetectionConfigs.addAll(
+    List<AnomalyDetectionConfig> deprecatedApiProtectionDetectionConfigs = new ArrayList<>();
+    deprecatedApiProtectionDetectionConfigs.addAll(
         loadDefaultApiDefinitionDetectionConfigs(
             config,
             apiDefinitionRegistry.getApiDefRuleIdToDetectionConfigMap().values().stream()
@@ -67,7 +76,7 @@ public class DetectorConfigServiceConfig {
                             .setApiDefinitionMetadataAnomalyDetectionConfig(detectionConfig)
                             .build())
                 .collect(Collectors.toList())));
-    apiProtectionDetectionConfigs.addAll(
+    deprecatedApiProtectionDetectionConfigs.addAll(
         loadDefaultSessionDefinitionDetectionConfigs(
             config,
             sessionDefinitionRegistry.getSessionDefRuleIdToDetectionConfigMap().values().stream()
@@ -77,11 +86,11 @@ public class DetectorConfigServiceConfig {
                             .setSessionDefinitionMetadataAnomalyDetectionConfig(detectionConfig)
                             .build())
                 .collect(Collectors.toList())));
-    apiProtectionDetectionConfigs.addAll(
+    deprecatedApiProtectionDetectionConfigs.addAll(
         configConverter.convertToAnomalyDetectionConfigs(
             config.getConfigList(CUSTOM_RULES_DETECTION_CONFIGS_PATH)));
 
-    apiProtectionDetectionConfigs.addAll(
+    deprecatedApiProtectionDetectionConfigs.addAll(
         loadDefaultVolumetricDetectionConfigs(
             config,
             volumetricRulesRegistry.getVolumetricRuleIdToConfigMap().values().stream()
@@ -91,7 +100,7 @@ public class DetectorConfigServiceConfig {
                             .setVolumetricAnomalyDetectionConfig(detectionConfig)
                             .build())
                 .collect(Collectors.toList())));
-    apiProtectionDetectionConfigs.addAll(
+    deprecatedApiProtectionDetectionConfigs.addAll(
         loadDefaultCredentialStuffingDetectionConfigs(
             config,
             credentialStuffingRulesRegistry
@@ -104,7 +113,7 @@ public class DetectorConfigServiceConfig {
                             .setCredentialAnomalyDetectionConfig(detectionConfig)
                             .build())
                 .collect(Collectors.toList())));
-    apiProtectionDetectionConfigs.addAll(
+    deprecatedApiProtectionDetectionConfigs.addAll(
         loadDefaultAccountTakeoverDetectionConfigs(
             config,
             accountTakeoverRulesRegistry.getAccountTakeoverRuleIdToConfigMap().values().stream()
@@ -114,11 +123,15 @@ public class DetectorConfigServiceConfig {
                             .setAccountTakeoverAnomalyDetectionConfig(detectionConfig)
                             .build())
                 .collect(Collectors.toList())));
-    this.apiProtectionDetectionConfigs = apiProtectionDetectionConfigs;
+    this.deprecatedApiProtectionDetectionConfigs = deprecatedApiProtectionDetectionConfigs;
   }
 
   public List<AnomalyDetectionConfig> getDefaultWafDetectionConfigs() {
     return wafDetectionConfigs;
+  }
+
+  public List<AnomalyDetectionConfig> getDefaultApiProtectDetectionConfigs() {
+    return apiProtectDetectionConfigs;
   }
 
   public List<AnomalyDetectionConfig> getDefaultGenAiDetectionConfigs() {
@@ -126,7 +139,19 @@ public class DetectorConfigServiceConfig {
   }
 
   public List<AnomalyDetectionConfig> getDefaultApiProtectionDetectionConfigs() {
-    return apiProtectionDetectionConfigs;
+    return deprecatedApiProtectionDetectionConfigs;
+  }
+
+  private List<AnomalyDetectionConfig> loadApiProtectDetectionConfigs() {
+    try {
+      Config apiProtectConfig =
+          ConfigFactory.parseResources(API_PROTECT_DETECTION_DEFAULT_CONFIGS_PATH);
+      return configConverter.convertToAnomalyDetectionConfigs(
+          apiProtectConfig.getConfigList(API_PROTECT_DETECTION_CONFIGS_PATH));
+    } catch (Exception e) {
+      log.error("Error loading API Protect detection configs", e);
+      return new ArrayList<>();
+    }
   }
 
   private List<AnomalyDetectionConfig> loadDefaultApiDefinitionDetectionConfigs(

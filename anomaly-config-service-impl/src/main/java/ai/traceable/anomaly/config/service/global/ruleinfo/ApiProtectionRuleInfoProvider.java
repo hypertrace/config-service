@@ -8,4 +8,6 @@ import java.util.List;
 public interface ApiProtectionRuleInfoProvider {
   List<AnomalyRuleInfo> getApiProtectRuleInfo(
       RuleVersion version, AnomalyEventFamily anomalyEventFamily);
+
+  List<AnomalyRuleInfo> getAllApiProtectRuleInfo(RuleVersion version);
 }

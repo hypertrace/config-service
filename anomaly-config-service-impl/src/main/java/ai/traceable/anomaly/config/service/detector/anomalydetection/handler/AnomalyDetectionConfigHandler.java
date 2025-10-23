@@ -18,17 +18,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class AnomalyDetectionConfigHandler {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(AnomalyDetectionConfigHandler.class);
   private final ApiDefinitionConfigHandler apiDefinitionConfigHandler;
   private final SessionDefinitionConfigHandler sessionDefinitionConfigHandler;
   private final ApiStateBasedConfigHandler apiStateBasedConfigHandler;
   private final BlockingMetadataConfigHandler blockingMetadataConfigHandler;
   private final ModsecConfigHandler modsecConfigHandler;
+  private final ApiProtectionConfigHandler apiProtectionConfigHandler;
   private final CustomRulesConfigHandler customRulesConfigHandler;
 
   private final VolumetricDetectionConfigHandler volumetricDetectionConfigHandler;
@@ -50,6 +48,7 @@ public class AnomalyDetectionConfigHandler {
     this.apiStateBasedConfigHandler = new ApiStateBasedConfigHandler();
     this.blockingMetadataConfigHandler = new BlockingMetadataConfigHandler();
     this.modsecConfigHandler = new ModsecConfigHandler();
+    this.apiProtectionConfigHandler = new ApiProtectionConfigHandler();
     this.customRulesConfigHandler = new CustomRulesConfigHandler();
     this.volumetricDetectionConfigHandler =
         new VolumetricDetectionConfigHandler(volumetricRulesRegistry);
@@ -139,6 +138,8 @@ public class AnomalyDetectionConfigHandler {
         .setConfigScope(preferredConfig.getConfigScope())
         .addAllAnomalyDetectionConfigs(modsecConfigHandler.merge(preferredConfig, fallbackConfig))
         .addAllAnomalyDetectionConfigs(
+            apiProtectionConfigHandler.merge(preferredConfig, fallbackConfig))
+        .addAllAnomalyDetectionConfigs(
             apiStateBasedConfigHandler.merge(preferredConfig, fallbackConfig))
         .addAllAnomalyDetectionConfigs(
             apiDefinitionConfigHandler.merge(preferredConfig, fallbackConfig))
@@ -186,6 +187,9 @@ public class AnomalyDetectionConfigHandler {
             anomalyDetectionConfigs, detectionConfigsToDelete, deletedConfigBuilder);
     anomalyDetectionConfigs =
         modsecConfigHandler.deleteWholeAnomalyDetectionConfigs(
+            anomalyDetectionConfigs, detectionConfigsToDelete, deletedConfigBuilder);
+    anomalyDetectionConfigs =
+        apiProtectionConfigHandler.deleteWholeAnomalyDetectionConfigs(
             anomalyDetectionConfigs, detectionConfigsToDelete, deletedConfigBuilder);
     anomalyDetectionConfigs =
         customRulesConfigHandler.deleteWholeAnomalyDetectionConfigs(

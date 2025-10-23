@@ -52,6 +52,7 @@ public class AnomalyDetectionConfigManagerImpl
   private final List<AnomalyDetectionConfig> defaultApiProtectionDetectionConfigs;
   private final List<AnomalyDetectionConfig> defaultGenAiDetectionConfigs;
   private final WafConfigResolver wafConfigResolver;
+  private final ApiProtectionConfigResolver apiProtectionConfigResolver;
   private final GlobalTestingModeResolver globalTestingModeResolver;
 
   @Inject
@@ -63,6 +64,7 @@ public class AnomalyDetectionConfigManagerImpl
       ConfigChangeEventGenerator configChangeEventGenerator,
       GlobalAnomalyConfigStatusManager anomalyConfigStatusManager,
       WafConfigResolver wafConfigResolver,
+      ApiProtectionConfigResolver apiProtectionConfigResolver,
       GlobalTestingModeResolver globalTestingModeResolver) {
     super(
         configServiceBlockingStub,
@@ -75,6 +77,7 @@ public class AnomalyDetectionConfigManagerImpl
     this.defaultGenAiDetectionConfigs = config.getDefaultGenAiDetectionConfigs();
     this.globalAnomalyConfigStatusManager = anomalyConfigStatusManager;
     this.wafConfigResolver = wafConfigResolver;
+    this.apiProtectionConfigResolver = apiProtectionConfigResolver;
     this.globalTestingModeResolver = globalTestingModeResolver;
   }
 
@@ -232,7 +235,7 @@ public class AnomalyDetectionConfigManagerImpl
     if (!anomalyDetectionConfigMap.containsKey(tenantId)) {
       scopedAnomalyDetectionConfigs.add(
           ScopedAnomalyDetectionConfig.newBuilder()
-              .setConfigScope(anomalyConfigScopeUtils.getDefaultCustomerConfigScope())
+              .setConfigScope(AnomalyConfigScopeUtils.getDefaultCustomerConfigScope())
               .build());
     }
     ScopedAnomalyConfigStatus scopedAnomalyConfigStatus =
@@ -435,6 +438,9 @@ public class AnomalyDetectionConfigManagerImpl
               .addAllAnomalyDetectionConfigs(
                   getDefaultApiProtectionDetectionConfigs(
                       globalScopedAnomalyConfigStatus.getGlobalApiConfig().getDefaultConfigsType()))
+              .addAllAnomalyDetectionConfigs(
+                  apiProtectionConfigResolver.resolve(
+                      requestContext, scopedAnomalyConfigStatus.getGlobalApiConfig()))
               .addAllAnomalyDetectionConfigs(defaultGenAiDetectionConfigs)
               .build();
       // tenant resolution not needed as env profile is at higher precedence
@@ -452,6 +458,9 @@ public class AnomalyDetectionConfigManagerImpl
               .addAllAnomalyDetectionConfigs(
                   getDefaultApiProtectionDetectionConfigs(
                       globalScopedAnomalyConfigStatus.getGlobalApiConfig().getDefaultConfigsType()))
+              .addAllAnomalyDetectionConfigs(
+                  apiProtectionConfigResolver.resolve(
+                      requestContext, scopedAnomalyConfigStatus.getGlobalApiConfig()))
               .addAllAnomalyDetectionConfigs(defaultGenAiDetectionConfigs)
               .build();
     }
@@ -468,7 +477,7 @@ public class AnomalyDetectionConfigManagerImpl
     return List.of();
   }
 
-  private final String getTenantId(RequestContext requestContext) {
+  private String getTenantId(RequestContext requestContext) {
     return requestContext
         .getTenantId()
         .orElseThrow(
@@ -477,8 +486,8 @@ public class AnomalyDetectionConfigManagerImpl
 
   /**
    * This method is used to get the global resolved configurations for anomaly detection configs.
-   * For more details, refer to the wiki:
-   * https://traceableai.atlassian.net/wiki/spaces/Engineering/pages/1812234269/Internal+Excluded+Security+events
+   * For more details, refer to the wiki: <a
+   * href="https://traceableai.atlassian.net/wiki/spaces/Engineering/pages/1812234269/Internal+Excluded+Security+events">...</a>
    */
   public ScopedAnomalyDetectionConfig getResolvedConfig(
       RequestContext requestContext,

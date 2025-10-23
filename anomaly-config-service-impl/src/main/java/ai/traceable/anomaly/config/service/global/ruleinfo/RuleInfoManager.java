@@ -15,6 +15,9 @@ public interface RuleInfoManager {
       RuleVersion version,
       boolean useTestModsecRules);
 
+  List<AnomalyRuleInfo> getAllApiProtectionAnomalyRuleInfo(
+      RequestContext requestContext, RuleVersion version);
+
   List<AnomalyRuleInfo> getAnomalyRuleInfos(
       List<AnomalyEventFamily> eventFamilies,
       ModsecRuleVersion ruleVersion,

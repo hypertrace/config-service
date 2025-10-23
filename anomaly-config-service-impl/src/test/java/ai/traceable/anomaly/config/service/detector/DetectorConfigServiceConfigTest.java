@@ -75,6 +75,7 @@ public class DetectorConfigServiceConfigTest {
                   + "        }\n"
                   + "      }\n"
                   + "    ]\n"
+                  + "apiProtectDetectionConfigs = []\n"
                   + "apiDefinitionDetectionConfigs = [\n"
                   + "    {\n"
                   + "      configStatus = {\n"

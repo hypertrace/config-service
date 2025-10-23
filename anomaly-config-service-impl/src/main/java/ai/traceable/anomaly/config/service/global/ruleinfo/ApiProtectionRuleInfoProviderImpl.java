@@ -30,36 +30,56 @@ import java.util.Set;
 public class ApiProtectionRuleInfoProviderImpl implements ApiProtectionRuleInfoProvider {
 
   private final ApiProtectionRulesProvider apiProtectionRulesProvider;
-  private static final String API_PROTECT_RULE_VERSION = "1.0.0";
+  private static final String API_PROTECT_FIRST_RULE_VERSION = "1.0.0";
+  private static final String API_PROTECT_SECOND_RULE_VERSION = "2.0.0";
 
-  private final Map<AnomalyEventFamily, Map<String, Set<String>>>
-      eventFamilyToThreatTypeIdsByVersion =
+  private final Map<AnomalyEventFamily, Map<String, Map<String, Set<String>>>>
+      eventFamilyToThreatTypeIdsToSpecificRuleIdsByVersion =
           new HashMap<>(
               Map.of(
                   AnomalyEventFamily.ANOMALY_EVENT_FAMILY_API_DEF,
                   Map.of(
-                      API_PROTECT_RULE_VERSION,
-                      Set.of(
-                          "jwt",
-                          "unknownParam",
-                          "enum",
-                          "integer",
-                          "type",
-                          "missingParam",
-                          "specialCharacter",
-                          "contentExplosion",
-                          "device",
-                          "httpStatus",
-                          "contentType",
-                          "contentSize",
-                          "ssrf",
-                          "bfla")),
+                      API_PROTECT_FIRST_RULE_VERSION,
+                      Map.ofEntries(
+                          Map.entry("jwt", Set.of()),
+                          Map.entry("unknownParam", Set.of()),
+                          Map.entry("enum", Set.of()),
+                          Map.entry("integer", Set.of()),
+                          Map.entry("type", Set.of()),
+                          Map.entry("missingParam", Set.of()),
+                          Map.entry("specialCharacter", Set.of()),
+                          Map.entry("contentExplosion", Set.of()),
+                          Map.entry("device", Set.of()),
+                          Map.entry("httpStatus", Set.of()),
+                          Map.entry("contentType", Set.of()),
+                          Map.entry("contentSize", Set.of()),
+                          Map.entry("ssrf", Set.of()),
+                          Map.entry("bfla", Set.of())),
+                      API_PROTECT_SECOND_RULE_VERSION,
+                      Map.of(
+                          "jwt", Set.of(),
+                          "authn", Set.of(),
+                          "authz", Set.of("authz_bfla", "authz_csrf"),
+                          "ssrf", Set.of(),
+                          "parameterAnomaly", Set.of(),
+                          "schemaValidation", Set.of(),
+                          "contentAnomaly", Set.of(),
+                          "gqla", Set.of())),
                   AnomalyEventFamily.ANOMALY_EVENT_FAMILY_SESSION,
-                  Map.of(API_PROTECT_RULE_VERSION, Set.of("sessionv", "bola", "userIdBola")),
+                  Map.of(
+                      API_PROTECT_FIRST_RULE_VERSION,
+                      Map.of(
+                          "sessionv", Set.of(),
+                          "bola", Set.of(),
+                          "userIdBola", Set.of()),
+                      API_PROTECT_SECOND_RULE_VERSION,
+                      Map.of(
+                          "sessionv", Set.of(),
+                          "authz", Set.of("authz_obola", "authz_ubola"))),
                   AnomalyEventFamily.ANOMALY_EVENT_FAMILY_VOLUMETRIC,
-                  Map.of(API_PROTECT_RULE_VERSION, Set.of("volumetric")),
+                  Map.of(API_PROTECT_FIRST_RULE_VERSION, Map.of("volumetric", Set.of())),
                   AnomalyEventFamily.ANOMALY_EVENT_FAMILY_CREDENTIAL_STUFFING,
-                  Map.of(API_PROTECT_RULE_VERSION, Set.of("ato"))));
+                  Map.of(API_PROTECT_FIRST_RULE_VERSION, Map.of("ato", Set.of()))));
 
   @Inject
   public ApiProtectionRuleInfoProviderImpl(ApiProtectionRulesProvider apiProtectionRulesProvider) {
@@ -73,6 +93,19 @@ public class ApiProtectionRuleInfoProviderImpl implements ApiProtectionRuleInfoP
         convertToAnomalyRuleInfos(
             getApiProtectVersionedRules(convertToApiProtectRulesVersion(version)),
             anomalyEventFamily));
+  }
+
+  @Override
+  public List<AnomalyRuleInfo> getAllApiProtectRuleInfo(RuleVersion version) {
+    List<AnomalyEventFamily> allApiEventFamilies =
+        List.of(
+            AnomalyEventFamily.ANOMALY_EVENT_FAMILY_API_DEF,
+            AnomalyEventFamily.ANOMALY_EVENT_FAMILY_SESSION);
+    List<AnomalyRuleInfo> allRules = new ArrayList<>();
+    for (AnomalyEventFamily eventFamily : allApiEventFamilies) {
+      allRules.addAll(getApiProtectRuleInfo(version, eventFamily));
+    }
+    return allRules;
   }
 
   private ApiProtectRulesVersion convertToApiProtectRulesVersion(RuleVersion ruleVersion) {
@@ -118,19 +151,22 @@ public class ApiProtectionRuleInfoProviderImpl implements ApiProtectionRuleInfoP
       rulesByTypeId.computeIfAbsent(typeId, k -> new ArrayList<>()).add(rule);
     }
 
-    Map<String, Set<String>> versionToRuleTypeIds =
-        eventFamilyToThreatTypeIdsByVersion.get(anomalyEventFamily);
+    Map<String, Map<String, Set<String>>> versionToRuleTypeIds =
+        eventFamilyToThreatTypeIdsToSpecificRuleIdsByVersion.get(anomalyEventFamily);
     if (versionToRuleTypeIds == null) {
       throw new IllegalArgumentException("Unsupported AnomalyEventFamily: " + anomalyEventFamily);
     }
-    Set<String> relevantTypeIds =
+    Map<String, Set<String>> relevantTypeIdsToSpecificRuleIds =
         versionToRuleTypeIds.get(versionedRules.getRulesVersion().getVersion());
     for (ApiProtectThreatType threatType : rulesData.getThreatTypesList()) {
       String typeId = threatType.getTypeId();
 
-      if (relevantTypeIds == null || !relevantTypeIds.contains(typeId)) {
+      if (relevantTypeIdsToSpecificRuleIds == null
+          || !relevantTypeIdsToSpecificRuleIds.containsKey(typeId)) {
         continue;
       }
+
+      Set<String> specificRuleIds = relevantTypeIdsToSpecificRuleIds.get(typeId);
 
       List<ApiProtectThreatRule> rulesForType = rulesByTypeId.get(typeId);
       if (rulesForType == null) continue;
@@ -146,15 +182,18 @@ public class ApiProtectionRuleInfoProviderImpl implements ApiProtectionRuleInfoP
 
       for (ApiProtectThreatRule rule : rulesForType) {
         ApiProtectThreatRuleDefinition ruleDef = rule.getRuleDefinition();
-        anomalyRuleInfoBuilder.addSubRuleInfos(
-            AnomalySubRuleInfo.newBuilder()
-                .setRuleId(rule.getRuleId())
-                .setRuleName(ruleDef.getRuleName())
-                .addAllSubRuleTypes(convertSubRuleTypes(ruleDef.getRuleType()))
-                .setSeverityLevel(convertToAnomalySeverityLevel(ruleDef.getSeverity()))
-                .putAllEventLabels(convertEventLabels(ruleDef.getThreatLabels().getLabelsList()))
-                .setEventDetails(createEventDetails(rule.getThreatDetails()))
-                .build());
+        // If specificRuleIds is empty, include all rules. Otherwise, only include specified rules
+        if (specificRuleIds.isEmpty() || specificRuleIds.contains(rule.getRuleId())) {
+          anomalyRuleInfoBuilder.addSubRuleInfos(
+              AnomalySubRuleInfo.newBuilder()
+                  .setRuleId(rule.getRuleId())
+                  .setRuleName(ruleDef.getRuleName())
+                  .addAllSubRuleTypes(convertSubRuleTypes(ruleDef.getRuleType()))
+                  .setSeverityLevel(convertToAnomalySeverityLevel(ruleDef.getSeverity()))
+                  .putAllEventLabels(convertEventLabels(ruleDef.getThreatLabels().getLabelsList()))
+                  .setEventDetails(createEventDetails(rule.getThreatDetails()))
+                  .build());
+        }
       }
 
       ruleInfos.add(anomalyRuleInfoBuilder.build());

@@ -78,6 +78,17 @@ public class AnomalyRuleInfoManagerImpl implements RuleInfoManager {
   }
 
   @Override
+  public List<AnomalyRuleInfo> getAllApiProtectionAnomalyRuleInfo(
+      RequestContext requestContext, RuleVersion version) {
+    if (featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext)
+        && version != null
+        && !version.equals(RuleVersion.getDefaultInstance())) {
+      return apiProtectionRuleInfoProvider.getAllApiProtectRuleInfo(version);
+    }
+    return List.of();
+  }
+
+  @Override
   public List<AnomalyRuleInfo> getAnomalyRuleInfos(
       List<AnomalyEventFamily> eventFamilies,
       ModsecRuleVersion ruleVersion,

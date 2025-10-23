@@ -99,9 +99,9 @@ public class FeatureCachingClient {
           TRACEABLE_EDGE_DECISION_FLAG,
           CONFIG_SERVICE_WAAP_RULES_VERSIONING,
           GENAI_DETECTION_V2_FLAG,
+          API_PROTECT_CONFIG_POLICIES_REVAMP_FLAG,
           PROTECTION_ENGINE_WEBAPP_PROTECTION_FLAG,
           PROTECTION_ENGINE_POST_DETECTION_FILTERING_FLAG,
-          API_PROTECT_CONFIG_POLICIES_REVAMP_FLAG,
           HIDDEN_DEFENSE_AI_FEATURES);
   private final FeatureFlagServiceBlockingStub featureFlagStub;
   private final LoadingCache<ContextualKey<Void>, Map<String, FeatureFlagValue>> featureFlagCache;

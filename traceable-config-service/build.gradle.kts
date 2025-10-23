@@ -139,7 +139,7 @@ tasks.integrationTest {
   dependsOn("startActorServiceContainer")
   dependsOn("startCorazaContainer")
   finalizedBy("stopAllContainers")
-  maxHeapSize = "2048m"
+  maxHeapSize = "2560m"
 }
 
 dependencies {

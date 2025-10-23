@@ -16,6 +16,7 @@ import ai.traceable.anomaly.config.service.common.AnomalySubRuleConfigUtils;
 import ai.traceable.anomaly.config.service.detector.DetectorConfigServiceConfig;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.AnomalyDetectionConfigHandler;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.AnomalyDetectionConfigUtils;
+import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.ApiProtectionConfigHandler;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.GlobalTestingModeResolver;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.ModsecConfigHandler;
 import ai.traceable.anomaly.config.service.global.ruleinfo.RuleInfoManager;
@@ -90,6 +91,7 @@ public class AnomalyDetectionConfigManagerTest {
           accountTakeoverRulesRegistry,
           genAiRulesRegistry);
   private WafConfigResolver wafConfigResolver;
+  private ApiProtectionConfigResolver apiProtectionConfigResolver;
   private AnomalyDetectionConfigManager configManager;
   private final AnomalyEnvironmentScope environmentScope =
       AnomalyEnvironmentScope.newBuilder().setEnvironmentId("environment").build();
@@ -185,6 +187,9 @@ public class AnomalyDetectionConfigManagerTest {
     wafConfigResolver =
         new WafConfigResolver(
             ruleInfoManager, detectorConfigServiceConfig, new ModsecConfigHandler());
+    apiProtectionConfigResolver =
+        new ApiProtectionConfigResolver(
+            ruleInfoManager, detectorConfigServiceConfig, new ApiProtectionConfigHandler());
 
     this.configManager =
         spy(
@@ -196,6 +201,7 @@ public class AnomalyDetectionConfigManagerTest {
                 mock(ConfigChangeEventGenerator.class),
                 globalAnomalyConfigStatusManager,
                 wafConfigResolver,
+                apiProtectionConfigResolver,
                 globalTestingModeResolver));
   }
 
@@ -573,6 +579,7 @@ public class AnomalyDetectionConfigManagerTest {
             mock(ConfigChangeEventGenerator.class),
             globalAnomalyConfigStatusManager,
             wafConfigResolver,
+            apiProtectionConfigResolver,
             globalTestingModeResolver);
 
     List<AnomalyDetectionConfig> defaultDetectionConfigs = new ArrayList<>();
@@ -652,6 +659,7 @@ public class AnomalyDetectionConfigManagerTest {
             mock(ConfigChangeEventGenerator.class),
             globalAnomalyConfigStatusManager,
             new WafConfigResolver(ruleInfoManager, config, new ModsecConfigHandler()),
+            apiProtectionConfigResolver,
             globalTestingModeResolver);
     List<AnomalyDetectionConfig> defaultDetectionConfigs = new ArrayList<>();
     defaultDetectionConfigs.add(
@@ -950,6 +958,7 @@ public class AnomalyDetectionConfigManagerTest {
             mock(ConfigChangeEventGenerator.class),
             globalAnomalyConfigStatusManager,
             wafConfigResolver,
+            apiProtectionConfigResolver,
             globalTestingModeResolver);
     List<AnomalyDetectionConfig> defaultDetectionConfigs = new ArrayList<>();
     defaultDetectionConfigs.add(
@@ -1059,6 +1068,7 @@ public class AnomalyDetectionConfigManagerTest {
             mock(ConfigChangeEventGenerator.class),
             globalAnomalyConfigStatusManager,
             wafConfigResolver,
+            apiProtectionConfigResolver,
             globalTestingModeResolver);
     List<AnomalyDetectionConfig> defaultDetectionConfigs = new ArrayList<>();
     defaultDetectionConfigs.add(
@@ -1170,6 +1180,7 @@ public class AnomalyDetectionConfigManagerTest {
             mock(ConfigChangeEventGenerator.class),
             globalAnomalyConfigStatusManager,
             wafConfigResolver,
+            apiProtectionConfigResolver,
             globalTestingModeResolver);
     List<AnomalyDetectionConfig> defaultDetectionConfigs = new ArrayList<>();
     defaultDetectionConfigs.add(
@@ -1669,6 +1680,7 @@ public class AnomalyDetectionConfigManagerTest {
                 + "        }\n"
                 + "      }\n"
                 + "    ]\n"
+                + "apiProtectDetectionConfigs = []\n"
                 + "apiDefinitionDetectionConfigs = [\n"
                 + "    {\n"
                 + "      configStatus = {\n"
