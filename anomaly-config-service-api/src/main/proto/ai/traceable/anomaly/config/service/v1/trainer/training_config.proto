@@ -395,7 +395,12 @@ message MetadataTrainingConfig {
     ResponseDurationTrainingConfig response_duration = 33;
     ParamEncodingTrainingConfig param_encoding = 34;
     UserAttributionTrainingConfig user_attribution = 35;
+    EmptyAuthParamValueTrainingConfig empty_auth_param_value = 36;
   }
+}
+
+message EmptyAuthParamValueTrainingConfig {
+  ThresholdFamilyConfig threshold_family_config = 1;
 }
 
 message VulnerabilityTrainingConfig {
