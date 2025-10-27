@@ -358,6 +358,85 @@ class ClauseGroupValidatorTest {
             MatchKey.MATCH_KEY_QUERY_PARAMS_COUNT, MatchOperator.MATCH_OPERATOR_GREATER_THAN, "1");
     status = clauseGroupValidator.validateClause(clause, EventType.EVENT_TYPE_NORMAL_DETECTION);
     assertEquals(Status.OK.getCode(), status.getCode());
+
+    clause =
+        getMatchExpressionClause(
+            MatchKey.MATCH_KEY_QUERY_PARAMS_COUNT,
+            MatchOperator.MATCH_OPERATOR_GREATER_THAN,
+            "10.0");
+    status = clauseGroupValidator.validateClause(clause, EventType.EVENT_TYPE_NORMAL_DETECTION);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    clause =
+        getMatchExpressionClause(
+            MatchKey.MATCH_KEY_HEADERS_COUNT,
+            MatchOperator.MATCH_OPERATOR_NOT_EQUAL,
+            "match-val-1");
+    status = clauseGroupValidator.validateClause(clause, EventType.EVENT_TYPE_ALLOW);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    clause =
+        getMatchExpressionClause(
+            MatchKey.MATCH_KEY_COOKIES_COUNT,
+            MatchOperator.MATCH_OPERATOR_GREATER_THAN,
+            "match-val-2");
+    status =
+        clauseGroupValidator.validateClause(clause, EventType.EVENT_TYPE_DETECTION_AND_BLOCKING);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    clause =
+        getMatchExpressionClause(
+            MatchKey.MATCH_KEY_QUERY_PARAMS_COUNT,
+            MatchOperator.MATCH_OPERATOR_EQUALS,
+            "match-val-3");
+    status = clauseGroupValidator.validateClause(clause, EventType.EVENT_TYPE_NORMAL_DETECTION);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    clause =
+        getMatchExpressionClause(
+            MatchKey.MATCH_KEY_BODY_SIZE, MatchOperator.MATCH_OPERATOR_LESS_THAN, "match-val-4");
+    status = clauseGroupValidator.validateClause(clause, EventType.EVENT_TYPE_TESTING_DETECTION);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    clause =
+        getMatchExpressionClause(
+            MatchKey.MATCH_KEY_QUERY_PARAMS_COUNT,
+            MatchOperator.MATCH_OPERATOR_EQUALS,
+            Value.newBuilder().setStringValue("str-val").build());
+    status = clauseGroupValidator.validateClause(clause, EventType.EVENT_TYPE_TESTING_DETECTION);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    clause =
+        getMatchExpressionClause(
+            MatchKey.MATCH_KEY_HEADERS_COUNT,
+            MatchOperator.MATCH_OPERATOR_NOT_EQUAL,
+            Value.newBuilder().setStringValue("20").build());
+    status = clauseGroupValidator.validateClause(clause, EventType.EVENT_TYPE_TESTING_DETECTION);
+    assertEquals(Status.OK.getCode(), status.getCode());
+
+    clause =
+        getMatchExpressionClause(
+            MatchKey.MATCH_KEY_COOKIES_COUNT,
+            MatchOperator.MATCH_OPERATOR_GREATER_THAN,
+            Value.newBuilder().setStringValue("10.4").build());
+    status = clauseGroupValidator.validateClause(clause, EventType.EVENT_TYPE_TESTING_DETECTION);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    clause =
+        getMatchExpressionClause(
+            MatchKey.MATCH_KEY_BODY_SIZE,
+            MatchOperator.MATCH_OPERATOR_LESS_THAN,
+            Value.newBuilder().setNumberValue(5).build());
+    status = clauseGroupValidator.validateClause(clause, EventType.EVENT_TYPE_TESTING_DETECTION);
+    assertEquals(Status.OK.getCode(), status.getCode());
+
+    clause =
+        getMatchExpressionClause(
+            MatchKey.MATCH_KEY_BODY_SIZE,
+            MatchOperator.MATCH_OPERATOR_LESS_THAN,
+            Value.newBuilder().setNumberValue(6.7).build());
+    status = clauseGroupValidator.validateClause(clause, EventType.EVENT_TYPE_TESTING_DETECTION);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
   }
 
   @Test
@@ -605,6 +684,17 @@ class ClauseGroupValidatorTest {
                 .setMatchKey(matchKey)
                 .setMatchOperator(matchOperator)
                 .setMatchValue(matchValue))
+        .build();
+  }
+
+  private Clause getMatchExpressionClause(
+      MatchKey matchKey, MatchOperator matchOperator, Value value) {
+    return Clause.newBuilder()
+        .setMatchExpression(
+            MatchExpression.newBuilder()
+                .setMatchKey(matchKey)
+                .setMatchOperator(matchOperator)
+                .setValue(value))
         .build();
   }
 

@@ -513,7 +513,7 @@ class CustomSignatureRulesValidatorTest {
                                             .setMatchValue("value")))))
             .build();
     status = rulesValidator.validate(request);
-    assertInvalidArgument(status, "numerical value for match operator");
+    assertInvalidArgument(status, "integer match value for match operator");
 
     // valid Cyrillic regex
     request =
@@ -561,7 +561,7 @@ class CustomSignatureRulesValidatorTest {
                                             .setMatchKey(MatchKey.MATCH_KEY_BODY_SIZE)
                                             .setMatchOperator(
                                                 MatchOperator.MATCH_OPERATOR_GREATER_THAN)
-                                            .setMatchValue("100.1")))))
+                                            .setMatchValue("100")))))
             .build();
     status = rulesValidator.validate(request);
     assertEquals(Code.OK, status.getCode());

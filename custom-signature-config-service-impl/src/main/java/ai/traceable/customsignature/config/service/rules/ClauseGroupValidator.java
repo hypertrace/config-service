@@ -116,6 +116,13 @@ public class ClauseGroupValidator {
           MATCH_KEY_HEADERS_COUNT,
           MATCH_KEY_COOKIES_COUNT);
 
+  private static final Set<MatchKey> NUMERIC_MATCH_KEYS =
+      Set.of(
+          MATCH_KEY_BODY_SIZE,
+          MATCH_KEY_QUERY_PARAMS_COUNT,
+          MATCH_KEY_HEADERS_COUNT,
+          MATCH_KEY_COOKIES_COUNT);
+
   public Status validateClauseGroup(ClauseGroup clauseGroup, EventType eventType) {
     if (clauseGroup.getClauseOperator() == ClauseOperator.CLAUSE_OPERATOR_UNSPECIFIED) {
       return Status.INVALID_ARGUMENT.withDescription(
@@ -458,16 +465,23 @@ public class ClauseGroupValidator {
     if (isInvalidMathematicalOperation(matchExpression)) {
       return Status.INVALID_ARGUMENT.withDescription(
           String.format(
-              "Custom Signature Rule match expression should have numerical value for match operator : %s",
-              matchOperator));
+              "Custom Signature Rule match expression should have an integer match value for match operator: %s, match key: %s",
+              matchOperator, matchKey));
     }
 
     if (MATCH_OPERATOR_MATCHES_REGEX.equals(matchOperator)
         || MATCH_OPERATOR_NOT_MATCH_REGEX.equals(matchOperator)) {
+      if (matchExpression.hasValue()) {
+        return validateRegex(matchExpression.getValue().getStringValue());
+      }
       return validateRegex(matchExpression.getMatchValue());
     }
 
-    return validateValue(matchExpression);
+    if (matchExpression.hasValue() && !validateValue(matchExpression.getValue())) {
+      return Status.INVALID_ARGUMENT.withDescription("Value in match expression is invalid");
+    }
+
+    return Status.OK;
   }
 
   private boolean hasInvalidBlockingConditionForCookieOrHeaderValues(
@@ -479,8 +493,13 @@ public class ClauseGroupValidator {
   }
 
   private boolean isInvalidMathematicalOperation(MatchExpression matchExpression) {
-    return NUMERIC_MATCH_OPERATORS.contains(matchExpression.getMatchOperator())
-        && !isNumber(matchExpression.getMatchValue());
+    boolean isNumericMatchKeyOrMatchOperator =
+        NUMERIC_MATCH_OPERATORS.contains(matchExpression.getMatchOperator())
+            || NUMERIC_MATCH_KEYS.contains(matchExpression.getMatchKey());
+    if (matchExpression.hasValue()) {
+      return isNumericMatchKeyOrMatchOperator && !isInteger(matchExpression.getValue());
+    }
+    return isNumericMatchKeyOrMatchOperator && !isInteger(matchExpression.getMatchValue());
   }
 
   private Status validateKeyValueExpression(KeyValueExpression keyValueExpression) {
@@ -771,36 +790,31 @@ public class ClauseGroupValidator {
     return Status.OK;
   }
 
-  private Status validateValue(MatchExpression matchExpression) {
-    if (matchExpression.hasValue()) {
-      Value value = matchExpression.getValue();
-      // all Values come as strings from the UI
-      if (!value.hasStringValue()) {
-        return Status.INVALID_ARGUMENT.withDescription(
-            "Custom signature rule match expression Value should be a string");
-      }
-
-      String stringValue = value.getStringValue();
-      if (isInvalidMathematicalOperation(matchExpression)) {
-        return Status.INVALID_ARGUMENT.withDescription(
-            "Numeric operator requires numeric value, got: " + stringValue);
-      }
-    }
-    return Status.OK;
-  }
-
   private boolean checkChainKeywords(String inputSecRule) {
     Matcher matcher = SEC_RULE_DIRECTIVES_WITH_CHAIN_KEYWORDS_REGEX.matcher(inputSecRule);
     return matcher.matches();
   }
 
-  private boolean isNumber(String value) {
+  private boolean isInteger(String value) {
     try {
-      Double.parseDouble(value);
+      Integer.parseInt(value);
       return true;
     } catch (Exception e) {
       return false;
     }
+  }
+
+  private boolean isInteger(Value value) {
+    if (value.hasStringValue()) {
+      return isInteger(value.getStringValue());
+    }
+
+    if (value.hasNumberValue()) {
+      double numberValue = value.getNumberValue();
+      return numberValue == (int) numberValue && !Double.isInfinite(numberValue);
+    }
+
+    return false;
   }
 
   private boolean containsSecRuleClause(ClauseGroup clauseGroup) {
@@ -817,5 +831,9 @@ public class ClauseGroupValidator {
 
   private String getName(Message message) {
     return message.getDescriptorForType().getName();
+  }
+
+  private boolean validateValue(Value value) {
+    return value.hasStringValue() || value.hasNumberValue();
   }
 }
