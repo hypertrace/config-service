@@ -371,6 +371,92 @@ class DetectionExclusionConditionValidatorTest {
                   List.of(EXCLUSION_TARGET_ALERT, EXCLUSION_TARGET_BLOCK, EXCLUSION_TARGET_ALLOW),
                   condition1));
     }
+
+    // invalid condition - numeric match key, numeric match operator and str match value
+    {
+      DetectionExclusionCondition detectionExclusionCondition =
+          DetectionExclusionCondition.newBuilder()
+              .setAttributeMatchCondition(
+                  SpanAttributeMatchCondition.newBuilder()
+                      .setKeyMatchCondition(
+                          KeyMetadataMatchCondition.newBuilder()
+                              .setMetadata(KeyMetadata.KEY_METADATA_QUERY_PARAMS_COUNT))
+                      .setValueMatchCondition(
+                          MatchCondition.newBuilder()
+                              .setOperator(MatchOperator.MATCH_OPERATOR_GREATER_THAN)
+                              .setValue(Value.newBuilder().setStringValue("val"))))
+              .build();
+      Throwable throwable =
+          assertThrows(
+              StatusRuntimeException.class,
+              () ->
+                  conditionValidator.validateRuleCondition(
+                      List.of(EXCLUSION_TARGET_ALERT), detectionExclusionCondition));
+      assertTrue(throwable.getMessage().contains("Numerical value should be present"));
+    }
+
+    // valid condition - numeric match key, numeric match operator and int based str match value
+    {
+      DetectionExclusionCondition detectionExclusionCondition =
+          DetectionExclusionCondition.newBuilder()
+              .setAttributeMatchCondition(
+                  SpanAttributeMatchCondition.newBuilder()
+                      .setKeyMatchCondition(
+                          KeyMetadataMatchCondition.newBuilder()
+                              .setMetadata(KeyMetadata.KEY_METADATA_REQUEST_HEADERS_COUNT))
+                      .setValueMatchCondition(
+                          MatchCondition.newBuilder()
+                              .setOperator(MatchOperator.MATCH_OPERATOR_LESS_THAN)
+                              .setValue(Value.newBuilder().setStringValue("10"))))
+              .build();
+      assertDoesNotThrow(
+          () ->
+              conditionValidator.validateRuleCondition(
+                  List.of(EXCLUSION_TARGET_ALERT), detectionExclusionCondition));
+    }
+
+    // invalid condition - numeric match key, numeric match operator and non-int based number match
+    {
+      DetectionExclusionCondition detectionExclusionCondition =
+          DetectionExclusionCondition.newBuilder()
+              .setAttributeMatchCondition(
+                  SpanAttributeMatchCondition.newBuilder()
+                      .setKeyMatchCondition(
+                          KeyMetadataMatchCondition.newBuilder()
+                              .setMetadata(KeyMetadata.KEY_METADATA_REQUEST_COOKIES_COUNT))
+                      .setValueMatchCondition(
+                          MatchCondition.newBuilder()
+                              .setOperator(MatchOperator.MATCH_OPERATOR_NOT_EQUAL)
+                              .setValue(Value.newBuilder().setNumberValue(2.5))))
+              .build();
+      Throwable throwable =
+          assertThrows(
+              StatusRuntimeException.class,
+              () ->
+                  conditionValidator.validateRuleCondition(
+                      List.of(EXCLUSION_TARGET_ALERT), detectionExclusionCondition));
+      assertTrue(throwable.getMessage().contains("Numerical value should be present"));
+    }
+
+    // valid condition - numeric match key, numeric match operator and int based number match value
+    {
+      DetectionExclusionCondition detectionExclusionCondition =
+          DetectionExclusionCondition.newBuilder()
+              .setAttributeMatchCondition(
+                  SpanAttributeMatchCondition.newBuilder()
+                      .setKeyMatchCondition(
+                          KeyMetadataMatchCondition.newBuilder()
+                              .setMetadata(KeyMetadata.KEY_METADATA_REQUEST_BODY_SIZE))
+                      .setValueMatchCondition(
+                          MatchCondition.newBuilder()
+                              .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                              .setValue(Value.newBuilder().setNumberValue(10))))
+              .build();
+      assertDoesNotThrow(
+          () ->
+              conditionValidator.validateRuleCondition(
+                  List.of(EXCLUSION_TARGET_ALERT), detectionExclusionCondition));
+    }
   }
 
   @Test

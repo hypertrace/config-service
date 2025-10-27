@@ -27,6 +27,7 @@ import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY
 import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_RESPONSE_COOKIES_COUNT;
 import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_RESPONSE_HEADERS_COUNT;
 import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_STATUS_CODE;
+import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_UNSPECIFIED;
 import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_URL;
 import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_USER_AGENT;
 import static ai.traceable.detection.exclusion.config.service.v1.MatchOperator.MATCH_OPERATOR_EQUALS;
@@ -95,6 +96,16 @@ public class DetectionExclusionConditionValidator {
           KEY_METADATA_STATUS_CODE,
           KEY_METADATA_REQUEST_BODY,
           KEY_METADATA_RESPONSE_BODY,
+          KEY_METADATA_REQUEST_BODY_SIZE,
+          KEY_METADATA_RESPONSE_BODY_SIZE,
+          KEY_METADATA_QUERY_PARAMS_COUNT,
+          KEY_METADATA_REQUEST_HEADERS_COUNT,
+          KEY_METADATA_RESPONSE_HEADERS_COUNT,
+          KEY_METADATA_REQUEST_COOKIES_COUNT,
+          KEY_METADATA_RESPONSE_COOKIES_COUNT);
+
+  private static final Set<KeyMetadata> NUMERIC_KEY_METADATA =
+      Set.of(
           KEY_METADATA_REQUEST_BODY_SIZE,
           KEY_METADATA_RESPONSE_BODY_SIZE,
           KEY_METADATA_QUERY_PARAMS_COUNT,
@@ -406,16 +417,16 @@ public class DetectionExclusionConditionValidator {
             String.format(
                 "Value match condition should not be present for key meta data : %s", metadata));
       }
-      validateMatchCondition(condition.getValueMatchCondition());
+      validateMatchCondition(condition.getValueMatchCondition(), metadata);
     } else {
       if (!keyMetadataMatchCondition.hasMatchCondition()) {
         throwInvalidArgumentException(
             String.format(
                 "Key match condition should be present for key meta data : %s", metadata));
       }
-      validateMatchCondition(keyMetadataMatchCondition.getMatchCondition());
+      validateMatchCondition(keyMetadataMatchCondition.getMatchCondition(), metadata);
       if (condition.hasValueMatchCondition()) {
-        validateMatchCondition(condition.getValueMatchCondition());
+        validateMatchCondition(condition.getValueMatchCondition(), metadata);
       }
     }
   }
@@ -560,7 +571,8 @@ public class DetectionExclusionConditionValidator {
     }
 
     if (systemDefinedEvent.hasDescriptionMatchCondition()) {
-      validateMatchCondition(systemDefinedEvent.getDescriptionMatchCondition());
+      validateMatchCondition(
+          systemDefinedEvent.getDescriptionMatchCondition(), KEY_METADATA_UNSPECIFIED);
     }
   }
 
@@ -586,10 +598,10 @@ public class DetectionExclusionConditionValidator {
               printMessage(condition)));
     }
     if (condition.hasKeyMatchCondition()) {
-      validateMatchCondition(condition.getKeyMatchCondition());
+      validateMatchCondition(condition.getKeyMatchCondition(), KEY_METADATA_UNSPECIFIED);
     }
     if (condition.hasValueMatchCondition()) {
-      validateMatchCondition(condition.getValueMatchCondition());
+      validateMatchCondition(condition.getValueMatchCondition(), KEY_METADATA_UNSPECIFIED);
     }
     condition.getObservedTypesList().forEach(this::validateAttributeValueType);
     condition.getLearntTypesList().forEach(this::validateAttributeValueType);
@@ -602,18 +614,18 @@ public class DetectionExclusionConditionValidator {
     }
   }
 
-  private void validateMatchCondition(MatchCondition matchCondition) {
+  private void validateMatchCondition(MatchCondition matchCondition, KeyMetadata keyMetadata) {
     validateNonDefaultPresenceOrThrow(matchCondition, MatchCondition.OPERATOR_FIELD_NUMBER);
 
     if (!isValidValue(matchCondition.getValue())) {
       throwInvalidArgumentException("Match condition should have a valid value");
     }
 
-    if (isInvalidMathematicalOperation(matchCondition)) {
+    if (isInvalidMathematicalOperation(matchCondition, keyMetadata)) {
       throwInvalidArgumentException(
           String.format(
-              "Numerical value should be present for match operator : %s",
-              matchCondition.getOperator()));
+              "Numerical value should be present for key metadata: %s, match operator: %s",
+              keyMetadata, matchCondition.getOperator()));
     }
 
     if (matchCondition.getOperator().equals(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
@@ -663,7 +675,7 @@ public class DetectionExclusionConditionValidator {
     if (!KEY_NULL_METADATA.contains(keyMetadata)) {
       validateMatchConditionOperatorForLhsOrRhsCondition(
           keyMetadataMatchCondition.getMatchCondition().getOperator());
-      validateMatchCondition(keyMetadataMatchCondition.getMatchCondition());
+      validateMatchCondition(keyMetadataMatchCondition.getMatchCondition(), keyMetadata);
     }
   }
 
@@ -703,10 +715,32 @@ public class DetectionExclusionConditionValidator {
     throw Status.INVALID_ARGUMENT.withDescription(description).asRuntimeException();
   }
 
-  private boolean isInvalidMathematicalOperation(MatchCondition matchCondition) {
-    return (matchCondition.getOperator().equals(MATCH_OPERATOR_GREATER_THAN)
-            || matchCondition.getOperator().equals(MATCH_OPERATOR_LESS_THAN))
-        && !matchCondition.getValue().hasNumberValue();
+  private boolean isInvalidMathematicalOperation(
+      MatchCondition matchCondition, KeyMetadata keyMetadata) {
+    boolean isNumericKeyMetadataOrMatchOperator =
+        matchCondition.getOperator().equals(MATCH_OPERATOR_GREATER_THAN)
+            || matchCondition.getOperator().equals(MATCH_OPERATOR_LESS_THAN)
+            || NUMERIC_KEY_METADATA.contains(keyMetadata);
+
+    return isNumericKeyMetadataOrMatchOperator && !isInteger(matchCondition.getValue());
+  }
+
+  private boolean isInteger(Value value) {
+    if (value.hasStringValue()) {
+      try {
+        Integer.parseInt(value.getStringValue());
+        return true;
+      } catch (Exception e) {
+        return false;
+      }
+    }
+
+    if (value.hasNumberValue()) {
+      double numberValue = value.getNumberValue();
+      return numberValue == (int) numberValue && !Double.isInfinite(numberValue);
+    }
+
+    return false;
   }
 
   public String getName(Message message) {
