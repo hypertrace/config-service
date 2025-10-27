@@ -9,13 +9,13 @@
           "keyLhsExpression": {
             "matchKey": "MATCH_KEY_HEADER_NAME",
             "matchOperator": "MATCH_OPERATOR_CONTAINS",
-            "matchValue": "name",
+            "matchValue": "header-name",
             "matchCategory": "MATCH_CATEGORY_REQUEST"
           },
           "keyRhsExpression": {
             "matchKey": "MATCH_KEY_COOKIE_NAME",
             "matchOperator": "MATCH_OPERATOR_CONTAINS",
-            "matchValue": "name",
+            "matchValue": "cookie-name",
             "matchCategory": "MATCH_CATEGORY_REQUEST"
           },
           "matchOperator": "MATCH_OPERATOR_EQUALS"

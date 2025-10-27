@@ -98,7 +98,7 @@ public class ClauseGroupValidator {
   private static final Set<MatchOperator> UNSUPPORTED_OPERATORS_FOR_LHS_RHS_EXPRESSIONS =
       Set.of(MATCH_OPERATOR_LESS_THAN, MATCH_OPERATOR_GREATER_THAN);
 
-  private static final Set<MatchKey> KEY_NULL_MATCH_KEYS =
+  public static final Set<MatchKey> KEY_NULL_MATCH_KEYS =
       Set.of(
           MATCH_KEY_URL,
           MATCH_KEY_HOST,

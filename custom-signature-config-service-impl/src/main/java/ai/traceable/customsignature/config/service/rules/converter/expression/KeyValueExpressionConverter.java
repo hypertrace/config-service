@@ -71,18 +71,18 @@ public class KeyValueExpressionConverter implements CustomSignatureExpressionCon
     return LIST_VALUE_MAP_TYPES.contains(tag)
         ? String.format(
             "map:match(%s, %s, %s, %s)",
-            CustomSignatureExpressionConverterUtils.getJexlExpForTag(tag),
-            CustomSignatureExpressionConverterUtils.getPredicateJexlExp(
+            CustomSignatureExpressionConverterUtils.getJexlExpressionForTag(tag),
+            CustomSignatureExpressionConverterUtils.getPredicateJexlExpression(
                 keyValueExpression.getKeyMatchOperator(), keyValueExpression.getMatchKey()),
-            CustomSignatureExpressionConverterUtils.getPredicateJexlExp(
+            CustomSignatureExpressionConverterUtils.getPredicateJexlExpression(
                 keyValueExpression.getValueMatchOperator(), keyValueExpression.getMatchValue()),
             ALL_MATCH_OPERATORS.contains(keyValueExpression.getValueMatchOperator()))
         : String.format(
             "map:match(%s, %s, %s)",
-            CustomSignatureExpressionConverterUtils.getJexlExpForTag(tag),
-            CustomSignatureExpressionConverterUtils.getPredicateJexlExp(
+            CustomSignatureExpressionConverterUtils.getJexlExpressionForTag(tag),
+            CustomSignatureExpressionConverterUtils.getPredicateJexlExpression(
                 keyValueExpression.getKeyMatchOperator(), keyValueExpression.getMatchKey()),
-            CustomSignatureExpressionConverterUtils.getPredicateJexlExp(
+            CustomSignatureExpressionConverterUtils.getPredicateJexlExpression(
                 keyValueExpression.getValueMatchOperator(), keyValueExpression.getMatchValue()));
   }
 

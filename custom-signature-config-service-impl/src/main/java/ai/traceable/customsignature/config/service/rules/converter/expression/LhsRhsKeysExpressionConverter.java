@@ -1,5 +1,7 @@
 package ai.traceable.customsignature.config.service.rules.converter.expression;
 
+import static ai.traceable.customsignature.config.service.rules.ClauseGroupValidator.KEY_NULL_MATCH_KEYS;
+
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.LhsRhsKeysExpression;
 import ai.traceable.customsignature.config.service.v1.MatchExpression;
@@ -59,14 +61,6 @@ public class LhsRhsKeysExpressionConverter implements CustomSignatureExpressionC
       MatchExpression lhsKeyExpression,
       MatchExpression rhsKeyExpression,
       MatchOperator lhsRhsMatchOperator) {
-    String lhsKeyExpressionMatchValue =
-        lhsKeyExpression.hasValue()
-            ? lhsKeyExpression.getValue().getStringValue()
-            : lhsKeyExpression.getMatchValue();
-    String rhsKeyExpressionMatchValue =
-        rhsKeyExpression.hasValue()
-            ? rhsKeyExpression.getValue().getStringValue()
-            : rhsKeyExpression.getMatchValue();
     MatchKey lhsMatchKey = lhsKeyExpression.getMatchKey();
     MatchKey rhsMatchKey = rhsKeyExpression.getMatchKey();
 
@@ -79,16 +73,89 @@ public class LhsRhsKeysExpressionConverter implements CustomSignatureExpressionC
     boolean isAnyMatchKeyCaseInsensitive =
         CustomSignatureExpressionConverterUtils.isMatchKeyCaseInsensitive(lhsMatchKey)
             || CustomSignatureExpressionConverterUtils.isMatchKeyCaseInsensitive(rhsMatchKey);
+    ai.traceable.datamodel.data.transformation.config.v1.MatchOperator
+        convertedLhsRhsMatchOperator =
+            CustomSignatureExpressionConverterUtils.getDataTransformationOperator(
+                isAnyMatchKeyCaseInsensitive, lhsRhsMatchOperator);
+
+    if (KEY_NULL_MATCH_KEYS.contains(lhsMatchKey) && KEY_NULL_MATCH_KEYS.contains(rhsMatchKey)) {
+      return String.format(
+          "map:match(%s, %s, %s)",
+          getValueForKeyNullMatchKeyTypes(lhsMatchKey),
+          getValueForKeyNullMatchKeyTypes(rhsMatchKey),
+          convertedLhsRhsMatchOperator.name());
+    }
+
+    if (KEY_NULL_MATCH_KEYS.contains(lhsMatchKey)) {
+      String mapJexlExpression =
+          CustomSignatureExpressionConverterUtils.getJexlExpressionForLhsRhsMatchKey(rhsMatchKey);
+      String rhsKeyExpressionMatchValue =
+          rhsKeyExpression.hasValue()
+              ? rhsKeyExpression.getValue().getStringValue()
+              : rhsKeyExpression.getMatchValue();
+      String predicateJexlExpression =
+          CustomSignatureExpressionConverterUtils.getPredicateJexlExpression(
+              rhsKeyExpression.getMatchOperator(), rhsKeyExpressionMatchValue);
+      return String.format(
+          "map:match(%s, %s, %s)",
+          getValueForKeyNullMatchKeyTypes(lhsMatchKey),
+          getExtractedValuesForKeyValueMatchKeyTypes(mapJexlExpression, predicateJexlExpression),
+          convertedLhsRhsMatchOperator.name());
+    }
+
+    if (KEY_NULL_MATCH_KEYS.contains(rhsMatchKey)) {
+      String mapJexlExpression =
+          CustomSignatureExpressionConverterUtils.getJexlExpressionForLhsRhsMatchKey(lhsMatchKey);
+      String lhsKeyExpressionMatchValue =
+          lhsKeyExpression.hasValue()
+              ? lhsKeyExpression.getValue().getStringValue()
+              : lhsKeyExpression.getMatchValue();
+      String predicateJexlExpression =
+          CustomSignatureExpressionConverterUtils.getPredicateJexlExpression(
+              lhsKeyExpression.getMatchOperator(), lhsKeyExpressionMatchValue);
+      return String.format(
+          "map:match(%s, %s, %s)",
+          getExtractedValuesForKeyValueMatchKeyTypes(mapJexlExpression, predicateJexlExpression),
+          getValueForKeyNullMatchKeyTypes(rhsMatchKey),
+          convertedLhsRhsMatchOperator.name());
+    }
+
+    String lhsMapJexlExpression =
+        CustomSignatureExpressionConverterUtils.getJexlExpressionForLhsRhsMatchKey(lhsMatchKey);
+    String rhsMapJexlExpression =
+        CustomSignatureExpressionConverterUtils.getJexlExpressionForLhsRhsMatchKey(rhsMatchKey);
+    String lhsKeyExpressionMatchValue =
+        lhsKeyExpression.hasValue()
+            ? lhsKeyExpression.getValue().getStringValue()
+            : lhsKeyExpression.getMatchValue();
+    String rhsKeyExpressionMatchValue =
+        rhsKeyExpression.hasValue()
+            ? rhsKeyExpression.getValue().getStringValue()
+            : rhsKeyExpression.getMatchValue();
+    String lhsPredicateJexlExpression =
+        CustomSignatureExpressionConverterUtils.getPredicateJexlExpression(
+            lhsKeyExpression.getMatchOperator(), lhsKeyExpressionMatchValue);
+    String rhsPredicateJexlExpression =
+        CustomSignatureExpressionConverterUtils.getPredicateJexlExpression(
+            rhsKeyExpression.getMatchOperator(), rhsKeyExpressionMatchValue);
 
     return String.format(
-        "map:match(%s, %s, %s, %s, %s)",
-        CustomSignatureExpressionConverterUtils.getJexlExpForLhsRhsMatchKey(lhsMatchKey),
-        CustomSignatureExpressionConverterUtils.getJexlExpForLhsRhsMatchKey(rhsMatchKey),
-        CustomSignatureExpressionConverterUtils.getPredicateJexlExp(
-            lhsKeyExpression.getMatchOperator(), lhsKeyExpressionMatchValue),
-        CustomSignatureExpressionConverterUtils.getPredicateJexlExp(
-            rhsKeyExpression.getMatchOperator(), rhsKeyExpressionMatchValue),
-        CustomSignatureExpressionConverterUtils.getDataTransformationOperator(
-            isAnyMatchKeyCaseInsensitive, lhsRhsMatchOperator));
+        "map:match(%s, %s, %s)",
+        getExtractedValuesForKeyValueMatchKeyTypes(
+            lhsMapJexlExpression, lhsPredicateJexlExpression),
+        getExtractedValuesForKeyValueMatchKeyTypes(
+            rhsMapJexlExpression, rhsPredicateJexlExpression),
+        convertedLhsRhsMatchOperator.name());
+  }
+
+  private String getExtractedValuesForKeyValueMatchKeyTypes(
+      String mapJexlExpression, String predicateJexlExpression) {
+    return "map:extractValues(" + mapJexlExpression + ", " + predicateJexlExpression + ")";
+  }
+
+  private String getValueForKeyNullMatchKeyTypes(MatchKey matchKey) {
+    return "Set.of("
+        + CustomSignatureExpressionConverterUtils.getJexlExpressionForMatchKey(matchKey)
+        + ")";
   }
 }

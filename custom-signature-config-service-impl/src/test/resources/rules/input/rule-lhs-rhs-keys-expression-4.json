@@ -6,19 +6,15 @@
       "clauseOperator": "CLAUSE_OPERATOR_AND",
       "clauses": [{
         "lhsRhsKeysExpression": {
-          "lhsKeyExpression": {
-            "matchKey": "MATCH_KEY_HEADER_NAME",
-            "matchOperator": "MATCH_OPERATOR_CONTAINS",
-            "matchValue": "header-name",
+          "keyLhsExpression": {
+            "matchKey": "MATCH_KEY_HOST",
             "matchCategory": "MATCH_CATEGORY_REQUEST"
           },
-          "rhsKeyExpression": {
-            "matchKey": "MATCH_KEY_COOKIE_NAME",
-            "matchOperator": "MATCH_OPERATOR_CONTAINS",
-            "matchValue": "cookie-name",
+          "keyRhsExpression": {
+            "matchKey": "MATCH_KEY_USER_AGENT",
             "matchCategory": "MATCH_CATEGORY_REQUEST"
           },
-          "matchOperator": "MATCH_OPERATOR_EQUALS"
+          "matchOperator": "MATCH_OPERATOR_NOT_EQUAL"
         }
       }]
     }

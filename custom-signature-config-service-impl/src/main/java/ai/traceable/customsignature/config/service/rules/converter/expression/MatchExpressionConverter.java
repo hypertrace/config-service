@@ -135,7 +135,7 @@ public class MatchExpressionConverter implements CustomSignatureExpressionConver
                                         JexlExpressionConfig.newBuilder()
                                             .setJexlExpression(
                                                 CustomSignatureExpressionConverterUtils
-                                                    .getJexlExpForMatchKey(matchKey))))))
+                                                    .getJexlExpressionForMatchKey(matchKey))))))
             .setBinaryOperator(builder)
             .build();
 
@@ -154,18 +154,18 @@ public class MatchExpressionConverter implements CustomSignatureExpressionConver
       String jexlExpForQueryParams =
           String.format(
               "map:match(%s, %s, %s)",
-              CustomSignatureExpressionConverterUtils.getJexlExpForMatchKey(
+              CustomSignatureExpressionConverterUtils.getJexlExpressionForMatchKey(
                   MatchKey.MATCH_KEY_QUERY_PARAMETER_NAME),
-              CustomSignatureExpressionConverterUtils.getPredicateJexlExp(
+              CustomSignatureExpressionConverterUtils.getPredicateJexlExpression(
                   matchOperator, matchValue),
               ALL_MATCH_OPERATORS.contains(matchOperator));
 
       String jexlExpForBodyParams =
           String.format(
               "map:match(%s, %s, %s)",
-              CustomSignatureExpressionConverterUtils.getJexlExpForMatchKey(
+              CustomSignatureExpressionConverterUtils.getJexlExpressionForMatchKey(
                   MatchKey.MATCH_KEY_BODY_PARAMETER_NAME),
-              CustomSignatureExpressionConverterUtils.getPredicateJexlExp(
+              CustomSignatureExpressionConverterUtils.getPredicateJexlExpression(
                   matchOperator, matchValue),
               ALL_MATCH_OPERATORS.contains(matchOperator));
 
@@ -197,8 +197,9 @@ public class MatchExpressionConverter implements CustomSignatureExpressionConver
     String jexlExp =
         String.format(
             "map:match(%s, %s, %s)",
-            CustomSignatureExpressionConverterUtils.getJexlExpForMatchKey(matchKey),
-            CustomSignatureExpressionConverterUtils.getPredicateJexlExp(matchOperator, matchValue),
+            CustomSignatureExpressionConverterUtils.getJexlExpressionForMatchKey(matchKey),
+            CustomSignatureExpressionConverterUtils.getPredicateJexlExpression(
+                matchOperator, matchValue),
             ALL_MATCH_OPERATORS.contains(matchOperator));
 
     return MatchCondition.newBuilder()
@@ -214,18 +215,20 @@ public class MatchExpressionConverter implements CustomSignatureExpressionConver
         String.format(
             "map:matchValue(%s, %s, %s)",
             getCollectValuesFromMapJexlExp(
-                CustomSignatureExpressionConverterUtils.getJexlExpForMatchKey(
+                CustomSignatureExpressionConverterUtils.getJexlExpressionForMatchKey(
                     MatchKey.MATCH_KEY_QUERY_PARAMETER_VALUE)),
-            CustomSignatureExpressionConverterUtils.getPredicateJexlExp(matchOperator, matchValue),
+            CustomSignatureExpressionConverterUtils.getPredicateJexlExpression(
+                matchOperator, matchValue),
             ALL_MATCH_OPERATORS.contains(matchOperator));
 
     String jexlExpForBodyParams =
         String.format(
             "map:matchValue(%s, %s, %s)",
             getCollectValuesFromMapJexlExp(
-                CustomSignatureExpressionConverterUtils.getJexlExpForMatchKey(
+                CustomSignatureExpressionConverterUtils.getJexlExpressionForMatchKey(
                     MatchKey.MATCH_KEY_BODY_PARAMETER_VALUE)),
-            CustomSignatureExpressionConverterUtils.getPredicateJexlExp(matchOperator, matchValue),
+            CustomSignatureExpressionConverterUtils.getPredicateJexlExpression(
+                matchOperator, matchValue),
             ALL_MATCH_OPERATORS.contains(matchOperator));
 
     return MatchCondition.newBuilder()
@@ -259,8 +262,9 @@ public class MatchExpressionConverter implements CustomSignatureExpressionConver
         String.format(
             "map:matchValue(%s, %s, %s)",
             getCollectValuesFromMapJexlExp(
-                CustomSignatureExpressionConverterUtils.getJexlExpForMatchKey(matchKey)),
-            CustomSignatureExpressionConverterUtils.getPredicateJexlExp(matchOperator, matchValue),
+                CustomSignatureExpressionConverterUtils.getJexlExpressionForMatchKey(matchKey)),
+            CustomSignatureExpressionConverterUtils.getPredicateJexlExpression(
+                matchOperator, matchValue),
             ALL_MATCH_OPERATORS.contains(matchOperator));
 
     return MatchCondition.newBuilder()

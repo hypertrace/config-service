@@ -14,7 +14,7 @@
             "conditions": [{
               "generic_match_condition": {
                 "jexl_expression": {
-                  "jexl_expression": "map:match($s.getRequestHeaders().getKeySet(), $s.getRequestCookies().getKeySet(), predicate:contains('name'), predicate:contains('name'), MATCH_OPERATOR_EQ)"
+                  "jexl_expression": "map:match(map:extractValues($s.getRequestHeaders(), predicate:contains('header-name')), map:extractValues($s.getRequestCookies(), predicate:contains('cookie-name')), MATCH_OPERATOR_EQ)"
                 }
               }
             }]

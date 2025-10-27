@@ -14,7 +14,7 @@ public class CustomSignatureExpressionConverterUtils {
           MatchKey.MATCH_KEY_HTTP_METHOD,
           MatchKey.MATCH_KEY_STATUS_CODE);
 
-  static String getPredicateJexlExp(MatchOperator matchOperator, String matchValue) {
+  static String getPredicateJexlExpression(MatchOperator matchOperator, String matchValue) {
     switch (matchOperator) {
       case MATCH_OPERATOR_EQUALS:
         return String.format("predicate:equals('%s')", matchValue);
@@ -37,7 +37,7 @@ public class CustomSignatureExpressionConverterUtils {
     }
   }
 
-  static String getJexlExpForTag(KeyValueTag tag) {
+  static String getJexlExpressionForTag(KeyValueTag tag) {
     switch (tag) {
       case KEY_VALUE_TAG_HEADER:
         return "$s.getRequestHeaders()";
@@ -52,7 +52,7 @@ public class CustomSignatureExpressionConverterUtils {
     }
   }
 
-  static String getJexlExpForMatchKey(MatchKey key) {
+  static String getJexlExpressionForMatchKey(MatchKey key) {
     switch (key) {
       case MATCH_KEY_URL:
         return "$s.getUrl()";
@@ -93,18 +93,18 @@ public class CustomSignatureExpressionConverterUtils {
     }
   }
 
-  static String getJexlExpForLhsRhsMatchKey(MatchKey key) {
+  static String getJexlExpressionForLhsRhsMatchKey(MatchKey key) {
     switch (key) {
       case MATCH_KEY_HEADER_NAME:
-        return "$s.getRequestHeaders().getKeySet()";
+        return "$s.getRequestHeaders()";
       case MATCH_KEY_BODY_PARAMETER_NAME:
-        return "$s.getRequestBodyParams().getKeySet()";
+        return "$s.getRequestBodyParams()";
       case MATCH_KEY_QUERY_PARAMETER_NAME:
-        return "$s.getQueryParams().getKeySet()";
+        return "$s.getQueryParams()";
       case MATCH_KEY_COOKIE_NAME:
-        return "$s.getRequestCookies().getKeySet()";
+        return "$s.getRequestCookies()";
       case MATCH_KEY_PARAMETER_NAME:
-        return "$s.getRequestParameters().getKeySet()";
+        return "$s.getRequestParameters()";
       default:
         throw new IllegalArgumentException("Invalid match key in lhs rhs keys expression : " + key);
     }
