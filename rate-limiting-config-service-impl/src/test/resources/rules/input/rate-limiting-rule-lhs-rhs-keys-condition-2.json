@@ -9,20 +9,12 @@
         "keyValueCondition": {
           "lhsRhsCondition": {
             "lhsKeyCondition": {
-              "keyType": "TYPE_REQUEST_HEADER",
-              "keyMatchOperatorCondition": {
-                "operator": "MATCH_OPERATOR_MATCHES_REGEX",
-                "value": "header.*"
-              }
+              "keyType": "TYPE_URL"
             },
             "rhsKeyCondition": {
-              "keyType": "TYPE_REQUEST_COOKIE",
-              "keyMatchOperatorCondition": {
-                "operator": "MATCH_OPERATOR_MATCHES_REGEX",
-                "value": "cookie.*"
-              }
+              "keyType": "TYPE_HOST"
             },
-            "lhsRhsMatchOperator": "MATCH_OPERATOR_EQUALS"
+            "lhsRhsMatchOperator": "MATCH_OPERATOR_NOT_EQUAL"
           }
         }
       }

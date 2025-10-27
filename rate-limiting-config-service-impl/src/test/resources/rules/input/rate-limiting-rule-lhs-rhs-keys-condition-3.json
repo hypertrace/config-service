@@ -1,0 +1,51 @@
+{
+  "id": "rate-limiting-rule-lhs-rhs-id",
+  "data": {
+    "category": "CATEGORY_RATE_LIMITING",
+    "name": "test-lhs-rhs-policy",
+    "enabled": true,
+    "condition": {
+      "leafCondition": {
+        "keyValueCondition": {
+          "lhsRhsCondition": {
+            "lhsKeyCondition": {
+              "keyType": "TYPE_REQUEST_BODY_PARAMETER",
+              "keyMatchOperatorCondition": {
+                "operator": "MATCH_OPERATOR_CONTAINS",
+                "value": "parameter-str-val"
+              }
+            },
+            "rhsKeyCondition": {
+              "keyType": "TYPE_HTTP_METHOD"
+            },
+            "lhsRhsMatchOperator": "MATCH_OPERATOR_NOT_CONTAIN"
+          }
+        }
+      }
+    },
+    "thresholdActionConfigs": [{
+      "resourceAccessThresholdConfigs": [{
+        "userAggregateType": "USER_AGGREGATE_TYPE_PER_USER",
+        "apiAggregateType": "API_AGGREGATE_TYPE_PER_ENDPOINT",
+        "rollingWindowThresholdConfig": {
+          "countAllowed": "100",
+          "durationIso": "PT1M"
+        }
+      }],
+      "actions": [{
+        "block": {
+          "eventSeverity": "EVENT_SEVERITY_CRITICAL",
+          "useThresholdDuration": true
+        }
+      }]
+    }],
+    "ruleConfigScope": {
+      "environmentScope": {
+        "environmentIds": ["test-env"]
+      }
+    },
+    "ruleStatus": {
+      "ruleCreationSource": "RULE_SOURCE_TRACEABLE"
+    }
+  }
+}

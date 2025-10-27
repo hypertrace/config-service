@@ -17,7 +17,7 @@
         "match_condition": {
           "generic_match_condition": {
             "jexl_expression": {
-              "jexl_expression": "map:match($s.getRequestHeaders().getKeySet(), $s.getRequestCookies().getKeySet(), predicate:matchesRegex('header.*'), predicate:matchesRegex('cookie.*'), MATCH_OPERATOR_EQUALS)"
+              "jexl_expression": "map:match(map:extractValues($s.getRequestBodyParams(), predicate:contains('parameter-str-val')), Set.of($s.getMethod()), MATCH_OPERATOR_NOT_CONTAIN)"
             }
           }
         },

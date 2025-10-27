@@ -1,0 +1,78 @@
+{
+  "decision_rules": [{
+    "id": "rate-limiting-rule-lhs-rhs-id_1",
+    "name": "test-lhs-rhs-policy",
+    "rule_scope": {
+      "scope_conditions": [{
+        "environment_scope": {
+          "environments": ["test-env"]
+        }
+      }]
+    },
+    "rule_category": "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
+    "rule_status": {},
+    "rule_definition": {
+      "edge_input_kind": "EDGE_INPUT_KIND_HTTP_REQUEST",
+      "aggregate_threshold_rule": {
+        "match_condition": {
+          "generic_match_condition": {
+            "jexl_expression": {
+              "jexl_expression": "map:match(map:extractValues($s.getRequestHeaders(), predicate:matchesRegex('header.*')), map:extractValues($s.getRequestCookies(), predicate:matchesRegex('cookie.*')), MATCH_OPERATOR_EQUALS)"
+            }
+          }
+        },
+        "group_by_dimensions": [{
+          "name": "AGGREGATE_PER_USER",
+          "rules": [{
+            "transformation_config": {
+              "jexl_expression": {
+                "jexl_expression": "TRACEABLE_USER_ID"
+              },
+              "output_type": "FIELD_TYPE_STR"
+            }
+          }]
+        }, {
+          "name": "AGGREGATE_PER_API",
+          "rules": [{
+            "transformation_config": {
+              "jexl_expression": {
+                "jexl_expression": "TRACEABLE_ENDPOINT_ID"
+              },
+              "output_type": "FIELD_TYPE_STR"
+            }
+          }]
+        }],
+        "time_window": "60s",
+        "value_aggregate_threshold": {
+          "aggregation_type": "AGGREGATION_TYPE_COUNT",
+          "static_threshold": 100.0
+        }
+      }
+    },
+    "rule_decision": {
+      "edge_decision_type": "EDGE_DECISION_TYPE_BLOCK",
+      "threat_type": "Rate Limiting",
+      "rule_info_decorations": [{
+        "rule_info_key": {
+          "static_value": "severity",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "EVENT_SEVERITY_CRITICAL",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }, {
+        "rule_info_key": {
+          "static_value": "threshold_details",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "CAEQARoICGQSBFBUMU0=",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }]
+    },
+    "policy_kind": "POLICY_KIND_WAF",
+    "policy_id": "rate-limiting-rule-lhs-rhs-id"
+  }]
+}
