@@ -6,8 +6,11 @@ import static ai.traceable.ratelimiting.config.service.v2.IpLocationType.IP_LOCA
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_HOST;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_HTTP_METHOD;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_QUERY_PARAMETER;
+import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_QUERY_PARAMS_COUNT;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_REQUEST_BODY_PARAMETER;
+import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_REQUEST_BODY_SIZE;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_REQUEST_COOKIE;
+import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_REQUEST_COOKIES_COUNT;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_REQUEST_HEADER;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_REQUEST_HEADERS_COUNT;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_RESPONSE_HEADERS_COUNT;
@@ -3615,6 +3618,125 @@ public class RateLimitingRulesValidatorTest {
         () ->
             rulesValidator.validateOrThrow(
                 requestContext, updateRateLimitingRuleRequest5, List.of()));
+  }
+
+  @Test
+  void testRateLimitingRulesForValuesWithNumericTypesAndMatchOperators() {
+    // invalid case - numeric key type and non-int based Value of type String
+    CreateRateLimitingRuleRequest createRateLimitingRuleRequest1 =
+        CreateRateLimitingRuleRequest.newBuilder()
+            .setData(
+                getRateLimitingRuleDataWithNumericTypeAndNumericMatchOperator(
+                    "rule-name-1",
+                    "rule-description-1",
+                    TYPE_REQUEST_BODY_SIZE,
+                    MatchOperator.MATCH_OPERATOR_EQUALS,
+                    Value.newBuilder().setStringValue("12.2").build()))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            rulesValidator.validateOrThrow(
+                requestContext, createRateLimitingRuleRequest1, List.of()));
+
+    // invalid case - numeric key type and non-int based Value of type Number
+    CreateRateLimitingRuleRequest createRateLimitingRuleRequest2 =
+        CreateRateLimitingRuleRequest.newBuilder()
+            .setData(
+                getRateLimitingRuleDataWithNumericTypeAndNumericMatchOperator(
+                    "rule-name-2",
+                    "rule-description-2",
+                    TYPE_QUERY_PARAMS_COUNT,
+                    MatchOperator.MATCH_OPERATOR_NOT_EQUAL,
+                    Value.newBuilder().setNumberValue(10.1).build()))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            rulesValidator.validateOrThrow(
+                requestContext, createRateLimitingRuleRequest2, List.of()));
+
+    // valid case - numeric key type and int-based Value of type String
+    CreateRateLimitingRuleRequest createRateLimitingRuleRequest3 =
+        CreateRateLimitingRuleRequest.newBuilder()
+            .setData(
+                getRateLimitingRuleDataWithNumericTypeAndNumericMatchOperator(
+                    "rule-name-3",
+                    "rule-description-3",
+                    TYPE_REQUEST_HEADERS_COUNT,
+                    MatchOperator.MATCH_OPERATOR_GREATER_THAN,
+                    Value.newBuilder().setStringValue("5").build()))
+            .build();
+    assertDoesNotThrow(
+        () ->
+            rulesValidator.validateOrThrow(
+                requestContext, createRateLimitingRuleRequest3, List.of()));
+
+    // valid case - numeric key type and int-based Value of type Number
+    CreateRateLimitingRuleRequest createRateLimitingRuleRequest4 =
+        CreateRateLimitingRuleRequest.newBuilder()
+            .setData(
+                getRateLimitingRuleDataWithNumericTypeAndNumericMatchOperator(
+                    "rule-name-4",
+                    "rule-description-4",
+                    TYPE_REQUEST_COOKIES_COUNT,
+                    MatchOperator.MATCH_OPERATOR_LESS_THAN,
+                    Value.newBuilder().setNumberValue(7).build()))
+            .build();
+    assertDoesNotThrow(
+        () ->
+            rulesValidator.validateOrThrow(
+                requestContext, createRateLimitingRuleRequest4, List.of()));
+  }
+
+  private RateLimitingRuleData getRateLimitingRuleDataWithNumericTypeAndNumericMatchOperator(
+      String ruleName,
+      String ruleDescription,
+      Type keyType,
+      MatchOperator matchOperator,
+      Value value) {
+    return RateLimitingRuleData.newBuilder()
+        .setName(ruleName)
+        .setDescription(ruleDescription)
+        .setCategory(Category.CATEGORY_RATE_LIMITING)
+        .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+        .setCondition(
+            Condition.newBuilder()
+                .setLeafCondition(
+                    LeafCondition.newBuilder()
+                        .setKeyValueCondition(
+                            getStaticValueConditionWithNumericTypeAndNumericMatchOperator(
+                                keyType, matchOperator, value))))
+        .addThresholdActionConfigs(
+            ThresholdActionConfig.newBuilder()
+                .addResourceAccessThresholdConfigs(
+                    ResourceAccessThresholdConfig.newBuilder()
+                        .setUserAggregateType(UserAggregateType.USER_AGGREGATE_TYPE_PER_USER)
+                        .setApiAggregateType(ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT)
+                        .setRollingWindowThresholdConfig(
+                            RollingWindowThresholdConfig.newBuilder()
+                                .setCountAllowed(10)
+                                .setDurationIso("duration-iso")))
+                .addActions(
+                    Action.newBuilder()
+                        .setBlock(
+                            Block.newBuilder()
+                                .setDurationIso("duration-iso")
+                                .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM))))
+        .build();
+  }
+
+  private KeyValueCondition getStaticValueConditionWithNumericTypeAndNumericMatchOperator(
+      Type keyType, MatchOperator matchOperator, Value value) {
+    return KeyValueCondition.newBuilder()
+        .setStaticValueCondition(
+            KeyValueCondition.StaticValueCondition.newBuilder()
+                .setKeyCondition(KeyValueCondition.KeyCondition.newBuilder().setKeyType(keyType))
+                .setValueMatchOperatorCondition(
+                    KeyValueCondition.MatchOperatorCondition.newBuilder()
+                        .setOperator(matchOperator)
+                        .setValue(value)))
+        .build();
   }
 
   private KeyValueCondition getLhsRhsKeysCondition(

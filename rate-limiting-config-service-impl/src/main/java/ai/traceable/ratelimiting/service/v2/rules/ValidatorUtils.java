@@ -76,6 +76,19 @@ public class ValidatorUtils {
           TYPE_REQUEST_COOKIES_COUNT,
           TYPE_RESPONSE_COOKIES_COUNT);
 
+  private static final Set<Type> NUMERIC_TYPES =
+      Set.of(
+          TYPE_RESPONSE_BODY_SIZE,
+          TYPE_REQUEST_BODY_SIZE,
+          TYPE_QUERY_PARAMS_COUNT,
+          TYPE_REQUEST_HEADERS_COUNT,
+          TYPE_RESPONSE_HEADERS_COUNT,
+          TYPE_REQUEST_COOKIES_COUNT,
+          TYPE_RESPONSE_COOKIES_COUNT);
+
+  private static final Set<MatchOperator> NUMERIC_MATCH_OPERATORS =
+      Set.of(MATCH_OPERATOR_GREATER_THAN, MATCH_OPERATOR_LESS_THAN);
+
   private static final Set<MatchOperator>
       SUPPORTED_FIRST_LEVEL_OPERATORS_FOR_LHS_RHS_KEYS_CONDITION =
           Set.of(
@@ -198,7 +211,7 @@ public class ValidatorUtils {
         throwInvalidArgumentException(
             "GREATER_THAN and LESS_THAN match operators are unsupported in LhsRhsKeysCondition");
       }
-      validateMatchOperatorCondition(keyMatchOperatorCondition);
+      validateMatchOperatorCondition(keyMatchOperatorCondition, keyConditionType);
     } else {
       if (keyCondition.hasKeyMatchOperatorCondition()) {
         throwInvalidArgumentException(
@@ -218,7 +231,8 @@ public class ValidatorUtils {
               "Invalid condition for type %s:%n %s",
               getName(staticValueCondition), printMessage(staticValueCondition)));
     }
-    if (KEY_NULL_CONDITION_TYPES.contains(staticValueCondition.getKeyCondition().getKeyType())
+    Type keyConditionType = staticValueCondition.getKeyCondition().getKeyType();
+    if (KEY_NULL_CONDITION_TYPES.contains(keyConditionType)
         && (!staticValueCondition.hasValueMatchOperatorCondition()
             || staticValueCondition.getKeyCondition().hasKeyMatchOperatorCondition())) {
       throwInvalidArgumentException(
@@ -228,10 +242,11 @@ public class ValidatorUtils {
     }
     if (staticValueCondition.getKeyCondition().hasKeyMatchOperatorCondition()) {
       validateMatchOperatorCondition(
-          staticValueCondition.getKeyCondition().getKeyMatchOperatorCondition());
+          staticValueCondition.getKeyCondition().getKeyMatchOperatorCondition(), keyConditionType);
     }
     if (staticValueCondition.hasValueMatchOperatorCondition()) {
-      validateMatchOperatorCondition(staticValueCondition.getValueMatchOperatorCondition());
+      validateMatchOperatorCondition(
+          staticValueCondition.getValueMatchOperatorCondition(), keyConditionType);
     }
   }
 
@@ -377,7 +392,7 @@ public class ValidatorUtils {
   }
 
   public void validateMatchOperatorCondition(
-      KeyValueCondition.MatchOperatorCondition matchOperatorCondition) {
+      KeyValueCondition.MatchOperatorCondition matchOperatorCondition, Type keyType) {
     validateNonDefaultPresenceOrThrow(
         matchOperatorCondition, KeyValueCondition.MatchOperatorCondition.OPERATOR_FIELD_NUMBER);
 
@@ -388,7 +403,7 @@ public class ValidatorUtils {
               matchOperatorCondition.getOperator()));
     }
 
-    if (isInvalidMathematicalOperation(matchOperatorCondition)) {
+    if (isInvalidMathematicalOperation(matchOperatorCondition, keyType)) {
       throwInvalidArgumentException(
           String.format(
               "Numerical value should be present for match operator : %s",
@@ -422,18 +437,18 @@ public class ValidatorUtils {
   }
 
   private boolean isInvalidMathematicalOperation(
-      KeyValueCondition.MatchOperatorCondition matchOperatorCondition) {
-    return (matchOperatorCondition.getOperator().equals(MatchOperator.MATCH_OPERATOR_GREATER_THAN)
-            || matchOperatorCondition.getOperator().equals(MatchOperator.MATCH_OPERATOR_LESS_THAN))
-        && !(matchOperatorCondition.getValue().hasNumberValue()
-            || (matchOperatorCondition.getValue().hasStringValue()
-                && isNumber(matchOperatorCondition.getValue().getStringValue())));
+      KeyValueCondition.MatchOperatorCondition matchOperatorCondition, Type keyType) {
+    return isNumericValueExpected(keyType, matchOperatorCondition.getOperator())
+        && !validateValue(matchOperatorCondition.getValue());
   }
 
   private boolean isInvalidMathematicalOperation(StringCondition stringCondition) {
-    return (stringCondition.getOperator().equals(MatchOperator.MATCH_OPERATOR_GREATER_THAN)
-            || stringCondition.getOperator().equals(MatchOperator.MATCH_OPERATOR_LESS_THAN))
+    return NUMERIC_MATCH_OPERATORS.contains(stringCondition.getOperator())
         && !isNumber(stringCondition.getValue());
+  }
+
+  private boolean isNumericValueExpected(Type keyType, MatchOperator matchOperator) {
+    return NUMERIC_TYPES.contains(keyType) || NUMERIC_MATCH_OPERATORS.contains(matchOperator);
   }
 
   private void validateScopeCondition(ScopeCondition scopeCondition) {
@@ -579,9 +594,22 @@ public class ValidatorUtils {
         ipAbuseVelocityCondition, IpAbuseVelocityCondition.MIN_IP_ABUSE_VELOCITY_FIELD_NUMBER);
   }
 
+  private boolean validateValue(Value value) {
+    if (value.hasStringValue()) {
+      return isNumber(value.getStringValue());
+    }
+
+    if (value.hasNumberValue()) {
+      double numberValue = value.getNumberValue();
+      return numberValue == (int) numberValue && !Double.isInfinite(numberValue);
+    }
+
+    return false;
+  }
+
   private boolean isNumber(String value) {
     try {
-      Double.parseDouble(value);
+      Integer.parseInt(value);
       return true;
     } catch (Exception e) {
       return false;

@@ -247,7 +247,8 @@ public class TransactionActionConfigValidator {
         }
         if (hasStaticValueCondition) {
           validatorUtils.validateMatchOperatorCondition(
-              staticValueCondition.getKeyCondition().getKeyMatchOperatorCondition());
+              staticValueCondition.getKeyCondition().getKeyMatchOperatorCondition(),
+              staticValueCondition.getKeyCondition().getKeyType());
         } else {
           validatorUtils.validateStringCondition(keyValueCondition.getKeyCondition());
         }
