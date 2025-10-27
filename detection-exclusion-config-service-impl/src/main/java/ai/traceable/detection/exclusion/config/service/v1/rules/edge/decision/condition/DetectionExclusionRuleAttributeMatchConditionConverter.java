@@ -88,7 +88,7 @@ class DetectionExclusionRuleAttributeMatchConditionConverter
                                           JexlExpressionConfig.newBuilder()
                                               .setJexlExpression(
                                                   DetectionExclusionRuleConditionConverterUtils
-                                                      .getJexlExpForAttributeMatchConditionKeyMetadata(
+                                                      .getJexlExpressionForAttributeMatchConditionKeyMetadata(
                                                           keyMetadata))))))
               .setBinaryOperator(builder)
               .build();
@@ -106,28 +106,28 @@ class DetectionExclusionRuleAttributeMatchConditionConverter
                 ? String.format(
                     "map:match(%s, %s, %s, %s)",
                     DetectionExclusionRuleConditionConverterUtils
-                        .getJexlExpForAttributeMatchConditionKeyMetadata(keyMetadata),
-                    DetectionExclusionRuleConditionConverterUtils.getPredicateJexlExp(
+                        .getJexlExpressionForAttributeMatchConditionKeyMetadata(keyMetadata),
+                    DetectionExclusionRuleConditionConverterUtils.getPredicateJexlExpression(
                         attributeMatchCondition.getKeyMatchCondition().getMatchCondition()),
-                    DetectionExclusionRuleConditionConverterUtils.getPredicateJexlExp(
+                    DetectionExclusionRuleConditionConverterUtils.getPredicateJexlExpression(
                         attributeMatchCondition.getValueMatchCondition()),
                     ALL_MATCH_OPERATORS.contains(
                         attributeMatchCondition.getValueMatchCondition().getOperator()))
                 : String.format(
                     "map:match(%s, %s, %s)",
                     DetectionExclusionRuleConditionConverterUtils
-                        .getJexlExpForAttributeMatchConditionKeyMetadata(keyMetadata),
-                    DetectionExclusionRuleConditionConverterUtils.getPredicateJexlExp(
+                        .getJexlExpressionForAttributeMatchConditionKeyMetadata(keyMetadata),
+                    DetectionExclusionRuleConditionConverterUtils.getPredicateJexlExpression(
                         attributeMatchCondition.getKeyMatchCondition().getMatchCondition()),
-                    DetectionExclusionRuleConditionConverterUtils.getPredicateJexlExp(
+                    DetectionExclusionRuleConditionConverterUtils.getPredicateJexlExpression(
                         attributeMatchCondition.getValueMatchCondition()));
       } else {
         jexlExp =
             String.format(
                 "map:match(%s, %s, %s)",
                 DetectionExclusionRuleConditionConverterUtils
-                    .getJexlExpForAttributeMatchConditionKeyMetadata(keyMetadata),
-                DetectionExclusionRuleConditionConverterUtils.getPredicateJexlExp(
+                    .getJexlExpressionForAttributeMatchConditionKeyMetadata(keyMetadata),
+                DetectionExclusionRuleConditionConverterUtils.getPredicateJexlExpression(
                     attributeMatchCondition.getKeyMatchCondition().getMatchCondition()),
                 ALL_MATCH_OPERATORS.contains(
                     attributeMatchCondition

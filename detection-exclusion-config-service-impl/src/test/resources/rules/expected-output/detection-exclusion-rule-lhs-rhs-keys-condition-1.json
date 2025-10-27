@@ -13,7 +13,7 @@
         "matchCondition": {
           "genericMatchCondition": {
             "jexlExpression": {
-              "jexlExpression": "map:match($s.getRequestHeaders().getKeySet(), $s.getRequestCookies().getKeySet(), predicate:matchesRegex('header.*'), predicate:matchesRegex('cookie.*'), MATCH_OPERATOR_EQ)"
+              "jexl_expression": "map:match(map:extractValues($s.getRequestHeaders(), predicate:matchesRegex(\'header.*\')), map:extractValues($s.getRequestCookies(), predicate:matchesRegex(\'cookie.*\')), MATCH_OPERATOR_EQ)"
             }
           }
         }

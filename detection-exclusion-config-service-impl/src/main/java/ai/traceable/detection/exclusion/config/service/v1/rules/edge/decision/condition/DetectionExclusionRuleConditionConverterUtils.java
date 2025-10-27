@@ -36,7 +36,7 @@ public class DetectionExclusionRuleConditionConverterUtils {
           KEY_METADATA_RESPONSE_HEADERS_COUNT,
           KEY_METADATA_RESPONSE_COOKIES_COUNT);
 
-  static String getPredicateJexlExp(
+  static String getPredicateJexlExpression(
       ai.traceable.detection.exclusion.config.service.v1.MatchCondition matchCondition) {
     switch (matchCondition.getOperator()) {
       case MATCH_OPERATOR_EQUALS:
@@ -61,7 +61,7 @@ public class DetectionExclusionRuleConditionConverterUtils {
     }
   }
 
-  static String getJexlExpForAttributeMatchConditionKeyMetadata(KeyMetadata keyMetadata) {
+  static String getJexlExpressionForAttributeMatchConditionKeyMetadata(KeyMetadata keyMetadata) {
     switch (keyMetadata) {
       case KEY_METADATA_URL:
         return "$s.getUrl()";
@@ -106,16 +106,16 @@ public class DetectionExclusionRuleConditionConverterUtils {
     }
   }
 
-  static String getJexlExpForLhsRhsMatchConditionKeyMetadata(KeyMetadata keyMetadata) {
+  static String getJexlExpressionForLhsRhsMatchConditionKeyMetadata(KeyMetadata keyMetadata) {
     switch (keyMetadata) {
       case KEY_METADATA_REQUEST_HEADER:
-        return "$s.getRequestHeaders().getKeySet()";
+        return "$s.getRequestHeaders()";
       case KEY_METADATA_REQUEST_COOKIE:
-        return "$s.getRequestCookies().getKeySet()";
+        return "$s.getRequestCookies()";
       case KEY_METADATA_QUERY_PARAMETER:
-        return "$s.getQueryParams().getKeySet()";
+        return "$s.getQueryParams()";
       case KEY_METADATA_REQUEST_BODY_PARAMETER:
-        return "$s.getRequestBodyParams().getKeySet()";
+        return "$s.getRequestBodyParams()";
       default:
         throw new IllegalArgumentException(
             "Invalid KeyMetadata type in lhs rhs keys match condition: " + keyMetadata);

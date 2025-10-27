@@ -1,0 +1,28 @@
+{
+  "id": "rule-id",
+  "ruleInfo": {
+    "name": "rule-name",
+    "conditions": [{
+      "lhsRhsKeysCondition": {
+        "lhsKeyCondition": {
+          "metadata": "KEY_METADATA_QUERY_PARAMETER",
+          "matchCondition": {
+            "operator": "MATCH_OPERATOR_NOT_EQUAL",
+            "value": "query-param-val"
+          }
+        },
+        "rhsKeyCondition": {
+          "metadata": "KEY_METADATA_URL"
+        },
+        "lhsRhsMatchOperator": "MATCH_OPERATOR_EQUALS"
+      }
+    }, {
+      "eventCondition": {
+        "customRuleEvents": [{
+          "ruleFamily": "CUSTOM_RULE_FAMILY_RATE_LIMIT"
+        }]
+      }
+    }],
+    "exclusionTargets": ["EXCLUSION_TARGET_BLOCK"]
+  }
+}

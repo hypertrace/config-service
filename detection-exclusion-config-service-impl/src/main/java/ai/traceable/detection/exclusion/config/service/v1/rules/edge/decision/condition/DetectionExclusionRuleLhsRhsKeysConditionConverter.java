@@ -1,5 +1,7 @@
 package ai.traceable.detection.exclusion.config.service.v1.rules.edge.decision.condition;
 
+import static ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionConditionValidator.KEY_NULL_METADATA;
+
 import ai.traceable.datamodel.data.transformation.config.v1.GenericMatchCondition;
 import ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig;
 import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
@@ -23,6 +25,7 @@ public class DetectionExclusionRuleLhsRhsKeysConditionConverter
       throw new IllegalArgumentException(
           "Illegal lhs key condition metadata: " + lhsKeyMetadataMatchCondition.getMetadata());
     }
+
     KeyMetadataMatchCondition rhsKeyMetadataMatchCondition =
         lhsRhsKeysCondition.getRhsKeyCondition();
     if (DetectionExclusionRuleConditionConverterUtils.RESPONSE_KEY_METADATA.contains(
@@ -30,6 +33,7 @@ public class DetectionExclusionRuleLhsRhsKeysConditionConverter
       throw new IllegalArgumentException(
           "Illegal rhs key condition metadata: " + rhsKeyMetadataMatchCondition.getMetadata());
     }
+
     return MatchCondition.newBuilder()
         .setGenericMatchCondition(
             GenericMatchCondition.newBuilder()
@@ -57,26 +61,85 @@ public class DetectionExclusionRuleLhsRhsKeysConditionConverter
 
     /*
      * This should be false in most cases, but we maintain this check:-
-     * In case any new KeyMetadata types are added in the future that might be case-insensitive
+     * in case any new KeyMetadata types are added in the future that might be case-insensitive
      * OR
-     * If the LhsRhsKeysMatchCondition logic is modified to support match condition evaluation with case-insensitive key metadata types
+     * if the LhsRhsKeysMatchCondition logic is modified to support match condition evaluation with case-insensitive key metadata types
      */
     boolean isLhsOrRhsKeyMetadataCaseInsensitive =
         DetectionExclusionRuleConditionConverterUtils.isKeyMetadataCaseInsensitive(lhsKeyMetadata)
             || DetectionExclusionRuleConditionConverterUtils.isKeyMetadataCaseInsensitive(
                 rhsKeyMetadata);
+    ai.traceable.datamodel.data.transformation.config.v1.MatchOperator
+        convertedLhsRhsMatchOperator =
+            DetectionExclusionRuleConditionConverterUtils.getMatchOperator(
+                isLhsOrRhsKeyMetadataCaseInsensitive, lhsRhsMatchOperator);
 
+    if (KEY_NULL_METADATA.contains(lhsKeyMetadata) && KEY_NULL_METADATA.contains(rhsKeyMetadata)) {
+      return String.format(
+          "map:match(%s, %s, %s)",
+          getValueForKeyNullMetadata(lhsKeyMetadata),
+          getValueForKeyNullMetadata(rhsKeyMetadata),
+          convertedLhsRhsMatchOperator.name());
+    }
+
+    if (KEY_NULL_METADATA.contains(lhsKeyMetadata)) {
+      String mapJexlExpression =
+          DetectionExclusionRuleConditionConverterUtils
+              .getJexlExpressionForAttributeMatchConditionKeyMetadata(rhsKeyMetadata);
+      String predicateJexlExpression =
+          DetectionExclusionRuleConditionConverterUtils.getPredicateJexlExpression(
+              rhsKeyMetadataMatchCondition.getMatchCondition());
+      return String.format(
+          "map:match(%s, %s, %s)",
+          getValueForKeyNullMetadata(lhsKeyMetadata),
+          getExtractedValueForKeyValueTypeOfKeyMetadata(mapJexlExpression, predicateJexlExpression),
+          convertedLhsRhsMatchOperator.name());
+    }
+
+    if (KEY_NULL_METADATA.contains(rhsKeyMetadata)) {
+      String mapJexlExpression =
+          DetectionExclusionRuleConditionConverterUtils
+              .getJexlExpressionForAttributeMatchConditionKeyMetadata(lhsKeyMetadata);
+      String predicateJexlExpression =
+          DetectionExclusionRuleConditionConverterUtils.getPredicateJexlExpression(
+              lhsKeyMetadataMatchCondition.getMatchCondition());
+      return String.format(
+          "map:match(%s, %s, %s)",
+          getExtractedValueForKeyValueTypeOfKeyMetadata(mapJexlExpression, predicateJexlExpression),
+          getValueForKeyNullMetadata(rhsKeyMetadata),
+          convertedLhsRhsMatchOperator.name());
+    }
+
+    String lhsMapJexlExpression =
+        DetectionExclusionRuleConditionConverterUtils
+            .getJexlExpressionForLhsRhsMatchConditionKeyMetadata(lhsKeyMetadata);
+    String lhsPredicateJexlExpression =
+        DetectionExclusionRuleConditionConverterUtils.getPredicateJexlExpression(
+            lhsKeyMetadataMatchCondition.getMatchCondition());
+    String rhsMapJexlExpression =
+        DetectionExclusionRuleConditionConverterUtils
+            .getJexlExpressionForLhsRhsMatchConditionKeyMetadata(rhsKeyMetadata);
+    String rhsPredicateJexlExpression =
+        DetectionExclusionRuleConditionConverterUtils.getPredicateJexlExpression(
+            rhsKeyMetadataMatchCondition.getMatchCondition());
     return String.format(
-        "map:match(%s, %s, %s, %s, %s)",
-        DetectionExclusionRuleConditionConverterUtils.getJexlExpForLhsRhsMatchConditionKeyMetadata(
-            lhsKeyMetadata),
-        DetectionExclusionRuleConditionConverterUtils.getJexlExpForLhsRhsMatchConditionKeyMetadata(
-            rhsKeyMetadata),
-        DetectionExclusionRuleConditionConverterUtils.getPredicateJexlExp(
-            lhsKeyMetadataMatchCondition.getMatchCondition()),
-        DetectionExclusionRuleConditionConverterUtils.getPredicateJexlExp(
-            rhsKeyMetadataMatchCondition.getMatchCondition()),
-        DetectionExclusionRuleConditionConverterUtils.getMatchOperator(
-            isLhsOrRhsKeyMetadataCaseInsensitive, lhsRhsMatchOperator));
+        "map:match(%s, %s, %s)",
+        getExtractedValueForKeyValueTypeOfKeyMetadata(
+            lhsMapJexlExpression, lhsPredicateJexlExpression),
+        getExtractedValueForKeyValueTypeOfKeyMetadata(
+            rhsMapJexlExpression, rhsPredicateJexlExpression),
+        convertedLhsRhsMatchOperator.name());
+  }
+
+  private String getExtractedValueForKeyValueTypeOfKeyMetadata(
+      String mapJexlExpression, String predicateJexlExpression) {
+    return "map:extractValues(" + mapJexlExpression + ", " + predicateJexlExpression + ")";
+  }
+
+  private String getValueForKeyNullMetadata(KeyMetadata keyMetadata) {
+    return "Set.of("
+        + DetectionExclusionRuleConditionConverterUtils
+            .getJexlExpressionForAttributeMatchConditionKeyMetadata(keyMetadata)
+        + ")";
   }
 }
