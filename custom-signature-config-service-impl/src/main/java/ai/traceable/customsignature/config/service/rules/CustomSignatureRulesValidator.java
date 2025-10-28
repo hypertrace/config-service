@@ -3,6 +3,7 @@ package ai.traceable.customsignature.config.service.rules;
 import static ai.traceable.customsignature.config.service.v1.EventType.EVENT_TYPE_ALLOW;
 import static ai.traceable.customsignature.config.service.v1.EventType.EVENT_TYPE_DETECTION_AND_BLOCKING;
 import static ai.traceable.customsignature.config.service.v1.EventType.EVENT_TYPE_NORMAL_DETECTION;
+import static ai.traceable.customsignature.config.service.v1.EventType.EVENT_TYPE_TESTING_DETECTION;
 import static ai.traceable.customsignature.config.service.v1.MatchCategory.MATCH_CATEGORY_REQUEST;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 
@@ -199,7 +200,8 @@ public class CustomSignatureRulesValidator implements RulesValidator {
 
   public static boolean isRuleOfEventTypeAlertAndContainsHeaderInjection(RuleEffect ruleEffect) {
     EventType ruleEventType = ruleEffect.getEventType();
-    return ruleEventType == EventType.EVENT_TYPE_NORMAL_DETECTION
+    return (ruleEventType == EventType.EVENT_TYPE_NORMAL_DETECTION
+            || ruleEventType == EVENT_TYPE_TESTING_DETECTION)
         && ruleEffect.getEffectsList().stream()
             .filter(RuleEffectWithModifications::hasAgentRuleEffect)
             .map(RuleEffectWithModifications::getAgentRuleEffect)

@@ -10,6 +10,9 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.customsignature.config.service.modsec.ModsecRulesManager;
 import ai.traceable.customsignature.config.service.modsec.ModsecRulesSupportChecker;
+import ai.traceable.customsignature.config.service.v1.AgentModification;
+import ai.traceable.customsignature.config.service.v1.AgentRuleEffect;
+import ai.traceable.customsignature.config.service.v1.BodyModification;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.ClauseOperator;
@@ -20,6 +23,8 @@ import ai.traceable.customsignature.config.service.v1.EnvironmentScope;
 import ai.traceable.customsignature.config.service.v1.EventSeverity;
 import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.ExpiryDetails;
+import ai.traceable.customsignature.config.service.v1.FieldValue;
+import ai.traceable.customsignature.config.service.v1.HeaderInjection;
 import ai.traceable.customsignature.config.service.v1.IpAddressExpression;
 import ai.traceable.customsignature.config.service.v1.IpType;
 import ai.traceable.customsignature.config.service.v1.IpTypeExpression;
@@ -32,9 +37,11 @@ import ai.traceable.customsignature.config.service.v1.MatchKey;
 import ai.traceable.customsignature.config.service.v1.MatchOperator;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
+import ai.traceable.customsignature.config.service.v1.RuleEffectWithModifications;
 import ai.traceable.customsignature.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.customsignature.config.service.v1.RuleSource;
+import ai.traceable.customsignature.config.service.v1.StatusCodeModification;
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleRequest;
 import com.google.protobuf.Value;
 import io.grpc.Status;
@@ -55,6 +62,12 @@ class CustomSignatureRulesValidatorTest {
   private ModsecRulesManager modsecRulesManager;
   private CustomSignatureRulesValidator rulesValidator;
   private MockedStatic<ModsecRulesSupportChecker> mockedModsecRulesSupportChecker;
+
+  private static final List<RuleEvaluationPoint> allRuleEvaluationPoints =
+      List.of(
+          RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM,
+          RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE,
+          RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT);
 
   @BeforeEach
   public void setup() {
@@ -575,6 +588,7 @@ class CustomSignatureRulesValidatorTest {
                         Clause.newBuilder()
                             .setKeyValueExpression(
                                 KeyValueExpression.newBuilder()
+                                    .setMatchCategory(MatchCategory.MATCH_CATEGORY_REQUEST)
                                     .setTag(KeyValueTag.KEY_VALUE_TAG_HEADER)
                                     .setMatchKey("key")
                                     .setKeyMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
@@ -662,6 +676,138 @@ class CustomSignatureRulesValidatorTest {
         .thenReturn(Status.OK);
     status = rulesValidator.validate(request);
     assertEquals(Code.OK, status.getCode());
+
+    request =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("name")
+            .setEffect(
+                RuleEffect.newBuilder()
+                    .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
+                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)
+                    .addAllRuleEvaluationPoints(allRuleEvaluationPoints))
+            .setDefinition(validRuleDefinition)
+            .build();
+    status = rulesValidator.validate(request);
+    assertEquals(Code.OK, status.getCode());
+
+    request =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("name")
+            .setEffect(
+                RuleEffect.newBuilder()
+                    .setEventType(EventType.EVENT_TYPE_ALLOW)
+                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
+                    .addAllRuleEvaluationPoints(allRuleEvaluationPoints))
+            .setDefinition(validRuleDefinition)
+            .build();
+    status = rulesValidator.validate(request);
+    assertEquals(Code.OK, status.getCode());
+
+    request =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("name")
+            .setEffect(
+                RuleEffect.newBuilder()
+                    .setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION)
+                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_HIGH)
+                    .addAllRuleEvaluationPoints(allRuleEvaluationPoints)
+                    .addEffects(
+                        RuleEffectWithModifications.newBuilder()
+                            .setAgentRuleEffect(
+                                AgentRuleEffect.newBuilder()
+                                    .addAgentModifications(
+                                        AgentModification.newBuilder()
+                                            .setHeaderInjection(
+                                                HeaderInjection.newBuilder()
+                                                    .setHeaderName("header-name")
+                                                    .setHeaderCategory(
+                                                        MatchCategory.MATCH_CATEGORY_REQUEST)
+                                                    .setValue(
+                                                        FieldValue.newBuilder()
+                                                            .setStaticValue("static-value")))))))
+            .setDefinition(validRuleDefinition)
+            .build();
+    status = rulesValidator.validate(request);
+    assertEquals(Code.OK, status.getCode());
+
+    request =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("name")
+            .setEffect(
+                RuleEffect.newBuilder()
+                    .setEventType(EventType.EVENT_TYPE_TESTING_DETECTION)
+                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_HIGH)
+                    .addAllRuleEvaluationPoints(allRuleEvaluationPoints)
+                    .addEffects(
+                        RuleEffectWithModifications.newBuilder()
+                            .setAgentRuleEffect(
+                                AgentRuleEffect.newBuilder()
+                                    .addAgentModifications(
+                                        AgentModification.newBuilder()
+                                            .setHeaderInjection(
+                                                HeaderInjection.newBuilder()
+                                                    .setHeaderName("header-name")
+                                                    .setHeaderCategory(
+                                                        MatchCategory.MATCH_CATEGORY_REQUEST)
+                                                    .setValue(
+                                                        FieldValue.newBuilder()
+                                                            .setStaticValue("static-value")))))))
+            .setDefinition(validRuleDefinition)
+            .build();
+    status = rulesValidator.validate(request);
+    assertEquals(Code.OK, status.getCode());
+
+    request =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("name")
+            .setEffect(
+                RuleEffect.newBuilder()
+                    .setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION)
+                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_HIGH)
+                    .addAllRuleEvaluationPoints(allRuleEvaluationPoints)
+                    .addEffects(
+                        RuleEffectWithModifications.newBuilder()
+                            .setAgentRuleEffect(
+                                AgentRuleEffect.newBuilder()
+                                    .addAgentModifications(
+                                        AgentModification.newBuilder()
+                                            .setStatusCodeModification(
+                                                StatusCodeModification.newBuilder()
+                                                    .setStatusCode(404))))))
+            .setDefinition(validRuleDefinition)
+            .build();
+    status = rulesValidator.validate(request);
+    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+    assertNotNull(status.getDescription());
+    assertEquals("Rule is not AGENT-compatible", status.getDescription());
+
+    request =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("name")
+            .setEffect(
+                RuleEffect.newBuilder()
+                    .setEventType(EventType.EVENT_TYPE_TESTING_DETECTION)
+                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_HIGH)
+                    .addAllRuleEvaluationPoints(allRuleEvaluationPoints)
+                    .addEffects(
+                        RuleEffectWithModifications.newBuilder()
+                            .setAgentRuleEffect(
+                                AgentRuleEffect.newBuilder()
+                                    .addAgentModifications(
+                                        AgentModification.newBuilder()
+                                            .setBodyModification(
+                                                BodyModification.newBuilder()
+                                                    .setLocationCategory(
+                                                        MatchCategory.MATCH_CATEGORY_REQUEST)
+                                                    .setBodyValue(
+                                                        FieldValue.newBuilder()
+                                                            .setStaticValue("static-val")))))))
+            .setDefinition(validRuleDefinition)
+            .build();
+    status = rulesValidator.validate(request);
+    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+    assertNotNull(status.getDescription());
+    assertEquals("Rule is not AGENT-compatible", status.getDescription());
   }
 
   @Test
