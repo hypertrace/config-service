@@ -1,17 +1,17 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.4.3479=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.3555=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.7.54=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:cache-provider:0.8.118=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:data-model:0.8.118=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:event-invalidation-cache:0.8.118=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:ip-utils:0.8.118=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:traceable-raw-span-constants:0.8.118=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.platform:coraza-waf-service-api:0.3.35=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform:coraza-waf-service-client:0.3.35=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:cache-provider:0.8.119=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:data-model:0.8.119=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:event-invalidation-cache:0.8.119=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:ip-utils:0.8.119=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:traceable-raw-span-constants:0.8.119=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.platform:coraza-waf-service-api:0.3.40=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform:coraza-waf-service-client:0.3.40=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:enriched-span-constants:5.0.21=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform:jni-modsecurity:0.1.139=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.platform:jni-modsecurity:0.1.140=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform:trace-enricher-constants:5.0.21=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 aopalliance:aopalliance:1.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.auth0:java-jwt:4.4.0=runtimeClasspath,testRuntimeClasspath
@@ -131,7 +131,7 @@ org.hypertrace.core.serviceframework:platform-metrics:0.1.91=runtimeClasspath,te
 org.hypertrace.core.spannormalizer:raw-span-constants:3.0.10=runtimeClasspath,testRuntimeClasspath
 org.hypertrace.core.spannormalizer:semantic-convention-utils:3.0.10=runtimeClasspath,testRuntimeClasspath
 org.hypertrace.core.spannormalizer:span-normalizer-constants:3.0.10=runtimeClasspath,testRuntimeClasspath
-org.hypertrace.entity.service:entity-service-api:0.8.278=runtimeClasspath,testRuntimeClasspath
+org.hypertrace.entity.service:entity-service-api:0.8.284=runtimeClasspath,testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-api:5.10.2=testCompileClasspath,testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-engine:5.10.2=testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-params:5.10.2=testCompileClasspath,testRuntimeClasspath
