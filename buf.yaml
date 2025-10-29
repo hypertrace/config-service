@@ -43,6 +43,7 @@ modules:
   - path: hypertrace-config-service/alerting-config-service-api/src/main/proto
   - path: integration-config-service-api/src/main/proto
   - path: ip-resolution-config-service-api/src/main/proto
+  - path: ip-resolution-strategy-config-service-api/src/main/proto
   - path: iprange-config-service-api/src/main/proto
   - path: jira-integration-config-service-api/src/main/proto
   - path: jwt-extraction-config-service-api/src/main/proto

@@ -35,6 +35,7 @@ import ai.traceable.github.integration.config.service.GithubIntegrationConfigSer
 import ai.traceable.http.event.collector.integration.config.service.HttpEventCollectorIntegrationConfigServiceFactory;
 import ai.traceable.integration.config.service.IntegrationConfigServiceFactory;
 import ai.traceable.iprange.config.service.IpRangeConfigServiceFactory;
+import ai.traceable.ipresolutionstrategy.config.service.v1.IpResolutionStrategyConfigServiceFactory;
 import ai.traceable.jira.integration.config.service.JiraIntegrationConfigServiceFactory;
 import ai.traceable.jwt.extraction.config.service.JwtExtractionConfigServiceFactory;
 import ai.traceable.licensestatus.config.service.LicenseStatusConfigServiceFactory;
@@ -123,6 +124,11 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                     providers.getFeatureCachingClient())),
             wrap(
                 IpRangeConfigServiceFactory.build(
+                    providers.getLocalChannel(),
+                    providers.getConfig(),
+                    providers.getChangeEventGenerator())),
+            wrap(
+                IpResolutionStrategyConfigServiceFactory.build(
                     providers.getLocalChannel(),
                     providers.getConfig(),
                     providers.getChangeEventGenerator())),

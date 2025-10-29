@@ -1,6 +1,7 @@
 package ai.traceable.blocking.config.service.common.rules;
 
 import ai.traceable.blocking.config.service.common.iptype.IpTypeRuleInfo;
+import ai.traceable.blocking.config.service.v2.IpResolutionStrategy;
 import ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureInlineRule;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionModsecRule;
@@ -56,4 +57,12 @@ public interface BlockingRulesSupplier {
   /** Returns the list of custom signature inline rule keyed by service name */
   Map<String, List<CustomSignatureInlineRule>> getCustomSignatureInlineRules(
       Set<String> serviceNames);
+
+  /**
+   * Returns per-service IP resolution strategies. Default returns an empty map. If this map is
+   * non-empty, service-scoped responses will include the corresponding strategy per service.
+   */
+  default Map<String, IpResolutionStrategy> getIpResolutionStrategies(Set<String> serviceNames) {
+    return java.util.Collections.emptyMap();
+  }
 }

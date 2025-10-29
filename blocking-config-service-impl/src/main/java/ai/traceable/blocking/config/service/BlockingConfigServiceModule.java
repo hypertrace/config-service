@@ -14,6 +14,8 @@ import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConf
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceGrpc.DetectionExclusionConfigServiceBlockingStub;
 import ai.traceable.iprange.config.service.v1.IpRangeConfigServiceGrpc;
 import ai.traceable.iprange.config.service.v1.IpRangeConfigServiceGrpc.IpRangeConfigServiceBlockingStub;
+import ai.traceable.ipresolutionstrategy.config.service.v1.IpResolutionStrategyConfigServiceGrpc;
+import ai.traceable.ipresolutionstrategy.config.service.v1.IpResolutionStrategyConfigServiceGrpc.IpResolutionStrategyConfigServiceBlockingStub;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesConfigServiceGrpc;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesConfigServiceGrpc.MaliciousSourcesConfigServiceBlockingStub;
 import ai.traceable.platform.actor.v1.ActorServiceGrpc;
@@ -127,6 +129,14 @@ public class BlockingConfigServiceModule extends AbstractModule {
   DetectionExclusionConfigServiceBlockingStub providesDetectionExclusionConfigServiceBlockingStub(
       Channel channel) {
     return DetectionExclusionConfigServiceGrpc.newBlockingStub(channel)
+        .withCallCredentials(
+            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  IpResolutionStrategyConfigServiceBlockingStub
+      providesIpResolutionStrategyConfigServiceBlockingStub(Channel channel) {
+    return IpResolutionStrategyConfigServiceGrpc.newBlockingStub(channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

@@ -97,7 +97,7 @@ message ParsingStrategy {
   // Strategy to extract IP from each token
   oneof extraction_rule {
     KeywordBasedExtraction keyword_based = 4;
-    RawIPExtraction raw_ip = 5;
+    RawIpExtraction raw_ip = 5;
     RegexBasedExtraction regex_based = 6;
   }
 }
@@ -121,4 +121,4 @@ message RegexBasedExtraction {
 }
 
 // For simple cases where the value itself is the IP address
-message RawIPExtraction {}
+message RawIpExtraction {}

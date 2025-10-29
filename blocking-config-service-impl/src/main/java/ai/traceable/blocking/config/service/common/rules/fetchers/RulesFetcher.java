@@ -7,6 +7,7 @@ public interface RulesFetcher {
     REGION,
     CUSTOM_SIGNATURE,
     DLP,
-    EXCLUSION
+    EXCLUSION,
+    IP_RESOLUTION_STRATEGY
   }
 }

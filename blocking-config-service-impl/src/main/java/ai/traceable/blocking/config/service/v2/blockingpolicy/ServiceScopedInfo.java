@@ -2,6 +2,7 @@ package ai.traceable.blocking.config.service.v2.blockingpolicy;
 
 import ai.traceable.blocking.config.service.v2.BlockingDetails;
 import ai.traceable.blocking.config.service.v2.ExclusionRule;
+import ai.traceable.blocking.config.service.v2.IpResolutionStrategy;
 import java.util.Collections;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -14,4 +15,5 @@ import lombok.NoArgsConstructor;
 public class ServiceScopedInfo {
   List<BlockingDetails> blockingDetails = Collections.emptyList();
   List<ExclusionRule> exclusionRules = Collections.emptyList();
+  IpResolutionStrategy ipResolutionStrategy;
 }

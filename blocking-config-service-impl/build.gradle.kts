@@ -10,6 +10,7 @@ dependencies {
   api(projects.customSignatureConfigServiceApi)
   api(projects.regionConfigServiceApi)
   api(projects.iprangeConfigServiceApi)
+  api(projects.ipResolutionStrategyConfigServiceApi)
   api(projects.rateLimitingConfigServiceApi)
   api(projects.maliciousSourcesConfigServiceApi)
   api(projects.detectionExclusionConfigServiceApi)

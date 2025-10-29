@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package ai.traceable.ipresolutionstrategy.config.service.v1;
+
+import "ai/traceable/ipresolutionstrategy/config/service/v1/ip_resolution_strategy_config.proto";
+
+option java_multiple_files = true;
+
+service IpResolutionStrategyConfigService {
+  rpc GetIpResolutionStrategyConfigs(GetIpResolutionStrategyConfigsRequest) returns (GetIpResolutionStrategyConfigsResponse) {}
+  rpc CreateIpResolutionStrategyConfig(CreateIpResolutionStrategyConfigRequest) returns (CreateIpResolutionStrategyConfigResponse) {}
+  rpc UpdateIpResolutionStrategyConfig(UpdateIpResolutionStrategyConfigRequest) returns (UpdateIpResolutionStrategyConfigResponse) {}
+  rpc DeleteIpResolutionStrategyConfig(DeleteIpResolutionStrategyConfigRequest) returns (DeleteIpResolutionStrategyConfigResponse) {}
+}
+
+message GetIpResolutionStrategyConfigsRequest {
+  IpResolutionStrategyFilter filter = 1;
+}
+
+message GetIpResolutionStrategyConfigsResponse {
+  repeated IpResolutionStrategyConfig configs = 1;
+}
+
+message CreateIpResolutionStrategyConfigRequest {
+  IpResolutionStrategyConfigData data = 1;
+}
+
+message CreateIpResolutionStrategyConfigResponse {
+  IpResolutionStrategyConfig config = 1;
+}
+
+message UpdateIpResolutionStrategyConfigRequest {
+  string id = 1;
+  IpResolutionStrategyConfigData data = 2;
+}
+
+message UpdateIpResolutionStrategyConfigResponse {
+  IpResolutionStrategyConfig config = 1;
+}
+
+message DeleteIpResolutionStrategyConfigRequest {
+  string id = 1;
+}
+
+message DeleteIpResolutionStrategyConfigResponse {}

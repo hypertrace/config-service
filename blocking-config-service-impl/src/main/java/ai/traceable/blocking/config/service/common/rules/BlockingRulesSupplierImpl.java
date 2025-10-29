@@ -6,10 +6,12 @@ import ai.traceable.blocking.config.service.common.iptype.IpTypeRuleInfo;
 import ai.traceable.blocking.config.service.common.rules.fetchers.CustomSignatureRulesFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.DlpRulesFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.ExclusionRulesFetcher;
+import ai.traceable.blocking.config.service.common.rules.fetchers.IpResolutionStrategyFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.MaliciousSourcesRulesFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.RegionRulesFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.RulesFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.RulesFetcher.RulesFetcherType;
+import ai.traceable.blocking.config.service.v2.IpResolutionStrategy;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureInlineRule;
@@ -731,6 +733,26 @@ public class BlockingRulesSupplierImpl implements BlockingRulesSupplier {
         return IpTypeRuleInfo.IpType.TOR_EXIT_NODE;
       default:
         return null;
+    }
+  }
+
+  @Override
+  public Map<String, IpResolutionStrategy> getIpResolutionStrategies(Set<String> serviceNames) {
+    if (serviceNames == null || serviceNames.isEmpty()) {
+      return Collections.emptyMap();
+    }
+    try {
+      IpResolutionStrategyFetcher fetcher =
+          (IpResolutionStrategyFetcher)
+              blockingRulesSupplierContext.getRulesFetcher(RulesFetcherType.IP_RESOLUTION_STRATEGY);
+      return fetcher.fetchStrategies(requestContext, environmentId, serviceNames);
+    } catch (Exception e) {
+      log.error(
+          "Error fetching IP resolution strategies for request context: {} and environment: {}",
+          requestContext,
+          environmentId,
+          e);
+      return Collections.emptyMap();
     }
   }
 }

@@ -12,6 +12,7 @@ import ai.traceable.blocking.config.service.v2.BlockingDetails;
 import ai.traceable.blocking.config.service.v2.BlockingPolicyConfiguration;
 import ai.traceable.blocking.config.service.v2.Component;
 import ai.traceable.blocking.config.service.v2.ExclusionRule;
+import ai.traceable.blocking.config.service.v2.IpResolutionStrategy;
 import ai.traceable.blocking.config.service.v2.blockingpolicy.exclusion.ExclusionRuleConverter;
 import ai.traceable.config.utils.SemanticVersioningComparator;
 import ai.traceable.config.utils.UuidGenerator;
@@ -90,6 +91,9 @@ public class BlockingPolicyConfigurationManager implements BlockingConfigManager
         blockingDetailsAggregator.getBlockingDetails(
             blockingRulesSupplier.getRequestContext(), filter, blockingRulesSupplier);
 
+    Map<String, IpResolutionStrategy> serviceScopedIpResolutionStrategies =
+        blockingRulesSupplier.getIpResolutionStrategies(new LinkedHashSet<>(serviceNames));
+
     Map<String, List<ExclusionRule>> serviceScopedExclusionRules =
         blockingRulesSupplier
             .getExclusionRules(new LinkedHashSet<>(serviceNames))
@@ -103,13 +107,15 @@ public class BlockingPolicyConfigurationManager implements BlockingConfigManager
                             .map(exclusionRuleConverter::convert)
                             .collect(Collectors.toList())));
 
-    if (aggregate.getBlockingPolicyList() != null && serviceScopedExclusionRules.isEmpty()) {
+    if (aggregate.getBlockingPolicyList() != null
+        && serviceScopedExclusionRules.isEmpty()
+        && serviceScopedIpResolutionStrategies.isEmpty()) {
       return Collections.singletonList(
           checkHashAndBuildResponse(
               requestElements.stream()
                   .map(BlockingConfigRequestElement::getPreviousHash)
                   .collect(Collectors.toUnmodifiableList()),
-              new ServiceScopedInfo(aggregate.getBlockingPolicyList(), List.of()),
+              new ServiceScopedInfo(aggregate.getBlockingPolicyList(), List.of(), null),
               requestElements.stream()
                   .map(BlockingConfigRequestElement::getSupportedAgentCapabilitiesList)
                   .flatMap(List::stream)
@@ -128,7 +134,10 @@ public class BlockingPolicyConfigurationManager implements BlockingConfigManager
     }
 
     Map<String, ServiceScopedInfo> serviceScopedInfoMap =
-        mergeServiceScopedMaps(serviceScopedExclusionRules, serviceScopedBlockingPolicyMap);
+        mergeServiceScopedMaps(
+            serviceScopedExclusionRules,
+            serviceScopedBlockingPolicyMap,
+            serviceScopedIpResolutionStrategies);
 
     return requestElements.stream()
         .map(
@@ -168,11 +177,14 @@ public class BlockingPolicyConfigurationManager implements BlockingConfigManager
       List<String> previousHashes,
       ServiceScopedInfo serviceScopedInfo,
       List<AgentCapabilities> agentCapabilities) {
-    BlockingPolicyConfiguration blockingPolicyConfiguration =
+    BlockingPolicyConfiguration.Builder configBuilder =
         BlockingPolicyConfiguration.newBuilder()
             .addAllBlockingDetailsList(serviceScopedInfo.getBlockingDetails())
-            .addAllExclusionRules(serviceScopedInfo.getExclusionRules())
-            .build();
+            .addAllExclusionRules(serviceScopedInfo.getExclusionRules());
+    if (serviceScopedInfo.getIpResolutionStrategy() != null) {
+      configBuilder.setIpResolutionStrategy(serviceScopedInfo.getIpResolutionStrategy());
+    }
+    BlockingPolicyConfiguration blockingPolicyConfiguration = configBuilder.build();
     String responseHash = uuidGenerator.generateId(blockingPolicyConfiguration);
     if (previousHashes.stream().allMatch(responseHash::equals)) {
       return BlockingConfigResponseElement.newBuilder()
@@ -190,10 +202,13 @@ public class BlockingPolicyConfigurationManager implements BlockingConfigManager
 
   private static Map<String, ServiceScopedInfo> mergeServiceScopedMaps(
       Map<String, List<ExclusionRule>> serviceScopedExclusionRules,
-      Map<String, List<BlockingDetails>> serviceScopedBlockingPolicyMap) {
-    return Stream.concat(
-            serviceScopedExclusionRules.keySet().stream(),
-            serviceScopedBlockingPolicyMap.keySet().stream())
+      Map<String, List<BlockingDetails>> serviceScopedBlockingPolicyMap,
+      Map<String, IpResolutionStrategy> serviceScopedIpResolutionStrategies) {
+    return Stream.of(
+            serviceScopedExclusionRules.keySet(),
+            serviceScopedBlockingPolicyMap.keySet(),
+            serviceScopedIpResolutionStrategies.keySet())
+        .flatMap(java.util.Set::stream)
         .distinct()
         .collect(
             Collectors.toMap(
@@ -203,7 +218,9 @@ public class BlockingPolicyConfigurationManager implements BlockingConfigManager
                         Optional.ofNullable(serviceScopedBlockingPolicyMap.get(serviceName))
                             .orElse(Collections.emptyList()),
                         Optional.ofNullable(serviceScopedExclusionRules.get(serviceName))
-                            .orElse(Collections.emptyList()))));
+                            .orElse(Collections.emptyList()),
+                        Optional.ofNullable(serviceScopedIpResolutionStrategies.get(serviceName))
+                            .orElse(null))));
   }
 
   private String getServiceName(AgentCapabilities agentCapabilities) {

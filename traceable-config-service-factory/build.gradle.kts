@@ -27,6 +27,7 @@ dependencies {
   implementation(projects.localProcessingConfigServiceImpl)
   implementation(projects.regionConfigServiceImpl)
   implementation(projects.iprangeConfigServiceImpl)
+  implementation(projects.ipResolutionStrategyConfigServiceImpl)
   implementation(projects.customSignatureConfigServiceImpl)
   implementation(projects.userAttributionConfigServiceImpl)
   implementation(projects.sessionIdentificationConfigServiceImpl)
