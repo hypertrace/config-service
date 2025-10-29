@@ -19,6 +19,7 @@ import ai.traceable.span.processing.config.service.v1.DeleteApiNamingRuleRequest
 import ai.traceable.span.processing.config.service.v1.DeleteApiNamingRulesRequest;
 import ai.traceable.span.processing.config.service.v1.DeleteProtectionSpanRuleRequest;
 import ai.traceable.span.processing.config.service.v1.DeleteSamplingConfigRequest;
+import ai.traceable.span.processing.config.service.v1.GenAiBasedConfig;
 import ai.traceable.span.processing.config.service.v1.GetAllApiNamingRulesRequest;
 import ai.traceable.span.processing.config.service.v1.GetAllProtectionSpanRulesRequest;
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedProtectionSpanRulesRequest;
@@ -266,6 +267,28 @@ public class SpanProcessingConfigRequestValidator {
               .asRuntimeException();
         }
         validateRegex(apiSpecBasedConfig.getRegexesList());
+        break;
+      case GEN_AI_BASED_CONFIG:
+        GenAiBasedConfig genAiBasedConfig = ruleConfig.getGenAiBasedConfig();
+
+        if (genAiBasedConfig.getRegexesCount() == 0
+            || genAiBasedConfig.getRegexesCount() != genAiBasedConfig.getValuesCount()) {
+          throw Status.INVALID_ARGUMENT
+              .withDescription(
+                  String.format(
+                      "Invalid regex count or segment matching count : %s", genAiBasedConfig))
+              .asRuntimeException();
+        }
+        if (genAiBasedConfig.getRegexesList().stream().anyMatch(String::isEmpty)
+            || genAiBasedConfig.getValuesList().stream().anyMatch(String::isEmpty)) {
+          throw Status.INVALID_ARGUMENT
+              .withDescription(
+                  String.format(
+                      "Invalid regex or value segment : %s. Regex/value segment must not be empty",
+                      genAiBasedConfig))
+              .asRuntimeException();
+        }
+        validateRegex(genAiBasedConfig.getRegexesList());
         break;
       case AST_SCAN_BASED_CONFIG:
         AstScanBasedConfig astScanBasedConfig = ruleConfig.getAstScanBasedConfig();
