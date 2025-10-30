@@ -40,8 +40,9 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
   private final SharedConfigMetadataRegistry sharedConfigMetadataRegistry;
 
   private static final String TENANT_ID_TAG = "tenantId";
-  private static final String CONFIG_ID_TAG = "deploymentId";
+  private static final String DEPLOYMENT_ID_TAG = "deploymentId";
   private static final String DEPLOYMENT_STATUS_TAG = "deploymentStatus";
+  private static final String DEPLOYMENT_NAME_TAG = "deploymentName";
   private static final String CLOUD_EDGE_DEPLOYMENT_STATUS_ACTION_TIMER =
       "cloud.edge.deployment.status.action.timer";
   private static final Map<Tags, Timer> TIMER_MAP = new ConcurrentHashMap<>();
@@ -83,7 +84,11 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
             .build();
 
     if (notifiableDeploymentStatuses.contains(updatedStatus)) {
-      return getTimer(ctx.getTenantId().orElseThrow(), id, updatedStatus.name())
+      return getTimer(
+              ctx.getTenantId().orElseThrow(),
+              id,
+              updatedStatus.name(),
+              request.getCloudEdgeDeploymentInputConfig().getClusterConfig().getClusterName())
           .record(
               () ->
                   store.upsertCloudEdgeDeploymentConfig(
@@ -174,7 +179,14 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
     try {
       if (!notifiableDeploymentStatuses.contains(currentStatus)
           && notifiableDeploymentStatuses.contains(updatedStatus)) {
-        return getTimer(ctx.getTenantId().orElseThrow(), id, updatedStatus.name())
+        return getTimer(
+                ctx.getTenantId().orElseThrow(),
+                id,
+                updatedStatus.name(),
+                updatedConfig
+                    .getCloudEdgeDeploymentInputConfig()
+                    .getClusterConfig()
+                    .getClusterName())
             .record(
                 () ->
                     store.upsertCloudEdgeDeploymentConfig(
@@ -255,15 +267,17 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
     store.upsertCloudEdgeDeploymentConfig(ctx, updatedConfig);
   }
 
-  private Timer getTimer(String tenantId, String configId, String deploymentStatus) {
+  private Timer getTimer(String tenantId, String configId, String deploymentStatus, String name) {
     Tags metricTags =
         Tags.of(
             TENANT_ID_TAG,
             tenantId,
             DEPLOYMENT_STATUS_TAG,
             deploymentStatus,
-            CONFIG_ID_TAG,
-            configId);
+            DEPLOYMENT_ID_TAG,
+            configId,
+            DEPLOYMENT_NAME_TAG,
+            name);
 
     return TIMER_MAP.computeIfAbsent(
         metricTags,
