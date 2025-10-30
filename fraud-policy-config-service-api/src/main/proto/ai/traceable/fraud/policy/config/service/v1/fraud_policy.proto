@@ -186,6 +186,7 @@ message FraudPolicy {
   // conjunction with template id)
   repeated ai.traceable.fraud.query.model.v1.TypedParam template_overrides = 104;
   ThreatSummaryConfig threat_summary_config = 105;
+  ThreatSummaryConfig detection_summary_config = 106;
 }
 
 message FraudWatcherPolicy {
