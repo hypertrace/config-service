@@ -60,6 +60,8 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
       "unique_external_ip_addresses_min_count";
   private static final String DISALLOW_UNAUTHENTICATED_SESSIONS =
       "disallow_unauthenticated_sessions";
+  private static final String PRIMARY_API_MODEL_TYPE = "primary_api_model";
+  private static final String SECONDARY_API_MODEL_TYPE = "secondary_api_model";
 
   // rule-id
   public static final String JWT_THREAT_TYPE_ID = "jwt";
@@ -556,6 +558,23 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
                     .setType(ConfigValueType.CONFIG_VALUE_TYPE_BOOL)
                     .build())
             .build();
+    ConfigMetadata primaryApiModelTypeConfigMetadata =
+        ConfigMetadata.newBuilder()
+            .setKey(PRIMARY_API_MODEL_TYPE)
+            .setConfigValueMetadata(
+                ConfigValueMetadata.newBuilder()
+                    .setType(ConfigValueType.CONFIG_VALUE_TYPE_STRING)
+                    .build())
+            .build();
+
+    ConfigMetadata secondaryApiModelTypeConfigMetadata =
+        ConfigMetadata.newBuilder()
+            .setKey(SECONDARY_API_MODEL_TYPE)
+            .setConfigValueMetadata(
+                ConfigValueMetadata.newBuilder()
+                    .setType(ConfigValueType.CONFIG_VALUE_TYPE_STRING)
+                    .build())
+            .build();
 
     // jwt_exp mapping
     threatRuleIdToConfigMetadataMapping.put(
@@ -768,7 +787,9 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
         List.of(
             minPercentSeenConfigMetadata,
             modsecurityEnabledConfigMetadata,
-            enabledForInternalIpsConfigMetadata));
+            enabledForInternalIpsConfigMetadata,
+            primaryApiModelTypeConfigMetadata,
+            secondaryApiModelTypeConfigMetadata));
 
     // schemaValidation_resctve mapping
     threatRuleIdToConfigMetadataMapping.put(
@@ -776,7 +797,9 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
         List.of(
             minPercentSeenConfigMetadata,
             modsecurityEnabledConfigMetadata,
-            enabledForInternalIpsConfigMetadata));
+            enabledForInternalIpsConfigMetadata,
+            primaryApiModelTypeConfigMetadata,
+            secondaryApiModelTypeConfigMetadata));
 
     // schemaValidation_reqie mapping
     threatRuleIdToConfigMetadataMapping.put(
@@ -785,7 +808,9 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
             noAnomalyStrings,
             modsecurityEnabledConfigMetadata,
             enabledForInternalIpsConfigMetadata,
-            thresholdFamiliesExcluded));
+            thresholdFamiliesExcluded,
+            primaryApiModelTypeConfigMetadata,
+            secondaryApiModelTypeConfigMetadata));
 
     // schemaValidation_reqptve mapping
     threatRuleIdToConfigMetadataMapping.put(
@@ -793,7 +818,9 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
         List.of(
             noAnomalyStrings,
             modsecurityEnabledConfigMetadata,
-            enabledForInternalIpsConfigMetadata));
+            enabledForInternalIpsConfigMetadata,
+            primaryApiModelTypeConfigMetadata,
+            secondaryApiModelTypeConfigMetadata));
 
     // schemaValidation_uresc mapping
     threatRuleIdToConfigMetadataMapping.put(
@@ -801,7 +828,9 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
         List.of(
             validGrpcStatusCodesConfigMetadata,
             validHttpStatusCodesConfigMetadata,
-            minPercentSeenConfigMetadata));
+            minPercentSeenConfigMetadata,
+            primaryApiModelTypeConfigMetadata,
+            secondaryApiModelTypeConfigMetadata));
 
     // schemaValidation_ureqp mapping
     threatRuleIdToConfigMetadataMapping.put(
@@ -810,7 +839,9 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
             modsecurityEnabledConfigMetadata,
             enabledForInternalIpsConfigMetadata,
             thresholdFamiliesExcluded,
-            severeRegexStrings));
+            severeRegexStrings,
+            primaryApiModelTypeConfigMetadata,
+            secondaryApiModelTypeConfigMetadata));
 
     // schemaValidation_mreqp mapping
     threatRuleIdToConfigMetadataMapping.put(
@@ -820,7 +851,9 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
             severeRegexStrings,
             enabledForInternalIpsConfigMetadata,
             evaluateRequestBodyParamsConfigMetadata,
-            thresholdFamiliesExcluded));
+            thresholdFamiliesExcluded,
+            primaryApiModelTypeConfigMetadata,
+            secondaryApiModelTypeConfigMetadata));
   }
 
   public static List<ConfigMetadata> getConfigMetadata(String threatRuleId) {
