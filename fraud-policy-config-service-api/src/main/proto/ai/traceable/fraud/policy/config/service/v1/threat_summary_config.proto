@@ -8,6 +8,7 @@ enum Source {
   SOURCE_UNSPECIFIED = 0;
   SOURCE_FRAUD_POLICY = 1;
   SOURCE_INCIDENT = 2;
+  SOURCE_FRAUD_DETECTION_EVENT = 3;
 }
 
 enum SummaryFormat {
