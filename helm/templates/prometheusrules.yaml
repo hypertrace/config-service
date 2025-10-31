@@ -76,9 +76,9 @@ spec:
             severity: SEV3
             repository: config-service
             team: protection-waap
-            { { - with .Values.prometheusRule.additionalRuleLabels } }
-            { { - toYaml . | nindent 12 } }
-            { { - end } }
+            {{- with .Values.prometheusRule.additionalRuleLabels }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
         - alert: CloudBotDeploymentConfigStatusChange
           annotations:
             summary: 'IGNORE: Cloud Bot Deployment Config Status Change'
