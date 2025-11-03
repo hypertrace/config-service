@@ -43,7 +43,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-public class CustomSignatureMigrationConfigServiceIntegrationTest
+public class CustomSignatureRuleEvaluationPointsMigrationConfigServiceIntegrationTest
     extends TraceableConfigServiceIntegrationTestBase {
   private static CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub
       customSignatureConfigServiceBlockingStub;
@@ -116,7 +116,7 @@ public class CustomSignatureMigrationConfigServiceIntegrationTest
         new CustomSignatureConfigServiceConfig(
             ConfigFactory.parseURL(
                 Objects.requireNonNull(
-                    CustomSignatureMigrationConfigServiceIntegrationTest.class
+                    CustomSignatureRuleEvaluationPointsMigrationConfigServiceIntegrationTest.class
                         .getClassLoader()
                         .getResource(APPLICATION_CONFIG))));
 

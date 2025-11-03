@@ -226,7 +226,9 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
       return Status.INTERNAL
           .withCause(ex)
           .withDescription(
-              String.format("Modsec rule could not be created for rule: [%s]", ruleName));
+              String.format(
+                  "Modsec rule could not be created for the custom signature rule having name: [%s]",
+                  ruleName));
     }
   }
 

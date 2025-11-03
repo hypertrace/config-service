@@ -6,6 +6,8 @@ import ai.traceable.customsignature.config.service.v1.Category;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureMigrationConfig;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
+import ai.traceable.customsignature.config.service.v1.EventType;
+import ai.traceable.customsignature.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleRequest;
 import jakarta.inject.Inject;
 import java.util.HashSet;
@@ -29,6 +31,8 @@ public class CustomSignatureRuleMigrationManager {
   private final Set<ContextualKey<Void>> ruleEvaluationPointsMigrationCompletedTenantsSet =
       new HashSet<>();
   private final Set<ContextualKey<Void>> ruleCategoryMigrationCompletedTenantsSet = new HashSet<>();
+  private final Set<ContextualKey<Void>> allowRulesPlatformExclusionMigrationCompletedTenantsSet =
+      new HashSet<>();
 
   @Inject
   public CustomSignatureRuleMigrationManager(
@@ -57,6 +61,7 @@ public class CustomSignatureRuleMigrationManager {
   public void migrateCustomSignatureRules(RequestContext requestContext) {
     migrateRuleEvaluationPoints(requestContext);
     migrateRuleCategory(requestContext);
+    migrateAllowRulesPlatformExclusion(requestContext);
   }
 
   private void migrateRuleEvaluationPoints(RequestContext requestContext) {
@@ -110,7 +115,69 @@ public class CustomSignatureRuleMigrationManager {
         rulesStore.getAllConfigData(requestContext).stream()
             .filter(rule -> rule.getCategory().equals(Category.CATEGORY_UNSPECIFIED))
             .map(rule -> rule.toBuilder().setCategory(Category.CATEGORY_CUSTOM_SIGNATURE).build())
-            .collect(Collectors.toUnmodifiableList());
+            .collect(Collectors.toList());
+
+    if (updatedRules.isEmpty()) {
+      return;
+    }
+    rulesStore.upsertObjects(requestContext, updatedRules);
+  }
+
+  private void migrateAllowRulesPlatformExclusion(RequestContext requestContext) {
+    if (config.isAllowRulesPlatformExclusionMigrationDisabled()) {
+      return;
+    }
+    ContextualKey<Void> contextualKey = requestContext.buildInternalContextualKey();
+    if (allowRulesPlatformExclusionMigrationCompletedTenantsSet.contains(contextualKey)) {
+      return;
+    }
+    CustomSignatureMigrationConfig customSignatureMigrationConfig =
+        migrationConfigStore
+            .getData(requestContext)
+            .orElse(CustomSignatureMigrationConfig.getDefaultInstance());
+    if (customSignatureMigrationConfig.getAllowRulesPlatformExclusionMigrationCompleted()) {
+      allowRulesPlatformExclusionMigrationCompletedTenantsSet.add(contextualKey);
+    } else {
+      migrateAllowRulesPlatformExclusionIfApplicable(requestContext);
+      migrationConfigStore.upsertObject(
+          requestContext,
+          customSignatureMigrationConfig.toBuilder()
+              .setAllowRulesPlatformExclusionMigrationCompleted(true)
+              .build());
+      allowRulesPlatformExclusionMigrationCompletedTenantsSet.add(contextualKey);
+    }
+  }
+
+  private void migrateAllowRulesPlatformExclusionIfApplicable(RequestContext requestContext) {
+    List<CustomSignatureRule> updatedRules =
+        rulesStore.getAllConfigData(requestContext).stream()
+            .filter(
+                rule ->
+                    rule.getEffect().getEventType() == EventType.EVENT_TYPE_ALLOW
+                        && rule.getEffect()
+                            .getRuleEvaluationPointsList()
+                            .contains(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM))
+            .map(
+                rule ->
+                    rule.toBuilder()
+                        .setEffect(
+                            rule.getEffect().toBuilder()
+                                .clearRuleEvaluationPoints()
+                                .addAllRuleEvaluationPoints(
+                                    rule.getEffect().getRuleEvaluationPointsList().stream()
+                                        .filter(
+                                            ruleEvaluationPoint ->
+                                                ruleEvaluationPoint
+                                                    != RuleEvaluationPoint
+                                                        .RULE_EVALUATION_POINT_PLATFORM)
+                                        .collect(Collectors.toList()))
+                                .build())
+                        .build())
+            .collect(Collectors.toList());
+
+    if (updatedRules.isEmpty()) {
+      return;
+    }
     rulesStore.upsertObjects(requestContext, updatedRules);
   }
 }

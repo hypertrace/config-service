@@ -91,7 +91,9 @@ public class CustomModsecRuleConverter {
   private CustomModsecRuleClause convert(MatchExpression expression) {
     CustomModsecRuleClause.Builder clauseBuilder = CustomModsecRuleClause.newBuilder();
     CustomModsecMatchExpression matchExpression =
-        convert(expression.getMatchOperator(), expression.getMatchValue());
+        expression.hasValue()
+            ? convert(expression.getMatchOperator(), expression.getValue().getStringValue())
+            : convert(expression.getMatchOperator(), expression.getMatchValue());
 
     Optional<CustomModsecValueMatchClause> valueMatchClause = Optional.empty();
     Optional<RequestValueMatchMetadata> requestMetadata =
