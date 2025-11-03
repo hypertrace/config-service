@@ -106,7 +106,7 @@
     MITRE_TECHNIQUE: T1595.002
   eventDetails:
     description: |
-      A Missing Field attack is flagged when a required field is missing in the request parameters.
+      A Missing Field attack is detected when a required parameter is absent from the request. Depending on the specific field that is missing, this may indicate potential issues such as unauthenticated access, Cross-Site Request Forgery (CSRF) attempts, or other forms of unauthorized requests.
     mitigation: |
       Implement input validation in your API to ensure all required fields are present in the request. Consider using a schema validation library to automate this process.
     impact: |
