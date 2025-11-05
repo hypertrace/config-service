@@ -124,6 +124,11 @@ public class AnomalyDetectionConfigHandler {
           configCases.add(
               AnomalyDetectionConfig.AnomalyDetectionConfigCase.GEN_AI_ANOMALY_DETECTION_CONFIG);
           break;
+        case ANOMALY_DETECTION_CONFIG_TYPE_API_PROTECT:
+          configCases.add(
+              AnomalyDetectionConfig.AnomalyDetectionConfigCase
+                  .API_PROTECT_ANOMALY_DETECTION_CONFIG);
+          break;
         default:
           break;
       }

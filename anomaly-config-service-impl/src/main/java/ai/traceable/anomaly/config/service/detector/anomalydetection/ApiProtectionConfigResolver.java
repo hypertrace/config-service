@@ -5,10 +5,15 @@ import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.Api
 import ai.traceable.anomaly.config.service.global.ruleinfo.RuleInfoManager;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleAction;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
+import ai.traceable.anomaly.config.service.v1.AnomalySeverityLevel;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
+import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
 import ai.traceable.anomaly.config.service.v1.RuleVersion;
 import ai.traceable.anomaly.config.service.v1.RuleVersionData;
+import ai.traceable.anomaly.config.service.v1.detector.AnomalyCategoryConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.AnomalyEventCategory;
+import ai.traceable.anomaly.config.service.v1.detector.AnomalyEventScoreCategory;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ApiProtectAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ApiProtectAnomalyRuleConfig;
@@ -65,7 +70,41 @@ public class ApiProtectionConfigResolver {
     return AnomalySubRuleConfig.newBuilder()
         .setSubRuleId(subRuleInfo.getRuleId())
         .setAnomalyRuleAction(AnomalyRuleAction.ANOMALY_RULE_ACTION_MONITOR)
+        .setCategoryConfig(getAnomalyCategoryConfig(subRuleInfo))
         .build();
+  }
+
+  private AnomalyCategoryConfig getAnomalyCategoryConfig(AnomalySubRuleInfo subRuleInfo) {
+    return AnomalyCategoryConfig.newBuilder()
+        .setEventScoreCategory(getEventScoreCategory(subRuleInfo.getSeverityLevel()))
+        .setEventCategory(getEventCategory(subRuleInfo.getSubRuleTypesList()))
+        .build();
+  }
+
+  private AnomalyEventScoreCategory getEventScoreCategory(AnomalySeverityLevel severityLevel) {
+    switch (severityLevel) {
+      case ANOMALY_SEVERITY_LEVEL_LOW:
+        return AnomalyEventScoreCategory.ANOMALY_EVENT_SCORE_CATEGORY_LOW;
+      case ANOMALY_SEVERITY_LEVEL_MEDIUM:
+        return AnomalyEventScoreCategory.ANOMALY_EVENT_SCORE_CATEGORY_MEDIUM;
+      case ANOMALY_SEVERITY_LEVEL_HIGH:
+        return AnomalyEventScoreCategory.ANOMALY_EVENT_SCORE_CATEGORY_HIGH;
+      case ANOMALY_SEVERITY_LEVEL_CRITICAL:
+        return AnomalyEventScoreCategory.ANOMALY_EVENT_SCORE_CATEGORY_CRITICAL;
+      default:
+        throw new IllegalArgumentException("Severity level " + severityLevel + " not recognized");
+    }
+  }
+
+  private AnomalyEventCategory getEventCategory(List<AnomalySubRuleType> subRuleTypes) {
+    if (subRuleTypes.contains(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK)
+        || subRuleTypes.contains(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE)) {
+      return AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_MALICIOUS;
+    } else if (subRuleTypes.contains(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR)) {
+      return AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_LATENT;
+    } else {
+      throw new IllegalArgumentException("Sub rule types " + subRuleTypes + " not recognized");
+    }
   }
 
   private static AnomalyDetectionConfig buildApiProtectAnomalyDetectionConfig(
