@@ -2,44 +2,54 @@ syntax = "proto3";
 
 package ai.traceable.ipresolutionstrategy.config.service.v1;
 
+import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
+import "ai/traceable/graphql/autogen/schema/annotations/method/v1/graphql_method_options.proto";
 import "ai/traceable/ipresolutionstrategy/config/service/v1/ip_resolution_strategy_config.proto";
 
 option java_multiple_files = true;
 
 service IpResolutionStrategyConfigService {
-  rpc GetIpResolutionStrategyConfigs(GetIpResolutionStrategyConfigsRequest) returns (GetIpResolutionStrategyConfigsResponse) {}
-  rpc CreateIpResolutionStrategyConfig(CreateIpResolutionStrategyConfigRequest) returns (CreateIpResolutionStrategyConfigResponse) {}
-  rpc UpdateIpResolutionStrategyConfig(UpdateIpResolutionStrategyConfigRequest) returns (UpdateIpResolutionStrategyConfigResponse) {}
-  rpc DeleteIpResolutionStrategyConfig(DeleteIpResolutionStrategyConfigRequest) returns (DeleteIpResolutionStrategyConfigResponse) {}
+  rpc GetIpResolutionStrategyConfigs(GetIpResolutionStrategyConfigsRequest) returns (GetIpResolutionStrategyConfigsResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "Retrieve IP resolution strategy configurations matching the provided filters";
+  }
+  rpc CreateIpResolutionStrategyConfig(CreateIpResolutionStrategyConfigRequest) returns (CreateIpResolutionStrategyConfigResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "Create a new IP resolution strategy configuration";
+  }
+  rpc UpdateIpResolutionStrategyConfig(UpdateIpResolutionStrategyConfigRequest) returns (UpdateIpResolutionStrategyConfigResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "Update an existing IP resolution strategy configuration";
+  }
+  rpc DeleteIpResolutionStrategyConfig(DeleteIpResolutionStrategyConfigRequest) returns (DeleteIpResolutionStrategyConfigResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "Delete an IP resolution strategy configuration";
+  }
 }
 
 message GetIpResolutionStrategyConfigsRequest {
-  IpResolutionStrategyFilter filter = 1;
+  IpResolutionStrategyFilter filter = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Filter criteria used to select configurations"];
 }
 
 message GetIpResolutionStrategyConfigsResponse {
-  repeated IpResolutionStrategyConfig configs = 1;
+  repeated IpResolutionStrategyConfig configs = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of IP resolution strategy configurations matching the request"];
 }
 
 message CreateIpResolutionStrategyConfigRequest {
-  IpResolutionStrategyConfigData data = 1;
+  IpResolutionStrategyConfigData data = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Configuration payload to create"];
 }
 
 message CreateIpResolutionStrategyConfigResponse {
-  IpResolutionStrategyConfig config = 1;
+  IpResolutionStrategyConfig config = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Created IP resolution strategy configuration"];
 }
 
 message UpdateIpResolutionStrategyConfigRequest {
-  string id = 1;
-  IpResolutionStrategyConfigData data = 2;
+  string id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Identifier of the configuration to update"];
+  IpResolutionStrategyConfigData data = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "New configuration payload"];
 }
 
 message UpdateIpResolutionStrategyConfigResponse {
-  IpResolutionStrategyConfig config = 1;
+  IpResolutionStrategyConfig config = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Updated IP resolution strategy configuration"];
 }
 
 message DeleteIpResolutionStrategyConfigRequest {
-  string id = 1;
+  string id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Identifier of the configuration to delete"];
 }
 
 message DeleteIpResolutionStrategyConfigResponse {}

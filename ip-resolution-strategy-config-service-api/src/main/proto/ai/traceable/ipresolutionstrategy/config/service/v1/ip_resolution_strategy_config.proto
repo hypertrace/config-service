@@ -2,49 +2,50 @@ syntax = "proto3";
 
 package ai.traceable.ipresolutionstrategy.config.service.v1;
 
+import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
 import "ai/traceable/ipresolutionstrategy/config/service/v1/ip_resolution_strategy_model.proto";
 
 option java_multiple_files = true;
 
 // A single stored configuration object for IP resolution strategy
 message IpResolutionStrategyConfig {
-  string id = 1;
-  IpResolutionStrategyConfigData data = 2;
+  string id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Unique identifier of the stored IP resolution strategy configuration"];
+  IpResolutionStrategyConfigData data = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Configuration payload that determines how client IPs are resolved"];
 }
 
 message IpResolutionStrategyConfigData {
   // The actual strategy to be used by agents
-  ai.traceable.ipresolutionstrategy.config.service.v1.IpResolutionStrategy strategy = 1;
+  ai.traceable.ipresolutionstrategy.config.service.v1.IpResolutionStrategy strategy = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Strategy specifying how client IPs are extracted and prioritized"];
   // Scope at which the strategy applies
-  Scope scope = 2;
+  Scope scope = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Scope (environment/service) where the strategy should be enforced"];
   // Optionally disable this config without deleting it
-  bool disabled = 3;
+  bool disabled = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Flag to temporarily disable the configuration without removing it"];
 }
 
 // Scope definition (environment and service)
 message Scope {
-  EnvironmentScope environment_scope = 1;
-  ServiceScope service_scope = 2;
+  EnvironmentScope environment_scope = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Environment-level scope constraints for the strategy"];
+  ServiceScope service_scope = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Service-level scope constraints for the strategy"];
 }
 
 message EnvironmentScope {
   // If empty, applies to all environments
-  repeated string environment_names = 1;
+  repeated string environment_names = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Environments where the strategy should apply; empty means all environments"];
 }
 
 message ServiceScope {
   // If empty, applies to all services
-  repeated string service_names = 1;
+  repeated string service_names = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Services where the strategy should apply; empty means all services"];
 }
 
 // Request filter to fetch configs
 message IpResolutionStrategyFilter {
   // Optional: filter by disabled flag
-  optional bool disabled = 1;
+  optional bool disabled = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "If set, returns only configs matching this disabled flag"];
   // Optional: restrict by environment names
-  repeated string environment_names = 2;
+  repeated string environment_names = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Filter results to configurations matching these environment names"];
   // Optional: restrict by service names
-  repeated string service_names = 3;
+  repeated string service_names = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Filter results to configurations matching these service names"];
   // Optional: limit to specific ids
-  repeated string ids = 4;
+  repeated string ids = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Filter results to specific configuration identifiers"];
 }
