@@ -93,44 +93,40 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
   public List<ApiNamingRuleDetails> createApiNamingRules(
       RequestContext requestContext, CreateApiNamingRulesRequest request) {
     // TODO: need to handle priorities
-    Stream<ApiNamingRule> segmentMatchingBasedRuleStream =
-        request.getRulesInfoList().stream()
-            .filter(
-                apiNamingRuleInfo ->
-                    apiNamingRuleInfo.getRuleConfig().hasSegmentMatchingBasedConfig())
-            .map(apiNamingRuleInfo -> buildApiNamingRule(requestContext, apiNamingRuleInfo))
-            .filter(ApiNamingRuleCreationContext::isNewRule)
-            .map(ApiNamingRuleCreationContext::getApiNamingRule);
 
-    List<ApiNamingRuleInfo> apiSpecBasedNamingRulesInfo =
-        request.getRulesInfoList().stream()
-            .filter(apiNamingRuleInfo -> apiNamingRuleInfo.getRuleConfig().hasApiSpecBasedConfig())
-            .collect(toUnmodifiableList());
+    List<ApiNamingRuleInfo> apiSpecBasedNamingRulesInfo = new ArrayList<>();
+    List<ApiNamingRule> otherRulesToCreate = new ArrayList<>();
+
+    for (ApiNamingRuleInfo ruleInfo : request.getRulesInfoList()) {
+      ApiNamingRuleConfig.RuleConfigCase configType = ruleInfo.getRuleConfig().getRuleConfigCase();
+
+      switch (configType) {
+        case API_SPEC_BASED_CONFIG:
+          apiSpecBasedNamingRulesInfo.add(ruleInfo);
+          break;
+
+        case SEGMENT_MATCHING_BASED_CONFIG:
+        case AST_SCAN_BASED_CONFIG:
+        case JOB_BASED_CONFIG:
+        case GEN_AI_BASED_CONFIG:
+          ApiNamingRuleCreationContext context = buildApiNamingRule(requestContext, ruleInfo);
+          if (context.isNewRule()) {
+            otherRulesToCreate.add(context.getApiNamingRule());
+          }
+          break;
+
+        default:
+          log.warn("Unrecognized rule config type: {}", configType);
+      }
+    }
+
     Stream<ApiNamingRule> apiSpecBasedRuleStream =
         buildApiSpecBasedNamingRules(requestContext, apiSpecBasedNamingRulesInfo);
 
-    Stream<ApiNamingRule> astScanBasedRuleStream =
-        request.getRulesInfoList().stream()
-            .filter(apiNamingRuleInfo -> apiNamingRuleInfo.getRuleConfig().hasAstScanBasedConfig())
-            .map(apiNamingRuleInfo -> buildApiNamingRule(requestContext, apiNamingRuleInfo))
-            .filter(ApiNamingRuleCreationContext::isNewRule)
-            .map(ApiNamingRuleCreationContext::getApiNamingRule);
-
-    Stream<ApiNamingRule> jobBasedApiNamingRulesStream =
-        request.getRulesInfoList().stream()
-            .filter(apiNamingRuleInfo -> apiNamingRuleInfo.getRuleConfig().hasJobBasedConfig())
-            .map(apiNamingRuleInfo -> buildApiNamingRule(requestContext, apiNamingRuleInfo))
-            .filter(ApiNamingRuleCreationContext::isNewRule)
-            .map(ApiNamingRuleCreationContext::getApiNamingRule);
-
     List<ApiNamingRule> apiNamingRulesToCreate =
-        Stream.of(
-                segmentMatchingBasedRuleStream,
-                apiSpecBasedRuleStream,
-                astScanBasedRuleStream,
-                jobBasedApiNamingRulesStream)
-            .flatMap(Function.identity())
+        Stream.concat(otherRulesToCreate.stream(), apiSpecBasedRuleStream)
             .collect(toUnmodifiableList());
+
     if (apiNamingRulesToCreate.isEmpty()) {
       return emptyList();
     }
@@ -273,6 +269,7 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
       case SEGMENT_MATCHING_BASED_CONFIG:
       case JOB_BASED_CONFIG:
       case AST_SCAN_BASED_CONFIG:
+      case GEN_AI_BASED_CONFIG:
         return ApiNamingRuleCreationContext.builder()
             .apiNamingRule(
                 ApiNamingRule.newBuilder()
