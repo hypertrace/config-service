@@ -80,6 +80,8 @@ public class FeatureCachingClient {
       "graphql.security-settings.defense-ai.hidden";
   private static final String API_PROTECT_CONFIG_POLICIES_REVAMP_FLAG =
       "api-protect.policies.revamp";
+  private static final String API_PROTECT_CONFIG_POLICIES_MIGRATION_FLAG =
+      "api-protect.policies.migration";
 
   private static final List<String> ALL_FLAGS_TO_FETCH =
       List.of(
@@ -100,6 +102,7 @@ public class FeatureCachingClient {
           CONFIG_SERVICE_WAAP_RULES_VERSIONING,
           GENAI_DETECTION_V2_FLAG,
           API_PROTECT_CONFIG_POLICIES_REVAMP_FLAG,
+          API_PROTECT_CONFIG_POLICIES_MIGRATION_FLAG,
           PROTECTION_ENGINE_WEBAPP_PROTECTION_FLAG,
           PROTECTION_ENGINE_POST_DETECTION_FILTERING_FLAG,
           HIDDEN_DEFENSE_AI_FEATURES);
@@ -169,6 +172,21 @@ public class FeatureCachingClient {
     } catch (Exception exception) {
       log.error(
           "Failed to retrieve current feature flag value for API Protect Config Policies Revamp",
+          exception);
+      return false;
+    }
+  }
+
+  public boolean isApiProtectConfigPoliciesMigrationEnabled(RequestContext requestContext) {
+    try {
+      return requireNonNull(
+              this.featureFlagCache
+                  .get(requestContext.buildInternalContextualKey())
+                  .get(API_PROTECT_CONFIG_POLICIES_MIGRATION_FLAG))
+          .getBoolean();
+    } catch (Exception exception) {
+      log.error(
+          "Failed to retrieve current feature flag value for API Protect Config Policies Migration",
           exception);
       return false;
     }

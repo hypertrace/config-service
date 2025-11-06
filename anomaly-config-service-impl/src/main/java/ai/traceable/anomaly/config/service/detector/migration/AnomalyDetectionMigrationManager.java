@@ -38,7 +38,7 @@ public class AnomalyDetectionMigrationManager {
   }
 
   public void migrateToApiProtectIfApplicable(RequestContext requestContext) {
-    if (!featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext)) {
+    if (!featureCachingClient.isApiProtectConfigPoliciesMigrationEnabled(requestContext)) {
       return;
     }
 
