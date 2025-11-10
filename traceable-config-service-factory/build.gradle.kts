@@ -22,6 +22,7 @@ dependencies {
   implementation(projects.externalUserAttributionConfigServiceImpl)
   implementation(projects.externalAgentAttributeConfigServiceImpl)
   implementation(projects.externalDataClassificationConfigServiceImpl)
+  implementation(projects.externalAgentActionConfigServiceImpl)
 
   implementation(projects.licenseStatusConfigServiceImpl)
   implementation(projects.localProcessingConfigServiceImpl)
