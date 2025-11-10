@@ -7,6 +7,7 @@ plugins {
 dependencies {
   api(commonLibs.grpc.api)
   api(commonLibs.typesafe.config)
+  api(commonLibs.hypertrace.framework.metrics)
   implementation(projects.regionConfigServiceApi)
   implementation(projects.featureCachingClient)
   implementation(projects.configUtils)

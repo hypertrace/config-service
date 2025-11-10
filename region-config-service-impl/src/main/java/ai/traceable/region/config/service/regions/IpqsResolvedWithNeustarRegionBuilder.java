@@ -16,6 +16,7 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.micrometer.core.instrument.Counter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -31,14 +32,17 @@ import lombok.Getter;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVRecord;
+import org.hypertrace.core.serviceframework.metrics.PlatformMetricsRegistry;
 
 /** takes ipqs as primary data source and searches for mismatch in country from neustar to drop */
 @Slf4j
 @Singleton
 public class IpqsResolvedWithNeustarRegionBuilder implements RegionBuilder {
+  private static final String IPQS_NEUSTAR_LOAD_FAILURE = "ipqs.neustar.load.failure";
   private final LatestInstantNamedPathFinder latestInstantNamedPathFinder;
   private final Supplier<Map<String, Region>> resolvedSupplier;
   private final UuidGenerator uuidGenerator;
+  private final Counter counter;
 
   @Inject
   IpqsResolvedWithNeustarRegionBuilder(
@@ -47,6 +51,7 @@ public class IpqsResolvedWithNeustarRegionBuilder implements RegionBuilder {
       RegionConfigServiceConfig config) {
     this.latestInstantNamedPathFinder = latestInstantNamedPathFinder;
     this.uuidGenerator = uuidGenerator;
+    this.counter = PlatformMetricsRegistry.registerCounter(IPQS_NEUSTAR_LOAD_FAILURE, null);
     if (!config.getIpqsNeustarResolutionEnabled()) {
       resolvedSupplier = Collections::emptyMap;
       return;
@@ -91,13 +96,18 @@ public class IpqsResolvedWithNeustarRegionBuilder implements RegionBuilder {
 
   private Map<String, Region> getResolvedRegions(
       FileRefreshConfig ipqsConfig, FileRefreshConfig neustarConfig) {
-    TreeMap<Long, EndIpRegionEntry> neustarRangeMap =
-        FileVersionBasedRefresh.fetchRecordsAndApplyFunction(
-            neustarConfig, latestInstantNamedPathFinder, this::getNeustarRangeMap);
-    return FileVersionBasedRefresh.fetchRecordsAndApplyFunction(
-        ipqsConfig,
-        latestInstantNamedPathFinder,
-        (records) -> getResolvedIpRegions(records, neustarRangeMap));
+    try {
+      TreeMap<Long, EndIpRegionEntry> neustarRangeMap =
+          FileVersionBasedRefresh.fetchRecordsAndApplyFunction(
+              neustarConfig, latestInstantNamedPathFinder, this::getNeustarRangeMap);
+      return FileVersionBasedRefresh.fetchRecordsAndApplyFunction(
+          ipqsConfig,
+          latestInstantNamedPathFinder,
+          (records) -> getResolvedIpRegions(records, neustarRangeMap));
+    } catch (Exception e) {
+      counter.increment();
+      return Collections.emptyMap();
+    }
   }
 
   private TreeMap<Long, EndIpRegionEntry> getNeustarRangeMap(Iterable<CSVRecord> records) {

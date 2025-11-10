@@ -93,5 +93,19 @@ spec:
             {{- with .Values.prometheusRule.additionalRuleLabels }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
+        - alert: IpqsNeustarFilesLoadingFailure
+          annotations:
+            summary: 'Failed to load IPQS/Neustar files'
+            message: 'Failed to load IPQS/Neustar files'
+            #runbook_url: https://harness.atlassian.net/wiki/x/EQISTgU
+          expr: sum(increase(ipqs_neustar_load_failure_count[1m])) > 0
+          for: 1m
+          labels:
+            severity: SEV2
+            repository: config-service
+            team: protection-waap
+            {{- with .Values.prometheusRule.additionalRuleLabels }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
   {{- end }}
 {{- end }}

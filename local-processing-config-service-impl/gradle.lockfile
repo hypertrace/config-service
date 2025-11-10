@@ -1,8 +1,8 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.4.3555=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.featureflag:feature-flag-service-api:0.7.54=runtimeClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.3651=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.featureflag:feature-flag-service-api:0.7.59=runtimeClasspath,testRuntimeClasspath
 ai.traceable.license.metering.service:license-metering-service-api:0.1.81=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:api-utils:0.8.119=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:cache-provider:0.8.119=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
@@ -13,7 +13,7 @@ ai.traceable.platform-gateway:event-stream:0.8.119=runtimeClasspath,testRuntimeC
 ai.traceable.platform-gateway:traceable-raw-span-constants:0.8.119=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:training-evaluation-framework:0.8.119=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:xml-utils:0.8.119=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform:api-naming-model:6.0.109=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.platform:api-naming-model:6.0.114=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform:enriched-span-constants:5.0.21=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:trace-enricher-api:5.0.21=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:trace-enricher-constants:5.0.21=runtimeClasspath,testRuntimeClasspath
@@ -208,7 +208,7 @@ org.hypertrace.core.serviceframework:service-framework-spi:0.1.91=runtimeClasspa
 org.hypertrace.core.spannormalizer:raw-span-constants:3.0.10=runtimeClasspath,testRuntimeClasspath
 org.hypertrace.core.spannormalizer:semantic-convention-utils:3.0.10=runtimeClasspath,testRuntimeClasspath
 org.hypertrace.core.spannormalizer:span-normalizer-constants:3.0.10=runtimeClasspath,testRuntimeClasspath
-org.hypertrace.entity.service:entity-service-api:0.8.284=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.hypertrace.entity.service:entity-service-api:0.8.289=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-api:5.10.2=testCompileClasspath,testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-engine:5.10.2=testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-params:5.10.2=testCompileClasspath,testRuntimeClasspath

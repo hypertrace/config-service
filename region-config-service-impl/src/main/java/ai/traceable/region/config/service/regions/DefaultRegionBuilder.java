@@ -6,12 +6,14 @@ import ai.traceable.config.utils.refresh.FileRefreshConfig;
 import ai.traceable.config.utils.refresh.FileVersionBasedRefresh;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import io.micrometer.core.instrument.Counter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVRecord;
+import org.hypertrace.core.serviceframework.metrics.PlatformMetricsRegistry;
 
 @Slf4j
 class DefaultRegionBuilder extends FileVersionBasedRefresh<Map<String, Region>>
@@ -20,8 +22,10 @@ class DefaultRegionBuilder extends FileVersionBasedRefresh<Map<String, Region>>
   public static final String END_IP_INT_CSV_HEADER = "end_ip_int";
   public static final String COUNTRY_CSV_HEADER = "country";
   public static final String ISO_CODE_CSV_HEADER = "country_iso_code";
+  private static final String IPQS_NEUSTAR_LOAD_FAILURE = "ipqs.neustar.load.failure";
 
   private final UuidGenerator uuidGenerator;
+  private final Counter counter;
 
   @Inject
   DefaultRegionBuilder(
@@ -31,10 +35,16 @@ class DefaultRegionBuilder extends FileVersionBasedRefresh<Map<String, Region>>
       boolean disabled) {
     super(latestInstantNamedPathFinder);
     this.uuidGenerator = uuidGenerator;
+    this.counter = PlatformMetricsRegistry.registerCounter(IPQS_NEUSTAR_LOAD_FAILURE, null);
     if (disabled) {
       this.supplier = Collections::emptyMap;
     } else {
-      initializeSupplier(fileRefreshConfig);
+      try {
+        initializeSupplier(fileRefreshConfig);
+      } catch (Exception e) {
+        counter.increment();
+        this.supplier = Collections::emptyMap;
+      }
     }
   }
 

@@ -8,6 +8,7 @@ import ai.traceable.config.utils.refresh.FileRefreshConfig;
 import ai.traceable.config.utils.refresh.FileVersionBasedRefresh;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.micrometer.core.instrument.Counter;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.Map;
@@ -15,6 +16,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVRecord;
+import org.hypertrace.core.serviceframework.metrics.PlatformMetricsRegistry;
 
 @Singleton
 @Slf4j
@@ -34,13 +36,21 @@ public class IpTypeRulesLoader extends FileVersionBasedRefresh<Map<IpType, IpTyp
           IpType.PUBLIC_PROXY,
           "IP_TYPE_HOSTING_PROVIDER",
           IpType.HOSTING_PROVIDER);
+  private static final String IPQS_NEUSTAR_LOAD_FAILURE = "ipqs.neustar.load.failure";
+  private final Counter counter;
 
   @Inject
   public IpTypeRulesLoader(
       LatestInstantNamedPathFinder latestInstantNamedPathFinder,
       FileRefreshConfig fileRefreshConfig) {
     super(latestInstantNamedPathFinder);
-    initializeSupplier(fileRefreshConfig);
+    this.counter = PlatformMetricsRegistry.registerCounter(IPQS_NEUSTAR_LOAD_FAILURE, null);
+    try {
+      initializeSupplier(fileRefreshConfig);
+    } catch (Exception e) {
+      counter.increment();
+      this.supplier = Collections::emptyMap;
+    }
   }
 
   @Override
