@@ -37,7 +37,8 @@ public class CustomSignatureAllowRulesPlatformExclusionMigrationConfigServiceInt
   private static CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub
       customSignatureConfigServiceBlockingStub;
 
-  private static final String TENANT_ID = "tenant1";
+  private static final String TENANT_ID_1 = "tenant-id-1";
+  private static final String TENANT_ID_2 = "tenant-id-2";
   private static final List<RuleEvaluationPoint> allRuleEvaluationPointsList =
       List.of(
           RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM,
@@ -54,77 +55,121 @@ public class CustomSignatureAllowRulesPlatformExclusionMigrationConfigServiceInt
 
   @Test
   void testMigrationForAllowRulesPlatformExclusion() {
-    CreateCustomSignatureRuleRequest createCustomSignatureRuleRequest =
-        getCustomSignatureRuleRequest();
-    CustomSignatureRule createdRule =
+    // case-1: rule has rule evaluation points other than PLATFORM
+    CreateCustomSignatureRuleRequest createCustomSignatureRuleRequest1 =
+        getCreateCustomSignatureRuleRequest1();
+    CustomSignatureRule createdRule1 =
         GrpcClientRequestContextUtil.executeInTenantContext(
-                TENANT_ID,
+                TENANT_ID_1,
                 () ->
                     customSignatureConfigServiceBlockingStub.createCustomSignatureRule(
-                        createCustomSignatureRuleRequest))
+                        createCustomSignatureRuleRequest1))
             .getRule();
-    String createdRuleId = createdRule.getId();
+    String createdRuleId1 = createdRule1.getId();
 
     // before migration
     assertTrue(
-        createdRule
+        createdRule1
             .getEffect()
             .getRuleEvaluationPointsList()
             .contains(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM));
     assertTrue(
-        createdRule
+        createdRule1
             .getEffect()
             .getRuleEvaluationPointsList()
             .contains(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE));
     assertTrue(
-        createdRule
+        createdRule1
             .getEffect()
             .getRuleEvaluationPointsList()
             .contains(RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT));
 
     List<CustomSignatureRule> allFetchedRules =
         GrpcClientRequestContextUtil.executeInTenantContext(
-            TENANT_ID,
+            TENANT_ID_1,
             () ->
                 customSignatureConfigServiceBlockingStub
                     .getCustomSignatureRules(
                         GetCustomSignatureRulesRequest.newBuilder()
-                            .setFilter(
-                                GetRulesFilter.newBuilder()
-                                    .addAllRuleEvaluationPoints(allRuleEvaluationPointsList))
+                            .setFilter(GetRulesFilter.newBuilder().addRuleIds(createdRuleId1))
                             .build())
                     .getRulesList());
 
     // after migration
-    CustomSignatureRule filteredCustomSignatureRule =
-        allFetchedRules.stream()
-            .filter(
-                fetchedCustomSignatureRule ->
-                    fetchedCustomSignatureRule.getId().equals(createdRuleId))
-            .findAny()
-            .orElseThrow(
-                () ->
-                    new IllegalStateException(
-                        "Custom Signature rule with ID " + createdRuleId + " not found"));
-    assertEquals(Category.CATEGORY_CUSTOM_SIGNATURE, filteredCustomSignatureRule.getCategory());
+    if (allFetchedRules.isEmpty()) {
+      throw new IllegalStateException(
+          "Custom Signature rule with ID " + createdRuleId1 + " not found");
+    }
+    CustomSignatureRule filteredCustomSignatureRule1 = allFetchedRules.get(0);
+
+    assertEquals(Category.CATEGORY_CUSTOM_SIGNATURE, filteredCustomSignatureRule1.getCategory());
     assertTrue(
-        filteredCustomSignatureRule
+        filteredCustomSignatureRule1
             .getEffect()
             .getRuleEvaluationPointsList()
             .contains(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE));
     assertTrue(
-        filteredCustomSignatureRule
+        filteredCustomSignatureRule1
             .getEffect()
             .getRuleEvaluationPointsList()
             .contains(RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT));
     assertFalse(
-        filteredCustomSignatureRule
+        filteredCustomSignatureRule1
+            .getEffect()
+            .getRuleEvaluationPointsList()
+            .contains(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM));
+
+    // case-2: rule has no rule evaluation points other than PLATFORM
+    CreateCustomSignatureRuleRequest createCustomSignatureRuleRequest2 =
+        getCreateCustomSignatureRuleRequest2();
+    CustomSignatureRule createdRule2 =
+        GrpcClientRequestContextUtil.executeInTenantContext(
+                TENANT_ID_2,
+                () ->
+                    customSignatureConfigServiceBlockingStub.createCustomSignatureRule(
+                        createCustomSignatureRuleRequest2))
+            .getRule();
+    String createdRuleId2 = createdRule2.getId();
+
+    // before migration
+    assertTrue(
+        createdRule1
+            .getEffect()
+            .getRuleEvaluationPointsList()
+            .contains(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM));
+
+    allFetchedRules =
+        GrpcClientRequestContextUtil.executeInTenantContext(
+            TENANT_ID_2,
+            () ->
+                customSignatureConfigServiceBlockingStub
+                    .getCustomSignatureRules(
+                        GetCustomSignatureRulesRequest.newBuilder()
+                            .setFilter(GetRulesFilter.newBuilder().addRuleIds(createdRuleId2))
+                            .build())
+                    .getRulesList());
+
+    // after migration
+    if (allFetchedRules.isEmpty()) {
+      throw new IllegalStateException(
+          "Custom Signature rule with ID " + createdRuleId2 + " not found");
+    }
+    CustomSignatureRule filteredCustomSignatureRule2 = allFetchedRules.get(0);
+
+    assertEquals(Category.CATEGORY_CUSTOM_SIGNATURE, filteredCustomSignatureRule2.getCategory());
+    assertTrue(
+        filteredCustomSignatureRule2
+            .getEffect()
+            .getRuleEvaluationPointsList()
+            .contains(RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT));
+    assertFalse(
+        filteredCustomSignatureRule2
             .getEffect()
             .getRuleEvaluationPointsList()
             .contains(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM));
   }
 
-  private CreateCustomSignatureRuleRequest getCustomSignatureRuleRequest() {
+  private CreateCustomSignatureRuleRequest getCreateCustomSignatureRuleRequest1() {
     return CreateCustomSignatureRuleRequest.newBuilder()
         .setName("rule-name")
         .setDescription("rule-description")
@@ -150,6 +195,35 @@ public class CustomSignatureAllowRulesPlatformExclusionMigrationConfigServiceInt
             RuleScope.newBuilder()
                 .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("env-id")))
         .setRuleSource(RuleSource.RULE_SOURCE_TRACEABLE)
+        .build();
+  }
+
+  private CreateCustomSignatureRuleRequest getCreateCustomSignatureRuleRequest2() {
+    return CreateCustomSignatureRuleRequest.newBuilder()
+        .setName("rule-name")
+        .setDescription("rule-description")
+        .setDefinition(
+            RuleDefinition.newBuilder()
+                .setClauseGroup(
+                    ClauseGroup.newBuilder()
+                        .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+                        .addClauses(
+                            Clause.newBuilder()
+                                .setMatchExpression(
+                                    MatchExpression.newBuilder()
+                                        .setMatchCategory(MatchCategory.MATCH_CATEGORY_REQUEST)
+                                        .setMatchKey(MatchKey.MATCH_KEY_HEADER_NAME)
+                                        .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                        .setValue(
+                                            Value.newBuilder().setStringValue("header-str-val"))))))
+        .setEffect(
+            RuleEffect.newBuilder()
+                .setEventType(EventType.EVENT_TYPE_ALLOW)
+                .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM))
+        .setRuleScope(
+            RuleScope.newBuilder()
+                .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("env-id")))
+        .setRuleSource(RuleSource.RULE_SOURCE_CUSTOMER)
         .build();
   }
 }

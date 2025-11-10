@@ -158,21 +158,26 @@ public class CustomSignatureRuleMigrationManager {
                             .getRuleEvaluationPointsList()
                             .contains(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM))
             .map(
-                rule ->
-                    rule.toBuilder()
-                        .setEffect(
-                            rule.getEffect().toBuilder()
-                                .clearRuleEvaluationPoints()
-                                .addAllRuleEvaluationPoints(
-                                    rule.getEffect().getRuleEvaluationPointsList().stream()
-                                        .filter(
-                                            ruleEvaluationPoint ->
-                                                ruleEvaluationPoint
-                                                    != RuleEvaluationPoint
-                                                        .RULE_EVALUATION_POINT_PLATFORM)
-                                        .collect(Collectors.toList()))
-                                .build())
-                        .build())
+                rule -> {
+                  List<RuleEvaluationPoint> filteredRuleEvaluationPoints =
+                      rule.getEffect().getRuleEvaluationPointsList().stream()
+                          .filter(
+                              ruleEvaluationPoint ->
+                                  ruleEvaluationPoint
+                                      != RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+                          .collect(Collectors.toList());
+                  if (filteredRuleEvaluationPoints.isEmpty()) {
+                    filteredRuleEvaluationPoints.add(
+                        RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT);
+                  }
+                  return rule.toBuilder()
+                      .setEffect(
+                          rule.getEffect().toBuilder()
+                              .clearRuleEvaluationPoints()
+                              .addAllRuleEvaluationPoints(filteredRuleEvaluationPoints)
+                              .build())
+                      .build();
+                })
             .collect(Collectors.toList());
 
     if (updatedRules.isEmpty()) {
