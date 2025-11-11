@@ -6,6 +6,7 @@ import static ai.traceable.anomaly.config.service.modsec.Utils.getSubRuleConfigM
 import ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigManager;
 import ai.traceable.anomaly.config.service.global.ruleinfo.WebAppRuleInfoProvider;
 import ai.traceable.anomaly.config.service.global.status.GlobalAnomalyConfigStatusManager;
+import ai.traceable.anomaly.config.service.modsec.ModsecConfigServiceConfig;
 import ai.traceable.anomaly.config.service.modsec.rules.ModsecManager;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
@@ -48,6 +49,12 @@ import ai.traceable.protection.processor.secrules.v1.CorazaRuleProcessor;
 import ai.traceable.protection.processor.secrules.v1.ModsecJniRuleDirectivesType;
 import ai.traceable.protection.processor.secrules.v1.ModsecJniRuleProcessor;
 import ai.traceable.protection.processor.secrules.v1.SecRuleProcessorDetails;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -60,15 +67,22 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.core.grpcutils.context.ContextualKey;
 import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.hypertrace.core.serviceframework.metrics.PlatformMetricsRegistry;
 
 @Slf4j
 public class WebAppEvaluationConfigContextManagerImpl
     implements WebAppEvaluationConfigContextManager {
+  private static final String CACHE_NAME = "webAppConfigContextCache";
   private static final GetAnomalyDetectionConfigsFilter ANOMALY_DETECTION_CONFIGS_FILTER =
       GetAnomalyDetectionConfigsFilter.newBuilder()
           .addAnomalyDetectionConfigTypes(
@@ -116,6 +130,8 @@ public class WebAppEvaluationConfigContextManagerImpl
   private final ModsecRuleVersion defaultModsecRuleVersion;
   private final CachedServiceMappingProvider cachedServiceMappingProvider;
   private final CachedApiMappingProvider cachedApiMappingProvider;
+  private final LoadingCache<ContextualKey<RequestData>, WebAppEvaluationConfigContext>
+      webAppConfigContextCache;
 
   @Inject
   public WebAppEvaluationConfigContextManagerImpl(
@@ -127,7 +143,8 @@ public class WebAppEvaluationConfigContextManagerImpl
       WebAppRuleInfoProvider webAppRuleInfoProvider,
       ModsecRuleVersion defaultModsecRuleVersion,
       CachedServiceMappingProvider cachedServiceMappingProvider,
-      CachedApiMappingProvider cachedApiMappingProvider) {
+      CachedApiMappingProvider cachedApiMappingProvider,
+      ModsecConfigServiceConfig modsecConfigServiceConfig) {
     this.modsecManager = modsecManager;
     this.modsecRulesRegistry = modsecRulesRegistry;
     this.anomalyDetectionConfigManager = anomalyDetectionConfigManager;
@@ -137,6 +154,8 @@ public class WebAppEvaluationConfigContextManagerImpl
     this.defaultModsecRuleVersion = defaultModsecRuleVersion;
     this.cachedServiceMappingProvider = cachedServiceMappingProvider;
     this.cachedApiMappingProvider = cachedApiMappingProvider;
+    this.webAppConfigContextCache = buildCache(modsecConfigServiceConfig);
+    registerCacheMetrics(modsecConfigServiceConfig);
   }
 
   @Override
@@ -148,6 +167,22 @@ public class WebAppEvaluationConfigContextManagerImpl
           requestContext.getTenantId());
       return WebAppEvaluationConfigContext.getDefaultInstance();
     }
+
+    ContextualKey<RequestData> cacheKey =
+        requestContext.buildInternalContextualKey(RequestData.from(request));
+    try {
+      return webAppConfigContextCache.get(cacheKey);
+    } catch (ExecutionException e) {
+      log.error(
+          "Error loading from cache for tenant: {}, falling back to direct computation",
+          requestContext.getTenantId(),
+          e);
+      return computeWebAppEvaluationConfigContext(requestContext, request);
+    }
+  }
+
+  private WebAppEvaluationConfigContext computeWebAppEvaluationConfigContext(
+      RequestContext requestContext, GetWebAppEvaluationConfigContextRequest request) {
     log.debug(
         "Starting getWebAppEvaluationConfigContext for tenant: {}, with request: ruleEvaluationPoint={}, subRuleTypes={}",
         requestContext.getTenantId(),
@@ -774,6 +809,114 @@ public class WebAppEvaluationConfigContextManagerImpl
       return ruleId.substring(4);
     }
     return ruleId;
+  }
+
+  private LoadingCache<ContextualKey<RequestData>, WebAppEvaluationConfigContext> buildCache(
+      ModsecConfigServiceConfig modsecConfigServiceConfig) {
+    return CacheBuilder.newBuilder()
+        .maximumSize(modsecConfigServiceConfig.getWebAppConfigContextCacheMaxSize())
+        .refreshAfterWrite(
+            modsecConfigServiceConfig.getWebAppConfigContextCacheRefreshAfterWriteDuration())
+        .recordStats()
+        .build(
+            CacheLoader.asyncReloading(
+                createCacheLoader(),
+                Executors.newFixedThreadPool(
+                    modsecConfigServiceConfig.getWebAppConfigContextCacheThreadPoolSize(),
+                    this.buildThreadFactory())));
+  }
+
+  private ThreadFactory buildThreadFactory() {
+    return new ThreadFactoryBuilder()
+        .setDaemon(true)
+        .setNameFormat("web-app-config-ctxt-cache-%d")
+        .build();
+  }
+
+  private CacheLoader<ContextualKey<RequestData>, WebAppEvaluationConfigContext>
+      createCacheLoader() {
+    return new CacheLoader<>() {
+
+      @Override
+      public WebAppEvaluationConfigContext load(ContextualKey<RequestData> key) {
+        return computeWebAppEvaluationConfigContext(key.getContext(), key.getData().getRequest());
+      }
+
+      @Override
+      public ListenableFuture<WebAppEvaluationConfigContext> reload(
+          ContextualKey<RequestData> cacheKey, WebAppEvaluationConfigContext existingValue) {
+        try {
+          return Futures.immediateFuture(
+              computeWebAppEvaluationConfigContext(
+                  cacheKey.getContext(), cacheKey.getData().getRequest()));
+        } catch (Exception e) {
+          log.error(
+              "Failed to reload cache entry for tenant: {}",
+              cacheKey.getContext().getTenantId(),
+              e);
+        }
+        return Futures.immediateFuture(existingValue);
+      }
+    };
+  }
+
+  private void registerCacheMetrics(ModsecConfigServiceConfig modsecConfigServiceConfig) {
+    PlatformMetricsRegistry.registerCacheTrackingOccupancy(
+        CACHE_NAME,
+        this.webAppConfigContextCache,
+        Collections.emptyMap(),
+        modsecConfigServiceConfig.getWebAppConfigContextCacheMaxSize());
+  }
+
+  /**
+   * Invalidates the cache for a specific tenant. This should be called when anomaly detection
+   * configs or global status configs are updated for a tenant.
+   *
+   * @param tenantId the tenant ID whose cache entries should be invalidated
+   */
+  public void invalidateCacheForTenant(String tenantId) {
+    log.info("Invalidating cache for tenant: {}", tenantId);
+    webAppConfigContextCache
+        .asMap()
+        .keySet()
+        .removeIf(
+            key ->
+                key.getContext().getTenantId().isPresent()
+                    && key.getContext().getTenantId().get().equals(tenantId));
+  }
+
+  /**
+   * Invalidates all cache entries. Use with caution - typically only needed for testing or
+   * emergency situations.
+   */
+  public void invalidateAllCache() {
+    log.warn("Invalidating all cache entries");
+    webAppConfigContextCache.invalidateAll();
+  }
+
+  /** Request data to be used for building cache key. */
+  @Value
+  @EqualsAndHashCode
+  static class RequestData {
+    RuleEvaluationPoint ruleEvaluationPoint;
+    List<AnomalySubRuleType> subRuleTypes;
+
+    static RequestData from(GetWebAppEvaluationConfigContextRequest request) {
+      // Sort sub rule types for consistent cache keys
+      List<AnomalySubRuleType> sortedSubRuleTypes =
+          request.getSubRuleTypesList().stream()
+              .sorted(Comparator.comparing(Enum::ordinal))
+              .collect(Collectors.toList());
+
+      return new RequestData(request.getRuleEvaluationPoint(), sortedSubRuleTypes);
+    }
+
+    GetWebAppEvaluationConfigContextRequest getRequest() {
+      return GetWebAppEvaluationConfigContextRequest.newBuilder()
+          .setRuleEvaluationPoint(ruleEvaluationPoint)
+          .addAllSubRuleTypes(subRuleTypes)
+          .build();
+    }
   }
 
   /**

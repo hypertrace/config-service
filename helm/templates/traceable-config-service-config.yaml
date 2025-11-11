@@ -449,6 +449,13 @@ data:
         }
       }
     }
+    modsec.config.service = {
+      webAppConfigContextCache {
+        maxSize = {{ .Values.anomalyConfigServiceConfig.modsecConfigService.webAppConfigContextCache.maxSize }}
+        refreshAfterWriteDuration = {{ .Values.anomalyConfigServiceConfig.modsecConfigService.webAppConfigContextCache.refreshAfterWriteDuration }}
+        threadPoolSize = {{ .Values.anomalyConfigServiceConfig.modsecConfigService.webAppConfigContextCache.threadPoolSize }}
+      }
+    }
     trainer.config.service = {
       {{- if .Values.defaultApiNamingTrainerConfigs }}
       apiNamingTrainingConfigs = {{- .Values.defaultApiNamingTrainerConfigs | indent 6 }}
@@ -484,3 +491,4 @@ data:
     {{- if .Values.defaultTraceableEdgeUserAttributionVariables }}
     default.variables.user-attribution = {{- .Values.defaultTraceableEdgeUserAttributionVariables | indent 4 }}
     {{- end }}
+    get.configs.thread.pool.size = {{ .Values.traceableEdgeConfigService.getConfigsThreadPoolSize }}

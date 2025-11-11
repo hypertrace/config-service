@@ -3302,6 +3302,13 @@ anomalyConfigServiceConfig:
           disabled = false
         }
       ]
+  modsecConfigService:
+    webAppConfigContextCache:
+      maxSize: 400
+      refreshAfterWriteDuration: 5m
+      threadPoolSize: 4
+traceableEdgeConfigService:
+  getConfigsThreadPoolSize: 10
 fraudDataModelDerivationConfigService:
   defaultFraudDataModelDerivations: |-
     []

@@ -23,9 +23,13 @@ public class TraceableEdgeConfig {
   private static final String DEFAULT_USER_ATTRIBUTION_VARIABLES_CONFIG_NAME =
       "default.variables.user-attribution";
   private static final String USERID_BLOCKING_CONFIGS_CONFIG_NAME = "userid.blocking.configs";
+  private static final String GET_CONFIGS_THREAD_POOL_SIZE_CONFIG_NAME =
+      "get.configs.thread.pool.size";
+  private static final int DEFAULT_GET_CONFIGS_EXECUTOR_SERVICE_THREAD_POOL_SIZE = 10;
 
   private final Duration defaultAgentPollingFrequency;
   private final Map<String, EdgeConfigSupplierConfig> edgeConfigSupplierConfigs;
+  private final int getConfigsThreadPoolSize;
 
   @Inject
   public TraceableEdgeConfig(Config config) {
@@ -34,6 +38,14 @@ public class TraceableEdgeConfig {
     this.defaultAgentPollingFrequency =
         getDuration(edgeConfig, DEFAULT_AGENT_POLLING_FREQUENCY_CONFIG_NAME);
     this.edgeConfigSupplierConfigs = extractEdgeConfigSupplierConfigs(edgeConfig);
+    this.getConfigsThreadPoolSize =
+        edgeConfig.hasPath(GET_CONFIGS_THREAD_POOL_SIZE_CONFIG_NAME)
+            ? edgeConfig.getInt(GET_CONFIGS_THREAD_POOL_SIZE_CONFIG_NAME)
+            : DEFAULT_GET_CONFIGS_EXECUTOR_SERVICE_THREAD_POOL_SIZE;
+  }
+
+  public int getConfigsThreadPoolSize() {
+    return getConfigsThreadPoolSize;
   }
 
   public Duration getAgentPollingFrequency(String configType) {

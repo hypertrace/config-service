@@ -1,16 +1,22 @@
 package ai.traceable.anomaly.config.service.modsec.protection.engine;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigManager;
 import ai.traceable.anomaly.config.service.global.ruleinfo.WebAppRuleInfoProvider;
 import ai.traceable.anomaly.config.service.global.status.GlobalAnomalyConfigStatusManager;
+import ai.traceable.anomaly.config.service.modsec.ModsecConfigServiceConfig;
 import ai.traceable.anomaly.config.service.modsec.rules.ModsecManager;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
 import ai.traceable.anomaly.config.service.v1.AnomalyApiScope;
@@ -51,6 +57,7 @@ import ai.traceable.protection.processing.common.v1.EntityScope;
 import ai.traceable.protection.processing.common.v1.EntityType;
 import ai.traceable.protection.processing.common.v1.Scope;
 import ai.traceable.protection.processing.common.v1.ScopeContext;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -201,15 +208,20 @@ class WebAppEvaluationConfigContextManagerImplTest {
                     .build()));
 
     when(anomalyDetectionConfigManager.getAllGlobalResolvedScopedAnomalyDetectionConfigs(
-            eq(requestContext), any()))
+            any(RequestContext.class), any()))
         .thenReturn(
             List.of(getApiScopedAnomalyDetectionConfig(), getEnvScopedAnomalyDetectionConfig()));
 
     when(globalAnomalyConfigStatusManager.getAllScopedAnomalyConfigStatusConfigs(
-            eq(requestContext), any()))
+            any(RequestContext.class), any()))
         .thenReturn(List.of(getTenantScopedAnomalyConfigStatus()));
     when(featureCachingClient.isProtectionEngineWebAppProtectionEnabledForTenant(any()))
         .thenReturn(true);
+    ModsecConfigServiceConfig modsecConfigServiceConfig = mock(ModsecConfigServiceConfig.class);
+    when(modsecConfigServiceConfig.getWebAppConfigContextCacheMaxSize()).thenReturn(400);
+    when(modsecConfigServiceConfig.getWebAppConfigContextCacheRefreshAfterWriteDuration())
+        .thenReturn(Duration.ofMinutes(5));
+    when(modsecConfigServiceConfig.getWebAppConfigContextCacheThreadPoolSize()).thenReturn(4);
     configContextManager =
         new WebAppEvaluationConfigContextManagerImpl(
             modsecManager,
@@ -220,7 +232,8 @@ class WebAppEvaluationConfigContextManagerImplTest {
             webAppRuleInfoProvider,
             ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3,
             serviceMappingProvider,
-            apiMappingProvider);
+            apiMappingProvider,
+            modsecConfigServiceConfig);
   }
 
   private ScopedAnomalyConfigStatus getTenantScopedAnomalyConfigStatus() {
@@ -484,7 +497,7 @@ class WebAppEvaluationConfigContextManagerImplTest {
             .addScopes(Scope.newBuilder().setCustomerScope(CustomerScope.getDefaultInstance()))
             .build();
     when(anomalyDetectionConfigManager.getAllGlobalResolvedScopedAnomalyDetectionConfigs(
-            eq(requestContext), any()))
+            any(RequestContext.class), any()))
         .thenReturn(
             List.of(
                 getApiScopedAnomalyDetectionConfig(),
@@ -512,5 +525,289 @@ class WebAppEvaluationConfigContextManagerImplTest {
     WebAppEvaluationConfig evaluationConfig3 = result.getEvaluationConfigs(2);
     assertEquals(SECOND_ENVIRONMENT_SCOPE_CONTEXT, evaluationConfig3.getScopeContext());
     assertEquals(List.of("subRule2", "subRule3"), evaluationConfig3.getDisabledSecRuleIdsList());
+  }
+
+  @Test
+  void testCachingBehavior_CacheHit() {
+    // First call - should compute and cache
+    WebAppEvaluationConfigContext result1 =
+        configContextManager.getWebAppEvaluationConfigContext(
+            requestContext,
+            GetWebAppEvaluationConfigContextRequest.newBuilder()
+                .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+                .build());
+
+    // Second call with same parameters - should return cached result
+    WebAppEvaluationConfigContext result2 =
+        configContextManager.getWebAppEvaluationConfigContext(
+            requestContext,
+            GetWebAppEvaluationConfigContextRequest.newBuilder()
+                .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+                .build());
+
+    // Results should be the same instance (from cache)
+    assertSame(result1, result2);
+    assertEquals(result1, result2);
+
+    // Verify the underlying managers were only called once (during first call)
+    verify(anomalyDetectionConfigManager, times(1))
+        .getAllGlobalResolvedScopedAnomalyDetectionConfigs(any(RequestContext.class), any());
+  }
+
+  @Test
+  void testCachingBehavior_DifferentRequestParameters() {
+    // Call with EDGE evaluation point
+    WebAppEvaluationConfigContext result1 =
+        configContextManager.getWebAppEvaluationConfigContext(
+            requestContext,
+            GetWebAppEvaluationConfigContextRequest.newBuilder()
+                .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+                .build());
+
+    // Call with PLATFORM evaluation point - should be a cache miss
+    WebAppEvaluationConfigContext result2 =
+        configContextManager.getWebAppEvaluationConfigContext(
+            requestContext,
+            GetWebAppEvaluationConfigContextRequest.newBuilder()
+                .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+                .build());
+
+    // Results should be different instances (different cache keys)
+    assertNotSame(result1, result2);
+
+    // Verify the underlying managers were called twice (once for each cache key)
+    verify(anomalyDetectionConfigManager, times(2))
+        .getAllGlobalResolvedScopedAnomalyDetectionConfigs(any(RequestContext.class), any());
+  }
+
+  @Test
+  void testCachingBehavior_DifferentSubRuleTypes() {
+    // Call with specific sub rule types
+    WebAppEvaluationConfigContext result1 =
+        configContextManager.getWebAppEvaluationConfigContext(
+            requestContext,
+            GetWebAppEvaluationConfigContextRequest.newBuilder()
+                .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+                .addAllSubRuleTypes(
+                    List.of(
+                        AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE,
+                        AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK))
+                .build());
+
+    // Call with different sub rule types - should be a cache miss
+    WebAppEvaluationConfigContext result2 =
+        configContextManager.getWebAppEvaluationConfigContext(
+            requestContext,
+            GetWebAppEvaluationConfigContextRequest.newBuilder()
+                .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+                .addAllSubRuleTypes(List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR))
+                .build());
+
+    // Results should be different instances
+    assertNotSame(result1, result2);
+
+    // Verify the underlying managers were called twice
+    verify(anomalyDetectionConfigManager, times(2))
+        .getAllGlobalResolvedScopedAnomalyDetectionConfigs(any(RequestContext.class), any());
+  }
+
+  @Test
+  void testCachingBehavior_SubRuleTypesOrderDoesNotMatter() {
+    // Call with sub rule types in one order
+    WebAppEvaluationConfigContext result1 =
+        configContextManager.getWebAppEvaluationConfigContext(
+            requestContext,
+            GetWebAppEvaluationConfigContextRequest.newBuilder()
+                .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+                .addAllSubRuleTypes(
+                    List.of(
+                        AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK,
+                        AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE))
+                .build());
+
+    // Call with same sub rule types in different order - should be a cache hit
+    WebAppEvaluationConfigContext result2 =
+        configContextManager.getWebAppEvaluationConfigContext(
+            requestContext,
+            GetWebAppEvaluationConfigContextRequest.newBuilder()
+                .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+                .addAllSubRuleTypes(
+                    List.of(
+                        AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE,
+                        AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK))
+                .build());
+
+    // Results should be the same instance (cache hit due to sorted keys)
+    assertSame(result1, result2);
+
+    // Verify the underlying managers were only called once
+    verify(anomalyDetectionConfigManager, times(1))
+        .getAllGlobalResolvedScopedAnomalyDetectionConfigs(any(RequestContext.class), any());
+  }
+
+  @Test
+  void testInvalidateCacheForTenant() {
+    // First call - should compute and cache
+    WebAppEvaluationConfigContext result1 =
+        configContextManager.getWebAppEvaluationConfigContext(
+            requestContext,
+            GetWebAppEvaluationConfigContextRequest.newBuilder()
+                .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+                .build());
+
+    assertNotNull(result1);
+
+    // Invalidate cache for this tenant
+    configContextManager.invalidateCacheForTenant(TENANT_ID);
+
+    // Second call - should recompute (cache was invalidated)
+    WebAppEvaluationConfigContext result2 =
+        configContextManager.getWebAppEvaluationConfigContext(
+            requestContext,
+            GetWebAppEvaluationConfigContextRequest.newBuilder()
+                .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+                .build());
+
+    // Results should be different instances (cache was invalidated)
+    assertNotSame(result1, result2);
+
+    // Verify the underlying managers were called twice (once before invalidation, once after)
+    verify(anomalyDetectionConfigManager, times(2))
+        .getAllGlobalResolvedScopedAnomalyDetectionConfigs(any(RequestContext.class), any());
+  }
+
+  @Test
+  void testInvalidateCacheForTenant_DoesNotAffectOtherTenants() {
+    String otherTenantId = "other-tenant";
+    RequestContext otherRequestContext = RequestContext.forTenantId(otherTenantId);
+
+    // Call for first tenant
+    WebAppEvaluationConfigContext result1 =
+        configContextManager.getWebAppEvaluationConfigContext(
+            requestContext,
+            GetWebAppEvaluationConfigContextRequest.newBuilder()
+                .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+                .build());
+
+    // Call for second tenant
+    WebAppEvaluationConfigContext result2 =
+        configContextManager.getWebAppEvaluationConfigContext(
+            otherRequestContext,
+            GetWebAppEvaluationConfigContextRequest.newBuilder()
+                .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+                .build());
+
+    // Invalidate cache for first tenant only
+    configContextManager.invalidateCacheForTenant(TENANT_ID);
+
+    // Call again for first tenant - should recompute
+    WebAppEvaluationConfigContext result3 =
+        configContextManager.getWebAppEvaluationConfigContext(
+            requestContext,
+            GetWebAppEvaluationConfigContextRequest.newBuilder()
+                .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+                .build());
+
+    // Call again for second tenant - should return cached result
+    WebAppEvaluationConfigContext result4 =
+        configContextManager.getWebAppEvaluationConfigContext(
+            otherRequestContext,
+            GetWebAppEvaluationConfigContextRequest.newBuilder()
+                .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+                .build());
+
+    // First tenant: results should be different instances
+    assertNotSame(result1, result3);
+
+    // Second tenant: results should be the same instance (cache not invalidated)
+    assertSame(result2, result4);
+  }
+
+  @Test
+  void testInvalidateAllCache() {
+    // Make multiple calls with different parameters to populate cache
+    WebAppEvaluationConfigContext result1 =
+        configContextManager.getWebAppEvaluationConfigContext(
+            requestContext,
+            GetWebAppEvaluationConfigContextRequest.newBuilder()
+                .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+                .build());
+
+    WebAppEvaluationConfigContext result2 =
+        configContextManager.getWebAppEvaluationConfigContext(
+            requestContext,
+            GetWebAppEvaluationConfigContextRequest.newBuilder()
+                .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+                .build());
+
+    assertNotNull(result1);
+    assertNotNull(result2);
+
+    // Invalidate all cache entries
+    configContextManager.invalidateAllCache();
+
+    // Call again with same parameters - should recompute both
+    WebAppEvaluationConfigContext result3 =
+        configContextManager.getWebAppEvaluationConfigContext(
+            requestContext,
+            GetWebAppEvaluationConfigContextRequest.newBuilder()
+                .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+                .build());
+
+    WebAppEvaluationConfigContext result4 =
+        configContextManager.getWebAppEvaluationConfigContext(
+            requestContext,
+            GetWebAppEvaluationConfigContextRequest.newBuilder()
+                .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+                .build());
+
+    // All results should be different instances (cache was cleared)
+    assertNotSame(result1, result3);
+    assertNotSame(result2, result4);
+
+    // Verify the underlying managers were called 4 times total
+    // (2 before invalidation, 2 after)
+    verify(anomalyDetectionConfigManager, times(4))
+        .getAllGlobalResolvedScopedAnomalyDetectionConfigs(any(RequestContext.class), any());
+  }
+
+  @Test
+  void testCachingBehavior_DifferentTenants() {
+    String otherTenantId = "other-tenant";
+    RequestContext otherRequestContext = RequestContext.forTenantId(otherTenantId);
+
+    // Call for first tenant
+    WebAppEvaluationConfigContext result1 =
+        configContextManager.getWebAppEvaluationConfigContext(
+            requestContext,
+            GetWebAppEvaluationConfigContextRequest.newBuilder()
+                .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+                .build());
+
+    // Call for second tenant with same request parameters
+    WebAppEvaluationConfigContext result2 =
+        configContextManager.getWebAppEvaluationConfigContext(
+            otherRequestContext,
+            GetWebAppEvaluationConfigContextRequest.newBuilder()
+                .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+                .build());
+
+    // Results should be different instances (different tenants = different cache keys)
+    assertNotSame(result1, result2);
+
+    // Call again for first tenant - should return cached result
+    WebAppEvaluationConfigContext result3 =
+        configContextManager.getWebAppEvaluationConfigContext(
+            requestContext,
+            GetWebAppEvaluationConfigContextRequest.newBuilder()
+                .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+                .build());
+
+    // Should be same instance as first call (cache hit)
+    assertSame(result1, result3);
+
+    // Verify the underlying managers were called twice (once per tenant)
+    verify(anomalyDetectionConfigManager, times(2))
+        .getAllGlobalResolvedScopedAnomalyDetectionConfigs(any(RequestContext.class), any());
   }
 }
