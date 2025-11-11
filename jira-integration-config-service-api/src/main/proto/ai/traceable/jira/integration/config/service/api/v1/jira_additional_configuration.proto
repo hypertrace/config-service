@@ -16,6 +16,26 @@ message JiraTemplateDetails {
   string name = 1;
   string adf_format_value = 2;
   string markdown_format_value = 3;
+  repeated JiraFieldTemplate field_templates = 4;
+}
+
+message JiraFieldTemplate {
+  string field_key = 1;
+  bool is_enabled = 2;
+  // if not set, field is just visible with no default
+  oneof field_value_source {
+    StaticFieldValue static_value = 3;
+    TraceableField traceable_field = 4;
+  }
+}
+
+message StaticFieldValue {
+  string value_json = 1;
+}
+
+enum TraceableField {
+  TRACEABLE_FIELD_UNSPECIFIED = 0;
+  TRACEABLE_FIELD_VULNERABILITY_SEVERITY = 1;
 }
 
 message JiraProjectIssueConfiguration {

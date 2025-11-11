@@ -12,6 +12,7 @@ service JiraIntegrationConfigService {
   rpc DeleteJiraIntegration(DeleteJiraIntegrationRequest) returns (DeleteJiraIntegrationResponse) {}
 
   rpc AddJiraTemplate(AddJiraTemplateRequest) returns (AddJiraTemplateResponse) {}
+  rpc GetJiraTemplates(GetJiraTemplatesRequest) returns (GetJiraTemplatesResponse) {}
   rpc UpdateJiraTemplate(UpdateJiraTemplateRequest) returns (UpdateJiraTemplateResponse) {}
   rpc DeleteJiraTemplate(DeleteJiraTemplateRequest) returns (DeleteJiraTemplateResponse) {}
 
@@ -88,6 +89,15 @@ message DeleteJiraTemplateRequest {
 }
 
 message DeleteJiraTemplateResponse {}
+
+message GetJiraTemplatesRequest {
+  GetJiraTemplatesFilter filter = 1;
+}
+
+message GetJiraTemplatesFilter {
+  optional string template_id = 1;
+  repeated TraceableEntityType entity_types = 2;
+}
 
 message GetJiraTemplatesResponse {
   repeated JiraTemplate jira_templates = 1;
