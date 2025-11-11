@@ -40,6 +40,7 @@ import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesCo
 import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesConfigResponse;
 import ai.traceable.ast.config.service.v1.EditVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.EditVulnerabilityMetadataOverridesResponse;
+import ai.traceable.ast.config.service.v1.EnvironmentScope;
 import ai.traceable.ast.config.service.v1.GetAllCustomTestPluginsRequest;
 import ai.traceable.ast.config.service.v1.GetAllCustomTestPluginsResponse;
 import ai.traceable.ast.config.service.v1.GetAllVulnerabilityMetadataOverridesRequest;
@@ -55,6 +56,7 @@ import ai.traceable.ast.config.service.v1.IdentifyingAttributes;
 import ai.traceable.ast.config.service.v1.MutationOverride;
 import ai.traceable.ast.config.service.v1.OverrideConfig;
 import ai.traceable.ast.config.service.v1.OverrideScope;
+import ai.traceable.ast.config.service.v1.PluginScope;
 import ai.traceable.ast.config.service.v1.ScanPurgeConfig;
 import ai.traceable.ast.config.service.v1.StringList;
 import ai.traceable.ast.config.service.v1.SystemDefinedMutationOverride;
@@ -559,7 +561,7 @@ class AstConfigServiceImplTest {
     void should_get_all_custom_test_plugin_with_filter() {
       GetAllCustomTestPluginsRequest request =
           GetAllCustomTestPluginsRequest.newBuilder()
-              .setFilter(
+              .addFilters(
                   CustomTestPluginFilter.newBuilder()
                       .setIdFilter(StringList.newBuilder().addAllValues(List.of("id1"))))
               .build();
@@ -603,6 +605,197 @@ class AstConfigServiceImplTest {
                           CustomTestPlugin.newBuilder()
                               .setId("id1")
                               .setName("custom-test")
+                              .setCodeSnippetDetails(
+                                  CodeSnippetDetails.newBuilder()
+                                      .setCodeSnippet("code-snippet")
+                                      .setCodeSnippetType(
+                                          CodeSnippetType
+                                              .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT))
+                              .addAllSupportedApiTypes(DEFAULT_SUPPORTED_API_TYPES)
+                              .build()))
+                  .build());
+      verify(responseStreamObserver, times(1)).onCompleted();
+    }
+
+    @Test
+    @DisplayName("Should get all custom test plugin with environment filter on valid request")
+    void should_get_all_custom_test_plugin_with_environment_filter() {
+      GetAllCustomTestPluginsRequest request =
+          GetAllCustomTestPluginsRequest.newBuilder()
+              .addFilters(
+                  CustomTestPluginFilter.newBuilder()
+                      .setEnvIdFilter(StringList.newBuilder().addAllValues(List.of("env1"))))
+              .build();
+
+      when(customTestPluginStore.getAllConfigData(any()))
+          .thenReturn(
+              List.of(
+                  CustomTestPlugin.newBuilder()
+                      .setName("custom-test-env1")
+                      .setId("id1")
+                      .setPluginScope(
+                          PluginScope.newBuilder()
+                              .setEnvironmentScope(
+                                  EnvironmentScope.newBuilder()
+                                      .addAllEnvironmentIds(List.of("env1", "env2"))))
+                      .setCodeSnippetDetails(
+                          CodeSnippetDetails.newBuilder()
+                              .setCodeSnippet("code-snippet")
+                              .setCodeSnippetType(
+                                  CodeSnippetType
+                                      .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT))
+                      .build(),
+                  CustomTestPlugin.newBuilder()
+                      .setName("custom-test-env3")
+                      .setId("id2")
+                      .setPluginScope(
+                          PluginScope.newBuilder()
+                              .setEnvironmentScope(
+                                  EnvironmentScope.newBuilder()
+                                      .addAllEnvironmentIds(List.of("env3", "env4"))))
+                      .setCodeSnippetDetails(
+                          CodeSnippetDetails.newBuilder()
+                              .setCodeSnippet("code-snippet")
+                              .setCodeSnippetType(
+                                  CodeSnippetType
+                                      .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT))
+                      .build(),
+                  CustomTestPlugin.newBuilder()
+                      .setName("custom-test-no-scope")
+                      .setId("id3")
+                      .setCodeSnippetDetails(
+                          CodeSnippetDetails.newBuilder()
+                              .setCodeSnippet("code-snippet")
+                              .setCodeSnippetType(
+                                  CodeSnippetType
+                                      .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT))
+                      .build()));
+
+      StreamObserver<GetAllCustomTestPluginsResponse> responseStreamObserver =
+          mock(StreamObserver.class);
+
+      Runnable runnable =
+          () -> astConfigService.getAllCustomTestPlugins(request, responseStreamObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseStreamObserver, times(1))
+          .onNext(
+              GetAllCustomTestPluginsResponse.newBuilder()
+                  .addAllCustomTestPlugins(
+                      List.of(
+                          CustomTestPlugin.newBuilder()
+                              .setId("id1")
+                              .setName("custom-test-env1")
+                              .setPluginScope(
+                                  PluginScope.newBuilder()
+                                      .setEnvironmentScope(
+                                          EnvironmentScope.newBuilder()
+                                              .addAllEnvironmentIds(List.of("env1", "env2"))))
+                              .setCodeSnippetDetails(
+                                  CodeSnippetDetails.newBuilder()
+                                      .setCodeSnippet("code-snippet")
+                                      .setCodeSnippetType(
+                                          CodeSnippetType
+                                              .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT))
+                              .addAllSupportedApiTypes(DEFAULT_SUPPORTED_API_TYPES)
+                              .build(),
+                          CustomTestPlugin.newBuilder()
+                              .setId("id3")
+                              .setName("custom-test-no-scope")
+                              .setCodeSnippetDetails(
+                                  CodeSnippetDetails.newBuilder()
+                                      .setCodeSnippet("code-snippet")
+                                      .setCodeSnippetType(
+                                          CodeSnippetType
+                                              .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT))
+                              .addAllSupportedApiTypes(DEFAULT_SUPPORTED_API_TYPES)
+                              .build()))
+                  .build());
+      verify(responseStreamObserver, times(1)).onCompleted();
+    }
+
+    @Test
+    @DisplayName("Should get all custom test plugin with multiple filters")
+    void should_get_all_custom_test_plugin_with_multiple_filters() {
+      GetAllCustomTestPluginsRequest request =
+          GetAllCustomTestPluginsRequest.newBuilder()
+              .addFilters(
+                  CustomTestPluginFilter.newBuilder()
+                      .setIdFilter(StringList.newBuilder().addAllValues(List.of("id1", "id2"))))
+              .addFilters(
+                  CustomTestPluginFilter.newBuilder()
+                      .setEnvIdFilter(StringList.newBuilder().addAllValues(List.of("env1"))))
+              .build();
+
+      when(customTestPluginStore.getAllConfigData(any()))
+          .thenReturn(
+              List.of(
+                  CustomTestPlugin.newBuilder()
+                      .setName("custom-test-matching")
+                      .setId("id1")
+                      .setPluginScope(
+                          PluginScope.newBuilder()
+                              .setEnvironmentScope(
+                                  EnvironmentScope.newBuilder()
+                                      .addAllEnvironmentIds(List.of("env1"))))
+                      .setCodeSnippetDetails(
+                          CodeSnippetDetails.newBuilder()
+                              .setCodeSnippet("code-snippet")
+                              .setCodeSnippetType(
+                                  CodeSnippetType
+                                      .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT))
+                      .build(),
+                  CustomTestPlugin.newBuilder()
+                      .setName("custom-test-wrong-env")
+                      .setId("id2")
+                      .setPluginScope(
+                          PluginScope.newBuilder()
+                              .setEnvironmentScope(
+                                  EnvironmentScope.newBuilder()
+                                      .addAllEnvironmentIds(List.of("env2"))))
+                      .setCodeSnippetDetails(
+                          CodeSnippetDetails.newBuilder()
+                              .setCodeSnippet("code-snippet")
+                              .setCodeSnippetType(
+                                  CodeSnippetType
+                                      .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT))
+                      .build(),
+                  CustomTestPlugin.newBuilder()
+                      .setName("custom-test-wrong-id")
+                      .setId("id3")
+                      .setPluginScope(
+                          PluginScope.newBuilder()
+                              .setEnvironmentScope(
+                                  EnvironmentScope.newBuilder()
+                                      .addAllEnvironmentIds(List.of("env1"))))
+                      .setCodeSnippetDetails(
+                          CodeSnippetDetails.newBuilder()
+                              .setCodeSnippet("code-snippet")
+                              .setCodeSnippetType(
+                                  CodeSnippetType
+                                      .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT))
+                      .build()));
+
+      StreamObserver<GetAllCustomTestPluginsResponse> responseStreamObserver =
+          mock(StreamObserver.class);
+
+      Runnable runnable =
+          () -> astConfigService.getAllCustomTestPlugins(request, responseStreamObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseStreamObserver, times(1))
+          .onNext(
+              GetAllCustomTestPluginsResponse.newBuilder()
+                  .addAllCustomTestPlugins(
+                      List.of(
+                          CustomTestPlugin.newBuilder()
+                              .setId("id1")
+                              .setName("custom-test-matching")
+                              .setPluginScope(
+                                  PluginScope.newBuilder()
+                                      .setEnvironmentScope(
+                                          EnvironmentScope.newBuilder()
+                                              .addAllEnvironmentIds(List.of("env1"))))
                               .setCodeSnippetDetails(
                                   CodeSnippetDetails.newBuilder()
                                       .setCodeSnippet("code-snippet")

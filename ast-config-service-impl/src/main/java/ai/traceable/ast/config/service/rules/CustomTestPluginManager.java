@@ -18,8 +18,9 @@ import ai.traceable.ast.config.service.v1.UpdateCustomTestPluginRequest;
 import com.google.inject.Inject;
 import io.grpc.Status;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -44,17 +45,13 @@ public class CustomTestPluginManager {
     List<CustomTestPlugin> customTestPluginsList =
         customTestPluginStore.getAllConfigData(requestContext);
     customTestPluginsList = setDefaultSupportedApiTypes(customTestPluginsList);
-    CustomTestPluginFilter filter = request.getFilter();
-    switch (filter.getTypeCase()) {
-      case ID_FILTER:
-        return getIdFilteredCustomTestPlugins(customTestPluginsList, filter.getIdFilter());
-      case TYPE_NOT_SET: // when no filter is selected return all custom test plugins
-        return customTestPluginsList;
-      default:
-        log.error("Unknown CustomTestPluginFilter type: {}", filter.getTypeCase());
+
+    List<CustomTestPluginFilter> filters = request.getFiltersList();
+    if (!filters.isEmpty()) {
+      return applyFilters(customTestPluginsList, filters);
     }
 
-    return Collections.emptyList();
+    return customTestPluginsList;
   }
 
   List<CustomTestPlugin> setDefaultSupportedApiTypes(List<CustomTestPlugin> customTestPluginsList) {
@@ -145,11 +142,63 @@ public class CustomTestPluginManager {
         .build();
   }
 
+  private List<CustomTestPlugin> applyFilters(
+      List<CustomTestPlugin> customTestPluginsList, List<CustomTestPluginFilter> filters) {
+
+    for (CustomTestPluginFilter filter : filters) {
+      switch (filter.getTypeCase()) {
+        case ID_FILTER:
+          customTestPluginsList =
+              getIdFilteredCustomTestPlugins(customTestPluginsList, filter.getIdFilter());
+          break;
+        case ENV_ID_FILTER:
+          customTestPluginsList =
+              getEnvironmentFilteredCustomTestPlugins(
+                  customTestPluginsList, filter.getEnvIdFilter());
+          break;
+        case TYPE_NOT_SET:
+          break;
+        default:
+          throw new IllegalArgumentException(
+              "Unknown CustomTestPluginFilter type: " + filter.getTypeCase());
+      }
+    }
+
+    return customTestPluginsList;
+  }
+
   private List<CustomTestPlugin> getIdFilteredCustomTestPlugins(
       List<CustomTestPlugin> customTestPluginsList, StringList idFilter) {
-    List<String> customTestPluginIds = idFilter.getValuesList();
+    Set<String> pluginIdsToFilter = new HashSet<>(idFilter.getValuesList());
     return customTestPluginsList.stream()
-        .filter(customTestPlugin -> customTestPluginIds.contains(customTestPlugin.getId()))
+        .filter(customTestPlugin -> pluginIdsToFilter.contains(customTestPlugin.getId()))
+        .collect(toUnmodifiableList());
+  }
+
+  private List<CustomTestPlugin> getEnvironmentFilteredCustomTestPlugins(
+      List<CustomTestPlugin> customTestPluginsList, StringList envIdFilter) {
+    Set<String> requestedEnvironmentIds = new HashSet<>(envIdFilter.getValuesList());
+
+    return customTestPluginsList.stream()
+        .filter(
+            customTestPlugin -> {
+
+              // If plugin has environment scope, check if any requested env matches
+              if (!customTestPlugin
+                  .getPluginScope()
+                  .getEnvironmentScope()
+                  .getEnvironmentIdsList()
+                  .isEmpty()) {
+                List<String> pluginEnvironmentIds =
+                    customTestPlugin.getPluginScope().getEnvironmentScope().getEnvironmentIdsList();
+
+                // Return true if there's any intersection between requested and plugin environments
+                return pluginEnvironmentIds.stream().anyMatch(requestedEnvironmentIds::contains);
+              }
+
+              // If plugin has scope but not environment scope, include it
+              return true;
+            })
         .collect(toUnmodifiableList());
   }
 }
