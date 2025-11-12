@@ -92,7 +92,8 @@ public class AttributeResolutionConfigValidatorImpl implements AttributeResoluti
     validateAttributeResolutionConfigData(config.getData());
   }
 
-  private void validateAttributeResolutionConfigData(AttributeResolutionConfigData data) {
+  @Override
+  public void validateAttributeResolutionConfigData(AttributeResolutionConfigData data) {
     if (data.getName().isBlank()) {
       throw Status.INVALID_ARGUMENT
           .withDescription(

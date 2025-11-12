@@ -4,12 +4,17 @@ import ai.traceable.attribute.resolution.config.service.v1.AttributeResolutionCo
 import ai.traceable.attribute.resolution.config.service.v1.CreateAttributeResolutionConfigRequest;
 import ai.traceable.attribute.resolution.config.service.v1.GetAttributeResolutionConfigsFilter;
 import ai.traceable.attribute.resolution.config.service.v1.UpdateAttributeResolutionConfigRequest;
+import ai.traceable.attribute.resolution.config.service.v1.config.AttributeResolutionDefaultConfig;
 import ai.traceable.attribute.resolution.config.service.v1.store.AttributeResolutionConfigStore;
 import ai.traceable.config.utils.UuidGenerator;
 import io.grpc.Status;
 import jakarta.inject.Inject;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.DeletedConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -18,18 +23,22 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public class AttributeResolutionConfigManagerImpl implements AttributeResolutionConfigManager {
   private final UuidGenerator uuidGenerator;
   private final AttributeResolutionConfigStore store;
+  private final AttributeResolutionDefaultConfig defaultConfig;
 
   @Inject
   public AttributeResolutionConfigManagerImpl(
-      UuidGenerator uuidGenerator, AttributeResolutionConfigStore store) {
+      UuidGenerator uuidGenerator,
+      AttributeResolutionConfigStore store,
+      AttributeResolutionDefaultConfig defaultConfig) {
     this.uuidGenerator = uuidGenerator;
     this.store = store;
+    this.defaultConfig = defaultConfig;
   }
 
   @Override
   public List<AttributeResolutionConfig> getAttributeResolutionConfigs(
       RequestContext context, GetAttributeResolutionConfigsFilter filter) {
-    return store.getAllConfigData(context, filter);
+    return mergeAttributeResolutionConfigs(filter, store.getAllConfigData(context, filter));
   }
 
   @Override
@@ -48,13 +57,17 @@ public class AttributeResolutionConfigManagerImpl implements AttributeResolution
     AttributeResolutionConfig oldConfig =
         store
             .getData(context, id)
-            .orElseThrow(
+            .orElseGet(
                 () ->
-                    Status.NOT_FOUND
-                        .withDescription(
-                            String.format(
-                                "Attribute resolution config does not exist with ID : %s", id))
-                        .asRuntimeException());
+                    Optional.ofNullable(getDefaultConfigById(id))
+                        .orElseThrow(
+                            () ->
+                                Status.NOT_FOUND
+                                    .withDescription(
+                                        String.format(
+                                            "Unable to update as AttributeResolutionConfig with id = %s does not exist",
+                                            id))
+                                    .asRuntimeException()));
     AttributeResolutionConfig updated =
         oldConfig.toBuilder().setData(request.getConfig().getData()).build();
     return upsert(context, updated);
@@ -62,6 +75,13 @@ public class AttributeResolutionConfigManagerImpl implements AttributeResolution
 
   @Override
   public void deleteAttributeResolutionConfig(RequestContext context, String id) {
+    if (isDefaultConfig(id)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              String.format(
+                  "Deleting default attribute resolution config is not allowed with ID : %s", id))
+          .asRuntimeException();
+    }
     store
         .deleteObject(context, id)
         .map(DeletedConfigObject::getDeletedData)
@@ -70,12 +90,44 @@ public class AttributeResolutionConfigManagerImpl implements AttributeResolution
                 Status.NOT_FOUND
                     .withDescription(
                         String.format(
-                            "Attribute resolution config does not exist with ID : {}", id))
+                            "Attribute resolution config does not exist with ID : %s", id))
                     .asRuntimeException(context.buildTrailers()));
   }
 
   private AttributeResolutionConfig upsert(
       RequestContext context, AttributeResolutionConfig config) {
     return store.upsertObject(context, config).getData();
+  }
+
+  private List<AttributeResolutionConfig> mergeAttributeResolutionConfigs(
+      List<AttributeResolutionConfig> userConfigs) {
+    Map<String, AttributeResolutionConfig> mergedConfigsMap =
+        new LinkedHashMap<>(defaultConfig.getDefaultAttributeResolutionConfigMap());
+    userConfigs.forEach(config -> mergedConfigsMap.put(config.getId(), config));
+    return mergedConfigsMap.values().stream().collect(Collectors.toUnmodifiableList());
+  }
+
+  private List<AttributeResolutionConfig> mergeAttributeResolutionConfigs(
+      GetAttributeResolutionConfigsFilter filter, List<AttributeResolutionConfig> userConfigs) {
+    return mergeAttributeResolutionConfigs(userConfigs).stream()
+        .filter(config -> applyFilter(filter, config))
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  private boolean applyFilter(
+      GetAttributeResolutionConfigsFilter filter,
+      AttributeResolutionConfig attributeResolutionConfig) {
+    return Optional.of(attributeResolutionConfig)
+        .filter(config -> config.getData().getEnabled() == filter.getEnabled())
+        .filter(config -> config.getData().getEntityType() == config.getData().getEntityType())
+        .isPresent();
+  }
+
+  private AttributeResolutionConfig getDefaultConfigById(String id) {
+    return defaultConfig.getDefaultAttributeResolutionConfigMap().get(id);
+  }
+
+  private boolean isDefaultConfig(String id) {
+    return defaultConfig.getDefaultAttributeResolutionConfigMap().containsKey(id);
   }
 }
