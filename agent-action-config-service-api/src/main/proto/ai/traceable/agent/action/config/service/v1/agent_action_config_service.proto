@@ -3,51 +3,61 @@ syntax = "proto3";
 package ai.traceable.agent.action.config.service.v1;
 
 import "ai/traceable/agent/action/config/service/v1/agent_action_config.proto";
+import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
+import "ai/traceable/graphql/autogen/schema/annotations/method/v1/graphql_method_options.proto";
 import "google/protobuf/timestamp.proto";
 
 option java_multiple_files = true;
 
 service AgentActionConfigService {
-  rpc CreateAgentAction(CreateAgentActionRequest) returns (CreateAgentActionResponse);
-  rpc GetAgentActions(GetAgentActionsRequest) returns (GetAgentActionsResponse);
-  rpc UpdateAgentAction(UpdateAgentActionRequest) returns (UpdateAgentActionResponse);
-  rpc DeleteAgentAction(DeleteAgentActionRequest) returns (DeleteAgentActionResponse);
+  rpc CreateAgentAction(CreateAgentActionRequest) returns (CreateAgentActionResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "Create a new agent action";
+  }
+  rpc GetAgentActions(GetAgentActionsRequest) returns (GetAgentActionsResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "Get agent actions for matching filters";
+  }
+  rpc UpdateAgentAction(UpdateAgentActionRequest) returns (UpdateAgentActionResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "Update an agent action";
+  }
+  rpc DeleteAgentAction(DeleteAgentActionRequest) returns (DeleteAgentActionResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "Delete an agent action";
+  }
 }
 
 message CreateAgentActionRequest {
-  AgentActionInput action = 1;
+  AgentActionInput action = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Agent action input to create"];
 }
 
 message CreateAgentActionResponse {
-  AgentAction action = 1;
+  AgentAction action = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Created agent action"];
 }
 
 message GetAgentActionsRequest {
-  GetAgentActionsFilter filter = 1;
+  GetAgentActionsFilter filter = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Filter criteria for retrieving agent actions"];
 }
 
 message GetAgentActionsResponse {
-  repeated AgentAction actions = 1;
+  repeated AgentAction actions = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of agent actions matching the filter"];
 }
 
 message UpdateAgentActionRequest {
-  string id = 1;
-  AgentActionInput action = 2;
+  string id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Id of the agent action to update"];
+  AgentActionInput action = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Updated agent action input"];
 }
 
 message UpdateAgentActionResponse {
-  AgentAction action = 1;
+  AgentAction action = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Updated agent action"];
 }
 
 message DeleteAgentActionRequest {
-  string id = 1;
+  string id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Id of the agent action to delete"];
 }
 
 message DeleteAgentActionResponse {}
 
 message AgentActionInput {
-  repeated AgentActionDetails details = 1;
-  google.protobuf.Timestamp expiration_timestamp = 2;
+  repeated AgentActionDetails details = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of action details to be executed"];
+  google.protobuf.Timestamp expiration_timestamp = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Timestamp when this action expires"];
   // scope of agents for this action.
-  AgentScope scope = 3;
+  AgentScope scope = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Scope of agents for this action"];
 }

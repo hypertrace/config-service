@@ -2,29 +2,30 @@ syntax = "proto3";
 
 package ai.traceable.agent.action.config.service.v1;
 
+import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
 import "google/protobuf/timestamp.proto";
 
 option java_multiple_files = true;
 
 message AgentAction {
-  string id = 1;
-  repeated AgentActionDetails action_details = 2;
-  google.protobuf.Timestamp expiration_timestamp = 3;
+  string id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Id of the AgentAction"];
+  repeated AgentActionDetails action_details = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of action details to be executed"];
+  google.protobuf.Timestamp expiration_timestamp = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Timestamp when this action expires"];
   // scope of agents for this action.
-  AgentScope scope = 4;
+  AgentScope scope = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Scope of agents for this action"];
 }
 
 message AgentActionDetails {
   oneof details {
-    ConfigMutationAction update_config_action = 1;
-    FetchDebugInformationAction fetch_debug_information_action = 2;
-    RestartAgentAction restart_agent_action = 3;
+    ConfigMutationAction update_config_action = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Action to update configuration"];
+    FetchDebugInformationAction fetch_debug_information_action = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Action to fetch debug information"];
+    RestartAgentAction restart_agent_action = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Action to restart the agent"];
   }
 }
 
 message ConfigMutationAction {
   // list of environment key, value pairs to be applied on an agent instance.
-  map<string, string> environment_variables = 1;
+  map<string, string> environment_variables = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of environment key-value pairs to be applied on an agent instance"];
 }
 
 message FetchDebugInformationAction {}
@@ -35,22 +36,22 @@ message AgentScope {
   // name of the targeted deployment.
   // This is just to group different agent instances on data collection side
   // and doesn't necessarily match the actual deployment name or id.
-  optional string deployment_name = 1;
+  optional string deployment_name = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Name of the targeted deployment"];
   // id unique to the specific agent instance.
-  optional string service_instance_id = 2;
+  optional string service_instance_id = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Id unique to the specific agent instance"];
   // name of module (agent) requesting for configs.
-  optional string module_name = 3;
+  optional string module_name = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Name of module (agent) requesting for configs"];
   // version of module (agent) requesting for configs.
-  optional string module_version = 4;
+  optional string module_version = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Version of module (agent) requesting for configs"];
 }
 
 message GetAgentActionsFilter {
-  CompositeFilter filter = 1;
+  CompositeFilter filter = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Composite filter for agent actions"];
 }
 
 message CompositeFilter {
-  LogicalOperator operator = 1;
-  repeated Filter filters = 2;
+  LogicalOperator operator = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Logical operator to combine filters"];
+  repeated Filter filters = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of filters to be combined"];
 
   enum LogicalOperator {
     LOGICAL_OPERATOR_UNSPECIFIED = 0;
@@ -61,14 +62,14 @@ message CompositeFilter {
 
 message Filter {
   oneof filter {
-    CompositeFilter children = 1;
-    LeafFilter leaf = 2;
+    CompositeFilter children = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Nested composite filter"];
+    LeafFilter leaf = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Leaf filter with specific criteria"];
   }
 }
 
 message LeafFilter {
-  optional string deployment_name = 1;
-  optional string service_instance_id = 2;
-  optional string module_name = 3;
-  optional string module_version = 4;
+  optional string deployment_name = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Name of the deployment to filter by"];
+  optional string service_instance_id = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Service instance id to filter by"];
+  optional string module_name = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Module name to filter by"];
+  optional string module_version = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Module version to filter by"];
 }
