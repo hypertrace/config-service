@@ -1,5 +1,13 @@
 package ai.traceable.attribute.resolution.config.service.v1.validation;
 
+import static ai.traceable.attribute.resolution.config.service.v1.KeyLocation.KEY_LOCATION_URL_PATH;
+import static ai.traceable.attribute.resolution.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_CONTAINS;
+import static ai.traceable.attribute.resolution.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_ENDS_WITH;
+import static ai.traceable.attribute.resolution.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_EQUALS;
+import static ai.traceable.attribute.resolution.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_NOT_CONTAINS;
+import static ai.traceable.attribute.resolution.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_NOT_EQUALS;
+import static ai.traceable.attribute.resolution.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_REGEX_MATCH;
+import static ai.traceable.attribute.resolution.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_STARTS_WITH;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
@@ -14,9 +22,11 @@ import ai.traceable.attribute.resolution.config.service.v1.EnvironmentScope;
 import ai.traceable.attribute.resolution.config.service.v1.Filter;
 import ai.traceable.attribute.resolution.config.service.v1.GetAttributeResolutionConfigsRequest;
 import ai.traceable.attribute.resolution.config.service.v1.KeyFilter;
+import ai.traceable.attribute.resolution.config.service.v1.KeyLocation;
 import ai.traceable.attribute.resolution.config.service.v1.LogicalFilter;
 import ai.traceable.attribute.resolution.config.service.v1.MatchGroupOperation;
 import ai.traceable.attribute.resolution.config.service.v1.RelationalFilter;
+import ai.traceable.attribute.resolution.config.service.v1.RelationalOperator;
 import ai.traceable.attribute.resolution.config.service.v1.ScopedCondition;
 import ai.traceable.attribute.resolution.config.service.v1.ServiceScope;
 import ai.traceable.attribute.resolution.config.service.v1.StaticAction;
@@ -25,11 +35,23 @@ import ai.traceable.attribute.resolution.config.service.v1.ValueFilter;
 import ai.traceable.config.utils.RegexValidator;
 import io.grpc.Status;
 import jakarta.inject.Inject;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @AllArgsConstructor(onConstructor_ = {@Inject})
 public class AttributeResolutionConfigValidatorImpl implements AttributeResolutionConfigValidator {
+  private static final List<KeyLocation> NON_VALUE_FILTER_KEY_LOCATION =
+      List.of(KEY_LOCATION_URL_PATH);
+  private static final List<RelationalOperator> ALLOWED_URL_OPERATORS =
+      List.of(
+          RELATIONAL_OPERATOR_EQUALS,
+          RELATIONAL_OPERATOR_NOT_EQUALS,
+          RELATIONAL_OPERATOR_CONTAINS,
+          RELATIONAL_OPERATOR_STARTS_WITH,
+          RELATIONAL_OPERATOR_ENDS_WITH,
+          RELATIONAL_OPERATOR_REGEX_MATCH,
+          RELATIONAL_OPERATOR_NOT_CONTAINS);
 
   @Override
   public void validateOrThrow(
@@ -197,7 +219,9 @@ public class AttributeResolutionConfigValidatorImpl implements AttributeResoluti
 
   private void validateRelationalFilter(RelationalFilter relationalFilter) {
     validateKeyFilter(relationalFilter.getKeyFilter());
-    validateValueFilter(relationalFilter.getValueFilter());
+    if (!NON_VALUE_FILTER_KEY_LOCATION.contains(relationalFilter.getKeyFilter().getLocation())) {
+      validateValueFilter(relationalFilter.getValueFilter());
+    }
   }
 
   private void validateValueFilter(ValueFilter valueFilter) {
@@ -216,6 +240,15 @@ public class AttributeResolutionConfigValidatorImpl implements AttributeResoluti
     if (!keyFilter.hasValue()) {
       throw Status.INVALID_ARGUMENT
           .withDescription(String.format("Value should be present in key filter : %s", keyFilter))
+          .asRuntimeException();
+    }
+
+    if (keyFilter.getLocation().equals(KEY_LOCATION_URL_PATH)
+        && !ALLOWED_URL_OPERATORS.contains(keyFilter.getOperator())) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              String.format(
+                  "Invalid operator %s for key location url path", keyFilter.getOperator()))
           .asRuntimeException();
     }
   }

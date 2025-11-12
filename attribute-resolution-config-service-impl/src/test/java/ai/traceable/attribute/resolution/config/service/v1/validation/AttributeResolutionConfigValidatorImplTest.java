@@ -1,7 +1,16 @@
 package ai.traceable.attribute.resolution.config.service.v1.validation;
 
 import static ai.traceable.attribute.resolution.config.service.v1.KeyLocation.KEY_LOCATION_REQUEST_HEADER;
+import static ai.traceable.attribute.resolution.config.service.v1.KeyLocation.KEY_LOCATION_URL_PATH;
+import static ai.traceable.attribute.resolution.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_CONTAINS;
+import static ai.traceable.attribute.resolution.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_ENDS_WITH;
 import static ai.traceable.attribute.resolution.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_EQUALS;
+import static ai.traceable.attribute.resolution.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_EXISTS;
+import static ai.traceable.attribute.resolution.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_IN;
+import static ai.traceable.attribute.resolution.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_NOT_CONTAINS;
+import static ai.traceable.attribute.resolution.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_NOT_EQUALS;
+import static ai.traceable.attribute.resolution.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_REGEX_MATCH;
+import static ai.traceable.attribute.resolution.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_STARTS_WITH;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
@@ -24,6 +33,7 @@ import ai.traceable.attribute.resolution.config.service.v1.LogicalOperator;
 import ai.traceable.attribute.resolution.config.service.v1.MatchGroupOperation;
 import ai.traceable.attribute.resolution.config.service.v1.NoOperation;
 import ai.traceable.attribute.resolution.config.service.v1.RelationalFilter;
+import ai.traceable.attribute.resolution.config.service.v1.RelationalOperator;
 import ai.traceable.attribute.resolution.config.service.v1.ScopedCondition;
 import ai.traceable.attribute.resolution.config.service.v1.ServiceScope;
 import ai.traceable.attribute.resolution.config.service.v1.StaticAction;
@@ -487,5 +497,124 @@ class AttributeResolutionConfigValidatorImplTest {
 
   private ServiceScope createValidServiceScope() {
     return ServiceScope.newBuilder().addServiceIds("service-123").build();
+  }
+
+  @ParameterizedTest(name = "testValidateKeyFilter_UrlPath_ValidOperator_{0}")
+  @MethodSource("provideValidUrlPathOperators")
+  void testValidateKeyFilter_UrlPath_ValidOperators(String testName, RelationalOperator operator) {
+    KeyFilter keyFilter = createUrlPathKeyFilter(operator);
+    RelationalFilter relationalFilter =
+        RelationalFilter.newBuilder().setKeyFilter(keyFilter).build();
+    Filter filter = Filter.newBuilder().setRelationalFilter(relationalFilter).build();
+    ScopedCondition scopedCondition =
+        createValidScopedCondition().toBuilder().setFilter(filter).build();
+    AttributeResolutionConfigData data =
+        createValidAttributeResolutionConfigData().toBuilder()
+            .clearScopedConditions()
+            .addScopedConditions(scopedCondition)
+            .build();
+    CreateAttributeResolutionConfigRequest request =
+        CreateAttributeResolutionConfigRequest.newBuilder().setData(data).build();
+
+    assertDoesNotThrow(() -> validator.validateOrThrow(requestContext, request));
+  }
+
+  @ParameterizedTest(name = "testValidateKeyFilter_UrlPath_InvalidOperator_{0}")
+  @MethodSource("provideInvalidUrlPathOperators")
+  void testValidateKeyFilter_UrlPath_InvalidOperators(
+      String testName, RelationalOperator operator) {
+    KeyFilter keyFilter = createUrlPathKeyFilter(operator);
+    RelationalFilter relationalFilter =
+        RelationalFilter.newBuilder().setKeyFilter(keyFilter).build();
+    Filter filter = Filter.newBuilder().setRelationalFilter(relationalFilter).build();
+    ScopedCondition scopedCondition =
+        createValidScopedCondition().toBuilder().setFilter(filter).build();
+    AttributeResolutionConfigData data =
+        createValidAttributeResolutionConfigData().toBuilder()
+            .clearScopedConditions()
+            .addScopedConditions(scopedCondition)
+            .build();
+    CreateAttributeResolutionConfigRequest request =
+        CreateAttributeResolutionConfigRequest.newBuilder().setData(data).build();
+
+    assertThrows(
+        StatusRuntimeException.class, () -> validator.validateOrThrow(requestContext, request));
+  }
+
+  @Test
+  void testValidateKeyFilter_UrlPath_NoValueFilter() {
+    // URL path location should not require a value filter
+    KeyFilter keyFilter = createUrlPathKeyFilter(RELATIONAL_OPERATOR_EQUALS);
+    RelationalFilter relationalFilter =
+        RelationalFilter.newBuilder()
+            .setKeyFilter(keyFilter)
+            // No value filter set for URL path
+            .build();
+    Filter filter = Filter.newBuilder().setRelationalFilter(relationalFilter).build();
+    ScopedCondition scopedCondition =
+        createValidScopedCondition().toBuilder().setFilter(filter).build();
+    AttributeResolutionConfigData data =
+        createValidAttributeResolutionConfigData().toBuilder()
+            .clearScopedConditions()
+            .addScopedConditions(scopedCondition)
+            .build();
+    CreateAttributeResolutionConfigRequest request =
+        CreateAttributeResolutionConfigRequest.newBuilder().setData(data).build();
+
+    assertDoesNotThrow(() -> validator.validateOrThrow(requestContext, request));
+  }
+
+  @Test
+  void testValidateKeyFilter_NonUrlPath_RequiresValueFilter() {
+    // Non-URL path locations should require a value filter
+    KeyFilter keyFilter =
+        KeyFilter.newBuilder()
+            .setLocation(KEY_LOCATION_REQUEST_HEADER)
+            .setOperator(RELATIONAL_OPERATOR_EQUALS)
+            .setValue(Value.newBuilder().setStringValue("/api/test"))
+            .build();
+    RelationalFilter relationalFilter =
+        RelationalFilter.newBuilder()
+            .setKeyFilter(keyFilter)
+            // No value filter set for non-URL path location
+            .build();
+    Filter filter = Filter.newBuilder().setRelationalFilter(relationalFilter).build();
+    ScopedCondition scopedCondition =
+        createValidScopedCondition().toBuilder().setFilter(filter).build();
+    AttributeResolutionConfigData data =
+        createValidAttributeResolutionConfigData().toBuilder()
+            .clearScopedConditions()
+            .addScopedConditions(scopedCondition)
+            .build();
+    CreateAttributeResolutionConfigRequest request =
+        CreateAttributeResolutionConfigRequest.newBuilder().setData(data).build();
+
+    assertThrows(
+        StatusRuntimeException.class, () -> validator.validateOrThrow(requestContext, request));
+  }
+
+  private static Stream<Arguments> provideValidUrlPathOperators() {
+    return Stream.of(
+        Arguments.of("Equals", RELATIONAL_OPERATOR_EQUALS),
+        Arguments.of("NotEquals", RELATIONAL_OPERATOR_NOT_EQUALS),
+        Arguments.of("Contains", RELATIONAL_OPERATOR_CONTAINS),
+        Arguments.of("StartsWith", RELATIONAL_OPERATOR_STARTS_WITH),
+        Arguments.of("EndsWith", RELATIONAL_OPERATOR_ENDS_WITH),
+        Arguments.of("RegexMatch", RELATIONAL_OPERATOR_REGEX_MATCH),
+        Arguments.of("NotContains", RELATIONAL_OPERATOR_NOT_CONTAINS));
+  }
+
+  private static Stream<Arguments> provideInvalidUrlPathOperators() {
+    return Stream.of(
+        Arguments.of("In", RELATIONAL_OPERATOR_IN),
+        Arguments.of("Exists", RELATIONAL_OPERATOR_EXISTS));
+  }
+
+  private KeyFilter createUrlPathKeyFilter(RelationalOperator operator) {
+    return KeyFilter.newBuilder()
+        .setLocation(KEY_LOCATION_URL_PATH)
+        .setOperator(operator)
+        .setValue(Value.newBuilder().setStringValue("/api/test"))
+        .build();
   }
 }
