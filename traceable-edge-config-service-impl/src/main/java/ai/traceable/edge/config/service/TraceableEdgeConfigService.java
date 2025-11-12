@@ -21,6 +21,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import io.grpc.stub.StreamObserver;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -136,11 +137,12 @@ public class TraceableEdgeConfigService
         futures.add(future);
       }
 
-      // Wait for all futures to complete and collect results in original order
+      // Wait for all futures to complete
       List<ConfigResponseElement> responseElements =
           futures.stream()
               .map(CompletableFuture::join)
               .filter(Objects::nonNull)
+              .sorted(Comparator.comparing(ConfigResponseElement::getHash))
               .collect(Collectors.toList());
       String hash =
           uuidGenerator.generateId(
