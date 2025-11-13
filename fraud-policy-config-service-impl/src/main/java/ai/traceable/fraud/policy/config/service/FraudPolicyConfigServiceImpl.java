@@ -25,7 +25,6 @@ import ai.traceable.fraud.policy.config.service.v1.UpdateFraudPolicyRequest;
 import ai.traceable.fraud.policy.config.service.v1.UpdateFraudPolicyResponse;
 import ai.traceable.fraud.policy.config.service.v1.UpsertFraudPolicyRequest;
 import ai.traceable.fraud.policy.config.service.v1.UpsertFraudPolicyResponse;
-import ai.traceable.fraud.policy.config.service.validation.ApiAccessAnomalyConfigServiceRequestValidator;
 import ai.traceable.fraud.policy.config.service.validation.FraudPolicyConfigRequestValidator;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -39,18 +38,14 @@ class FraudPolicyConfigServiceImpl
     extends FraudPolicyConfigServiceGrpc.FraudPolicyConfigServiceImplBase {
 
   private final FraudPolicyConfigStoreManager fraudPolicyConfigStoreManager;
-  private final FraudPolicyConfigRequestValidator requestValidator;
 
   private final ApiAccessAnomalyConfigStoreManager apiAccessAnomalyConfigStoreManager;
 
   @Inject
   FraudPolicyConfigServiceImpl(
       FraudPolicyConfigStoreManager fraudPolicyConfigStoreManager,
-      FraudPolicyConfigRequestValidator requestValidator,
-      ApiAccessAnomalyConfigStoreManager apiAccessAnomalyConfigStoreManager,
-      ApiAccessAnomalyConfigServiceRequestValidator apiAccessAnomalyConfigServiceRequestValidator) {
+      ApiAccessAnomalyConfigStoreManager apiAccessAnomalyConfigStoreManager) {
     this.fraudPolicyConfigStoreManager = fraudPolicyConfigStoreManager;
-    this.requestValidator = requestValidator;
     this.apiAccessAnomalyConfigStoreManager = apiAccessAnomalyConfigStoreManager;
   }
 
@@ -60,7 +55,8 @@ class FraudPolicyConfigServiceImpl
       StreamObserver<CreateFraudPolicyResponse> responseObserver) {
     RequestContext requestContext = RequestContext.CURRENT.get();
     try {
-      this.requestValidator.validateRequestContext(requestContext);
+      FraudPolicyConfigRequestValidator.validateRequestContext(requestContext);
+      FraudPolicyConfigRequestValidator.validateRawSQLQuery(request.getFraudPolicy());
       responseObserver.onNext(
           fraudPolicyConfigStoreManager.createFraudPolicy(requestContext, request));
       responseObserver.onCompleted();
@@ -81,7 +77,8 @@ class FraudPolicyConfigServiceImpl
       StreamObserver<UpsertFraudPolicyResponse> responseObserver) {
     RequestContext requestContext = RequestContext.CURRENT.get();
     try {
-      this.requestValidator.validateRequestContext(requestContext);
+      FraudPolicyConfigRequestValidator.validateRequestContext(requestContext);
+      FraudPolicyConfigRequestValidator.validateRawSQLQuery(request.getFraudPolicy());
       responseObserver.onNext(
           fraudPolicyConfigStoreManager.upsertFraudPolicy(requestContext, request));
       responseObserver.onCompleted();
@@ -102,7 +99,7 @@ class FraudPolicyConfigServiceImpl
       StreamObserver<UpdateFraudPolicyResponse> responseObserver) {
     RequestContext requestContext = RequestContext.CURRENT.get();
     try {
-      this.requestValidator.validateRequestContext(requestContext);
+      FraudPolicyConfigRequestValidator.validateRequestContext(requestContext);
       responseObserver.onNext(
           fraudPolicyConfigStoreManager.updateFraudPolicy(requestContext, request));
       responseObserver.onCompleted();
@@ -123,7 +120,7 @@ class FraudPolicyConfigServiceImpl
       StreamObserver<DeleteFraudPolicyResponse> responseObserver) {
     RequestContext requestContext = RequestContext.CURRENT.get();
     try {
-      this.requestValidator.validateRequestContext(requestContext);
+      FraudPolicyConfigRequestValidator.validateRequestContext(requestContext);
       responseObserver.onNext(
           fraudPolicyConfigStoreManager.deleteFraudPolicyList(requestContext, request));
       responseObserver.onCompleted();
