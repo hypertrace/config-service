@@ -35,6 +35,7 @@ dependencies {
   implementation(commonLibs.traceable.protection.rules.apiprotect)
   implementation(commonLibs.traceable.protection.rules.aiapp)
   implementation(commonLibs.traceable.protection.engine.config.webapp)
+  implementation(commonLibs.traceable.protection.engine.config.apiprotect)
   implementation(commonLibs.traceable.protection.engine.processor.secrules)
 
   annotationProcessor(commonLibs.lombok)
