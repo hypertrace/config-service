@@ -223,7 +223,7 @@ class RateLimitingV2ConfigServiceIntegrationTest extends TraceableConfigServiceI
     // fetching rules without a filter
     List<RateLimitingRule> rules =
         getRules(GetRateLimitingRulesFilter.getDefaultInstance()); // default rules
-    assertEquals(15, rules.size());
+    assertEquals(14, rules.size());
     /*
      * For the above couple of ruleData defined globally, ruleSource is set to DEFAULT but rate-limiting validator
      * ensures that if a rule is being created with the config-service stub call, then DEFAULT RuleSource can't be used.
