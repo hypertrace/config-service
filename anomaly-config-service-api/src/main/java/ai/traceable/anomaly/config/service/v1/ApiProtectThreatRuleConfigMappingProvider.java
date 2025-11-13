@@ -84,7 +84,9 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
   public static final String HTTP_STATUS_THREAT_TYPE_ID = "httpStatus";
   public static final String CONTENT_ANOMALY_THREAT_TYPE_ID = "contentAnomaly";
   public static final String SCHEMA_VALIDATION_THREAT_TYPE_ID = "schemaValidation";
-  public static final String AUTHZ_THREAT_TYPE_ID = "authz";
+  public static final String AUTHZH_THREAT_TYPE_ID = "authzh";
+  public static final String AUTHZV_THREAT_TYPE_ID = "authzv";
+  public static final String CSTA_THREAT_TYPE_ID = "csta";
   public static final String AUTHN_THREAT_TYPE_ID = "authn";
   public static final String PARAMETER_ANOMALY_THREAT_TYPE_ID = "parameterAnomaly";
   public static final String JWT_EXP_SUB_RULE_ID = "jwt_exp";
@@ -105,10 +107,10 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
   public static final String GQLA_FS_SUB_RULE_ID = "gqla_fs";
   public static final String GQLA_GST_SUB_RULE_ID = "gqla_gst";
   public static final String GQLA_GDLB_SUB_RULE_ID = "gqla_gdlb";
-  public static final String AUTHZ_BOLA_SUB_RULE_ID = "authz_obola";
-  public static final String AUTHZ_USER_ID_BOLA_SUB_RULE_ID = "authz_ubola";
-  public static final String AUTHZ_BFLA_SUB_RULE_ID = "authz_bfla";
-  public static final String AUTHZ_CSRF_SUB_RULE_ID = "authz_csrf";
+  public static final String AUTHZH_BOLA_SUB_RULE_ID = "authzh_obola";
+  public static final String AUTHZH_USER_ID_BOLA_SUB_RULE_ID = "authzh_ubola";
+  public static final String AUTHZV_BFLA_SUB_RULE_ID = "authzv_bfla";
+  public static final String CSTA_CSRF_SUB_RULE_ID = "csta_csrf";
   public static final String AUTHN_AUA_SUB_RULE_ID = "authn_aua";
   public static final String AUTHN_UA_SUB_RULE_ID = "authn_ua";
   public static final String SESSIONV_LANDSPEED_SUB_RULE_ID = "sessionv_landspeed";
@@ -647,22 +649,17 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
             operationDenyListConfigMetadata,
             operationDenyListRegexConfigMetadata));
 
-    // authz_bfla mapping
+    // authzh_ubola mapping
     threatRuleIdToConfigMetadataMapping.put(
-        AUTHZ_BFLA_SUB_RULE_ID,
-        List.of(minPercentSeenConfigMetadata, disabledForUnknownRolesConfigMetadata));
-
-    // authz_ubola mapping
-    threatRuleIdToConfigMetadataMapping.put(
-        AUTHZ_USER_ID_BOLA_SUB_RULE_ID,
+        AUTHZH_USER_ID_BOLA_SUB_RULE_ID,
         List.of(
             minCorrelationProbabilityConfigMetadata,
             userIdSourceConfigMetadata,
             userIdDataListConfigMetadata));
 
-    // authz_obola mapping
+    // authzh_obola mapping
     threatRuleIdToConfigMetadataMapping.put(
-        AUTHZ_BOLA_SUB_RULE_ID,
+        AUTHZH_BOLA_SUB_RULE_ID,
         List.of(
             minCorrelationProbabilityConfigMetadata,
             pairwiseCorrelationProbabilityConfigMetadata,
@@ -673,9 +670,14 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
             requestParamValuesNotAllowedConfigMetadata,
             multiValuedStringParamRulesConfigMetadata));
 
-    // authz_csrf mapping
+    // authzv_bfla mapping
     threatRuleIdToConfigMetadataMapping.put(
-        AUTHZ_CSRF_SUB_RULE_ID,
+        AUTHZV_BFLA_SUB_RULE_ID,
+        List.of(minPercentSeenConfigMetadata, disabledForUnknownRolesConfigMetadata));
+
+    // csta_csrf mapping
+    threatRuleIdToConfigMetadataMapping.put(
+        CSTA_CSRF_SUB_RULE_ID,
         List.of(
             minPercentSeenConfigMetadata,
             csrfRegexStrings,

@@ -59,7 +59,8 @@ public class ApiProtectionRuleInfoProviderImpl implements ApiProtectionRuleInfoP
                       Map.of(
                           "jwt", Set.of(),
                           "authn", Set.of(),
-                          "authz", Set.of("authz_bfla", "authz_csrf"),
+                          "authzv", Set.of(),
+                          "csta", Set.of(),
                           "ssrf", Set.of(),
                           "parameterAnomaly", Set.of(),
                           "schemaValidation", Set.of(),
@@ -75,7 +76,7 @@ public class ApiProtectionRuleInfoProviderImpl implements ApiProtectionRuleInfoP
                       API_PROTECT_SECOND_RULE_VERSION,
                       Map.of(
                           "sessionv", Set.of(),
-                          "authz", Set.of("authz_obola", "authz_ubola"))),
+                          "authzh", Set.of())),
                   AnomalyEventFamily.ANOMALY_EVENT_FAMILY_VOLUMETRIC,
                   Map.of(API_PROTECT_FIRST_RULE_VERSION, Map.of("volumetric", Set.of())),
                   AnomalyEventFamily.ANOMALY_EVENT_FAMILY_CREDENTIAL_STUFFING,

@@ -334,34 +334,39 @@ public class ApiProtectMigrationProcessorTest {
     assertEquals(
         0.9, authnAuaRule.getConfigParamsMap().get("min_percent_seen").getNumberValue(), 0.001);
 
-    // Verify authz rule and config params
-    ApiProtectAnomalyRuleConfig authzRule = findApiProtectRule(apiProtectConfigs, "authz");
-    assertNotNull(authzRule);
-    assertTrue(authzRule.getSubRuleConfigsCount() > 0);
+    // Verify authzv rule and config params
+    ApiProtectAnomalyRuleConfig authzvRule = findApiProtectRule(apiProtectConfigs, "authzv");
+    assertNotNull(authzvRule);
+    assertTrue(authzvRule.getSubRuleConfigsCount() > 0);
 
-    AnomalySubRuleConfig authzBflaRule = findSubRule(authzRule, "authz_bfla");
-    assertNotNull(authzBflaRule);
+    AnomalySubRuleConfig authzvBflaRule = findSubRule(authzvRule, "authzv_bfla");
+    assertNotNull(authzvBflaRule);
     assertEquals(
-        AnomalyRuleAction.ANOMALY_RULE_ACTION_DISABLE, authzBflaRule.getAnomalyRuleAction());
-    assertTrue(authzBflaRule.getConfigParamsMap().containsKey("min_percent_seen"));
+        AnomalyRuleAction.ANOMALY_RULE_ACTION_DISABLE, authzvBflaRule.getAnomalyRuleAction());
+    assertTrue(authzvBflaRule.getConfigParamsMap().containsKey("min_percent_seen"));
     assertEquals(
-        0.8, authzBflaRule.getConfigParamsMap().get("min_percent_seen").getNumberValue(), 0.001);
+        0.8, authzvBflaRule.getConfigParamsMap().get("min_percent_seen").getNumberValue(), 0.001);
 
-    AnomalySubRuleConfig authzObolaRule = findSubRule(authzRule, "authz_obola");
-    assertNotNull(authzObolaRule);
+    // Verify authzv rule and config params
+    ApiProtectAnomalyRuleConfig authzhRule = findApiProtectRule(apiProtectConfigs, "authzh");
+    assertNotNull(authzhRule);
+    assertTrue(authzhRule.getSubRuleConfigsCount() > 0);
+
+    AnomalySubRuleConfig authzhObolaRule = findSubRule(authzhRule, "authzh_obola");
+    assertNotNull(authzhObolaRule);
     assertEquals(
-        AnomalyRuleAction.ANOMALY_RULE_ACTION_MONITOR, authzObolaRule.getAnomalyRuleAction());
-    assertTrue(authzObolaRule.getConfigParamsMap().containsKey("multi_valued_string_param_rules"));
+        AnomalyRuleAction.ANOMALY_RULE_ACTION_MONITOR, authzhObolaRule.getAnomalyRuleAction());
+    assertTrue(authzhObolaRule.getConfigParamsMap().containsKey("multi_valued_string_param_rules"));
     assertEquals(
         1,
-        authzObolaRule
+        authzhObolaRule
             .getConfigParamsMap()
             .get("multi_valued_string_param_rules")
             .getListValue()
             .getValuesCount());
     assertEquals(
         "keyRegex",
-        authzObolaRule
+        authzhObolaRule
             .getConfigParamsMap()
             .get("multi_valued_string_param_rules")
             .getListValue()
@@ -372,7 +377,7 @@ public class ApiProtectMigrationProcessorTest {
             .getStringValue());
     assertEquals(
         "valueDelimiter",
-        authzObolaRule
+        authzhObolaRule
             .getConfigParamsMap()
             .get("multi_valued_string_param_rules")
             .getListValue()
@@ -383,7 +388,7 @@ public class ApiProtectMigrationProcessorTest {
             .getStringValue());
     assertEquals(
         "valueRegex",
-        authzObolaRule
+        authzhObolaRule
             .getConfigParamsMap()
             .get("multi_valued_string_param_rules")
             .getListValue()
@@ -393,26 +398,26 @@ public class ApiProtectMigrationProcessorTest {
             .get("value_regex")
             .getStringValue());
 
-    AnomalySubRuleConfig authzUbolaRule = findSubRule(authzRule, "authz_ubola");
-    assertNotNull(authzUbolaRule);
+    AnomalySubRuleConfig authzhUbolaRule = findSubRule(authzhRule, "authzh_ubola");
+    assertNotNull(authzhUbolaRule);
     assertEquals(
-        AnomalyRuleAction.ANOMALY_RULE_ACTION_MONITOR, authzUbolaRule.getAnomalyRuleAction());
-    assertTrue(authzUbolaRule.getConfigParamsMap().containsKey("min_correlation_probability"));
+        AnomalyRuleAction.ANOMALY_RULE_ACTION_MONITOR, authzhUbolaRule.getAnomalyRuleAction());
+    assertTrue(authzhUbolaRule.getConfigParamsMap().containsKey("min_correlation_probability"));
     assertEquals(
         0.95,
-        authzUbolaRule.getConfigParamsMap().get("min_correlation_probability").getNumberValue(),
+        authzhUbolaRule.getConfigParamsMap().get("min_correlation_probability").getNumberValue(),
         0.001);
-    assertTrue(authzUbolaRule.getConfigParamsMap().containsKey("user_id_data_list"));
+    assertTrue(authzhUbolaRule.getConfigParamsMap().containsKey("user_id_data_list"));
     assertEquals(
         3,
-        authzUbolaRule
+        authzhUbolaRule
             .getConfigParamsMap()
             .get("user_id_data_list")
             .getListValue()
             .getValuesCount());
     assertEquals(
         "userId",
-        authzUbolaRule
+        authzhUbolaRule
             .getConfigParamsMap()
             .get("user_id_data_list")
             .getListValue()
@@ -422,7 +427,7 @@ public class ApiProtectMigrationProcessorTest {
             .get("user_id_custom_attribute")
             .getStringValue());
     assertFalse(
-        authzUbolaRule
+        authzhUbolaRule
             .getConfigParamsMap()
             .get("user_id_data_list")
             .getListValue()
@@ -432,7 +437,7 @@ public class ApiProtectMigrationProcessorTest {
             .get("user_attribution_extracted_id")
             .getBoolValue());
     assertTrue(
-        authzUbolaRule
+        authzhUbolaRule
             .getConfigParamsMap()
             .get("user_id_data_list")
             .getListValue()
@@ -442,13 +447,18 @@ public class ApiProtectMigrationProcessorTest {
             .get("user_attribution_extracted_id_from_jwt")
             .getBoolValue());
 
-    AnomalySubRuleConfig authzCsrfRule = findSubRule(authzRule, "authz_csrf");
-    assertNotNull(authzCsrfRule);
+    // Verify csta rule and config params
+    ApiProtectAnomalyRuleConfig cstaRule = findApiProtectRule(apiProtectConfigs, "csta");
+    assertNotNull(cstaRule);
+    assertTrue(cstaRule.getSubRuleConfigsCount() > 0);
+
+    AnomalySubRuleConfig cstaCsrfRule = findSubRule(cstaRule, "csta_csrf");
+    assertNotNull(cstaCsrfRule);
     assertEquals(
-        AnomalyRuleAction.ANOMALY_RULE_ACTION_MONITOR, authzCsrfRule.getAnomalyRuleAction());
-    assertTrue(authzCsrfRule.getConfigParamsMap().containsKey("min_percent_seen"));
+        AnomalyRuleAction.ANOMALY_RULE_ACTION_MONITOR, cstaCsrfRule.getAnomalyRuleAction());
+    assertTrue(cstaCsrfRule.getConfigParamsMap().containsKey("min_percent_seen"));
     assertEquals(
-        0.9, authzCsrfRule.getConfigParamsMap().get("min_percent_seen").getNumberValue(), 0.001);
+        0.9, cstaCsrfRule.getConfigParamsMap().get("min_percent_seen").getNumberValue(), 0.001);
 
     // Verify session violation rule and config params
     ApiProtectAnomalyRuleConfig sessionvRule = findApiProtectRule(apiProtectConfigs, "sessionv");

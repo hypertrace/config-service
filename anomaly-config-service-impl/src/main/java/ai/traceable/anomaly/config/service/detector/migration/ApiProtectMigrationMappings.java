@@ -53,31 +53,31 @@ public class ApiProtectMigrationMappings {
     // BOLA mappings
     Map<String, List<String>> bolaMap =
         ImmutableMap.of(
-            ApiProtectThreatRuleConfigMappingProvider.AUTHZ_THREAT_TYPE_ID,
-            ImmutableList.of(ApiProtectThreatRuleConfigMappingProvider.AUTHZ_BOLA_SUB_RULE_ID));
+            ApiProtectThreatRuleConfigMappingProvider.AUTHZH_THREAT_TYPE_ID,
+            ImmutableList.of(ApiProtectThreatRuleConfigMappingProvider.AUTHZH_BOLA_SUB_RULE_ID));
     mapBuilder.put(ApiProtectThreatRuleConfigMappingProvider.BOLA_THREAT_TYPE_ID, bolaMap);
 
     // UserIdBOLA mappings
     Map<String, List<String>> userIdBolaMap =
         ImmutableMap.of(
-            ApiProtectThreatRuleConfigMappingProvider.AUTHZ_THREAT_TYPE_ID,
+            ApiProtectThreatRuleConfigMappingProvider.AUTHZH_THREAT_TYPE_ID,
             ImmutableList.of(
-                ApiProtectThreatRuleConfigMappingProvider.AUTHZ_USER_ID_BOLA_SUB_RULE_ID));
+                ApiProtectThreatRuleConfigMappingProvider.AUTHZH_USER_ID_BOLA_SUB_RULE_ID));
     mapBuilder.put(
         ApiProtectThreatRuleConfigMappingProvider.USER_ID_BOLA_THREAT_TYPE_ID, userIdBolaMap);
 
     // BFLA mappings
     Map<String, List<String>> bflaMap =
         ImmutableMap.of(
-            ApiProtectThreatRuleConfigMappingProvider.AUTHZ_THREAT_TYPE_ID,
-            ImmutableList.of(ApiProtectThreatRuleConfigMappingProvider.AUTHZ_BFLA_SUB_RULE_ID));
+            ApiProtectThreatRuleConfigMappingProvider.AUTHZV_THREAT_TYPE_ID,
+            ImmutableList.of(ApiProtectThreatRuleConfigMappingProvider.AUTHZV_BFLA_SUB_RULE_ID));
     mapBuilder.put(ApiProtectThreatRuleConfigMappingProvider.BFLA_THREAT_TYPE_ID, bflaMap);
 
     // Missing Param mappings
     Map<String, List<String>> missingParamMap =
         ImmutableMap.of(
-            ApiProtectThreatRuleConfigMappingProvider.AUTHZ_THREAT_TYPE_ID,
-            ImmutableList.of(ApiProtectThreatRuleConfigMappingProvider.AUTHZ_CSRF_SUB_RULE_ID),
+            ApiProtectThreatRuleConfigMappingProvider.CSTA_THREAT_TYPE_ID,
+            ImmutableList.of(ApiProtectThreatRuleConfigMappingProvider.CSTA_CSRF_SUB_RULE_ID),
             ApiProtectThreatRuleConfigMappingProvider.AUTHN_THREAT_TYPE_ID,
             ImmutableList.of(
                 ApiProtectThreatRuleConfigMappingProvider.AUTHN_AUA_SUB_RULE_ID,
