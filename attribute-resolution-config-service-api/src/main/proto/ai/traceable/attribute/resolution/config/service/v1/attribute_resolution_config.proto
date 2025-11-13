@@ -2,6 +2,7 @@ syntax = "proto3";
 package ai.traceable.attribute.resolution.config.service.v1;
 
 import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
 
 option java_multiple_files = true;
 
@@ -13,6 +14,12 @@ message GetAttributeResolutionConfigsFilter {
 message AttributeResolutionConfig {
   string id = 1;
   AttributeResolutionConfigData data = 2;
+  AttributeResolutionConfigMetadata metadata = 3;
+}
+
+message AttributeResolutionConfigMetadata {
+  google.protobuf.Timestamp creation_timestamp = 1;
+  google.protobuf.Timestamp last_updated_timestamp = 2;
 }
 
 message AttributeResolutionConfigData {

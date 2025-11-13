@@ -1,11 +1,13 @@
 package ai.traceable.attribute.resolution.config.service.v1.manager;
 
 import ai.traceable.attribute.resolution.config.service.v1.AttributeResolutionConfig;
+import ai.traceable.attribute.resolution.config.service.v1.AttributeResolutionConfigMetadata;
 import ai.traceable.attribute.resolution.config.service.v1.CreateAttributeResolutionConfigRequest;
 import ai.traceable.attribute.resolution.config.service.v1.GetAttributeResolutionConfigsFilter;
 import ai.traceable.attribute.resolution.config.service.v1.UpdateAttributeResolutionConfigRequest;
 import ai.traceable.attribute.resolution.config.service.v1.config.AttributeResolutionDefaultConfig;
 import ai.traceable.attribute.resolution.config.service.v1.store.AttributeResolutionConfigStore;
+import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.config.utils.UuidGenerator;
 import io.grpc.Status;
 import jakarta.inject.Inject;
@@ -16,6 +18,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.config.objectstore.DeletedConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -24,21 +27,32 @@ public class AttributeResolutionConfigManagerImpl implements AttributeResolution
   private final UuidGenerator uuidGenerator;
   private final AttributeResolutionConfigStore store;
   private final AttributeResolutionDefaultConfig defaultConfig;
+  private final TimestampConverter timestampConverter;
 
   @Inject
   public AttributeResolutionConfigManagerImpl(
       UuidGenerator uuidGenerator,
       AttributeResolutionConfigStore store,
-      AttributeResolutionDefaultConfig defaultConfig) {
+      AttributeResolutionDefaultConfig defaultConfig,
+      TimestampConverter timestampConverter) {
     this.uuidGenerator = uuidGenerator;
     this.store = store;
     this.defaultConfig = defaultConfig;
+    this.timestampConverter = timestampConverter;
   }
 
   @Override
   public List<AttributeResolutionConfig> getAttributeResolutionConfigs(
       RequestContext context, GetAttributeResolutionConfigsFilter filter) {
-    return mergeAttributeResolutionConfigs(filter, store.getAllConfigData(context, filter));
+    List<AttributeResolutionConfig> attributeResolutionConfigs =
+        store.getAllObjects(context, filter).stream()
+            .map(
+                configObject ->
+                    configObject.getData().toBuilder()
+                        .setMetadata(buildAttributeResolutionMetadata(configObject))
+                        .build())
+            .collect(Collectors.toUnmodifiableList());
+    return mergeAttributeResolutionConfigs(filter, attributeResolutionConfigs);
   }
 
   @Override
@@ -96,7 +110,17 @@ public class AttributeResolutionConfigManagerImpl implements AttributeResolution
 
   private AttributeResolutionConfig upsert(
       RequestContext context, AttributeResolutionConfig config) {
-    return store.upsertObject(context, config).getData();
+    ContextualConfigObject<AttributeResolutionConfig> configObject =
+        store.upsertObject(context, config);
+    return config.toBuilder().setMetadata(buildAttributeResolutionMetadata(configObject)).build();
+  }
+
+  private AttributeResolutionConfigMetadata.Builder buildAttributeResolutionMetadata(
+      ContextualConfigObject<AttributeResolutionConfig> storedConfig) {
+    return AttributeResolutionConfigMetadata.newBuilder()
+        .setCreationTimestamp(timestampConverter.convert(storedConfig.getCreationTimestamp()))
+        .setLastUpdatedTimestamp(
+            timestampConverter.convert(storedConfig.getLastUpdatedTimestamp()));
   }
 
   private List<AttributeResolutionConfig> mergeAttributeResolutionConfigs(
