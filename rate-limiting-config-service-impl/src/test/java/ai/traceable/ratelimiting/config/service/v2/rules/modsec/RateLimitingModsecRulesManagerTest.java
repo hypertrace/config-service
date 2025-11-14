@@ -58,6 +58,7 @@ import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
 import ai.traceable.ratelimiting.config.service.v2.RegionCondition;
 import ai.traceable.ratelimiting.config.service.v2.RegionCondition.Region;
 import ai.traceable.ratelimiting.config.service.v2.RuleConfigScope;
+import ai.traceable.ratelimiting.config.service.v2.RuleEvaluationPoint;
 import ai.traceable.ratelimiting.config.service.v2.ScopeCondition;
 import ai.traceable.ratelimiting.config.service.v2.ScopeCondition.EntityScope;
 import ai.traceable.ratelimiting.config.service.v2.ScopeCondition.EntityType;
@@ -299,6 +300,8 @@ class RateLimitingModsecRulesManagerTest {
                   RateLimitingRuleData.newBuilder()
                       .setName("rule-name-1")
                       .setCategory(Category.CATEGORY_DATA_EXFILTRATION)
+                      .addRuleEvaluationPoints(
+                          RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT)
                       .setCondition(
                           Condition.newBuilder()
                               .setCompositeCondition(
@@ -335,6 +338,8 @@ class RateLimitingModsecRulesManagerTest {
                   RateLimitingRuleData.newBuilder()
                       .setName("rule-name-3")
                       .setCategory(Category.CATEGORY_DATA_EXFILTRATION)
+                      .addRuleEvaluationPoints(
+                          RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT)
                       .addThresholdActionConfigs(ThresholdActionConfig.getDefaultInstance()))
               .build(),
           RateLimitingRule.newBuilder()
@@ -343,6 +348,8 @@ class RateLimitingModsecRulesManagerTest {
                   RateLimitingRuleData.newBuilder()
                       .setName("rule-name-4")
                       .setCategory(Category.CATEGORY_DATA_EXFILTRATION)
+                      .addRuleEvaluationPoints(
+                          RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT)
                       .setCondition(
                           Condition.newBuilder()
                               .setCompositeCondition(

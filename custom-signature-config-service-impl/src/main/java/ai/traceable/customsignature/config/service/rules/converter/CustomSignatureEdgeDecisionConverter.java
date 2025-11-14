@@ -25,6 +25,7 @@ import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import ai.traceable.customsignature.config.service.v1.RuleEffectWithModifications;
+import ai.traceable.customsignature.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig;
 import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchCondition;
@@ -78,6 +79,8 @@ public class CustomSignatureEdgeDecisionConverter {
     EdgeDecisionEngineConfig.Builder builder = EdgeDecisionEngineConfig.newBuilder();
     List<EdgeDecisionRule> edgeDecisionRules =
         customSignatureRules.stream()
+            .filter(
+                customSignatureRule -> hasEdgeRuleEvaluationPoint(customSignatureRule.getEffect()))
             .map(this::convertCustomSignatureRule)
             .filter(Optional::isPresent)
             .map(Optional::get)
@@ -293,5 +296,11 @@ public class CustomSignatureEdgeDecisionConverter {
     mayBeMatchCondition.ifPresent(
         matchCondition -> builder.getSignatureRuleBuilder().setMatchCondition(matchCondition));
     return builder.build();
+  }
+
+  private static boolean hasEdgeRuleEvaluationPoint(RuleEffect ruleEffect) {
+    return ruleEffect
+        .getRuleEvaluationPointsList()
+        .contains(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE);
   }
 }

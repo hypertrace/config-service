@@ -11,6 +11,8 @@ import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRuleModsecRule
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter;
 import ai.traceable.ratelimiting.config.service.v2.ModsecBlobData;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
+import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
+import ai.traceable.ratelimiting.config.service.v2.RuleEvaluationPoint;
 import ai.traceable.ratelimiting.service.v2.rules.modsec.converters.ModsecBlobDataConverter;
 import ai.traceable.ratelimiting.service.v2.rules.modsec.datatype.DataClassificationInfoProvider;
 import ai.traceable.ratelimiting.service.v2.rules.modsec.datatype.DataClassificationInfoProvider.DataClassificationInfo;
@@ -111,6 +113,7 @@ public class RateLimitingModsecRulesManager {
       Function<String, String> serviceNameProvider) {
     return rateLimitingRulesSupplier.apply(filter.getRulesFilter()).stream()
         .filter(rule -> filterByRuleAction(rule, filter.getRuleActionsList()))
+        .filter(rule -> filterByRuleEvaluationPoint(rule.getData()))
         .filter(this::filterExpired)
         .map(
             rule ->
@@ -135,6 +138,12 @@ public class RateLimitingModsecRulesManager {
       return ruleActions.contains(RuleAction.RULE_ACTION_TRANSACTION_ALLOWED);
     }
     return false;
+  }
+
+  private boolean filterByRuleEvaluationPoint(RateLimitingRuleData rateLimitingRuleData) {
+    return rateLimitingRuleData
+        .getRuleEvaluationPointsList()
+        .contains(RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT);
   }
 
   private boolean filterExpired(final RateLimitingRule rule) {

@@ -4,6 +4,7 @@
     "category": "CATEGORY_RATE_LIMITING",
     "name": "test-policy",
     "enabled": true,
+    "ruleEvaluationPoints": ["RULE_EVALUATION_POINT_EDGE"],
     "condition": {
       "leafCondition": {
         "ipAbuseVelocityCondition": {

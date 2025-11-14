@@ -18,6 +18,7 @@
         }]
       }
     }],
-    "exclusionTargets": ["EXCLUSION_TARGET_BLOCK"]
+    "exclusionTargets": ["EXCLUSION_TARGET_BLOCK"],
+    "ruleEvaluationPoints": ["RULE_EVALUATION_POINT_EDGE"]
   }
 }

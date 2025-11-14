@@ -11,11 +11,13 @@ import ai.traceable.detection.exclusion.config.service.v1.CustomRuleEvent;
 import ai.traceable.detection.exclusion.config.service.v1.CustomRuleFamily;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleInfo;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleScope;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleStatus;
 import ai.traceable.detection.exclusion.config.service.v1.EventCondition;
 import ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget;
 import ai.traceable.detection.exclusion.config.service.v1.LogicalOperator;
+import ai.traceable.detection.exclusion.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
 import ai.traceable.detection.exclusion.config.service.v1.rules.edge.decision.condition.DetectionExclusionRuleConditionConverter;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecision;
@@ -68,12 +70,20 @@ public class DetectionExclusionRuleEdgeDecisionConverter {
       RequestContext requestContext, List<DetectionExclusionRule> detectionExclusionRules) {
     List<EdgeDecisionRule> edgeDecisionRules =
         detectionExclusionRules.stream()
+            .filter(rule -> hasEdgeRuleEvaluationPoint(rule.getRuleInfo()))
             .map(rule -> getEdgeDecisionRule(requestContext, rule))
             .filter(Optional::isPresent)
             .map(Optional::get)
             .collect(Collectors.toUnmodifiableList());
 
     return EdgeDecisionEngineConfig.newBuilder().addAllDecisionRules(edgeDecisionRules).build();
+  }
+
+  private static boolean hasEdgeRuleEvaluationPoint(
+      DetectionExclusionRuleInfo detectionExclusionRuleInfo) {
+    return detectionExclusionRuleInfo
+        .getRuleEvaluationPointsList()
+        .contains(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE);
   }
 
   private Optional<EdgeDecisionRule> getEdgeDecisionRule(

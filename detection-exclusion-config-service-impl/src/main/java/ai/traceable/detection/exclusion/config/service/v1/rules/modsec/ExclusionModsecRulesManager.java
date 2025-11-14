@@ -6,6 +6,7 @@ import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionMods
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
 import ai.traceable.detection.exclusion.config.service.v1.GetExclusionModsecRulesResponse;
 import ai.traceable.detection.exclusion.config.service.v1.ModsecBlobData;
+import ai.traceable.detection.exclusion.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.detection.exclusion.config.service.v1.rules.modsec.ModsecBlobConverter.ModsecBlobResult;
 import ai.traceable.detection.exclusion.config.service.v1.rules.modsec.ModsecClauseConverter.ModsecClauseResult;
 import ai.traceable.detection.exclusion.config.service.v1.rules.modsec.ModsecClauseConverter.ServiceDetail;
@@ -57,35 +58,43 @@ public class ExclusionModsecRulesManager {
     List<DetectionExclusionModsecRule> exclusionModsecRules = new ArrayList<>();
 
     // Convert exclusion rule to modsec blob
-    exclusionRules.forEach(
-        exclusionRule -> {
-          ModsecClauseResult modsecClauseResult =
-              modsecClauseConverter.convert(requestContext, exclusionRule);
-          ModsecBlobResult modsecBlobResult =
-              modsecBlobConverter.convertToModsecRule(
-                  exclusionRule.getId(), modsecClauseResult.getClauses(), modsecIdAssignment);
-          List<String> servicesApplicable =
-              servicesOnWhichRuleIsApplicable(modsecClauseResult.getServiceDetails(), serviceNames);
+    exclusionRules.stream()
+        .filter(
+            detectionExclusionRule ->
+                detectionExclusionRule
+                    .getRuleInfo()
+                    .getRuleEvaluationPointsList()
+                    .contains(RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT))
+        .forEach(
+            exclusionRule -> {
+              ModsecClauseResult modsecClauseResult =
+                  modsecClauseConverter.convert(requestContext, exclusionRule);
+              ModsecBlobResult modsecBlobResult =
+                  modsecBlobConverter.convertToModsecRule(
+                      exclusionRule.getId(), modsecClauseResult.getClauses(), modsecIdAssignment);
+              List<String> servicesApplicable =
+                  servicesOnWhichRuleIsApplicable(
+                      modsecClauseResult.getServiceDetails(), serviceNames);
 
-          // Store the modsecBlob and rule ID pair against all applicable services
-          servicesApplicable.forEach(
-              service -> serviceToModsecBlobDataMap.get(service).add(modsecBlobResult));
+              // Store the modsecBlob and rule ID pair against all applicable services
+              servicesApplicable.forEach(
+                  service -> serviceToModsecBlobDataMap.get(service).add(modsecBlobResult));
 
-          // Convert into DetectionExclusionModsecRule
-          if (modsecBlobResult.getModsecBlob().isBlank()) {
-            // If blob is empty, there would be no associated modsec rule id
-            // There can be rules with request/response conditions, which would produce a blank
-            // modsec blob, but we would still want to evaluate the rules
-            exclusionModsecRules.add(
-                DetectionExclusionModsecRule.newBuilder().setRule(exclusionRule).build());
-          } else {
-            exclusionModsecRules.add(
-                DetectionExclusionModsecRule.newBuilder()
-                    .setRule(exclusionRule)
-                    .addAssociatedModsecRuleIds(modsecBlobResult.getRuleId())
-                    .build());
-          }
-        });
+              // Convert into DetectionExclusionModsecRule
+              if (modsecBlobResult.getModsecBlob().isBlank()) {
+                // If blob is empty, there would be no associated modsec rule id
+                // There can be rules with request/response conditions, which would produce a blank
+                // modsec blob, but we would still want to evaluate the rules
+                exclusionModsecRules.add(
+                    DetectionExclusionModsecRule.newBuilder().setRule(exclusionRule).build());
+              } else {
+                exclusionModsecRules.add(
+                    DetectionExclusionModsecRule.newBuilder()
+                        .setRule(exclusionRule)
+                        .addAssociatedModsecRuleIds(modsecBlobResult.getRuleId())
+                        .build());
+              }
+            });
 
     // Merge blobs across services with the same rules
     List<ModsecBlobData> modsecBlobDataList =

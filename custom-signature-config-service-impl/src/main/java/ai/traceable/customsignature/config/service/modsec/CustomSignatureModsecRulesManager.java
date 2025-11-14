@@ -15,6 +15,7 @@ import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesResponse;
 import ai.traceable.customsignature.config.service.v1.ModsecBlobData;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
+import ai.traceable.customsignature.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.customsignature.config.service.v1.ScopeExpression;
 import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
 import io.grpc.Status;
@@ -93,6 +94,12 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
                         rule.getDefinition().getClauseGroup().getClausesList().stream()
                             .map(Clause::getClauseCase)
                             .allMatch(NON_SOURCE_OR_TARGET_BASED_CLAUSES::contains))
+                .filter(
+                    rule ->
+                        rule.getEffect()
+                            .getRuleEvaluationPointsList()
+                            .contains(
+                                RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT))
                 .collect(Collectors.toUnmodifiableList())
             : customSignatureRules;
 
