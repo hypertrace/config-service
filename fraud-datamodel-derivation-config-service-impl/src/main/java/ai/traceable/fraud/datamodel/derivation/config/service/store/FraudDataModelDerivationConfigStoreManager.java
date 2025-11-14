@@ -42,6 +42,8 @@ public class FraudDataModelDerivationConfigStoreManager {
             .setName(request.getName())
             .setDerivationConfigType(request.getDerivationConfigType())
             .setDerivationConfig(request.getDerivationConfig())
+            .setDisabled(request.getDisabled())
+            .setDescription(request.getDescription())
             .build();
     ContextualConfigObject<DerivationConfig> configObject =
         fraudDataModelDerivationConfigStore.upsertObject(requestContext, newSavedFilter);

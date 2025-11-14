@@ -138,10 +138,15 @@ class FraudDataModelDerivationConfigServiceImplTest {
                                 DerivationConfigType.DERIVATION_CONFIG_TYPE_EVENT)
                             .setName("derivation_config")
                             .setDerivationConfig("yaml_config")
+                            .setDisabled(false)
+                            .setDescription("Test derivation config description")
                             .build())
                     .getDerivationConfig());
 
     Assertions.assertNotNull(createdDerivationConfig.getId());
+    Assertions.assertEquals(false, createdDerivationConfig.getDisabled());
+    Assertions.assertEquals(
+        "Test derivation config description", createdDerivationConfig.getDescription());
     String uuid = createdDerivationConfig.getId();
 
     DerivationConfig updatedDerivationConfig =

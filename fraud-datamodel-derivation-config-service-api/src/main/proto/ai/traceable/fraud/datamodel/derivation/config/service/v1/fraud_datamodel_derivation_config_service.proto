@@ -26,6 +26,8 @@ message CreateDerivationConfigRequest {
   DerivationConfigType derivation_config_type = 1;
   string name = 2;
   string derivation_config = 3;
+  bool disabled = 4;
+  string description = 5;
 }
 
 message CreateDerivationConfigResponse {
