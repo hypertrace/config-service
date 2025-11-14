@@ -82,6 +82,8 @@ message DetectionExclusionMigrationConfig {
   bool change_log_4_migration_completed = 4;
   // migration with respect to the addition of rule evaluation points
   bool rule_evaluation_points_migration_completed = 5;
+  // migration for revamp of api protection exclusion rules
+  bool api_protection_exclusion_rules_migration_completed = 6;
 }
 
 message GetExclusionModsecRulesRequest {

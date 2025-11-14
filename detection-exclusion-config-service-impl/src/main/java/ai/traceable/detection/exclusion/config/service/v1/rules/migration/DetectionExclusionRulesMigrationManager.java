@@ -51,6 +51,8 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
   private final Set<ContextualKey<Void>> changeLog4MigrationCompletedTenantsSet = new HashSet<>();
   private final Set<ContextualKey<Void>> ruleEvaluationPointsMigrationCompletedTenantsSet =
       new HashSet<>();
+  private final Set<ContextualKey<Void>> apiProtectionExclusionRulesMigrationCompletedTenantsSet =
+      new HashSet<>();
 
   @Inject
   public DetectionExclusionRulesMigrationManager(
@@ -259,6 +261,24 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
     }
   }
 
+  @Override
+  public void migrateForApiProtectionExclusionRulesIfApplicable(RequestContext requestContext) {
+    ContextualKey<Void> contextualKey = requestContext.buildInternalContextualKey();
+    if (apiProtectionExclusionRulesMigrationCompletedTenantsSet.contains(contextualKey)) {
+      return;
+    }
+    DetectionExclusionMigrationConfig detectionExclusionMigrationConfig =
+        migrationStore
+            .getData(requestContext)
+            .orElse(DetectionExclusionMigrationConfig.getDefaultInstance());
+    if (detectionExclusionMigrationConfig.getApiProtectionExclusionRulesMigrationCompleted()) {
+      apiProtectionExclusionRulesMigrationCompletedTenantsSet.add(contextualKey);
+    } else if (featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext)) {
+      updateDetectionExclusionRulesForApiProtection(
+          requestContext, detectionExclusionMigrationConfig);
+    }
+  }
+
   private void updateDetectionExclusionRulesWithRuleEvaluationPoints(
       RequestContext requestContext, DetectionExclusionMigrationConfig migrationConfig) {
     List<DetectionExclusionRule> updatedRules =
@@ -360,6 +380,32 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
             condition ->
                 condition.hasSourceAnomalousAttributeMatchCondition()
                     || condition.hasSourceScopeCondition());
+  }
+
+  private void updateDetectionExclusionRulesForApiProtection(
+      RequestContext requestContext, DetectionExclusionMigrationConfig migrationConfig) {
+    List<DetectionExclusionRule> updatedRules =
+        newRulesStore.getAllConfigData(requestContext).stream()
+            .map(
+                rule -> {
+                  DetectionExclusionRuleInfo.Builder ruleInfoBuilder =
+                      rule.getRuleInfo().toBuilder();
+                  if (DetectionExclusionRuleIdMigrationManager
+                      .updateRuleConditionsExclusionRulesForApiProtection(ruleInfoBuilder)) {
+                    return rule.toBuilder().setRuleInfo(ruleInfoBuilder).build();
+                  }
+                  return null;
+                })
+            .filter(Objects::nonNull)
+            .collect(Collectors.toUnmodifiableList());
+    if (!updatedRules.isEmpty()) {
+      newRulesStore.upsertObjects(requestContext, updatedRules);
+    }
+    migrationStore.upsertObject(
+        requestContext,
+        migrationConfig.toBuilder().setApiProtectionExclusionRulesMigrationCompleted(true).build());
+    apiProtectionExclusionRulesMigrationCompletedTenantsSet.add(
+        requestContext.buildInternalContextualKey());
   }
 
   private boolean updateConditionForSSTIifAny(DetectionExclusionRuleInfo.Builder ruleInfoBuilder) {

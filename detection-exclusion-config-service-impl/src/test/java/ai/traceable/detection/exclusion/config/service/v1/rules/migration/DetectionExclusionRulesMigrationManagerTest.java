@@ -48,6 +48,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
@@ -348,6 +349,85 @@ class DetectionExclusionRulesMigrationManagerTest {
     verifyZeroInteractionWithRulesStore(true);
   }
 
+  @Test
+  void testMigration_apiProtectionExclusionRules() {
+    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext))
+        .thenReturn(true);
+    when(newRulesStore.getAllConfigData(any()))
+        .thenReturn(
+            List.of(
+                getSampleApiProtectionRule(false, "id4a"),
+                getSampleApiProtectionRule(true, "id4b")));
+    DetectionExclusionMigrationConfig completedMigrationConfig =
+        mockMigrationStore(true, true, true, true, false).toBuilder()
+            .setApiProtectionExclusionRulesMigrationCompleted(true)
+            .build();
+
+    migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
+    verify(migrationStore, times(1)).getData(requestContext);
+    verify(migrationStore, times(1)).upsertObject(requestContext, completedMigrationConfig);
+    verify(newRulesStore, times(1)).getAllConfigData(requestContext);
+    verify(newRulesStore, times(1)).upsertObjects(eq(requestContext), any());
+    verify(newRulesStore, times(1))
+        .upsertObjects(
+            eq(requestContext),
+            argThat(list -> list.size() == 1 && verifyApiProtection(list.get(0))));
+
+    resetStores();
+    migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
+    verifyZeroInteractionWithRulesStore(true);
+  }
+
+  @Test
+  void testMigrationCompleted_apiProtectionExclusionRules() {
+    when(newRulesStore.getAllConfigData(any()))
+        .thenReturn(
+            List.of(
+                sampleNewRule,
+                getSampleApiProtectionRule(false, "id4a"),
+                getSampleApiProtectionRule(true, "id4b")));
+    mockMigrationStore(false, false, false, false, true);
+
+    migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
+    verify(migrationStore, times(1)).getData(requestContext);
+    verify(migrationStore, times(0)).upsertObject(eq(requestContext), any());
+    verify(newRulesStore, times(0)).getAllConfigData(requestContext);
+
+    resetStores();
+    migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
+    verifyZeroInteractionWithRulesStore(true);
+  }
+
+  @Test
+  void testMigration_apiProtectionExclusionRules_contentTypeMultipleEvents() {
+    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext))
+        .thenReturn(true);
+    when(newRulesStore.getAllConfigData(any()))
+        .thenReturn(
+            List.of(
+                sampleNewRule,
+                getSampleApiProtectionContentTypeRule(false, "id5a"),
+                getSampleApiProtectionContentTypeRule(true, "id5b")));
+    DetectionExclusionMigrationConfig completedMigrationConfig =
+        mockMigrationStore(true, true, true, true, false).toBuilder()
+            .setApiProtectionExclusionRulesMigrationCompleted(true)
+            .build();
+
+    migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
+    verify(migrationStore, times(1)).getData(requestContext);
+    verify(migrationStore, times(1)).upsertObject(requestContext, completedMigrationConfig);
+    verify(newRulesStore, times(1)).getAllConfigData(requestContext);
+    verify(newRulesStore, times(1)).upsertObjects(eq(requestContext), any());
+    verify(newRulesStore, times(1))
+        .upsertObjects(
+            eq(requestContext),
+            argThat(list -> list.size() == 1 && verifyContentTypeMultipleEvents(list.get(0))));
+
+    resetStores();
+    migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
+    verifyZeroInteractionWithRulesStore(true);
+  }
+
   private AnomalyExclusionRuleConfig getSampleOldRuleConfig() {
     return AnomalyExclusionRuleConfig.newBuilder()
         .setId("id1")
@@ -480,6 +560,129 @@ class DetectionExclusionRulesMigrationManagerTest {
         .build();
   }
 
+  private DetectionExclusionRule getSampleApiProtectionRule(boolean updated, String id) {
+    SystemDefinedEvent.Builder eventBuilder = SystemDefinedEvent.newBuilder();
+    if (updated) {
+      eventBuilder.setEventSubTypeId("authzh_obola");
+    } else {
+      eventBuilder.setEventTypeId("bola");
+    }
+    return DetectionExclusionRule.newBuilder()
+        .setId(id)
+        .setRuleScope(
+            DetectionExclusionRuleScope.newBuilder()
+                .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("env")))
+        .setRuleInfo(
+            DetectionExclusionRuleInfo.newBuilder()
+                .setName("name4")
+                .setDescription("desc4")
+                .addConditions(
+                    DetectionExclusionCondition.newBuilder()
+                        .setEventCondition(
+                            EventCondition.newBuilder().addSystemDefinedEvents(eventBuilder)))
+                .addConditions(
+                    DetectionExclusionCondition.newBuilder()
+                        .setScopeCondition(
+                            ScopeCondition.newBuilder()
+                                .setEntityScope(
+                                    EntityScope.newBuilder()
+                                        .setEntityType(EntityType.ENTITY_TYPE_SERVICE)
+                                        .addEntityIds("service")))))
+        .build();
+  }
+
+  private boolean verifyApiProtection(DetectionExclusionRule rule) {
+    assertEquals("id4a", rule.getId());
+    assertTrue(
+        rule.getRuleInfo().getConditionsList().stream()
+            .flatMap(
+                condition -> condition.getEventCondition().getSystemDefinedEventsList().stream())
+            .filter(
+                event -> !event.getEventTypeId().isEmpty() || !event.getEventSubTypeId().isEmpty())
+            .allMatch(
+                event ->
+                    event.getEventTypeId().isEmpty()
+                        && event.getEventSubTypeId().equals("authzh_obola")));
+    return true;
+  }
+
+  private DetectionExclusionRule getSampleApiProtectionContentTypeRule(boolean updated, String id) {
+    DetectionExclusionRuleInfo.Builder ruleInfoBuilder =
+        DetectionExclusionRuleInfo.newBuilder()
+            .setName("name5")
+            .setDescription("desc5")
+            .addConditions(
+                DetectionExclusionCondition.newBuilder()
+                    .setScopeCondition(
+                        ScopeCondition.newBuilder()
+                            .setEntityScope(
+                                EntityScope.newBuilder()
+                                    .setEntityType(EntityType.ENTITY_TYPE_SERVICE)
+                                    .addEntityIds("service"))));
+
+    if (updated) {
+      ruleInfoBuilder.addConditions(
+          DetectionExclusionCondition.newBuilder()
+              .setEventCondition(
+                  EventCondition.newBuilder()
+                      .addSystemDefinedEvents(
+                          SystemDefinedEvent.newBuilder()
+                              .setEventSubTypeId("contentAnomaly_reqctm"))
+                      .addSystemDefinedEvents(
+                          SystemDefinedEvent.newBuilder()
+                              .setEventSubTypeId("schemaValidation_reqctve"))
+                      .addSystemDefinedEvents(
+                          SystemDefinedEvent.newBuilder()
+                              .setEventSubTypeId("schemaValidation_resctve"))));
+    } else {
+      ruleInfoBuilder.addConditions(
+          DetectionExclusionCondition.newBuilder()
+              .setEventCondition(
+                  EventCondition.newBuilder()
+                      .addSystemDefinedEvents(
+                          SystemDefinedEvent.newBuilder()
+                              .setEventFamily(
+                                  SystemDefinedEventFamily.SYSTEM_DEFINED_EVENT_FAMILY_API_DEF)
+                              .setEventTypeId("contentType"))));
+    }
+
+    return DetectionExclusionRule.newBuilder()
+        .setId(id)
+        .setRuleScope(
+            DetectionExclusionRuleScope.newBuilder()
+                .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("env")))
+        .setRuleInfo(ruleInfoBuilder)
+        .build();
+  }
+
+  private boolean verifyContentTypeMultipleEvents(DetectionExclusionRule rule) {
+    assertEquals("id5a", rule.getId());
+    List<SystemDefinedEvent> events =
+        rule.getRuleInfo().getConditionsList().stream()
+            .flatMap(
+                condition -> condition.getEventCondition().getSystemDefinedEventsList().stream())
+            .collect(Collectors.toList());
+
+    // Verify we have exactly 3 events
+    assertEquals(3, events.size());
+
+    // Verify all events have empty typeId and correct subTypeIds
+    assertTrue(events.stream().allMatch(event -> event.getEventTypeId().isEmpty()));
+
+    List<String> subTypeIds =
+        events.stream().map(SystemDefinedEvent::getEventSubTypeId).collect(Collectors.toList());
+    List<SystemDefinedEventFamily> families =
+        events.stream().map(SystemDefinedEvent::getEventFamily).collect(Collectors.toList());
+
+    assertTrue(subTypeIds.contains("contentAnomaly_reqctm"));
+    assertTrue(subTypeIds.contains("schemaValidation_reqctve"));
+    assertTrue(subTypeIds.contains("schemaValidation_resctve"));
+    assertEquals(1, families.stream().distinct().count());
+    assertEquals(SystemDefinedEventFamily.SYSTEM_DEFINED_EVENT_FAMILY_API_DEF, families.get(0));
+
+    return true;
+  }
+
   private SampleContextualConfigObject<AnomalyExclusionRuleConfig> getOldRuleContextualConfigObject(
       String context, Instant lastUpdatedTimestamp) {
     return new SampleContextualConfigObject<>(
@@ -503,12 +706,28 @@ class DetectionExclusionRulesMigrationManagerTest {
       boolean changeLog2MigrationCompleted,
       boolean changeLog3MigrationCompleted,
       boolean changeLog4MigrationCompleted) {
+    return mockMigrationStore(
+        migrationCompleted,
+        changeLog2MigrationCompleted,
+        changeLog3MigrationCompleted,
+        changeLog4MigrationCompleted,
+        false);
+  }
+
+  private DetectionExclusionMigrationConfig mockMigrationStore(
+      boolean migrationCompleted,
+      boolean changeLog2MigrationCompleted,
+      boolean changeLog3MigrationCompleted,
+      boolean changeLog4MigrationCompleted,
+      boolean apiProtectionExclusionRulesMigrationCompleted) {
     DetectionExclusionMigrationConfig migrationConfig =
         DetectionExclusionMigrationConfig.newBuilder()
             .setMigrationCompleted(migrationCompleted)
             .setChangeLog2MigrationCompleted(changeLog2MigrationCompleted)
             .setChangeLog3MigrationCompleted(changeLog3MigrationCompleted)
             .setChangeLog4MigrationCompleted(changeLog4MigrationCompleted)
+            .setApiProtectionExclusionRulesMigrationCompleted(
+                apiProtectionExclusionRulesMigrationCompleted)
             .build();
     when(migrationStore.getData(any())).thenReturn(Optional.of(migrationConfig));
     return migrationConfig;

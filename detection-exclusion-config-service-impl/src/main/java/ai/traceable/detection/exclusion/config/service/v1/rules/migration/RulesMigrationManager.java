@@ -16,6 +16,8 @@ public interface RulesMigrationManager {
 
   void migrateForRuleEvaluationPointsIfApplicable(RequestContext requestContext);
 
+  void migrateForApiProtectionExclusionRulesIfApplicable(RequestContext requestContext);
+
   CreateDetectionExclusionRuleRequest migrateCreateDetectionExclusionRuleRequest(
       CreateDetectionExclusionRuleRequest createDetectionExclusionRuleRequest);
 
