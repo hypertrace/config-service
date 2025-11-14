@@ -16,7 +16,6 @@
   },
   "effect": {
     "eventType": "EVENT_TYPE_DETECTION_AND_BLOCKING",
-    "eventSeverity": "EVENT_SEVERITY_MEDIUM",
-    "ruleEvaluationPoints": ["RULE_EVALUATION_POINT_EDGE"]
+    "eventSeverity": "EVENT_SEVERITY_MEDIUM"
   }
 }

@@ -14,10 +14,8 @@ import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionModsecRule;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
-import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleInfo;
 import ai.traceable.detection.exclusion.config.service.v1.GetExclusionModsecRulesResponse;
 import ai.traceable.detection.exclusion.config.service.v1.ModsecBlobData;
-import ai.traceable.detection.exclusion.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.detection.exclusion.config.service.v1.rules.modsec.ModsecBlobConverter.ModsecBlobResult;
 import ai.traceable.detection.exclusion.config.service.v1.rules.modsec.ModsecClauseConverter.ModsecClauseResult;
 import ai.traceable.detection.exclusion.config.service.v1.rules.modsec.ModsecClauseConverter.ServiceDetail;
@@ -63,16 +61,6 @@ class ExclusionModsecRulesManagerTest {
     DetectionExclusionRule exclusionRule2 = mock(DetectionExclusionRule.class);
     when(exclusionRule1.getId()).thenReturn("rule1");
     when(exclusionRule2.getId()).thenReturn("rule2");
-
-    DetectionExclusionRuleInfo ruleInfo1 = mock(DetectionExclusionRuleInfo.class);
-    DetectionExclusionRuleInfo ruleInfo2 = mock(DetectionExclusionRuleInfo.class);
-    when(ruleInfo1.getRuleEvaluationPointsList())
-        .thenReturn(List.of(RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT));
-    when(ruleInfo2.getRuleEvaluationPointsList())
-        .thenReturn(List.of(RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT));
-    when(exclusionRule1.getRuleInfo()).thenReturn(ruleInfo1);
-    when(exclusionRule2.getRuleInfo()).thenReturn(ruleInfo2);
-
     List<DetectionExclusionRule> exclusionRules = List.of(exclusionRule1, exclusionRule2);
 
     ModsecClauseConverter.ModsecClauseResult clauseResult =
@@ -114,10 +102,6 @@ class ExclusionModsecRulesManagerTest {
   @Test
   void testServiceScope() {
     DetectionExclusionRule exclusionRule1 = mock(DetectionExclusionRule.class);
-    DetectionExclusionRuleInfo ruleInfo1 = mock(DetectionExclusionRuleInfo.class);
-    when(ruleInfo1.getRuleEvaluationPointsList())
-        .thenReturn(List.of(RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT));
-    when(exclusionRule1.getRuleInfo()).thenReturn(ruleInfo1);
     when(exclusionRule1.getId()).thenReturn("rule1");
 
     Clause mockClause = mock(Clause.class);
@@ -158,16 +142,8 @@ class ExclusionModsecRulesManagerTest {
   @Test
   void testGetModsecRules_withServiceScope() {
     DetectionExclusionRule exclusionRule1 = mock(DetectionExclusionRule.class);
-    DetectionExclusionRuleInfo ruleInfo1 = mock(DetectionExclusionRuleInfo.class);
-    when(ruleInfo1.getRuleEvaluationPointsList())
-        .thenReturn(List.of(RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT));
-    when(exclusionRule1.getRuleInfo()).thenReturn(ruleInfo1);
     when(exclusionRule1.getId()).thenReturn("rule1");
     DetectionExclusionRule exclusionRule2 = mock(DetectionExclusionRule.class);
-    DetectionExclusionRuleInfo ruleInfo2 = mock(DetectionExclusionRuleInfo.class);
-    when(ruleInfo2.getRuleEvaluationPointsList())
-        .thenReturn(List.of(RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT));
-    when(exclusionRule2.getRuleInfo()).thenReturn(ruleInfo2);
     when(exclusionRule2.getId()).thenReturn("rule2");
     List<DetectionExclusionRule> exclusionRules = List.of(exclusionRule1, exclusionRule2);
 

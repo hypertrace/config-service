@@ -40,7 +40,6 @@
     "name": "test-policy",
     "description": "",
     "enabled": true,
-    "ruleEvaluationPoints": ["RULE_EVALUATION_POINT_EDGE"],
     "condition": {
       "composite_condition": {
         "children": [

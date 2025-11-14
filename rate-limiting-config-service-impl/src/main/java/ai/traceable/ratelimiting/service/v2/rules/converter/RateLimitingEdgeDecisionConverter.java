@@ -67,7 +67,6 @@ import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
 import ai.traceable.ratelimiting.config.service.v2.ResourceAccessThresholdConfig;
 import ai.traceable.ratelimiting.config.service.v2.RuleConfigScope;
-import ai.traceable.ratelimiting.config.service.v2.RuleEvaluationPoint;
 import ai.traceable.ratelimiting.config.service.v2.RuleStatus;
 import ai.traceable.ratelimiting.config.service.v2.ThresholdActionConfig;
 import ai.traceable.ratelimiting.service.v2.rules.converter.condition.MatchConditionDetails;
@@ -145,7 +144,6 @@ public class RateLimitingEdgeDecisionConverter {
       final RequestContext requestContext, final List<RateLimitingRule> rateLimitingRules) {
     final EdgeDecisionEngineConfig.Builder builder = EdgeDecisionEngineConfig.newBuilder();
     rateLimitingRules.stream()
-        .filter(rateLimitingRule -> hasEdgeRuleEvaluationPoint(rateLimitingRule.getData()))
         .map(rule -> this.convertRateLimitingRule(requestContext, rule))
         .forEach(builder::addAllDecisionRules);
     return builder.build();
@@ -688,12 +686,6 @@ public class RateLimitingEdgeDecisionConverter {
           "No path params found across configured entity: " + apiIdentifierEntity);
     }
     return pathParamIndexes;
-  }
-
-  private static boolean hasEdgeRuleEvaluationPoint(RateLimitingRuleData rateLimitingRuleData) {
-    return rateLimitingRuleData
-        .getRuleEvaluationPointsList()
-        .contains(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE);
   }
 
   @lombok.Value

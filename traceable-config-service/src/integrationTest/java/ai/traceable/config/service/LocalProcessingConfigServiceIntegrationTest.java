@@ -12,8 +12,6 @@ import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
-import ai.traceable.customsignature.config.service.v1.AgentModification;
-import ai.traceable.customsignature.config.service.v1.AgentRuleEffect;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.ClauseOperator;
@@ -22,16 +20,11 @@ import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServi
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
 import ai.traceable.customsignature.config.service.v1.EventSeverity;
 import ai.traceable.customsignature.config.service.v1.EventType;
-import ai.traceable.customsignature.config.service.v1.FieldValue;
-import ai.traceable.customsignature.config.service.v1.HeaderInjection;
-import ai.traceable.customsignature.config.service.v1.MatchCategory;
 import ai.traceable.customsignature.config.service.v1.MatchExpression;
 import ai.traceable.customsignature.config.service.v1.MatchKey;
 import ai.traceable.customsignature.config.service.v1.MatchOperator;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
-import ai.traceable.customsignature.config.service.v1.RuleEffectWithModifications;
-import ai.traceable.customsignature.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.v1.CreateLocalProcessingRuleRequest;
 import ai.traceable.localprocessing.config.service.v1.GetDefaultProtectionModeRequest;
@@ -314,29 +307,6 @@ public class LocalProcessingConfigServiceIntegrationTest
   }
 
   private void createAndGetCustomSignatureRule(EventType eventType) {
-    RuleEffect.Builder ruleEffectBuilder =
-        RuleEffect.newBuilder()
-            .setEventType(eventType)
-            .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
-            .addRuleEvaluationPoints(
-                RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT);
-    if (eventType == EventType.EVENT_TYPE_NORMAL_DETECTION
-        || eventType == EventType.EVENT_TYPE_TESTING_DETECTION) {
-      ruleEffectBuilder.addEffects(
-          RuleEffectWithModifications.newBuilder()
-              .setAgentRuleEffect(
-                  AgentRuleEffect.newBuilder()
-                      .addAgentModifications(
-                          AgentModification.newBuilder()
-                              .setHeaderInjection(
-                                  HeaderInjection.newBuilder()
-                                      .setHeaderCategory(MatchCategory.MATCH_CATEGORY_REQUEST)
-                                      .setHeaderName("header-name")
-                                      .setValue(
-                                          FieldValue.newBuilder()
-                                              .setStaticValue("static-field-value"))))));
-    }
-
     GrpcClientRequestContextUtil.executeInTenantContext(
         TENANT_ID,
         () ->
@@ -356,7 +326,11 @@ public class LocalProcessingConfigServiceIntegrationTest
                                                     .setMatchOperator(
                                                         MatchOperator.MATCH_OPERATOR_CONTAINS)
                                                     .setMatchValue("anomalous")))))
-                    .setEffect(ruleEffectBuilder.build())
+                    .setEffect(
+                        RuleEffect.newBuilder()
+                            .setEventType(eventType)
+                            .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
+                            .build())
                     .build()));
   }
 }

@@ -44,7 +44,6 @@ import ai.traceable.customsignature.config.service.v1.RegionExpression;
 import ai.traceable.customsignature.config.service.v1.RequestScannerTypeExpression;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
-import ai.traceable.customsignature.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.customsignature.config.service.v1.UserAgentExpression;
 import ai.traceable.customsignature.config.service.v1.UserIdExpression;
@@ -492,10 +491,6 @@ class CustomSignatureModsecRulesManagerTest {
         CustomSignatureRule.newBuilder()
             .setId(UUID.randomUUID().toString())
             .setName("ruleWithModsecConvertibleClause")
-            .setEffect(
-                RuleEffect.newBuilder()
-                    .addRuleEvaluationPoints(
-                        RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT))
             .setDefinition(
                 RuleDefinition.newBuilder()
                     .setClauseGroup(
@@ -514,10 +509,6 @@ class CustomSignatureModsecRulesManagerTest {
         CustomSignatureRule.newBuilder()
             .setId(UUID.randomUUID().toString())
             .setName("ruleWithConvertibleAndNonConvertibleClause")
-            .setEffect(
-                RuleEffect.newBuilder()
-                    .addRuleEvaluationPoints(
-                        RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT))
             .setDefinition(
                 RuleDefinition.newBuilder()
                     .setClauseGroup(
