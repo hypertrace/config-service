@@ -372,7 +372,7 @@ traceableConfigServiceConfig:
     ruleCategory:
       migrationDisabled: true
     allowRulesPlatformExclusion:
-      migrationDisabled: true
+      migrationDisabled: false
     #    defaultCustomSignatureRules: |-
     #    [
     #     {
