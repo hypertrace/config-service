@@ -105,6 +105,13 @@ public class DocumentConfigStore implements ConfigStore {
             .withDescription("Update failed because upsert condition did not match given record")
             .asRuntimeException();
       }
+    } else if (optionalPreviousConfig.isPresent()
+        && optionalPreviousConfig.get().getCreationTimestamp() < 1648630400000L) {
+      // Delete documents older than 2022-04-01, and recreate them with their IDs ending in "latest"
+      // Since documents before this date don't have "latest" in their _id, they are causing
+      // duplicate entries.
+      collection.delete(buildConfigResourceContextsFilter(List.of(configResourceContext)));
+      collection.upsert(latestDocKey, latestConfigDocument);
     } else {
       collection.upsert(latestDocKey, latestConfigDocument);
     }
