@@ -13,6 +13,8 @@ import static ai.traceable.attribute.resolution.config.service.v1.RelationalOper
 import static ai.traceable.attribute.resolution.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_STARTS_WITH;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.attribute.resolution.config.service.v1.Action;
@@ -39,8 +41,11 @@ import ai.traceable.attribute.resolution.config.service.v1.ServiceScope;
 import ai.traceable.attribute.resolution.config.service.v1.StaticAction;
 import ai.traceable.attribute.resolution.config.service.v1.UpdateAttributeResolutionConfigRequest;
 import ai.traceable.attribute.resolution.config.service.v1.ValueFilter;
+import ai.traceable.attribute.resolution.config.service.v1.manager.AttributeResolutionConfigManager;
+import ai.traceable.attribute.resolution.config.service.v1.manager.AttributeResolutionConfigManagerImpl;
 import com.google.protobuf.Value;
 import io.grpc.StatusRuntimeException;
+import java.util.Collections;
 import java.util.stream.Stream;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,10 +63,12 @@ class AttributeResolutionConfigValidatorImplTest {
   private AttributeResolutionConfigValidatorImpl validator;
 
   @Mock private RequestContext requestContext;
+  @Mock private AttributeResolutionConfigManager attributeResolutionConfigManager;
 
   @BeforeEach
   void setUp() {
-    validator = new AttributeResolutionConfigValidatorImpl();
+    attributeResolutionConfigManager = mock(AttributeResolutionConfigManagerImpl.class);
+    validator = new AttributeResolutionConfigValidatorImpl(attributeResolutionConfigManager);
     when(requestContext.getTenantId()).thenReturn(java.util.Optional.of("test-tenant"));
   }
 
@@ -591,6 +598,176 @@ class AttributeResolutionConfigValidatorImplTest {
 
     assertThrows(
         StatusRuntimeException.class, () -> validator.validateOrThrow(requestContext, request));
+  }
+
+  @Test
+  void testValidateCreateAttributeResolutionConfigRequest_NoDuplicateName_Success() {
+    when(attributeResolutionConfigManager.getAttributeResolutionConfigs(
+            requestContext, GetAttributeResolutionConfigsFilter.getDefaultInstance()))
+        .thenReturn(Collections.emptyList());
+    CreateAttributeResolutionConfigRequest request = createValidCreateRequest();
+    assertDoesNotThrow(() -> validator.validateOrThrow(requestContext, request));
+  }
+
+  @Test
+  void testValidateCreateAttributeResolutionConfigRequest_DuplicateName_ThrowsException() {
+    AttributeResolutionConfig existingConfig =
+        createValidAttributeResolutionConfig().toBuilder()
+            .setId("existing-config-id")
+            .setData(
+                createValidAttributeResolutionConfigData().toBuilder()
+                    .setName("Test Config")
+                    .build())
+            .build();
+
+    when(attributeResolutionConfigManager.getAttributeResolutionConfigs(
+            requestContext, GetAttributeResolutionConfigsFilter.getDefaultInstance()))
+        .thenReturn(Collections.singletonList(existingConfig));
+
+    CreateAttributeResolutionConfigRequest request =
+        CreateAttributeResolutionConfigRequest.newBuilder()
+            .setData(
+                createValidAttributeResolutionConfigData().toBuilder()
+                    .setName("Test Config")
+                    .build())
+            .build();
+
+    StatusRuntimeException exception =
+        assertThrows(
+            StatusRuntimeException.class, () -> validator.validateOrThrow(requestContext, request));
+
+    assertTrue(
+        exception
+            .getMessage()
+            .contains("Attribute resolution config with name Test Config already exists"));
+  }
+
+  @Test
+  void testValidateCreateAttributeResolutionConfigRequest_DifferentName_Success() {
+    AttributeResolutionConfig existingConfig =
+        createValidAttributeResolutionConfig().toBuilder()
+            .setId("existing-config-id")
+            .setData(
+                createValidAttributeResolutionConfigData().toBuilder()
+                    .setName("Existing Config")
+                    .build())
+            .build();
+
+    when(attributeResolutionConfigManager.getAttributeResolutionConfigs(
+            requestContext, GetAttributeResolutionConfigsFilter.getDefaultInstance()))
+        .thenReturn(Collections.singletonList(existingConfig));
+
+    CreateAttributeResolutionConfigRequest request =
+        CreateAttributeResolutionConfigRequest.newBuilder()
+            .setData(
+                createValidAttributeResolutionConfigData().toBuilder()
+                    .setName("New Config")
+                    .build())
+            .build();
+
+    assertDoesNotThrow(() -> validator.validateOrThrow(requestContext, request));
+  }
+
+  @Test
+  void testValidateUpdateAttributeResolutionConfigRequest_SameName_SameId_Success() {
+    AttributeResolutionConfig existingConfig =
+        createValidAttributeResolutionConfig().toBuilder()
+            .setId("config-123")
+            .setData(
+                createValidAttributeResolutionConfigData().toBuilder()
+                    .setName("Test Config")
+                    .build())
+            .build();
+
+    when(attributeResolutionConfigManager.getAttributeResolutionConfigs(
+            requestContext, GetAttributeResolutionConfigsFilter.getDefaultInstance()))
+        .thenReturn(Collections.singletonList(existingConfig));
+
+    UpdateAttributeResolutionConfigRequest request =
+        UpdateAttributeResolutionConfigRequest.newBuilder().setConfig(existingConfig).build();
+
+    assertDoesNotThrow(() -> validator.validateOrThrow(requestContext, request));
+  }
+
+  @Test
+  void testValidateUpdateAttributeResolutionConfigRequest_SameName_DifferentId_ThrowsException() {
+    AttributeResolutionConfig existingConfig =
+        createValidAttributeResolutionConfig().toBuilder()
+            .setId("existing-config-id")
+            .setData(
+                createValidAttributeResolutionConfigData().toBuilder()
+                    .setName("Test Config")
+                    .build())
+            .build();
+
+    when(attributeResolutionConfigManager.getAttributeResolutionConfigs(
+            requestContext, GetAttributeResolutionConfigsFilter.getDefaultInstance()))
+        .thenReturn(Collections.singletonList(existingConfig));
+
+    AttributeResolutionConfig configToUpdate =
+        createValidAttributeResolutionConfig().toBuilder()
+            .setId("different-config-id")
+            .setData(
+                createValidAttributeResolutionConfigData().toBuilder()
+                    .setName("Test Config")
+                    .build())
+            .build();
+
+    UpdateAttributeResolutionConfigRequest request =
+        UpdateAttributeResolutionConfigRequest.newBuilder().setConfig(configToUpdate).build();
+
+    StatusRuntimeException exception =
+        assertThrows(
+            StatusRuntimeException.class, () -> validator.validateOrThrow(requestContext, request));
+
+    assertTrue(
+        exception
+            .getMessage()
+            .contains("Attribute resolution config with name Test Config already exists"));
+  }
+
+  @Test
+  void testValidateUpdateAttributeResolutionConfigRequest_DifferentName_Success() {
+    AttributeResolutionConfig existingConfig =
+        createValidAttributeResolutionConfig().toBuilder()
+            .setId("existing-config-id")
+            .setData(
+                createValidAttributeResolutionConfigData().toBuilder()
+                    .setName("Existing Config")
+                    .build())
+            .build();
+
+    when(attributeResolutionConfigManager.getAttributeResolutionConfigs(
+            requestContext, GetAttributeResolutionConfigsFilter.getDefaultInstance()))
+        .thenReturn(Collections.singletonList(existingConfig));
+
+    AttributeResolutionConfig configToUpdate =
+        createValidAttributeResolutionConfig().toBuilder()
+            .setId("different-config-id")
+            .setData(
+                createValidAttributeResolutionConfigData().toBuilder()
+                    .setName("Updated Config")
+                    .build())
+            .build();
+
+    UpdateAttributeResolutionConfigRequest request =
+        UpdateAttributeResolutionConfigRequest.newBuilder().setConfig(configToUpdate).build();
+
+    assertDoesNotThrow(() -> validator.validateOrThrow(requestContext, request));
+  }
+
+  @Test
+  void testValidateUpdateAttributeResolutionConfigRequest_NoExistingConfigs_Success() {
+
+    when(attributeResolutionConfigManager.getAttributeResolutionConfigs(
+            requestContext, GetAttributeResolutionConfigsFilter.getDefaultInstance()))
+        .thenReturn(Collections.emptyList());
+
+    UpdateAttributeResolutionConfigRequest request =
+        UpdateAttributeResolutionConfigRequest.newBuilder()
+            .setConfig(createValidAttributeResolutionConfig())
+            .build();
+    assertDoesNotThrow(() -> validator.validateOrThrow(requestContext, request));
   }
 
   private static Stream<Arguments> provideValidUrlPathOperators() {

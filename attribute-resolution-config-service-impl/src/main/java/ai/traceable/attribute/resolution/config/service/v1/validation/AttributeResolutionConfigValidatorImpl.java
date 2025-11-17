@@ -20,6 +20,7 @@ import ai.traceable.attribute.resolution.config.service.v1.DeleteAttributeResolu
 import ai.traceable.attribute.resolution.config.service.v1.DynamicAction;
 import ai.traceable.attribute.resolution.config.service.v1.EnvironmentScope;
 import ai.traceable.attribute.resolution.config.service.v1.Filter;
+import ai.traceable.attribute.resolution.config.service.v1.GetAttributeResolutionConfigsFilter;
 import ai.traceable.attribute.resolution.config.service.v1.GetAttributeResolutionConfigsRequest;
 import ai.traceable.attribute.resolution.config.service.v1.KeyFilter;
 import ai.traceable.attribute.resolution.config.service.v1.KeyLocation;
@@ -32,10 +33,12 @@ import ai.traceable.attribute.resolution.config.service.v1.ServiceScope;
 import ai.traceable.attribute.resolution.config.service.v1.StaticAction;
 import ai.traceable.attribute.resolution.config.service.v1.UpdateAttributeResolutionConfigRequest;
 import ai.traceable.attribute.resolution.config.service.v1.ValueFilter;
+import ai.traceable.attribute.resolution.config.service.v1.manager.AttributeResolutionConfigManager;
 import ai.traceable.config.utils.RegexValidator;
 import io.grpc.Status;
 import jakarta.inject.Inject;
 import java.util.List;
+import java.util.Optional;
 import lombok.AllArgsConstructor;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -53,6 +56,8 @@ public class AttributeResolutionConfigValidatorImpl implements AttributeResoluti
           RELATIONAL_OPERATOR_REGEX_MATCH,
           RELATIONAL_OPERATOR_NOT_CONTAINS);
 
+  private final AttributeResolutionConfigManager manager;
+
   @Override
   public void validateOrThrow(
       RequestContext context, GetAttributeResolutionConfigsRequest request) {
@@ -64,6 +69,7 @@ public class AttributeResolutionConfigValidatorImpl implements AttributeResoluti
       RequestContext context, CreateAttributeResolutionConfigRequest request) {
     validateRequestContextOrThrow(context);
     validateAttributeResolutionConfigData(request.getData());
+    validateDuplicateConfigName(context, request.getData().getName());
   }
 
   @Override
@@ -71,6 +77,7 @@ public class AttributeResolutionConfigValidatorImpl implements AttributeResoluti
       RequestContext context, UpdateAttributeResolutionConfigRequest request) {
     validateRequestContextOrThrow(context);
     validateAttributeResolutionConfig(request.getConfig());
+    validateDuplicateConfigName(context, request.getConfig());
   }
 
   @Override
@@ -300,5 +307,41 @@ public class AttributeResolutionConfigValidatorImpl implements AttributeResoluti
                   environmentScope))
           .asRuntimeException();
     }
+  }
+
+  private void validateDuplicateConfigName(RequestContext context, String configName) {
+    Optional<AttributeResolutionConfig> existingConfigWithSameName =
+        findConfigByName(context, configName);
+    if (existingConfigWithSameName.isPresent()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              String.format("Attribute resolution config with name %s already exists", configName))
+          .asRuntimeException();
+    }
+  }
+
+  private void validateDuplicateConfigName(
+      RequestContext context, AttributeResolutionConfig config) {
+    Optional<AttributeResolutionConfig> existingConfigWithSameName =
+        findConfigByName(context, config.getData().getName());
+    if (existingConfigWithSameName.isPresent()
+        && !existingConfigWithSameName.get().getId().equals(config.getId())) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              String.format(
+                  "Attribute resolution config with name %s already exists",
+                  config.getData().getName()))
+          .asRuntimeException();
+    }
+  }
+
+  private Optional<AttributeResolutionConfig> findConfigByName(
+      RequestContext context, String configName) {
+    List<AttributeResolutionConfig> existingConfigs =
+        manager.getAttributeResolutionConfigs(
+            context, GetAttributeResolutionConfigsFilter.getDefaultInstance());
+    return existingConfigs.stream()
+        .filter(config -> config.getData().getName().equals(configName))
+        .findFirst();
   }
 }
