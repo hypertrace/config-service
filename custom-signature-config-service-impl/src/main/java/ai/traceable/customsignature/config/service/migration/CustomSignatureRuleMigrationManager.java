@@ -2,6 +2,7 @@ package ai.traceable.customsignature.config.service.migration;
 
 import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceConfig;
 import ai.traceable.customsignature.config.service.rules.CustomSignatureRulesStore;
+import ai.traceable.customsignature.config.service.rules.CustomSignatureRulesValidator;
 import ai.traceable.customsignature.config.service.v1.Category;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureMigrationConfig;
@@ -33,6 +34,8 @@ public class CustomSignatureRuleMigrationManager {
   private final Set<ContextualKey<Void>> ruleCategoryMigrationCompletedTenantsSet = new HashSet<>();
   private final Set<ContextualKey<Void>> allowRulesPlatformExclusionMigrationCompletedTenantsSet =
       new HashSet<>();
+  private final Set<ContextualKey<Void>> markForTestingInlineAgentMigrationCompletedTenantsSet =
+      new HashSet<>();
 
   @Inject
   public CustomSignatureRuleMigrationManager(
@@ -62,6 +65,7 @@ public class CustomSignatureRuleMigrationManager {
     migrateRuleEvaluationPoints(requestContext);
     migrateRuleCategory(requestContext);
     migrateAllowRulesPlatformExclusion(requestContext);
+    migrateMarkForTestingToInlineAgent(requestContext);
   }
 
   private void migrateRuleEvaluationPoints(RequestContext requestContext) {
@@ -178,6 +182,59 @@ public class CustomSignatureRuleMigrationManager {
                               .build())
                       .build();
                 })
+            .collect(Collectors.toList());
+
+    if (updatedRules.isEmpty()) {
+      return;
+    }
+    rulesStore.upsertObjects(requestContext, updatedRules);
+  }
+
+  private void migrateMarkForTestingToInlineAgent(RequestContext requestContext) {
+    if (config.isMarkForTestingInlineAgentMigrationDisabled()) {
+      return;
+    }
+    ContextualKey<Void> contextualKey = requestContext.buildInternalContextualKey();
+    if (markForTestingInlineAgentMigrationCompletedTenantsSet.contains(contextualKey)) {
+      return;
+    }
+    CustomSignatureMigrationConfig customSignatureMigrationConfig =
+        migrationConfigStore
+            .getData(requestContext)
+            .orElse(CustomSignatureMigrationConfig.getDefaultInstance());
+    if (customSignatureMigrationConfig.getMarkForTestingInlineAgentMigrationCompleted()) {
+      markForTestingInlineAgentMigrationCompletedTenantsSet.add(contextualKey);
+    } else {
+      migrateMarkForTestingToInlineAgentIfApplicable(requestContext);
+      migrationConfigStore.upsertObject(
+          requestContext,
+          customSignatureMigrationConfig.toBuilder()
+              .setMarkForTestingInlineAgentMigrationCompleted(true)
+              .build());
+      markForTestingInlineAgentMigrationCompletedTenantsSet.add(contextualKey);
+    }
+  }
+
+  private void migrateMarkForTestingToInlineAgentIfApplicable(RequestContext requestContext) {
+    List<CustomSignatureRule> updatedRules =
+        rulesStore.getAllConfigData(requestContext).stream()
+            .filter(
+                rule ->
+                    CustomSignatureRulesValidator.isRuleOfEventTypeAlertAndContainsHeaderInjection(
+                            rule.getEffect())
+                        && !rule.getEffect()
+                            .getRuleEvaluationPointsList()
+                            .contains(
+                                RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT))
+            .map(
+                rule ->
+                    rule.toBuilder()
+                        .setEffect(
+                            rule.getEffect().toBuilder()
+                                .addRuleEvaluationPoints(
+                                    RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT)
+                                .build())
+                        .build())
             .collect(Collectors.toList());
 
     if (updatedRules.isEmpty()) {

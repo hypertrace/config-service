@@ -553,4 +553,6 @@ message CustomSignatureMigrationConfig {
   bool rule_category_migration_completed = 2;
   // migrate existing ALLOW rules to exclude PLATFORM from rule evaluation points
   bool allow_rules_platform_exclusion_migration_completed = 3;
+  // migrate existing rules to have INLINE_TRACING_AGENT as a rule evaluation point for ruleEffect having markForTesting with header injection
+  bool mark_for_testing_inline_agent_migration_completed = 4;
 }

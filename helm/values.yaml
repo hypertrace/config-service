@@ -373,6 +373,8 @@ traceableConfigServiceConfig:
       migrationDisabled: true
     allowRulesPlatformExclusion:
       migrationDisabled: false
+    markForTestingInlineAgent:
+      migrationDisabled: true
     #    defaultCustomSignatureRules: |-
     #    [
     #     {

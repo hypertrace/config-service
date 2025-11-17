@@ -37,10 +37,13 @@ public class CustomSignatureConfigServiceConfig {
       "ruleCategory." + MIGRATION_DISABLED_KEY;
   private static final String ALLOW_RULES_PLATFORM_EXCLUSION_MIGRATION_DISABLED_KEY =
       "allowRulesPlatformExclusion." + MIGRATION_DISABLED_KEY;
+  private static final String MARK_FOR_TESTING_INLINE_AGENT_MIGRATION_DISABLED_KEY =
+      "markForTestingInlineAgent." + MIGRATION_DISABLED_KEY;
 
   @Getter private final boolean ruleEvaluationPointsMigrationDisabled;
   @Getter private final boolean ruleCategoryMigrationDisabled;
   @Getter private final boolean allowRulesPlatformExclusionMigrationDisabled;
+  @Getter private final boolean markForTestingInlineAgentMigrationDisabled;
 
   public CustomSignatureConfigServiceConfig(Config config) {
     this.config =
@@ -57,6 +60,9 @@ public class CustomSignatureConfigServiceConfig {
     this.allowRulesPlatformExclusionMigrationDisabled =
         this.config.hasPath(ALLOW_RULES_PLATFORM_EXCLUSION_MIGRATION_DISABLED_KEY)
             && this.config.getBoolean(ALLOW_RULES_PLATFORM_EXCLUSION_MIGRATION_DISABLED_KEY);
+    this.markForTestingInlineAgentMigrationDisabled =
+        this.config.hasPath(MARK_FOR_TESTING_INLINE_AGENT_MIGRATION_DISABLED_KEY)
+            && this.config.getBoolean(MARK_FOR_TESTING_INLINE_AGENT_MIGRATION_DISABLED_KEY);
   }
 
   private List<CustomSignatureRule> loadDefaultCustomSignatureRules() {

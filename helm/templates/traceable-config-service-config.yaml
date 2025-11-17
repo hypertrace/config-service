@@ -143,6 +143,7 @@ data:
       ruleEvaluationPoints.migrationDisabled = {{ .Values.traceableConfigServiceConfig.customSignatureConfigService.ruleEvaluationPoints.migrationDisabled }}
       ruleCategory.migrationDisabled = {{ .Values.traceableConfigServiceConfig.customSignatureConfigService.ruleCategory.migrationDisabled }}
       allowRulesPlatformExclusion.migrationDisabled = {{ .Values.traceableConfigServiceConfig.customSignatureConfigService.allowRulesPlatformExclusion.migrationDisabled }}
+      markForTestingInlineAgent.migrationDisabled = {{ .Values.traceableConfigServiceConfig.customSignatureConfigService.markForTestingInlineAgent.migrationDisabled }}
     }
     bot.config.service {
         default.policies = {{ toJson .Values.traceableConfigServiceConfig.botConfigService.defaultPolicies }}
