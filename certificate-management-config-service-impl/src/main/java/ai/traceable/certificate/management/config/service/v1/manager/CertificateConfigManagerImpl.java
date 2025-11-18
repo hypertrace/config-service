@@ -4,10 +4,13 @@ import ai.traceable.certificate.management.config.service.v1.*;
 import ai.traceable.certificate.management.config.service.v1.store.CertificateConfigStore;
 import ai.traceable.certificate.management.config.service.v1.validator.CertificateUsageValidator;
 import ai.traceable.config.utils.UuidGenerator;
+import com.google.protobuf.Timestamp;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -45,7 +48,11 @@ public class CertificateConfigManagerImpl implements CertificateConfigManager {
 
   @Override
   public List<Certificate> getCertificates(RequestContext ctx, CertificateFilter filter) {
-    return store.getCertificates(ctx, filter);
+    List<Certificate> certificates = store.getCertificates(ctx, filter);
+
+    return certificates.stream()
+        .map(cert -> updateCertificateStatusBasedOnExpiration(ctx, cert))
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -153,5 +160,40 @@ public class CertificateConfigManagerImpl implements CertificateConfigManager {
       throw new StatusRuntimeException(
           Status.INTERNAL.withDescription("Failed to delete certificate: " + e.getMessage()));
     }
+  }
+
+  private Certificate updateCertificateStatusBasedOnExpiration(
+      RequestContext ctx, Certificate certificate) {
+    if (!certificate.hasStatusDetails()
+        || !certificate.getStatusDetails().hasExpirationTimestamp()) {
+      return certificate;
+    }
+
+    CertificateStatus currentStatus = certificate.getStatusDetails().getStatus();
+
+    if (currentStatus == CertificateStatus.CERTIFICATE_STATUS_EXPIRED
+        || currentStatus == CertificateStatus.CERTIFICATE_STATUS_REVOKED
+        || currentStatus == CertificateStatus.CERTIFICATE_STATUS_FAILED) {
+      return certificate;
+    }
+
+    Timestamp expirationTimestamp = certificate.getStatusDetails().getExpirationTimestamp();
+    Instant expirationInstant =
+        Instant.ofEpochSecond(expirationTimestamp.getSeconds(), expirationTimestamp.getNanos());
+    Instant now = Instant.now();
+
+    if (now.isAfter(expirationInstant)) {
+      Certificate updatedCertificate =
+          certificate.toBuilder()
+              .setStatusDetails(
+                  certificate.getStatusDetails().toBuilder()
+                      .setStatus(CertificateStatus.CERTIFICATE_STATUS_EXPIRED)
+                      .build())
+              .build();
+
+      return store.updateCertificate(ctx, updatedCertificate);
+    }
+
+    return certificate;
   }
 }

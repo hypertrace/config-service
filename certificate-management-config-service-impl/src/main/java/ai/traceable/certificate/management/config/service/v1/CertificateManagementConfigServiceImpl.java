@@ -40,7 +40,6 @@ public class CertificateManagementConfigServiceImpl
     try {
       List<Certificate> certificates =
           certificateConfigManager.getCertificates(ctx, request.getFilter());
-
       responseObserver.onNext(
           GetCertificatesResponse.newBuilder().addAllCertificates(certificates).build());
       responseObserver.onCompleted();

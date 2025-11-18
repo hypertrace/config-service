@@ -216,6 +216,141 @@ class CertificateConfigManagerImplTest {
   }
 
   @Test
+  void testGetCertificates_UpdatesExpiredCertificateStatus() {
+    CertificateFilter filter = CertificateFilter.getDefaultInstance();
+
+    // Create an expired certificate (expiration 1 hour ago)
+    long pastExpiration = (System.currentTimeMillis() / 1000) - 3600;
+    Certificate expiredCertificate =
+        Certificate.newBuilder()
+            .setId("cert-expired")
+            .setName("Expired Certificate")
+            .setMetadata(createValidMetadata())
+            .addStorage(createValidStorageDetails())
+            .setStatusDetails(
+                CertificateStatusDetails.newBuilder()
+                    .setStatus(CertificateStatus.CERTIFICATE_STATUS_ACTIVE)
+                    .setExpirationTimestamp(Timestamp.newBuilder().setSeconds(pastExpiration))
+                    .build())
+            .build();
+
+    // Create a valid certificate (expires in 1 hour)
+    long futureExpiration = (System.currentTimeMillis() / 1000) + 3600;
+    Certificate validCertificate =
+        Certificate.newBuilder()
+            .setId("cert-valid")
+            .setName("Valid Certificate")
+            .setMetadata(createValidMetadata())
+            .addStorage(createValidStorageDetails())
+            .setStatusDetails(
+                CertificateStatusDetails.newBuilder()
+                    .setStatus(CertificateStatus.CERTIFICATE_STATUS_ACTIVE)
+                    .setExpirationTimestamp(Timestamp.newBuilder().setSeconds(futureExpiration))
+                    .build())
+            .build();
+
+    // Expected updated certificate with EXPIRED status
+    Certificate expectedUpdatedCertificate =
+        expiredCertificate.toBuilder()
+            .setStatusDetails(
+                expiredCertificate.getStatusDetails().toBuilder()
+                    .setStatus(CertificateStatus.CERTIFICATE_STATUS_EXPIRED)
+                    .build())
+            .build();
+
+    when(store.getCertificates(requestContext, filter))
+        .thenReturn(Arrays.asList(expiredCertificate, validCertificate));
+    when(store.updateCertificate(eq(requestContext), any(Certificate.class)))
+        .thenReturn(expectedUpdatedCertificate);
+
+    List<Certificate> result = manager.getCertificates(requestContext, filter);
+
+    assertNotNull(result);
+    assertEquals(2, result.size());
+
+    // First certificate should be marked as EXPIRED
+    assertEquals("cert-expired", result.get(0).getId());
+    assertEquals(
+        CertificateStatus.CERTIFICATE_STATUS_EXPIRED, result.get(0).getStatusDetails().getStatus());
+
+    // Second certificate should remain ACTIVE
+    assertEquals("cert-valid", result.get(1).getId());
+    assertEquals(
+        CertificateStatus.CERTIFICATE_STATUS_ACTIVE, result.get(1).getStatusDetails().getStatus());
+
+    verify(store).getCertificates(requestContext, filter);
+    verify(store).updateCertificate(eq(requestContext), any(Certificate.class));
+  }
+
+  @Test
+  void testGetCertificates_SkipsAlreadyExpiredCertificates() {
+    CertificateFilter filter = CertificateFilter.getDefaultInstance();
+
+    // Create a certificate that is already marked as EXPIRED
+    long pastExpiration = (System.currentTimeMillis() / 1000) - 3600;
+    Certificate alreadyExpiredCertificate =
+        Certificate.newBuilder()
+            .setId("cert-already-expired")
+            .setName("Already Expired Certificate")
+            .setMetadata(createValidMetadata())
+            .addStorage(createValidStorageDetails())
+            .setStatusDetails(
+                CertificateStatusDetails.newBuilder()
+                    .setStatus(CertificateStatus.CERTIFICATE_STATUS_EXPIRED)
+                    .setExpirationTimestamp(Timestamp.newBuilder().setSeconds(pastExpiration))
+                    .build())
+            .build();
+
+    when(store.getCertificates(requestContext, filter))
+        .thenReturn(List.of(alreadyExpiredCertificate));
+
+    List<Certificate> result = manager.getCertificates(requestContext, filter);
+
+    assertNotNull(result);
+    assertEquals(1, result.size());
+    assertEquals("cert-already-expired", result.get(0).getId());
+    assertEquals(
+        CertificateStatus.CERTIFICATE_STATUS_EXPIRED, result.get(0).getStatusDetails().getStatus());
+
+    verify(store).getCertificates(requestContext, filter);
+    // Should NOT call updateCertificate since it's already expired
+    verify(store, never()).updateCertificate(any(), any());
+  }
+
+  @Test
+  void testGetCertificates_SkipsCertificatesWithoutExpirationTimestamp() {
+    CertificateFilter filter = CertificateFilter.getDefaultInstance();
+
+    // Create a certificate without expiration timestamp
+    Certificate certificateWithoutExpiration =
+        Certificate.newBuilder()
+            .setId("cert-no-expiration")
+            .setName("Certificate Without Expiration")
+            .setMetadata(createValidMetadata())
+            .addStorage(createValidStorageDetails())
+            .setStatusDetails(
+                CertificateStatusDetails.newBuilder()
+                    .setStatus(CertificateStatus.CERTIFICATE_STATUS_ACTIVE)
+                    .build())
+            .build();
+
+    when(store.getCertificates(requestContext, filter))
+        .thenReturn(List.of(certificateWithoutExpiration));
+
+    List<Certificate> result = manager.getCertificates(requestContext, filter);
+
+    assertNotNull(result);
+    assertEquals(1, result.size());
+    assertEquals("cert-no-expiration", result.get(0).getId());
+    assertEquals(
+        CertificateStatus.CERTIFICATE_STATUS_ACTIVE, result.get(0).getStatusDetails().getStatus());
+
+    verify(store).getCertificates(requestContext, filter);
+    // Should NOT call updateCertificate since there's no expiration timestamp
+    verify(store, never()).updateCertificate(any(), any());
+  }
+
+  @Test
   void testUpdateCertificate_StatusUpdate() {
     String id = "cert-123";
     Timestamp expirationTimestamp =
