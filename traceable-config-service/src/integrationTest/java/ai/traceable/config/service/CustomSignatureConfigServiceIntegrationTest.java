@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import ai.traceable.customsignature.config.service.v1.AgentModification;
+import ai.traceable.customsignature.config.service.v1.AgentRuleEffect;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.ClauseOperator;
@@ -17,20 +19,24 @@ import ai.traceable.customsignature.config.service.v1.DeleteCustomSignatureRuleR
 import ai.traceable.customsignature.config.service.v1.EventSeverity;
 import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.ExpiryDetails;
+import ai.traceable.customsignature.config.service.v1.FieldValue;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureEdgeDecisionRulesRequest;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureEdgeDecisionRulesResponse;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesRequest;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesResponse;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesRequest;
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
+import ai.traceable.customsignature.config.service.v1.HeaderInjection;
 import ai.traceable.customsignature.config.service.v1.IpAddressExpression;
 import ai.traceable.customsignature.config.service.v1.KeyValueExpression;
 import ai.traceable.customsignature.config.service.v1.KeyValueTag;
+import ai.traceable.customsignature.config.service.v1.MatchCategory;
 import ai.traceable.customsignature.config.service.v1.MatchExpression;
 import ai.traceable.customsignature.config.service.v1.MatchKey;
 import ai.traceable.customsignature.config.service.v1.MatchOperator;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
+import ai.traceable.customsignature.config.service.v1.RuleEffectWithModifications;
 import ai.traceable.customsignature.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.customsignature.config.service.v1.RuleSource;
@@ -177,8 +183,7 @@ public class CustomSignatureConfigServiceIntegrationTest
     assertFalse(fetchedRules.get(0).getBlockingExpiryDetails().hasExpiryDuration());
     assertEquals(0, fetchedRules.get(0).getBlockingExpiryDetails().getExpiryTimestampMillis());
     updateExpiryTime(fetchedRules.get(0));
-    List<CustomSignatureRule> updatedRules =
-        fetchTestRules(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING);
+    List<CustomSignatureRule> updatedRules = fetchTestRules(EventType.EVENT_TYPE_ALLOW);
     assertEquals(1, updatedRules.size());
     assertEquals(updatedRules.get(0).getId(), fetchedRules.get(0).getId());
     assertEquals(
@@ -364,7 +369,8 @@ public class CustomSignatureConfigServiceIntegrationTest
                                 RuleEffect.newBuilder()
                                     .setEventType(EventType.EVENT_TYPE_TESTING_DETECTION)
                                     .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
-                                    .build())
+                                    .addEffects(
+                                        getRuleEffectWithModificationsForInlineTracingAgent()))
                             .setDefinition(definition)
                             .setRuleScope(RuleScope.newBuilder().build())
                             .setRuleSource(RuleSource.RULE_SOURCE_CUSTOMER)
@@ -383,7 +389,8 @@ public class CustomSignatureConfigServiceIntegrationTest
                                 RuleEffect.newBuilder()
                                     .setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION)
                                     .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
-                                    .build())
+                                    .addEffects(
+                                        getRuleEffectWithModificationsForInlineTracingAgent()))
                             .setDefinition(definition)
                             .setRuleScope(RuleScope.newBuilder().build())
                             .setRuleSource(RuleSource.RULE_SOURCE_CUSTOMER)
@@ -465,7 +472,11 @@ public class CustomSignatureConfigServiceIntegrationTest
                 RuleEffect.newBuilder()
                     .setEventType(EventType.EVENT_TYPE_TESTING_DETECTION)
                     .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
-                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+                    .addAllRuleEvaluationPoints(
+                        List.of(
+                            RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM,
+                            RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT))
+                    .addEffects(getRuleEffectWithModificationsForInlineTracingAgent())
                     .build())
             .setDefinition(definition)
             .setRuleScope(RuleScope.newBuilder().build())
@@ -478,7 +489,11 @@ public class CustomSignatureConfigServiceIntegrationTest
                 RuleEffect.newBuilder()
                     .setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION)
                     .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
-                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+                    .addAllRuleEvaluationPoints(
+                        List.of(
+                            RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM,
+                            RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT))
+                    .addEffects(getRuleEffectWithModificationsForInlineTracingAgent())
                     .build())
             .setDefinition(definition)
             .setRuleScope(RuleScope.newBuilder().build())
@@ -489,9 +504,7 @@ public class CustomSignatureConfigServiceIntegrationTest
   private void updateExpiryTime(CustomSignatureRule rule) {
     CustomSignatureRule updatedRule =
         CustomSignatureRule.newBuilder(rule.toBuilder().clearRuleSource().build())
-            .setEffect(
-                rule.getEffect().toBuilder()
-                    .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING))
+            .setEffect(rule.getEffect().toBuilder().setEventType(EventType.EVENT_TYPE_ALLOW))
             .setBlockingExpiryDetails(
                 ExpiryDetails.newBuilder()
                     .setExpiryDuration(Duration.of(2, ChronoUnit.DAYS).toString())
@@ -524,5 +537,20 @@ public class CustomSignatureConfigServiceIntegrationTest
                                 .build())
                         .build())
                 .getRulesList());
+  }
+
+  private RuleEffectWithModifications getRuleEffectWithModificationsForInlineTracingAgent() {
+    return RuleEffectWithModifications.newBuilder()
+        .setAgentRuleEffect(
+            AgentRuleEffect.newBuilder()
+                .addAgentModifications(
+                    AgentModification.newBuilder()
+                        .setHeaderInjection(
+                            HeaderInjection.newBuilder()
+                                .setHeaderName("header-name")
+                                .setHeaderCategory(MatchCategory.MATCH_CATEGORY_REQUEST)
+                                .setValue(
+                                    FieldValue.newBuilder().setStaticValue("static-field-value")))))
+        .build();
   }
 }
