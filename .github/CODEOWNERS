@@ -17,12 +17,12 @@ custom-signature-config-service-impl/src @singhalprerana @avinashkolluru @aaron-
 malicious-sources-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99 @bhubam
 iprange-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99 @bhubam
 region-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99 @bhubam
-fraud-datamodel-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @vinaysrini @abhishek-yadav-tracable
-fraud-datamodel-derivation-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @vinaysrini @abhishek-yadav-tracable
-fraud-policy-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @vinaysrini @abhishek-yadav-tracable
-fraud-datamodel-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @vinaysrini @abhishek-yadav-tracable
-fraud-datamodel-derivation-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @vinaysrini @abhishek-yadav-tracable
-fraud-policy-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @vinaysrini @abhishek-yadav-tracable
+fraud-datamodel-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @vinaysrini @abhishek-yadav-tracable @varsha-abhinandan
+fraud-datamodel-derivation-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @vinaysrini @abhishek-yadav-tracable @varsha-abhinandan
+fraud-policy-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @vinaysrini @abhishek-yadav-tracable @varsha-abhinandan
+fraud-datamodel-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @vinaysrini @abhishek-yadav-tracable @varsha-abhinandan
+fraud-datamodel-derivation-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @vinaysrini @abhishek-yadav-tracable @varsha-abhinandan
+fraud-policy-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @vinaysrini @abhishek-yadav-tracable @varsha-abhinandan
 traceable-policy-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini
 traceable-policy-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini
 traceable-datamodel-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini
