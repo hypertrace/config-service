@@ -123,12 +123,19 @@ public class AttributeResolutionConfigCachingClientImpl implements AttributeReso
     if (!AttributeResolutionConfig.class.getName().equals(key.getConfigType())) {
       return;
     }
-    RequestContext requestContext = RequestContext.forTenantId(key.getTenantId());
     switch (value.getEventCase()) {
       case CREATE_EVENT:
       case UPDATE_EVENT:
       case DELETE_EVENT:
-        this.attributeResolutionConfigCache.invalidate(requestContext.buildInternalContextualKey());
+        this.attributeResolutionConfigCache.asMap().keySet().stream()
+            .filter(
+                config ->
+                    config
+                        .getContext()
+                        .getTenantId()
+                        .map(tenantId -> tenantId.equals(key.getTenantId()))
+                        .orElse(false))
+            .forEach(attributeResolutionConfigCache::invalidate);
         break;
       default:
     }

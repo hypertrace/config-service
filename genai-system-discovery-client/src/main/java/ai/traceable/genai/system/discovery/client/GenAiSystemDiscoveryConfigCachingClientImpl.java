@@ -134,13 +134,19 @@ public class GenAiSystemDiscoveryConfigCachingClientImpl
     if (!GenAiSystemDiscoveryRule.class.getName().equals(key.getConfigType())) {
       return;
     }
-    RequestContext requestContext = RequestContext.forTenantId(key.getTenantId());
     switch (value.getEventCase()) {
       case CREATE_EVENT:
       case UPDATE_EVENT:
       case DELETE_EVENT:
-        this.genAiSystemDiscoveryConfigCache.invalidate(
-            requestContext.buildInternalContextualKey());
+        this.genAiSystemDiscoveryConfigCache.asMap().keySet().stream()
+            .filter(
+                config ->
+                    config
+                        .getContext()
+                        .getTenantId()
+                        .map(tenantId -> tenantId.equals(key.getTenantId()))
+                        .orElse(false))
+            .forEach(genAiSystemDiscoveryConfigCache::invalidate);
         break;
       default:
     }

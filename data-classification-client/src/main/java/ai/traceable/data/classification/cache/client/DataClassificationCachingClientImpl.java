@@ -139,12 +139,19 @@ public class DataClassificationCachingClientImpl implements DataClassificationCl
         && !key.getConfigType().equals(DataSet.class.getName())) {
       return;
     }
-    RequestContext requestContext = RequestContext.forTenantId(key.getTenantId());
     switch (value.getEventCase()) {
       case CREATE_EVENT:
       case UPDATE_EVENT:
       case DELETE_EVENT:
-        this.dataClassificationInfoCache.invalidate(requestContext.buildInternalContextualKey());
+        this.dataClassificationInfoCache.asMap().keySet().stream()
+            .filter(
+                config ->
+                    config
+                        .getContext()
+                        .getTenantId()
+                        .map(tenantId -> tenantId.equals(key.getTenantId()))
+                        .orElse(false))
+            .forEach(dataClassificationInfoCache::invalidate);
         break;
       default:
     }
