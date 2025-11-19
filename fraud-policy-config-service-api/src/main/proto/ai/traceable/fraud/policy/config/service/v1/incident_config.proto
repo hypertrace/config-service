@@ -260,6 +260,7 @@ message CreateTriggers {
 
 message CloseTriggers {
   repeated CloseTrigger or = 1;
+  repeated CloseTrigger and = 2;
 }
 
 // these are incident triggers. for create and close
@@ -282,6 +283,8 @@ enum CloseTriggerType {
   // trigger based on count of anomalies in a window
   // for ex: window = 5 evaluations, trigger if 3 or more normal (non-anomalous) points
   CLOSE_TRIGGER_TYPE_COUNT = 1;
+  // trigger based on time
+  CLOSE_TRIGGER_TYPE_TIME = 2;
 }
 
 message TriggerWindow {
@@ -301,6 +304,7 @@ message CreateTrigger {
 message CloseTrigger {
   oneof type {
     CloseCountTrigger close_count_trigger = 1;
+    CloseTimeTrigger close_time_trigger = 2;
   }
 }
 
@@ -319,4 +323,9 @@ message CloseCountTrigger {
   TriggerWindow window = 2;
   // threshold of count. how many normal points in a window
   int32 normal_count = 3;
+}
+
+message CloseTimeTrigger {
+  CloseTriggerType type = 1;
+  ai.traceable.fraud.policy.config.service.v1.TimeObj close_time = 2;
 }
