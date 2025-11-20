@@ -178,6 +178,12 @@ message FraudPolicy {
   // if this policy is generated from a template / default rule, store the template id
   optional string template_id = 20;
 
+  Target target = 21;
+
+  // This field holds references to the definitions, entities, and derivations
+  // that are used by this policy.
+  repeated BackreferencesInfo backreferences_info = 22;
+
   IncidentConfig incident_config = 100;
   TriageConfig triage_config = 101;
   // store information about the last execution status of the policy.
@@ -423,5 +429,26 @@ message ThresholdOperation {
     ThresholdPercent threshold_percent = 2;
     ThresholdStdDev threshold_std_dev = 3;
     ThresholdAbsolute threshold_abs = 4;
+  }
+}
+
+message Target {
+  oneof target_type {
+    ApiEndpointTarget api_endpoint = 1;
+  }
+
+  message ApiEndpointTarget {
+    string api_id = 1;
+  }
+}
+
+message BackreferencesInfo {
+  oneof reference_type {
+    // Derivation config reference
+    DerivationConfigReference derivation_config = 2;
+  }
+
+  message DerivationConfigReference {
+    string derivation_config_id = 1;
   }
 }

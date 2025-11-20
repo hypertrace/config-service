@@ -84,14 +84,45 @@ public class FraudPolicyDefinitionsTest {
                                                                         BaselineSpec.newBuilder()
                                                                             .setEwmaBaseline(
                                                                                 EWMABaseline
-                                                                                    .getDefaultInstance()))))))
-                                    .build())))
-            .setCategory(FraudPolicyCategory.FRAUD_POLICY_CATEGORY_FRAUD)
+                                                                                    .getDefaultInstance())))))))))
             .build();
     print(fraudPolicy);
     FraudPolicy deserialized =
         deserialize(serialize(fraudPolicy), FraudPolicy.newBuilder()).build();
     Assertions.assertEquals(fraudPolicy, deserialized);
+  }
+
+  @Test
+  void testBackreferencesInfo() {
+    FraudPolicy policy =
+        FraudPolicy.newBuilder()
+            .setId("backref-test-id")
+            .setName("policy_with_backreferences")
+            // Add derivation config references
+            .addBackreferencesInfo(
+                BackreferencesInfo.newBuilder()
+                    .setDerivationConfig(
+                        BackreferencesInfo.DerivationConfigReference.newBuilder()
+                            .setDerivationConfigId("derivation-config-123")))
+            .addBackreferencesInfo(
+                BackreferencesInfo.newBuilder()
+                    .setDerivationConfig(
+                        BackreferencesInfo.DerivationConfigReference.newBuilder()
+                            .setDerivationConfigId("derivation-config-456")))
+            .build();
+
+    // Test serialization and deserialization
+    FraudPolicy deserialized = deserialize(serialize(policy), FraudPolicy.newBuilder()).build();
+    Assertions.assertEquals(policy, deserialized);
+
+    // Verify backreferences content
+    BackreferencesInfo derivationRef1 = policy.getBackreferencesInfo(0);
+    BackreferencesInfo derivationRef2 = policy.getBackreferencesInfo(1);
+
+    Assertions.assertEquals(
+        "derivation-config-123", derivationRef1.getDerivationConfig().getDerivationConfigId());
+    Assertions.assertEquals(
+        "derivation-config-456", derivationRef2.getDerivationConfig().getDerivationConfigId());
   }
 
   @Test
@@ -186,7 +217,6 @@ public class FraudPolicyDefinitionsTest {
                             .setMessageFormat("${$amount} transferred out of {$numAccounts}")
                             .putMessageParams("amount", FieldType.FIELD_TYPE_DOUBLE)
                             .putMessageParams("numAccounts", FieldType.FIELD_TYPE_LONG)))
-            .setCategory(FraudPolicyCategory.FRAUD_POLICY_CATEGORY_FRAUD)
             .build();
     print(policy);
     deserialized = deserialize(serialize(policy), FraudPolicy.newBuilder()).build();
