@@ -178,7 +178,7 @@ message FraudPolicy {
   // if this policy is generated from a template / default rule, store the template id
   optional string template_id = 20;
 
-  Target target = 21;
+  repeated Target target = 21;
 
   // This field holds references to the definitions, entities, and derivations
   // that are used by this policy.
