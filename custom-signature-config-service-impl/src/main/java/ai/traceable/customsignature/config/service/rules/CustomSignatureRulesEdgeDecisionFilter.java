@@ -7,6 +7,7 @@ import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.LhsRhsKeysExpression;
 import ai.traceable.customsignature.config.service.v1.MatchCategory;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
+import ai.traceable.customsignature.config.service.v1.RuleEvaluationPoint;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,8 +20,11 @@ public class CustomSignatureRulesEdgeDecisionFilter {
   // Rules that can be converted to edge decision rules
   public static List<CustomSignatureRule> getConvertibleRules(List<CustomSignatureRule> rules) {
     return rules.stream()
-        .filter(rule -> hasCompatibleClauseGroup(rule.getDefinition().getClauseGroup()))
-        .filter(rule -> hasCompatibleEventType(rule.getEffect()))
+        .filter(
+            rule ->
+                rule.getEffect()
+                    .getRuleEvaluationPointsList()
+                    .contains(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE))
         .collect(Collectors.toUnmodifiableList());
   }
 
