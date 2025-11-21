@@ -1,8 +1,10 @@
 package ai.traceable.anomaly.config.service.modsec.protection.engine;
 
+import static ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils.ANOMALY_CONFIG_SCOPE_COMPARATOR;
 import static ai.traceable.anomaly.config.service.modsec.Utils.getModsecAnomalyRuleConfigMap;
 import static ai.traceable.anomaly.config.service.modsec.Utils.getSubRuleConfigMap;
 
+import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigManager;
 import ai.traceable.anomaly.config.service.global.ruleinfo.WebAppRuleInfoProvider;
 import ai.traceable.anomaly.config.service.global.status.GlobalAnomalyConfigStatusManager;
@@ -29,19 +31,12 @@ import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import ai.traceable.anomaly.config.service.v1.modsec.RuleEvaluationPoint;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
-import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider.ApiIdentifierEntity;
 import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
-import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider.ServiceIdentifierEntity;
 import ai.traceable.modsecurity.utils.ModsecRuleUtils;
 import ai.traceable.protection.engine.config.webapp.v1.SecRuleProcessorConfig;
 import ai.traceable.protection.engine.config.webapp.v1.WebAppEvaluationConfig;
 import ai.traceable.protection.engine.config.webapp.v1.WebAppEvaluationConfigContext;
 import ai.traceable.protection.engine.config.webapp.v1.WebAppEvaluationRulesContext;
-import ai.traceable.protection.processing.common.v1.CustomerScope;
-import ai.traceable.protection.processing.common.v1.Entity;
-import ai.traceable.protection.processing.common.v1.EntityScope;
-import ai.traceable.protection.processing.common.v1.EntityType;
-import ai.traceable.protection.processing.common.v1.Scope;
 import ai.traceable.protection.processing.common.v1.ScopeContext;
 import ai.traceable.protection.processor.secrules.v1.CorazaEngineVersion;
 import ai.traceable.protection.processor.secrules.v1.CorazaRuleDirectivesType;
@@ -55,12 +50,11 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.google.inject.Inject;
+import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -75,8 +69,11 @@ import java.util.stream.Collectors;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.change.event.v1.ConfigChangeEventKey;
+import org.hypertrace.config.change.event.v1.ConfigChangeEventValue;
 import org.hypertrace.core.grpcutils.context.ContextualKey;
 import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.hypertrace.core.kafka.event.listener.KafkaLiveEventListener;
 import org.hypertrace.core.serviceframework.metrics.PlatformMetricsRegistry;
 
 @Slf4j
@@ -88,38 +85,12 @@ public class WebAppEvaluationConfigContextManagerImpl
           .addAnomalyDetectionConfigTypes(
               AnomalyDetectionConfigType.ANOMALY_DETECTION_CONFIG_TYPE_MODSECURITY)
           .build();
-  private static final Map<AnomalyConfigScope.ScopeCase, Integer> SCOPE_ORDER =
-      Map.of(
-          AnomalyConfigScope.ScopeCase.API_SCOPE,
-          1,
-          AnomalyConfigScope.ScopeCase.SERVICE_SCOPE,
-          2,
-          AnomalyConfigScope.ScopeCase.ENVIRONMENT_SCOPE,
-          3,
-          AnomalyConfigScope.ScopeCase.CUSTOMER_SCOPE,
-          4);
   private static final List<AnomalySubRuleType> ALL_SUB_RULE_TYPES =
       List.of(
           AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK,
           AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE,
           AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR);
-  private static final Comparator<AnomalyConfigScope> ANOMALY_CONFIG_SCOPE_COMPARATOR =
-      Comparator.comparing(
-              (AnomalyConfigScope scope) ->
-                  SCOPE_ORDER.getOrDefault(scope.getScopeCase(), Integer.MAX_VALUE))
-          .thenComparing(
-              scope -> {
-                switch (scope.getScopeCase()) {
-                  case API_SCOPE:
-                    return scope.getApiScope().getId();
-                  case SERVICE_SCOPE:
-                    return scope.getServiceScope().getId();
-                  case ENVIRONMENT_SCOPE:
-                    return scope.getEnvironmentScope().getEnvironmentId();
-                  default:
-                    return "";
-                }
-              });
+
   private static final String EMPTY_STRING = "";
   private final ModsecManager modsecManager;
   private final ModsecRulesRegistry modsecRulesRegistry;
@@ -144,7 +115,8 @@ public class WebAppEvaluationConfigContextManagerImpl
       ModsecRuleVersion defaultModsecRuleVersion,
       CachedServiceMappingProvider cachedServiceMappingProvider,
       CachedApiMappingProvider cachedApiMappingProvider,
-      ModsecConfigServiceConfig modsecConfigServiceConfig) {
+      ModsecConfigServiceConfig modsecConfigServiceConfig,
+      KafkaLiveEventListener<ConfigChangeEventKey, ConfigChangeEventValue> kafkaLiveEventListener) {
     this.modsecManager = modsecManager;
     this.modsecRulesRegistry = modsecRulesRegistry;
     this.anomalyDetectionConfigManager = anomalyDetectionConfigManager;
@@ -156,6 +128,14 @@ public class WebAppEvaluationConfigContextManagerImpl
     this.cachedApiMappingProvider = cachedApiMappingProvider;
     this.webAppConfigContextCache = buildCache(modsecConfigServiceConfig);
     registerCacheMetrics(modsecConfigServiceConfig);
+    try {
+      kafkaLiveEventListener.registerCallback(this::updateCacheBasedOnEvent);
+    } catch (Exception e) {
+      log.warn(
+          "Failed to register Kafka event listener for {}, cache invalidation will not work",
+          CACHE_NAME,
+          e);
+    }
   }
 
   @Override
@@ -167,17 +147,27 @@ public class WebAppEvaluationConfigContextManagerImpl
           requestContext.getTenantId());
       return WebAppEvaluationConfigContext.getDefaultInstance();
     }
-
-    ContextualKey<RequestData> cacheKey =
-        requestContext.buildInternalContextualKey(RequestData.from(request));
-    try {
-      return webAppConfigContextCache.get(cacheKey);
-    } catch (ExecutionException e) {
-      log.error(
-          "Error loading from cache for tenant: {}, falling back to direct computation",
-          requestContext.getTenantId(),
-          e);
-      return computeWebAppEvaluationConfigContext(requestContext, request);
+    RuleEvaluationPoint ruleEvaluationPoint = request.getRuleEvaluationPoint();
+    switch (ruleEvaluationPoint) {
+      case RULE_EVALUATION_POINT_EDGE:
+        try {
+          return webAppConfigContextCache.get(
+              requestContext.buildInternalContextualKey(RequestData.from(request)));
+        } catch (ExecutionException e) {
+          log.error(
+              "Error loading from cache for tenant: {}, falling back to direct computation",
+              requestContext.getTenantId(),
+              e);
+          return WebAppEvaluationConfigContext.getDefaultInstance();
+        }
+      case RULE_EVALUATION_POINT_PLATFORM:
+        return computeWebAppEvaluationConfigContext(requestContext, request);
+      default:
+        log.warn(
+            "Unknown RuleEvaluationPoint: {}. Returning empty config context for requestContext: {}",
+            ruleEvaluationPoint,
+            requestContext);
+        return WebAppEvaluationConfigContext.getDefaultInstance();
     }
   }
 
@@ -211,7 +201,8 @@ public class WebAppEvaluationConfigContextManagerImpl
     List<SecRuleProcessorConfig> secRuleProcessorConfigs = new ArrayList<>();
     List<AnomalyConfigScope> configScopesWithEmptyBlob = new ArrayList<>();
     Map<AnomalyConfigScope, ScopeContext> scopeContextMap =
-        getScopeContextMap(requestContext, configScopes);
+        AnomalyConfigScopeUtils.getScopeContextMap(
+            requestContext, configScopes, cachedApiMappingProvider, cachedServiceMappingProvider);
     log.debug("Retrieved scope context map with {} entries", scopeContextMap.size());
     Map<RulesContextArgs, List<AnomalyConfigScope>> rulesContextArgsToScopesMap = new HashMap<>();
 
@@ -411,7 +402,7 @@ public class WebAppEvaluationConfigContextManagerImpl
       case RULE_EVALUATION_POINT_PLATFORM:
         return filterSubRuleTypes(subRuleTypes, ALL_SUB_RULE_TYPES);
       default:
-        log.error("Unsupported rule evaluation point: {}", ruleEvaluationPoint);
+        log.error("Unsupported rule evaluation point : {}", ruleEvaluationPoint);
         throw new IllegalArgumentException(
             "Unsupported rule evaluation point: " + ruleEvaluationPoint);
     }
@@ -596,169 +587,6 @@ public class WebAppEvaluationConfigContextManagerImpl
     }
   }
 
-  private Map<AnomalyConfigScope, ScopeContext> getScopeContextMap(
-      RequestContext requestContext, Set<AnomalyConfigScope> configScopes) {
-    Set<String> serviceIds = new HashSet<>();
-    Set<String> apiIds = new HashSet<>();
-
-    for (AnomalyConfigScope configScope : configScopes) {
-      switch (configScope.getScopeCase()) {
-        case API_SCOPE:
-          apiIds.add(configScope.getApiScope().getId());
-          serviceIds.add(configScope.getApiScope().getServiceScope().getId());
-          break;
-        case SERVICE_SCOPE:
-          serviceIds.add(configScope.getServiceScope().getId());
-          break;
-        case ENVIRONMENT_SCOPE:
-        case CUSTOMER_SCOPE:
-          break;
-        default:
-          log.error("Unsupported scope type: {}", configScope.getScopeCase());
-          throw new IllegalArgumentException(
-              "Unsupported scope type: " + configScope.getScopeCase());
-      }
-    }
-
-    Map<String, Optional<ApiIdentifierEntity>> apiEntities =
-        cachedApiMappingProvider.getApiIdentifierEntities(requestContext, apiIds);
-    Map<String, Optional<ServiceIdentifierEntity>> serviceEntities =
-        cachedServiceMappingProvider.getServiceIdentifierEntities(requestContext, serviceIds);
-    Map<AnomalyConfigScope, ScopeContext> scopeContextMap = new HashMap<>();
-    for (AnomalyConfigScope scope : configScopes) {
-      switch (scope.getScopeCase()) {
-        case CUSTOMER_SCOPE:
-          scopeContextMap.put(
-              scope,
-              ScopeContext.newBuilder()
-                  .addScopes(
-                      Scope.newBuilder().setCustomerScope(CustomerScope.getDefaultInstance()))
-                  .build());
-          break;
-        case ENVIRONMENT_SCOPE:
-          // NOTE: env id & env name are same
-          scopeContextMap.put(
-              scope,
-              ScopeContext.newBuilder()
-                  .addScopes(
-                      Scope.newBuilder()
-                          .setEntityScope(
-                              EntityScope.newBuilder()
-                                  .setEntityType(EntityType.ENTITY_TYPE_ENVIRONMENT)
-                                  .addEntities(
-                                      Entity.newBuilder()
-                                          .setId(scope.getEnvironmentScope().getEnvironmentId())
-                                          .setName(scope.getEnvironmentScope().getEnvironmentId())
-                                          .build())))
-                  .addScopes(
-                      Scope.newBuilder().setCustomerScope(CustomerScope.getDefaultInstance()))
-                  .build());
-          break;
-        case SERVICE_SCOPE:
-          scopeContextMap.put(
-              scope,
-              ScopeContext.newBuilder()
-                  .addScopes(
-                      Scope.newBuilder()
-                          .setEntityScope(
-                              EntityScope.newBuilder()
-                                  .setEntityType(EntityType.ENTITY_TYPE_SERVICE)
-                                  .addEntities(
-                                      Entity.newBuilder()
-                                          .setId(scope.getServiceScope().getId())
-                                          .setName(
-                                              serviceEntities
-                                                  .get(scope.getServiceScope().getId())
-                                                  .map(ServiceIdentifierEntity::getServiceName)
-                                                  .orElse(EMPTY_STRING))
-                                          .build())))
-                  .addScopes(
-                      Scope.newBuilder()
-                          .setEntityScope(
-                              EntityScope.newBuilder()
-                                  .setEntityType(EntityType.ENTITY_TYPE_ENVIRONMENT)
-                                  .addEntities(
-                                      Entity.newBuilder()
-                                          .setId(
-                                              scope
-                                                  .getServiceScope()
-                                                  .getEnvironmentScope()
-                                                  .getEnvironmentId())
-                                          .setName(
-                                              scope
-                                                  .getServiceScope()
-                                                  .getEnvironmentScope()
-                                                  .getEnvironmentId())
-                                          .build())))
-                  .addScopes(
-                      Scope.newBuilder().setCustomerScope(CustomerScope.getDefaultInstance()))
-                  .build());
-          break;
-        case API_SCOPE:
-          scopeContextMap.put(
-              scope,
-              ScopeContext.newBuilder()
-                  .addScopes(
-                      Scope.newBuilder()
-                          .setEntityScope(
-                              EntityScope.newBuilder()
-                                  .setEntityType(EntityType.ENTITY_TYPE_API)
-                                  .addEntities(
-                                      Entity.newBuilder()
-                                          .setId(scope.getApiScope().getId())
-                                          .setName(
-                                              apiEntities
-                                                  .get(scope.getApiScope().getId())
-                                                  .map(ApiIdentifierEntity::getApiName)
-                                                  .orElse(EMPTY_STRING))
-                                          .build())))
-                  .addScopes(
-                      Scope.newBuilder()
-                          .setEntityScope(
-                              EntityScope.newBuilder()
-                                  .setEntityType(EntityType.ENTITY_TYPE_SERVICE)
-                                  .addEntities(
-                                      Entity.newBuilder()
-                                          .setId(scope.getApiScope().getServiceScope().getId())
-                                          .setName(
-                                              serviceEntities
-                                                  .get(
-                                                      scope.getApiScope().getServiceScope().getId())
-                                                  .map(ServiceIdentifierEntity::getServiceName)
-                                                  .orElse(EMPTY_STRING))
-                                          .build())))
-                  .addScopes(
-                      Scope.newBuilder()
-                          .setEntityScope(
-                              EntityScope.newBuilder()
-                                  .setEntityType(EntityType.ENTITY_TYPE_ENVIRONMENT)
-                                  .addEntities(
-                                      Entity.newBuilder()
-                                          .setId(
-                                              scope
-                                                  .getApiScope()
-                                                  .getServiceScope()
-                                                  .getEnvironmentScope()
-                                                  .getEnvironmentId())
-                                          .setName(
-                                              scope
-                                                  .getApiScope()
-                                                  .getServiceScope()
-                                                  .getEnvironmentScope()
-                                                  .getEnvironmentId())
-                                          .build())))
-                  .addScopes(
-                      Scope.newBuilder().setCustomerScope(CustomerScope.getDefaultInstance()))
-                  .build());
-          break;
-        default:
-          log.error("Unsupported scope type: {}", scope.getScopeCase());
-          throw new IllegalArgumentException("Unsupported scope type: " + scope.getScopeCase());
-      }
-    }
-    return scopeContextMap;
-  }
-
   private ModsecRuleVersion getModsecRuleVersion(
       ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig) {
     Optional<ModsecRuleVersion> modsecRuleVersion =
@@ -892,6 +720,36 @@ public class WebAppEvaluationConfigContextManagerImpl
   public void invalidateAllCache() {
     log.warn("Invalidating all cache entries");
     webAppConfigContextCache.invalidateAll();
+  }
+
+  /**
+   * Updates cache based on Kafka config change events. This method is registered as a callback with
+   * KafkaLiveEventListener to automatically invalidate cache when relevant configs change.
+   *
+   * @param key the config change event key containing config type and tenant info
+   * @param value the config change event value containing the event type
+   */
+  private void updateCacheBasedOnEvent(ConfigChangeEventKey key, ConfigChangeEventValue value) {
+    if (!key.getConfigType().equals(ScopedAnomalyDetectionConfig.class.getName())
+        && !key.getConfigType().equals(ScopedAnomalyConfigStatus.class.getName())) {
+      return;
+    }
+
+    log.debug(
+        "Received config change event for configType={}, tenantId={}, eventType={}",
+        key.getConfigType(),
+        key.getTenantId(),
+        value.getEventCase());
+
+    switch (value.getEventCase()) {
+      case CREATE_EVENT:
+      case UPDATE_EVENT:
+      case DELETE_EVENT:
+        invalidateCacheForTenant(key.getTenantId());
+        break;
+      default:
+        log.debug("Ignoring event type: {}", value.getEventCase());
+    }
   }
 
   /** Request data to be used for building cache key. */

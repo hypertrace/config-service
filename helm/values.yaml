@@ -3309,6 +3309,11 @@ anomalyConfigServiceConfig:
       maxSize: 400
       refreshAfterWriteDuration: 5m
       threadPoolSize: 4
+  apiProtectConfigService:
+    apiProtectConfigContextCache:
+      maxSize: 400
+      refreshAfterWriteDuration: 1h
+      threadPoolSize: 4
 traceableEdgeConfigService:
   getConfigsThreadPoolSize: 10
 fraudDataModelDerivationConfigService:

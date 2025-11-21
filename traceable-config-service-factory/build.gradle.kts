@@ -12,6 +12,8 @@ dependencies {
   implementation(commonLibs.typesafe.config)
   implementation(localLibs.hypertrace.configservice.partitioner.config.impl)
   implementation(commonLibs.hypertrace.framework.documentstore.metrics)
+  implementation(commonLibs.hypertrace.kafkaStreams.eventListener)
+  implementation(localLibs.hypertrace.configservice.changeeventapi)
 
   implementation(projects.traceableConfigServiceRest)
   implementation(commonLibs.traceable.accesscontrol.policy)

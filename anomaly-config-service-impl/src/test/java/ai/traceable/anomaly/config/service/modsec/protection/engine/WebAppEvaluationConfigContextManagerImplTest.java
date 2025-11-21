@@ -61,7 +61,10 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.hypertrace.config.change.event.v1.ConfigChangeEventKey;
+import org.hypertrace.config.change.event.v1.ConfigChangeEventValue;
 import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.hypertrace.core.kafka.event.listener.KafkaLiveEventListener;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -222,6 +225,9 @@ class WebAppEvaluationConfigContextManagerImplTest {
     when(modsecConfigServiceConfig.getWebAppConfigContextCacheRefreshAfterWriteDuration())
         .thenReturn(Duration.ofMinutes(5));
     when(modsecConfigServiceConfig.getWebAppConfigContextCacheThreadPoolSize()).thenReturn(4);
+    @SuppressWarnings("unchecked")
+    KafkaLiveEventListener<ConfigChangeEventKey, ConfigChangeEventValue> kafkaLiveEventListener =
+        mock(KafkaLiveEventListener.class);
     configContextManager =
         new WebAppEvaluationConfigContextManagerImpl(
             modsecManager,
@@ -233,7 +239,8 @@ class WebAppEvaluationConfigContextManagerImplTest {
             ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3,
             serviceMappingProvider,
             apiMappingProvider,
-            modsecConfigServiceConfig);
+            modsecConfigServiceConfig,
+            kafkaLiveEventListener);
   }
 
   private ScopedAnomalyConfigStatus getTenantScopedAnomalyConfigStatus() {
@@ -637,11 +644,11 @@ class WebAppEvaluationConfigContextManagerImplTest {
                         AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK))
                 .build());
 
-    // Results should be the same instance (cache hit due to sorted keys)
-    assertSame(result1, result2);
+    // Results shouldn't be the same as the rule evaluation point is platform
+    assertNotSame(result1, result2);
 
     // Verify the underlying managers were only called once
-    verify(anomalyDetectionConfigManager, times(1))
+    verify(anomalyDetectionConfigManager, times(2))
         .getAllGlobalResolvedScopedAnomalyDetectionConfigs(any(RequestContext.class), any());
   }
 

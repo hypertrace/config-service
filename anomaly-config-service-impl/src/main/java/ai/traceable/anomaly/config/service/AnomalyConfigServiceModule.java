@@ -1,6 +1,7 @@
 package ai.traceable.anomaly.config.service;
 
 import static ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory.AGGREGATOR_CONFIG_ANNOTATION;
+import static ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory.ANOMALY_API_PROTECT_CONFIG_ANNOTATION;
 import static ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory.ANOMALY_EXCLUSION_CONFIG_ANNOTATION;
 import static ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory.ANOMALY_GLOBAL_CONFIG_ANNOTATION;
 import static ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory.ANOMALY_MODSEC_CONFIG_ANNOTATION;
@@ -8,6 +9,7 @@ import static ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory.DE
 import static ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory.TRAINER_CONFIG_ANNOTATION;
 
 import ai.traceable.anomaly.config.service.aggregator.AggregationConfigServiceModule;
+import ai.traceable.anomaly.config.service.apiprotect.AnomalyApiProtectConfigServiceModule;
 import ai.traceable.anomaly.config.service.common.license.LicenseMeteringServiceModule;
 import ai.traceable.anomaly.config.service.detector.DetectorConfigServiceModule;
 import ai.traceable.anomaly.config.service.exclusion.AnomalyExclusionConfigServiceModule;
@@ -22,12 +24,16 @@ import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.entity.fetcher.cache.CachedServiceMappingProviderModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
+import com.google.inject.TypeLiteral;
 import com.typesafe.config.Config;
 import io.grpc.Channel;
+import org.hypertrace.config.change.event.v1.ConfigChangeEventKey;
+import org.hypertrace.config.change.event.v1.ConfigChangeEventValue;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
+import org.hypertrace.core.kafka.event.listener.KafkaLiveEventListener;
 
 public class AnomalyConfigServiceModule extends AbstractModule {
 
@@ -40,18 +46,22 @@ public class AnomalyConfigServiceModule extends AbstractModule {
   private final Channel channel;
   private final ConfigChangeEventGenerator configChangeEventGenerator;
   private final FeatureCachingClient featureCachingClient;
+  private final KafkaLiveEventListener<ConfigChangeEventKey, ConfigChangeEventValue>
+      kafkaLiveEventListener;
 
   AnomalyConfigServiceModule(
       GrpcChannelRegistry channelRegistry,
       Channel channel,
       Config config,
       ConfigChangeEventGenerator configChangeEventGenerator,
-      FeatureCachingClient featureCachingClient) {
+      FeatureCachingClient featureCachingClient,
+      KafkaLiveEventListener<ConfigChangeEventKey, ConfigChangeEventValue> kafkaLiveEventListener) {
     this.channel = channel;
     this.channelRegistry = channelRegistry;
     this.config = config;
     this.configChangeEventGenerator = configChangeEventGenerator;
     this.featureCachingClient = featureCachingClient;
+    this.kafkaLiveEventListener = kafkaLiveEventListener;
   }
 
   @Override
@@ -61,11 +71,14 @@ public class AnomalyConfigServiceModule extends AbstractModule {
             config.getConfig(LICENSE_METERING_SERVICE_CONFIG_PATH), channelRegistry));
     bind(ConfigChangeEventGenerator.class).toInstance(configChangeEventGenerator);
     bind(FeatureCachingClient.class).toInstance(featureCachingClient);
+    bind(new TypeLiteral<KafkaLiveEventListener<ConfigChangeEventKey, ConfigChangeEventValue>>() {})
+        .toInstance(kafkaLiveEventListener);
     install(new ConfigStatusModule());
     install(new RuleInfoModule());
     install(new AnomalyGlobalConfigServiceModule(ANOMALY_GLOBAL_CONFIG_ANNOTATION));
     install(new AnomalyExclusionConfigServiceModule(ANOMALY_EXCLUSION_CONFIG_ANNOTATION));
     install(new AnomalyModsecConfigServiceModule(ANOMALY_MODSEC_CONFIG_ANNOTATION));
+    install(new AnomalyApiProtectConfigServiceModule(ANOMALY_API_PROTECT_CONFIG_ANNOTATION));
     install(new TrainerConfigServiceModule(TRAINER_CONFIG_ANNOTATION));
     install(new DetectorConfigServiceModule(DETECTOR_CONFIG_ANNOTATION));
     install(new AggregationConfigServiceModule(AGGREGATOR_CONFIG_ANNOTATION));

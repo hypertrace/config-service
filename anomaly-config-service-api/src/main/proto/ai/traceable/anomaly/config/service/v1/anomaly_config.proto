@@ -306,6 +306,12 @@ enum RuleVersionConfigType {
   RULE_VERSION_CONFIG_TYPE_EXPERIMENTAL = 3;
 }
 
+enum RuleEvaluationPoint {
+  RULE_EVALUATION_POINT_UNSPECIFIED = 0;
+  RULE_EVALUATION_POINT_EDGE = 1;
+  RULE_EVALUATION_POINT_PLATFORM = 2;
+}
+
 message StringList {
   repeated string values = 1;
 }

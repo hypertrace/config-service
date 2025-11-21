@@ -40,6 +40,9 @@ public class MockFeatureFlagService extends FeatureFlagServiceImplBase {
                 "protection-engine.webapp-protection",
                 FeatureFlagValue.newBuilder().setBoolean(false).build())
             .putValues(
+                "protection-engine.api-protection",
+                FeatureFlagValue.newBuilder().setBoolean(false).build())
+            .putValues(
                 "api-protect.policies.revamp",
                 FeatureFlagValue.newBuilder().setBoolean(false).build())
             .putValues(

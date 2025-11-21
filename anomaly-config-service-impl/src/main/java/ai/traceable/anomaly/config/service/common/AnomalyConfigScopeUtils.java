@@ -4,28 +4,75 @@ import ai.traceable.anomaly.config.service.v1.AnomalyApiScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyBackendApiScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyBackendScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope.ScopeCase;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyEnvironmentScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
+import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
+import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider.ApiIdentifierEntity;
+import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
+import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider.ServiceIdentifierEntity;
+import ai.traceable.protection.processing.common.v1.CustomerScope;
+import ai.traceable.protection.processing.common.v1.Entity;
+import ai.traceable.protection.processing.common.v1.EntityScope;
+import ai.traceable.protection.processing.common.v1.EntityType;
+import ai.traceable.protection.processing.common.v1.Scope;
+import ai.traceable.protection.processing.common.v1.ScopeContext;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
+@Slf4j
 public class AnomalyConfigScopeUtils {
+
+  private static final Map<ScopeCase, Integer> SCOPE_ORDER =
+      Map.of(
+          AnomalyConfigScope.ScopeCase.API_SCOPE,
+          1,
+          AnomalyConfigScope.ScopeCase.SERVICE_SCOPE,
+          2,
+          AnomalyConfigScope.ScopeCase.ENVIRONMENT_SCOPE,
+          3,
+          AnomalyConfigScope.ScopeCase.CUSTOMER_SCOPE,
+          4);
 
   private static final AnomalyConfigScope CUSTOMER_CONFIG_SCOPE =
       AnomalyConfigScope.newBuilder()
           .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
           .build();
+
+  public static final Comparator<AnomalyConfigScope> ANOMALY_CONFIG_SCOPE_COMPARATOR =
+      Comparator.comparing(
+              (AnomalyConfigScope scope) ->
+                  SCOPE_ORDER.getOrDefault(scope.getScopeCase(), Integer.MAX_VALUE))
+          .thenComparing(
+              scope -> {
+                switch (scope.getScopeCase()) {
+                  case API_SCOPE:
+                    return scope.getApiScope().getId();
+                  case SERVICE_SCOPE:
+                    return scope.getServiceScope().getId();
+                  case ENVIRONMENT_SCOPE:
+                    return scope.getEnvironmentScope().getEnvironmentId();
+                  default:
+                    return "";
+                }
+              });
 
   public static AnomalyConfigScope getDefaultCustomerConfigScope() {
     return CUSTOMER_CONFIG_SCOPE;
@@ -408,5 +455,264 @@ public class AnomalyConfigScopeUtils {
       default:
         return false;
     }
+  }
+
+  public static List<AnomalyConfigScope> getConfigScopesWithDecreasingPriority(
+      AnomalyConfigScope anomalyConfigScope) {
+    if (anomalyConfigScope == null) {
+      throw new IllegalArgumentException("Scope must be non-null");
+    }
+    String environmentId;
+    String serviceId;
+    String apiId;
+    switch (anomalyConfigScope.getScopeCase()) {
+      case CUSTOMER_SCOPE:
+        return Collections.singletonList(getAnomalyConfigCustomerScope());
+      case ENVIRONMENT_SCOPE:
+        environmentId = anomalyConfigScope.getEnvironmentScope().getEnvironmentId();
+        return ImmutableList.of(
+            getAnomalyConfigEnvironmentScope(environmentId), getAnomalyConfigCustomerScope());
+      case SERVICE_SCOPE:
+        environmentId =
+            anomalyConfigScope
+                .getApiScope()
+                .getServiceScope()
+                .getEnvironmentScope()
+                .getEnvironmentId();
+        serviceId = anomalyConfigScope.getApiScope().getServiceScope().getId();
+        return ImmutableList.of(
+            getAnomalyConfigServiceScope(environmentId, serviceId),
+            getAnomalyConfigEnvironmentScope(environmentId),
+            getAnomalyConfigCustomerScope());
+      case API_SCOPE:
+        environmentId =
+            anomalyConfigScope
+                .getApiScope()
+                .getServiceScope()
+                .getEnvironmentScope()
+                .getEnvironmentId();
+        serviceId = anomalyConfigScope.getApiScope().getServiceScope().getId();
+        apiId = anomalyConfigScope.getApiScope().getId();
+        return ImmutableList.of(
+            getAnomalyConfigApiScope(environmentId, serviceId, apiId),
+            getAnomalyConfigServiceScope(environmentId, serviceId),
+            getAnomalyConfigEnvironmentScope(environmentId),
+            getAnomalyConfigCustomerScope());
+      default:
+        log.debug("Unsupported scope type: {}", anomalyConfigScope.getScopeCase());
+        return Collections.singletonList(getAnomalyConfigCustomerScope());
+    }
+  }
+
+  private static AnomalyConfigScope getAnomalyConfigEnvironmentScope(String environmentId) {
+    return AnomalyConfigScope.newBuilder()
+        .setEnvironmentScope(AnomalyEnvironmentScope.newBuilder().setEnvironmentId(environmentId))
+        .build();
+  }
+
+  private static AnomalyConfigScope getAnomalyConfigServiceScope(
+      String environmentId, String serviceId) {
+    return AnomalyConfigScope.newBuilder()
+        .setServiceScope(
+            AnomalyServiceScope.newBuilder()
+                .setId(serviceId)
+                .setEnvironmentScope(
+                    AnomalyEnvironmentScope.newBuilder().setEnvironmentId(environmentId)))
+        .build();
+  }
+
+  private static AnomalyConfigScope getAnomalyConfigApiScope(
+      String environmentId, String serviceId, String apiId) {
+    return AnomalyConfigScope.newBuilder()
+        .setApiScope(
+            AnomalyApiScope.newBuilder()
+                .setId(apiId)
+                .setServiceScope(
+                    AnomalyServiceScope.newBuilder()
+                        .setId(serviceId)
+                        .setEnvironmentScope(
+                            AnomalyEnvironmentScope.newBuilder().setEnvironmentId(environmentId))))
+        .build();
+  }
+
+  private static AnomalyConfigScope getAnomalyConfigCustomerScope() {
+    return AnomalyConfigScope.newBuilder()
+        .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
+        .build();
+  }
+
+  /**
+   * Builds a map of AnomalyConfigScope to ScopeContext for the given set of config scopes.
+   *
+   * @param requestContext the request context
+   * @param configScopes the set of anomaly config scopes to build scope contexts for
+   * @param cachedApiMappingProvider provider to fetch API entity details
+   * @param cachedServiceMappingProvider provider to fetch service entity details
+   * @return map of AnomalyConfigScope to ScopeContext
+   */
+  public static Map<AnomalyConfigScope, ScopeContext> getScopeContextMap(
+      RequestContext requestContext,
+      Set<AnomalyConfigScope> configScopes,
+      CachedApiMappingProvider cachedApiMappingProvider,
+      CachedServiceMappingProvider cachedServiceMappingProvider) {
+    Set<String> serviceIds = new HashSet<>();
+    Set<String> apiIds = new HashSet<>();
+
+    for (AnomalyConfigScope configScope : configScopes) {
+      switch (configScope.getScopeCase()) {
+        case API_SCOPE:
+          apiIds.add(configScope.getApiScope().getId());
+          serviceIds.add(configScope.getApiScope().getServiceScope().getId());
+          break;
+        case SERVICE_SCOPE:
+          serviceIds.add(configScope.getServiceScope().getId());
+          break;
+        case ENVIRONMENT_SCOPE:
+        case CUSTOMER_SCOPE:
+          break;
+        default:
+          log.error("Unsupported scope type: {}", configScope.getScopeCase());
+          throw new IllegalArgumentException(
+              "Unsupported scope type: " + configScope.getScopeCase());
+      }
+    }
+
+    Map<String, Optional<ApiIdentifierEntity>> apiEntities =
+        cachedApiMappingProvider.getApiIdentifierEntities(requestContext, apiIds);
+    Map<String, Optional<ServiceIdentifierEntity>> serviceEntities =
+        cachedServiceMappingProvider.getServiceIdentifierEntities(requestContext, serviceIds);
+    Map<AnomalyConfigScope, ScopeContext> scopeContextMap = new HashMap<>();
+    for (AnomalyConfigScope scope : configScopes) {
+      switch (scope.getScopeCase()) {
+        case CUSTOMER_SCOPE:
+          scopeContextMap.put(
+              scope,
+              ScopeContext.newBuilder()
+                  .addScopes(
+                      Scope.newBuilder().setCustomerScope(CustomerScope.getDefaultInstance()))
+                  .build());
+          break;
+        case ENVIRONMENT_SCOPE:
+          // NOTE: env id & env name are same
+          scopeContextMap.put(
+              scope,
+              ScopeContext.newBuilder()
+                  .addScopes(
+                      Scope.newBuilder()
+                          .setEntityScope(
+                              EntityScope.newBuilder()
+                                  .setEntityType(EntityType.ENTITY_TYPE_ENVIRONMENT)
+                                  .addEntities(
+                                      Entity.newBuilder()
+                                          .setId(scope.getEnvironmentScope().getEnvironmentId())
+                                          .setName(scope.getEnvironmentScope().getEnvironmentId())
+                                          .build())))
+                  .addScopes(
+                      Scope.newBuilder().setCustomerScope(CustomerScope.getDefaultInstance()))
+                  .build());
+          break;
+        case SERVICE_SCOPE:
+          scopeContextMap.put(
+              scope,
+              ScopeContext.newBuilder()
+                  .addScopes(
+                      Scope.newBuilder()
+                          .setEntityScope(
+                              EntityScope.newBuilder()
+                                  .setEntityType(EntityType.ENTITY_TYPE_SERVICE)
+                                  .addEntities(
+                                      Entity.newBuilder()
+                                          .setId(scope.getServiceScope().getId())
+                                          .setName(
+                                              serviceEntities
+                                                  .get(scope.getServiceScope().getId())
+                                                  .map(ServiceIdentifierEntity::getServiceName)
+                                                  .orElse(""))
+                                          .build())))
+                  .addScopes(
+                      Scope.newBuilder()
+                          .setEntityScope(
+                              EntityScope.newBuilder()
+                                  .setEntityType(EntityType.ENTITY_TYPE_ENVIRONMENT)
+                                  .addEntities(
+                                      Entity.newBuilder()
+                                          .setId(
+                                              scope
+                                                  .getServiceScope()
+                                                  .getEnvironmentScope()
+                                                  .getEnvironmentId())
+                                          .setName(
+                                              scope
+                                                  .getServiceScope()
+                                                  .getEnvironmentScope()
+                                                  .getEnvironmentId())
+                                          .build())))
+                  .addScopes(
+                      Scope.newBuilder().setCustomerScope(CustomerScope.getDefaultInstance()))
+                  .build());
+          break;
+        case API_SCOPE:
+          scopeContextMap.put(
+              scope,
+              ScopeContext.newBuilder()
+                  .addScopes(
+                      Scope.newBuilder()
+                          .setEntityScope(
+                              EntityScope.newBuilder()
+                                  .setEntityType(EntityType.ENTITY_TYPE_API)
+                                  .addEntities(
+                                      Entity.newBuilder()
+                                          .setId(scope.getApiScope().getId())
+                                          .setName(
+                                              apiEntities
+                                                  .get(scope.getApiScope().getId())
+                                                  .map(ApiIdentifierEntity::getApiName)
+                                                  .orElse(""))
+                                          .build())))
+                  .addScopes(
+                      Scope.newBuilder()
+                          .setEntityScope(
+                              EntityScope.newBuilder()
+                                  .setEntityType(EntityType.ENTITY_TYPE_SERVICE)
+                                  .addEntities(
+                                      Entity.newBuilder()
+                                          .setId(scope.getApiScope().getServiceScope().getId())
+                                          .setName(
+                                              serviceEntities
+                                                  .get(
+                                                      scope.getApiScope().getServiceScope().getId())
+                                                  .map(ServiceIdentifierEntity::getServiceName)
+                                                  .orElse(""))
+                                          .build())))
+                  .addScopes(
+                      Scope.newBuilder()
+                          .setEntityScope(
+                              EntityScope.newBuilder()
+                                  .setEntityType(EntityType.ENTITY_TYPE_ENVIRONMENT)
+                                  .addEntities(
+                                      Entity.newBuilder()
+                                          .setId(
+                                              scope
+                                                  .getApiScope()
+                                                  .getServiceScope()
+                                                  .getEnvironmentScope()
+                                                  .getEnvironmentId())
+                                          .setName(
+                                              scope
+                                                  .getApiScope()
+                                                  .getServiceScope()
+                                                  .getEnvironmentScope()
+                                                  .getEnvironmentId())
+                                          .build())))
+                  .addScopes(
+                      Scope.newBuilder().setCustomerScope(CustomerScope.getDefaultInstance()))
+                  .build());
+          break;
+        default:
+          log.error("Unsupported scope type: {}", scope.getScopeCase());
+          throw new IllegalArgumentException("Unsupported scope type: " + scope.getScopeCase());
+      }
+    }
+    return scopeContextMap;
   }
 }

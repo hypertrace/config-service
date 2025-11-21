@@ -46,6 +46,7 @@ public class FeatureCachingClient {
   private static final boolean DEFAULT_WAAP_VERSIONING_FLAG_VALUE = false;
   private static final boolean DEFAULT_GENAI_DETECTION_V2_VALUE = false;
   private static final boolean DEFAULT_PROTECTION_ENGINE_WEBAPP_PROTECTION_FLAG_VALUE = false;
+  private static final boolean DEFAULT_PROTECTION_ENGINE_API_PROTECTION_FLAG_VALUE = false;
   private static final boolean DEFAULT_PROTECTION_ENGINE_POST_DETECTION_FILTERING_FLAG_VALUE =
       false;
   private static final Set<String> DEFAULT_HIDDEN_DEFENSE_AI_FEATURES_VALUE =
@@ -74,6 +75,8 @@ public class FeatureCachingClient {
   private static final String GENAI_DETECTION_V2_FLAG = "enricher.genai-detection-v2";
   private static final String PROTECTION_ENGINE_WEBAPP_PROTECTION_FLAG =
       "protection-engine.webapp-protection";
+  private static final String PROTECTION_ENGINE_API_PROTECTION_FLAG =
+      "protection-engine.api-protection";
   private static final String PROTECTION_ENGINE_POST_DETECTION_FILTERING_FLAG =
       "protection-engine.post-detection-filtering";
   private static final String HIDDEN_DEFENSE_AI_FEATURES =
@@ -104,6 +107,7 @@ public class FeatureCachingClient {
           API_PROTECT_CONFIG_POLICIES_REVAMP_FLAG,
           API_PROTECT_CONFIG_POLICIES_MIGRATION_FLAG,
           PROTECTION_ENGINE_WEBAPP_PROTECTION_FLAG,
+          PROTECTION_ENGINE_API_PROTECTION_FLAG,
           PROTECTION_ENGINE_POST_DETECTION_FILTERING_FLAG,
           HIDDEN_DEFENSE_AI_FEATURES);
   private final FeatureFlagServiceBlockingStub featureFlagStub;
@@ -416,6 +420,21 @@ public class FeatureCachingClient {
           "Failed to retrieve current feature flag value for Protection Engine Web App Protection",
           exception);
       return DEFAULT_PROTECTION_ENGINE_WEBAPP_PROTECTION_FLAG_VALUE;
+    }
+  }
+
+  public boolean isProtectionEngineApiProtectEnabledForTenant(RequestContext requestContext) {
+    try {
+      return requireNonNull(
+              this.featureFlagCache
+                  .get(requestContext.buildInternalContextualKey())
+                  .get(PROTECTION_ENGINE_API_PROTECTION_FLAG))
+          .getBoolean();
+    } catch (Exception exception) {
+      log.warn(
+          "Failed to retrieve current feature flag value for Protection Engine API Protection",
+          exception);
+      return DEFAULT_PROTECTION_ENGINE_API_PROTECTION_FLAG_VALUE;
     }
   }
 

@@ -12,6 +12,7 @@ public class AnomalyConfigServiceConfig {
   private static final String AGGREGATOR_CONFIG_SERVICE_PATH = "aggregator.config.service";
   private static final String MODSEC_RULE_VERSION_CONFIG_PATH = "modsecRuleVersion";
   private static final String MODSEC_CONFIG_SERVICE_PATH = "modsec.config.service";
+  private static final String API_PROTECT_CONFIG_SERVICE_PATH = "api.protect.config.service";
 
   private final Config config;
 
@@ -45,5 +46,9 @@ public class AnomalyConfigServiceConfig {
 
   public Config getModsecConfigServiceConfig() {
     return this.config.getConfig(MODSEC_CONFIG_SERVICE_PATH);
+  }
+
+  public Config getApiProtectConfigServiceConfig() {
+    return this.config.getConfig(API_PROTECT_CONFIG_SERVICE_PATH);
   }
 }

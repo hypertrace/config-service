@@ -80,7 +80,8 @@ public class AnomalyModsecConfigServiceImpl extends AnomalyModsecConfigServiceIm
     Status status = validator.validate(request);
     if (!status.isOk()) {
       log.error(
-          "Get Anomaly Modsec Config Service Request is not valid: {}", status.getDescription());
+          "Get Anomaly Default Modsec Config Service Request is not valid: {}",
+          status.getDescription());
       responseObserver.onError(status.asException());
       return;
     }

@@ -8,8 +8,11 @@ import com.google.inject.Guice;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import io.grpc.Channel;
+import org.hypertrace.config.change.event.v1.ConfigChangeEventKey;
+import org.hypertrace.config.change.event.v1.ConfigChangeEventValue;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
+import org.hypertrace.core.kafka.event.listener.KafkaLiveEventListener;
 import org.junit.jupiter.api.Test;
 
 class AnomalyConfigServiceModuleTest {
@@ -30,6 +33,10 @@ class AnomalyConfigServiceModuleTest {
                 + "  cache.max.size = 5000\n"
                 + "}");
 
+    @SuppressWarnings("unchecked")
+    KafkaLiveEventListener<ConfigChangeEventKey, ConfigChangeEventValue> mockKafkaListener =
+        mock(KafkaLiveEventListener.class);
+
     assertDoesNotThrow(
         () ->
             Guice.createInjector(
@@ -38,7 +45,8 @@ class AnomalyConfigServiceModuleTest {
                         mockChannel,
                         config,
                         mock(ConfigChangeEventGenerator.class),
-                        mock(FeatureCachingClient.class)))
+                        mock(FeatureCachingClient.class),
+                        mockKafkaListener))
                 .getAllBindings());
   }
 }
