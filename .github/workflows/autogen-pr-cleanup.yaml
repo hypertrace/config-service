@@ -1,0 +1,29 @@
+name: Autogen PR Cleanup
+
+on:
+  schedule:
+    - cron: "22 2 * * 4" # Weekly on Tuesday at 2:22 AM UTC (randomized time)
+  workflow_dispatch: # Allow manual triggering
+jobs:
+  cleanup:
+    name: Cleanup Autogen & Gradle Lock PRs
+    runs-on: self-hosted-x64-small
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Checkout Traceable actions
+        uses: actions/checkout@v4
+        with:
+          repository: traceableai/github-actions
+          ssh-key: ${{ secrets.GH_ACTION_READ_KEY }}
+          path: .github/actions
+
+      - name: Authenticate GitHub CLI
+        run: gh auth setup-git
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run autogen & gradle lock cleanup
+        uses: traceableai/github-actions/autogen-pr-cleanup@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
