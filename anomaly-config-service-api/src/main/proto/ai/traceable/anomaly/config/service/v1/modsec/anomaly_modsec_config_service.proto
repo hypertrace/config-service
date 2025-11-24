@@ -15,4 +15,6 @@ service AnomalyModsecConfigService {
   rpc GetDefaultModsecCrsRules(GetDefaultModsecCrsRulesRequest) returns (GetDefaultModsecCrsRulesResponse) {}
 
   rpc GetWebAppEvaluationConfigContext(GetWebAppEvaluationConfigContextRequest) returns (GetWebAppEvaluationConfigContextResponse) {}
+
+  rpc GetImpactScoringRules(GetImpactScoringRulesRequest) returns (GetImpactScoringRulesResponse) {}
 }

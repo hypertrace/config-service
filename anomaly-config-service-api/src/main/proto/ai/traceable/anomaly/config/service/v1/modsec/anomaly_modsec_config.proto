@@ -41,6 +41,16 @@ message GetWebAppEvaluationConfigContextResponse {
   bytes web_app_evaluation_config_context = 1;
 }
 
+message GetImpactScoringRulesRequest {}
+
+message GetImpactScoringRulesResponse {
+  ImpactScoringRules impact_scoring_rules = 1;
+}
+
+message ImpactScoringRules {
+  string impact_scoring_blob = 1;
+}
+
 enum RuleEvaluationPoint {
   option deprecated = true;
 
