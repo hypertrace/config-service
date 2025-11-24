@@ -4,6 +4,7 @@ package ai.traceable.fraud.policy.config.service.v1;
 
 option java_multiple_files = true;
 
+// todo: implement fqn based extraction, some of the sources will be removed
 enum Source {
   SOURCE_UNSPECIFIED = 0;
   SOURCE_FRAUD_POLICY = 1;
@@ -11,6 +12,7 @@ enum Source {
   SOURCE_FRAUD_DETECTION_EVENT = 3;
   SOURCE_DETECTION_EVENT_SPAN = 4;
   SOURCE_JSON_TEXT = 5;
+  SOURCE_FRAUD_INCIDENT_OBJECT = 6;
 }
 
 enum SummaryFormat {
