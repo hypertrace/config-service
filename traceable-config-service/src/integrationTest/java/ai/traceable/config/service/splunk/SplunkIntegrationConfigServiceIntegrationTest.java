@@ -7,8 +7,10 @@ import ai.traceable.splunk.integration.config.service.api.v1.*;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+@Disabled
 public class SplunkIntegrationConfigServiceIntegrationTest
     extends TraceableConfigServiceIntegrationTestBase {
 

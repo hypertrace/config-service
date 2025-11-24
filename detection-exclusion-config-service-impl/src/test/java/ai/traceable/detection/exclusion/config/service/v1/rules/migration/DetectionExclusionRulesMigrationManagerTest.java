@@ -40,8 +40,6 @@ import ai.traceable.detection.exclusion.config.service.v1.ScopeCondition;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEventFamily;
 import ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionRulesStore;
-import ai.traceable.detection.exclusion.config.service.v1.rules.RulesManager;
-import ai.traceable.detection.exclusion.config.service.v1.rules.modsec.ExclusionModsecRulesSupportChecker;
 import ai.traceable.platform.config.provider.common.clients.ActorServiceClient;
 import com.typesafe.config.ConfigFactory;
 import java.time.Instant;
@@ -80,7 +78,6 @@ class DetectionExclusionRulesMigrationManagerTest {
   private DetectionExclusionMigrationStore migrationStore =
       mock(DetectionExclusionMigrationStore.class);
   private DetectionExclusionRulesMigrationManager migrationManager;
-  private ExclusionModsecRulesSupportChecker exclusionModsecRulesSupportChecker;
 
   @BeforeEach
   void setup() {
@@ -88,9 +85,6 @@ class DetectionExclusionRulesMigrationManagerTest {
     newRulesStore = mock(DetectionExclusionRulesStore.class);
     oldRulesStore = mock(AnomalyExclusionRuleConfigStore.class);
     migrationStore = mock(DetectionExclusionMigrationStore.class);
-    RulesManager rulesManager = mock(RulesManager.class);
-    ExclusionModsecRulesSupportChecker exclusionModsecRulesSupportChecker =
-        mock(ExclusionModsecRulesSupportChecker.class);
     ActorServiceClient actorServiceClient = mock(ActorServiceClient.class);
     when(actorServiceClient.getActorsByEntityIds(any(), any())).thenReturn(List.of());
 
@@ -350,7 +344,7 @@ class DetectionExclusionRulesMigrationManagerTest {
   }
 
   @Test
-  void testMigration_apiProtectionExclusionRules() {
+  void testMigration_apiProtectionExclusionRules_ForwardMigration() {
     when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext))
         .thenReturn(true);
     when(newRulesStore.getAllConfigData(any()))
@@ -371,7 +365,7 @@ class DetectionExclusionRulesMigrationManagerTest {
     verify(newRulesStore, times(1))
         .upsertObjects(
             eq(requestContext),
-            argThat(list -> list.size() == 1 && verifyApiProtection(list.get(0))));
+            argThat(list -> list.size() == 1 && verifyApiProtectionForward(list.get(0))));
 
     resetStores();
     migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
@@ -380,6 +374,8 @@ class DetectionExclusionRulesMigrationManagerTest {
 
   @Test
   void testMigrationCompleted_apiProtectionExclusionRules() {
+    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext))
+        .thenReturn(true);
     when(newRulesStore.getAllConfigData(any()))
         .thenReturn(
             List.of(
@@ -396,6 +392,171 @@ class DetectionExclusionRulesMigrationManagerTest {
     resetStores();
     migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
     verifyZeroInteractionWithRulesStore(true);
+  }
+
+  @Test
+  void testMigration_apiProtectionExclusionRules_BackwardMigration() {
+    // Feature flag is disabled, migration was completed -> trigger backward migration
+    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext))
+        .thenReturn(false);
+    when(newRulesStore.getAllConfigData(any()))
+        .thenReturn(
+            List.of(
+                getSampleApiProtectionRule(true, "id4a"), // Already migrated rule
+                getSampleApiProtectionRule(false, "id4b"))); // Not migrated rule
+    DetectionExclusionMigrationConfig rollbackMigrationConfig =
+        mockMigrationStore(true, true, true, true, true).toBuilder()
+            .setApiProtectionExclusionRulesMigrationCompleted(false)
+            .build();
+
+    migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
+    verify(migrationStore, times(1)).getData(requestContext);
+    verify(migrationStore, times(1)).upsertObject(requestContext, rollbackMigrationConfig);
+    verify(newRulesStore, times(1)).getAllConfigData(requestContext);
+    verify(newRulesStore, times(1)).upsertObjects(eq(requestContext), any());
+    verify(newRulesStore, times(1))
+        .upsertObjects(
+            eq(requestContext),
+            argThat(list -> list.size() == 1 && verifyApiProtectionBackward(list.get(0))));
+  }
+
+  @Test
+  void testMigration_apiProtectionExclusionRules_BackwardMigration_ContentType() {
+    // Feature flag is disabled, migration was completed -> trigger backward migration
+    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext))
+        .thenReturn(false);
+    when(newRulesStore.getAllConfigData(any()))
+        .thenReturn(
+            List.of(
+                getSampleApiProtectionContentTypeRule(true, "id5a"), // Already migrated rule
+                getSampleApiProtectionContentTypeRule(false, "id5b")));
+    DetectionExclusionMigrationConfig rollbackMigrationConfig =
+        mockMigrationStore(true, true, true, true, true).toBuilder()
+            .setApiProtectionExclusionRulesMigrationCompleted(false)
+            .build();
+
+    migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
+    verify(migrationStore, times(1)).getData(requestContext);
+    verify(migrationStore, times(1)).upsertObject(requestContext, rollbackMigrationConfig);
+    verify(newRulesStore, times(1)).getAllConfigData(requestContext);
+    verify(newRulesStore, times(1)).upsertObjects(eq(requestContext), any());
+    verify(newRulesStore, times(1))
+        .upsertObjects(
+            eq(requestContext),
+            argThat(list -> list.size() == 1 && verifyContentTypeBackward(list.get(0))));
+  }
+
+  @Test
+  void testNoMigration_apiProtectionExclusionRules_FeatureFlagDisabled_NotCompleted() {
+    // Feature flag is disabled, migration NOT completed -> do nothing
+    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext))
+        .thenReturn(false);
+    mockMigrationStore(true, true, true, true, false);
+
+    migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
+    verify(migrationStore, times(1)).getData(requestContext);
+    verify(migrationStore, times(0)).upsertObject(eq(requestContext), any());
+    verify(newRulesStore, times(0)).getAllConfigData(requestContext);
+  }
+
+  @Test
+  void testMigration_apiProtectionExclusionRules_FullLifecycle_FlagToggling() {
+    // This test covers the full lifecycle: FF enabled -> FF disabled -> FF enabled again
+
+    // ==================== PHASE 1: FF ENABLED - Forward Migration ====================
+    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext))
+        .thenReturn(true);
+    when(newRulesStore.getAllConfigData(any()))
+        .thenReturn(List.of(getSampleApiProtectionRule(false, "id4a")));
+
+    DetectionExclusionMigrationConfig initialConfig =
+        mockMigrationStore(true, true, true, true, false);
+    DetectionExclusionMigrationConfig forwardMigrationConfig =
+        initialConfig.toBuilder().setApiProtectionExclusionRulesMigrationCompleted(true).build();
+
+    // First call: Forward migration should happen
+    migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
+
+    verify(migrationStore, times(1)).getData(requestContext);
+    verify(migrationStore, times(1)).upsertObject(requestContext, forwardMigrationConfig);
+    verify(newRulesStore, times(1)).getAllConfigData(requestContext);
+    verify(newRulesStore, times(1))
+        .upsertObjects(
+            eq(requestContext),
+            argThat(list -> list.size() == 1 && verifyApiProtectionForward(list.get(0))));
+
+    // ==================== PHASE 2: FF STILL ENABLED - Cached (no work) ====================
+    resetStores();
+    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext))
+        .thenReturn(true);
+    // No need to mock migrationStore since we return early before accessing it
+
+    // Second call: Should return early (cached), no DB access at all
+    migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
+
+    verify(migrationStore, times(0)).getData(requestContext);
+    verify(migrationStore, times(0)).upsertObject(eq(requestContext), any());
+    verify(newRulesStore, times(0)).getAllConfigData(requestContext);
+
+    // ==================== PHASE 3: FF DISABLED - Backward Migration ====================
+    resetStores();
+    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext))
+        .thenReturn(false);
+    when(newRulesStore.getAllConfigData(any()))
+        .thenReturn(List.of(getSampleApiProtectionRule(true, "id4a"))); // Already migrated
+
+    DetectionExclusionMigrationConfig backwardMigrationConfig =
+        mockMigrationStore(true, true, true, true, true).toBuilder()
+            .setApiProtectionExclusionRulesMigrationCompleted(false)
+            .build();
+
+    // Third call: Backward migration should happen
+    migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
+
+    verify(migrationStore, times(1)).getData(requestContext);
+    verify(migrationStore, times(1)).upsertObject(requestContext, backwardMigrationConfig);
+    verify(newRulesStore, times(1)).getAllConfigData(requestContext);
+    verify(newRulesStore, times(1))
+        .upsertObjects(
+            eq(requestContext),
+            argThat(list -> list.size() == 1 && verifyApiProtectionBackward(list.get(0))));
+
+    // ==================== PHASE 4: FF DISABLED AGAIN - No work (nothing to rollback)
+    // ====================
+    resetStores();
+    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext))
+        .thenReturn(false);
+    mockMigrationStore(true, true, true, true, false); // migration NOT completed
+
+    // Fourth call: Should return early (nothing to rollback)
+    migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
+
+    verify(migrationStore, times(1)).getData(requestContext);
+    verify(migrationStore, times(0)).upsertObject(eq(requestContext), any());
+    verify(newRulesStore, times(0)).getAllConfigData(requestContext);
+
+    // ==================== PHASE 5: FF ENABLED AGAIN - Forward Migration Again ====================
+    resetStores();
+    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext))
+        .thenReturn(true);
+    when(newRulesStore.getAllConfigData(any()))
+        .thenReturn(List.of(getSampleApiProtectionRule(false, "id4a")));
+
+    DetectionExclusionMigrationConfig reMigrationConfig =
+        mockMigrationStore(true, true, true, true, false).toBuilder()
+            .setApiProtectionExclusionRulesMigrationCompleted(true)
+            .build();
+
+    // Fifth call: Forward migration should happen again
+    migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
+
+    verify(migrationStore, times(1)).getData(requestContext);
+    verify(migrationStore, times(1)).upsertObject(requestContext, reMigrationConfig);
+    verify(newRulesStore, times(1)).getAllConfigData(requestContext);
+    verify(newRulesStore, times(1))
+        .upsertObjects(
+            eq(requestContext),
+            argThat(list -> list.size() == 1 && verifyApiProtectionForward(list.get(0))));
   }
 
   @Test
@@ -591,18 +752,48 @@ class DetectionExclusionRulesMigrationManagerTest {
         .build();
   }
 
-  private boolean verifyApiProtection(DetectionExclusionRule rule) {
+  private boolean verifyApiProtectionForward(DetectionExclusionRule rule) {
     assertEquals("id4a", rule.getId());
-    assertTrue(
+    List<SystemDefinedEvent> events =
         rule.getRuleInfo().getConditionsList().stream()
             .flatMap(
                 condition -> condition.getEventCondition().getSystemDefinedEventsList().stream())
             .filter(
                 event -> !event.getEventTypeId().isEmpty() || !event.getEventSubTypeId().isEmpty())
+            .collect(Collectors.toList());
+
+    // Verify we have only the new event (1 total) - old "bola" converted to "authzh_obola"
+    assertEquals(1, events.size());
+
+    // Verify the event is converted to new subTypeId
+    assertTrue(
+        events.stream()
             .allMatch(
                 event ->
                     event.getEventTypeId().isEmpty()
                         && event.getEventSubTypeId().equals("authzh_obola")));
+    return true;
+  }
+
+  private boolean verifyApiProtectionBackward(DetectionExclusionRule rule) {
+    assertEquals("id4a", rule.getId());
+    List<SystemDefinedEvent> events =
+        rule.getRuleInfo().getConditionsList().stream()
+            .flatMap(
+                condition -> condition.getEventCondition().getSystemDefinedEventsList().stream())
+            .filter(
+                event -> !event.getEventTypeId().isEmpty() || !event.getEventSubTypeId().isEmpty())
+            .collect(Collectors.toList());
+
+    // Verify we have only the old event (1 total) - "authzh_obola" converted back to "bola"
+    assertEquals(1, events.size());
+
+    // Verify the event is converted back to old typeId
+    assertTrue(
+        events.stream()
+            .allMatch(
+                event ->
+                    event.getEventSubTypeId().isEmpty() && event.getEventTypeId().equals("bola")));
     return true;
   }
 
@@ -627,12 +818,18 @@ class DetectionExclusionRulesMigrationManagerTest {
                   EventCondition.newBuilder()
                       .addSystemDefinedEvents(
                           SystemDefinedEvent.newBuilder()
+                              .setEventFamily(
+                                  SystemDefinedEventFamily.SYSTEM_DEFINED_EVENT_FAMILY_API_DEF)
                               .setEventSubTypeId("contentAnomaly_reqctm"))
                       .addSystemDefinedEvents(
                           SystemDefinedEvent.newBuilder()
+                              .setEventFamily(
+                                  SystemDefinedEventFamily.SYSTEM_DEFINED_EVENT_FAMILY_API_DEF)
                               .setEventSubTypeId("schemaValidation_reqctve"))
                       .addSystemDefinedEvents(
                           SystemDefinedEvent.newBuilder()
+                              .setEventFamily(
+                                  SystemDefinedEventFamily.SYSTEM_DEFINED_EVENT_FAMILY_API_DEF)
                               .setEventSubTypeId("schemaValidation_resctve"))));
     } else {
       ruleInfoBuilder.addConditions(
@@ -663,12 +860,13 @@ class DetectionExclusionRulesMigrationManagerTest {
                 condition -> condition.getEventCondition().getSystemDefinedEventsList().stream())
             .collect(Collectors.toList());
 
-    // Verify we have exactly 3 events
+    // Verify we have exactly 3 events (old "contentType" converted to 3 new subTypeIds)
     assertEquals(3, events.size());
 
-    // Verify all events have empty typeId and correct subTypeIds
+    // Verify all events have empty typeId (converted to subTypeId)
     assertTrue(events.stream().allMatch(event -> event.getEventTypeId().isEmpty()));
 
+    // Verify the 3 new events with correct subTypeIds
     List<String> subTypeIds =
         events.stream().map(SystemDefinedEvent::getEventSubTypeId).collect(Collectors.toList());
     List<SystemDefinedEventFamily> families =
@@ -679,6 +877,27 @@ class DetectionExclusionRulesMigrationManagerTest {
     assertTrue(subTypeIds.contains("schemaValidation_resctve"));
     assertEquals(1, families.stream().distinct().count());
     assertEquals(SystemDefinedEventFamily.SYSTEM_DEFINED_EVENT_FAMILY_API_DEF, families.get(0));
+
+    return true;
+  }
+
+  private boolean verifyContentTypeBackward(DetectionExclusionRule rule) {
+    assertEquals("id5a", rule.getId());
+    List<SystemDefinedEvent> events =
+        rule.getRuleInfo().getConditionsList().stream()
+            .flatMap(
+                condition -> condition.getEventCondition().getSystemDefinedEventsList().stream())
+            .collect(Collectors.toList());
+
+    // Verify we have exactly 1 event (3 new subTypeIds converted back to old "contentType")
+    assertEquals(1, events.size());
+
+    // Verify the event is converted back to old typeId
+    SystemDefinedEvent event = events.get(0);
+    assertEquals("contentType", event.getEventTypeId());
+    assertTrue(event.getEventSubTypeId().isEmpty());
+    assertEquals(
+        SystemDefinedEventFamily.SYSTEM_DEFINED_EVENT_FAMILY_API_DEF, event.getEventFamily());
 
     return true;
   }

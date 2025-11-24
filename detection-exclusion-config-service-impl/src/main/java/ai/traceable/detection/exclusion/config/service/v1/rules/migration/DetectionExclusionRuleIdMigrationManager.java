@@ -6,8 +6,10 @@ import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
@@ -15,6 +17,7 @@ import lombok.experimental.UtilityClass;
 public class DetectionExclusionRuleIdMigrationManager {
   private static final Map<String, String> OLD_TO_NEW_RULE_ID_MAPPINGS = new HashMap<>();
   private static final Map<String, List<String>> OLD_TYPE_ID_TO_NEW_SUB_TYPE_IDS = new HashMap<>();
+  private static final Map<String, String> NEW_SUB_TYPE_ID_TO_OLD_TYPE_ID = new HashMap<>();
 
   static {
     OLD_TO_NEW_RULE_ID_MAPPINGS.put("crs_9210310", "crs_9320310");
@@ -76,6 +79,14 @@ public class DetectionExclusionRuleIdMigrationManager {
             ApiProtectThreatRuleConfigMappingProvider.AUTHN_UA_SUB_RULE_ID,
             ApiProtectThreatRuleConfigMappingProvider.SCHEMA_VALIDATION_MREQP_SUB_RULE_ID));
 
+    // Build reverse mapping for backward migration
+    OLD_TYPE_ID_TO_NEW_SUB_TYPE_IDS.forEach(
+        (oldTypeId, newSubTypeIds) -> {
+          for (String newSubTypeId : newSubTypeIds) {
+            NEW_SUB_TYPE_ID_TO_OLD_TYPE_ID.put(newSubTypeId, oldTypeId);
+          }
+        });
+
     // Add future migrations here
   }
 
@@ -108,23 +119,40 @@ public class DetectionExclusionRuleIdMigrationManager {
   }
 
   public static boolean updateRuleConditionsExclusionRulesForApiProtection(
-      DetectionExclusionRuleInfo.Builder ruleInfoBuilder) {
+      DetectionExclusionRuleInfo.Builder ruleInfoBuilder, boolean isFeatureFlagEnabled) {
     boolean isUpdated = false;
     List<DetectionExclusionCondition> conditions = new ArrayList<>();
     for (DetectionExclusionCondition condition : ruleInfoBuilder.getConditionsList()) {
-      if (hasSystemDefinedEventBasedConditionNeedingMigrationForApiProtection(condition)) {
-        List<SystemDefinedEvent> migratedEvents =
-            migrateSystemDefinedEventsForApiProtection(condition);
-        conditions.add(
-            condition.toBuilder()
-                .setEventCondition(
-                    condition.getEventCondition().toBuilder()
-                        .clearSystemDefinedEvents()
-                        .addAllSystemDefinedEvents(migratedEvents))
-                .build());
-        isUpdated = true;
+      if (isFeatureFlagEnabled) {
+        // Forward migration: old typeId -> new subTypeId (keep both)
+        if (hasSystemDefinedEventBasedConditionNeedingForwardMigration(condition)) {
+          Set<SystemDefinedEvent> migratedEvents = migrateSystemDefinedEventsForward(condition);
+          conditions.add(
+              condition.toBuilder()
+                  .setEventCondition(
+                      condition.getEventCondition().toBuilder()
+                          .clearSystemDefinedEvents()
+                          .addAllSystemDefinedEvents(migratedEvents))
+                  .build());
+          isUpdated = true;
+        } else {
+          conditions.add(condition);
+        }
       } else {
-        conditions.add(condition);
+        // Backward migration: new subTypeId -> old typeId (remove new, keep old)
+        if (hasSystemDefinedEventBasedConditionNeedingBackwardMigration(condition)) {
+          Set<SystemDefinedEvent> migratedEvents = migrateSystemDefinedEventsBackward(condition);
+          conditions.add(
+              condition.toBuilder()
+                  .setEventCondition(
+                      condition.getEventCondition().toBuilder()
+                          .clearSystemDefinedEvents()
+                          .addAllSystemDefinedEvents(migratedEvents))
+                  .build());
+          isUpdated = true;
+        } else {
+          conditions.add(condition);
+        }
       }
     }
 
@@ -142,10 +170,16 @@ public class DetectionExclusionRuleIdMigrationManager {
         .anyMatch(event -> needsMigration(event.getEventSubTypeId()));
   }
 
-  private static boolean hasSystemDefinedEventBasedConditionNeedingMigrationForApiProtection(
+  private static boolean hasSystemDefinedEventBasedConditionNeedingForwardMigration(
       DetectionExclusionCondition condition) {
     return condition.getEventCondition().getSystemDefinedEventsList().stream()
-        .anyMatch(event -> needsTypeIdMigration(event.getEventTypeId()));
+        .anyMatch(event -> needsForwardMigration(event.getEventTypeId()));
+  }
+
+  private static boolean hasSystemDefinedEventBasedConditionNeedingBackwardMigration(
+      DetectionExclusionCondition condition) {
+    return condition.getEventCondition().getSystemDefinedEventsList().stream()
+        .anyMatch(event -> needsBackwardMigration(event.getEventSubTypeId()));
   }
 
   private static List<SystemDefinedEvent> migrateSystemDefinedEvents(
@@ -162,17 +196,35 @@ public class DetectionExclusionRuleIdMigrationManager {
         .collect(Collectors.toList());
   }
 
-  private static List<SystemDefinedEvent> migrateSystemDefinedEventsForApiProtection(
+  private static Set<SystemDefinedEvent> migrateSystemDefinedEventsForward(
       DetectionExclusionCondition condition) {
-    List<SystemDefinedEvent> migratedEvents = new ArrayList<>();
+    Set<SystemDefinedEvent> migratedEvents = new HashSet<>();
 
     for (SystemDefinedEvent event : condition.getEventCondition().getSystemDefinedEventsList()) {
-      if (needsTypeIdMigration(event.getEventTypeId())) {
+      if (needsForwardMigration(event.getEventTypeId())) {
+        // Convert: replace old typeId with new subTypeId(s)
         List<String> newSubTypeIds = OLD_TYPE_ID_TO_NEW_SUB_TYPE_IDS.get(event.getEventTypeId());
         for (String newSubTypeId : newSubTypeIds) {
           migratedEvents.add(
               event.toBuilder().clearEventTypeId().setEventSubTypeId(newSubTypeId).build());
         }
+      } else {
+        migratedEvents.add(event);
+      }
+    }
+    return migratedEvents;
+  }
+
+  private static Set<SystemDefinedEvent> migrateSystemDefinedEventsBackward(
+      DetectionExclusionCondition condition) {
+    Set<SystemDefinedEvent> migratedEvents = new HashSet<>();
+
+    for (SystemDefinedEvent event : condition.getEventCondition().getSystemDefinedEventsList()) {
+      if (needsBackwardMigration(event.getEventSubTypeId())) {
+        // Convert: replace new subTypeId with old typeId
+        String oldTypeId = NEW_SUB_TYPE_ID_TO_OLD_TYPE_ID.get(event.getEventSubTypeId());
+        migratedEvents.add(
+            event.toBuilder().clearEventSubTypeId().setEventTypeId(oldTypeId).build());
       } else {
         migratedEvents.add(event);
       }
@@ -188,7 +240,11 @@ public class DetectionExclusionRuleIdMigrationManager {
     return OLD_TO_NEW_RULE_ID_MAPPINGS.containsKey(ruleId);
   }
 
-  private static boolean needsTypeIdMigration(String typeId) {
+  private static boolean needsForwardMigration(String typeId) {
     return OLD_TYPE_ID_TO_NEW_SUB_TYPE_IDS.containsKey(typeId);
+  }
+
+  private static boolean needsBackwardMigration(String subTypeId) {
+    return NEW_SUB_TYPE_ID_TO_OLD_TYPE_ID.containsKey(subTypeId);
   }
 }

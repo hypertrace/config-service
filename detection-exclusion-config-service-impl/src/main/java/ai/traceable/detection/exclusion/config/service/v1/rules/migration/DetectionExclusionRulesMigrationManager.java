@@ -264,18 +264,46 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
   @Override
   public void migrateForApiProtectionExclusionRulesIfApplicable(RequestContext requestContext) {
     ContextualKey<Void> contextualKey = requestContext.buildInternalContextualKey();
-    if (apiProtectionExclusionRulesMigrationCompletedTenantsSet.contains(contextualKey)) {
+    boolean isFeatureFlagEnabled =
+        featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext);
+
+    // Early cache check: if FF is enabled and we've already completed migration, skip
+    if (isFeatureFlagEnabled
+        && apiProtectionExclusionRulesMigrationCompletedTenantsSet.contains(contextualKey)) {
       return;
     }
+
+    // Fetch migration state from store
     DetectionExclusionMigrationConfig detectionExclusionMigrationConfig =
         migrationStore
             .getData(requestContext)
             .orElse(DetectionExclusionMigrationConfig.getDefaultInstance());
-    if (detectionExclusionMigrationConfig.getApiProtectionExclusionRulesMigrationCompleted()) {
+
+    boolean isMigrationCompleted =
+        detectionExclusionMigrationConfig.getApiProtectionExclusionRulesMigrationCompleted();
+
+    // Scenario 1: FF enabled and migration completed -> add to cache and return
+    if (isFeatureFlagEnabled && isMigrationCompleted) {
       apiProtectionExclusionRulesMigrationCompletedTenantsSet.add(contextualKey);
-    } else if (featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext)) {
+      return;
+    }
+
+    // Scenario 2: FF disabled and migration NOT completed -> nothing to rollback
+    if (!isFeatureFlagEnabled && !isMigrationCompleted) {
+      return;
+    }
+
+    // Scenario 3: FF enabled and migration NOT completed -> migrate forward
+    if (isFeatureFlagEnabled && !isMigrationCompleted) {
       updateDetectionExclusionRulesForApiProtection(
-          requestContext, detectionExclusionMigrationConfig);
+          requestContext, detectionExclusionMigrationConfig, true);
+      return;
+    }
+
+    // Scenario 4: FF disabled and migration IS completed -> migrate backward (rollback)
+    if (!isFeatureFlagEnabled && isMigrationCompleted) {
+      updateDetectionExclusionRulesForApiProtection(
+          requestContext, detectionExclusionMigrationConfig, false);
     }
   }
 
@@ -383,7 +411,9 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
   }
 
   private void updateDetectionExclusionRulesForApiProtection(
-      RequestContext requestContext, DetectionExclusionMigrationConfig migrationConfig) {
+      RequestContext requestContext,
+      DetectionExclusionMigrationConfig migrationConfig,
+      boolean isFeatureFlagEnabled) {
     List<DetectionExclusionRule> updatedRules =
         newRulesStore.getAllConfigData(requestContext).stream()
             .map(
@@ -391,7 +421,8 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
                   DetectionExclusionRuleInfo.Builder ruleInfoBuilder =
                       rule.getRuleInfo().toBuilder();
                   if (DetectionExclusionRuleIdMigrationManager
-                      .updateRuleConditionsExclusionRulesForApiProtection(ruleInfoBuilder)) {
+                      .updateRuleConditionsExclusionRulesForApiProtection(
+                          ruleInfoBuilder, isFeatureFlagEnabled)) {
                     return rule.toBuilder().setRuleInfo(ruleInfoBuilder).build();
                   }
                   return null;
@@ -401,11 +432,19 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
     if (!updatedRules.isEmpty()) {
       newRulesStore.upsertObjects(requestContext, updatedRules);
     }
+
     migrationStore.upsertObject(
         requestContext,
-        migrationConfig.toBuilder().setApiProtectionExclusionRulesMigrationCompleted(true).build());
-    apiProtectionExclusionRulesMigrationCompletedTenantsSet.add(
-        requestContext.buildInternalContextualKey());
+        migrationConfig.toBuilder()
+            .setApiProtectionExclusionRulesMigrationCompleted(isFeatureFlagEnabled)
+            .build());
+    if (isFeatureFlagEnabled) {
+      apiProtectionExclusionRulesMigrationCompletedTenantsSet.add(
+          requestContext.buildInternalContextualKey());
+    } else {
+      apiProtectionExclusionRulesMigrationCompletedTenantsSet.remove(
+          requestContext.buildInternalContextualKey());
+    }
   }
 
   private boolean updateConditionForSSTIifAny(DetectionExclusionRuleInfo.Builder ruleInfoBuilder) {
