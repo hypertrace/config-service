@@ -142,8 +142,12 @@ public class AttributeResolutionConfigManagerImpl implements AttributeResolution
       GetAttributeResolutionConfigsFilter filter,
       AttributeResolutionConfig attributeResolutionConfig) {
     return Optional.of(attributeResolutionConfig)
-        .filter(config -> config.getData().getEnabled() == filter.getEnabled())
-        .filter(config -> config.getData().getEntityType() == config.getData().getEntityType())
+        .filter(
+            config -> !filter.hasEnabled() || config.getData().getEnabled() == filter.getEnabled())
+        .filter(
+            config ->
+                !filter.hasEntityType()
+                    || config.getData().getEntityType().equals(config.getData().getEntityType()))
         .isPresent();
   }
 
