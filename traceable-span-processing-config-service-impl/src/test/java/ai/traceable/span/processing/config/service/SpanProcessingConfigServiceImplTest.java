@@ -9,6 +9,7 @@ import static ai.traceable.span.processing.config.service.v1.RelationalOperator.
 import static ai.traceable.span.processing.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_IN;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -21,6 +22,7 @@ import ai.traceable.api.spec.config.service.v1.GetApiSpecsRequest;
 import ai.traceable.api.spec.config.service.v1.GetApiSpecsResponse;
 import ai.traceable.api.spec.config.service.v1.StringList;
 import ai.traceable.config.utils.TimestampConverter;
+import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.span.processing.config.service.apinamingrules.ApiNamingRulesManager;
 import ai.traceable.span.processing.config.service.apinamingrules.ApiNamingRulesManagerConfig;
 import ai.traceable.span.processing.config.service.apinamingrules.DefaultApiNamingRulesManager;
@@ -34,6 +36,7 @@ import ai.traceable.span.processing.config.service.store.ApiNamingRulesConfigSto
 import ai.traceable.span.processing.config.service.store.DefaultProtectionSpanRuleEvaluationStatusConfigStore;
 import ai.traceable.span.processing.config.service.store.ProtectionSpanRulesConfigStore;
 import ai.traceable.span.processing.config.service.store.SamplingConfigsConfigStore;
+import ai.traceable.span.processing.config.service.utils.ApiNamingRuleIdGenerator;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRule;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRuleConfig;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRuleDetails;
@@ -51,6 +54,7 @@ import ai.traceable.span.processing.config.service.v1.DeleteApiNamingRulesReques
 import ai.traceable.span.processing.config.service.v1.DeleteProtectionSpanRuleRequest;
 import ai.traceable.span.processing.config.service.v1.DeleteSamplingConfigRequest;
 import ai.traceable.span.processing.config.service.v1.Field;
+import ai.traceable.span.processing.config.service.v1.GenAiBasedConfig;
 import ai.traceable.span.processing.config.service.v1.GetAllApiNamingRulesRequest;
 import ai.traceable.span.processing.config.service.v1.GetAllProtectionSpanRulesRequest;
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedProtectionSpanRulesRequest;
@@ -107,6 +111,7 @@ class SpanProcessingConfigServiceImplTest {
   private ApiSpecConfigServiceGrpc.ApiSpecConfigServiceBlockingStub
       apiSpecConfigServiceBlockingStub;
   private ApiNamingRulesManagerConfig apiNamingRulesManagerConfig;
+  private ApiNamingRuleIdGenerator apiNamingRuleIdGenerator;
 
   @BeforeEach
   void beforeEach() {
@@ -127,6 +132,7 @@ class SpanProcessingConfigServiceImplTest {
     this.apiSpecConfigServiceBlockingStub =
         mock(ApiSpecConfigServiceGrpc.ApiSpecConfigServiceBlockingStub.class, Answers.RETURNS_SELF);
     apiNamingRulesManagerConfig = mock(ApiNamingRulesManagerConfig.class);
+    apiNamingRuleIdGenerator = new ApiNamingRuleIdGenerator(new UuidGenerator());
     when(apiNamingRulesManagerConfig.getApiSpecServiceTimeout())
         .thenReturn(java.time.Duration.ofSeconds(10));
 
@@ -145,7 +151,8 @@ class SpanProcessingConfigServiceImplTest {
             apiNamingRulesConfigStore,
             timestampConverter,
             this.apiSpecConfigServiceBlockingStub,
-            apiNamingRulesManagerConfig);
+            apiNamingRulesManagerConfig,
+            apiNamingRuleIdGenerator);
     ProtectionSpanRulesManager protectionSpanRulesManager =
         new DefaultProtectionSpanRulesManager(timestampConverter, protectionSpanRulesConfigStore);
     DefaultProtectionSpanRuleEvaluationStatusConfigStore
@@ -1399,6 +1406,100 @@ class SpanProcessingConfigServiceImplTest {
     assertTrue(apiNamingRules.contains(secondCreatedApiNamingRule));
   }
 
+  @Test
+  void testGenAiBasedApiNamingRules_deduplication() {
+    // Create first GenAI rule
+    ApiNamingRuleDetails firstRule =
+        this.spanProcessingConfigServiceStub
+            .createApiNamingRules(
+                CreateApiNamingRulesRequest.newBuilder()
+                    .addRulesInfo(
+                        ApiNamingRuleInfo.newBuilder()
+                            .setName("genAiRule1")
+                            .setDisabled(false)
+                            .setRuleConfig(
+                                buildGenAiBasedConfig(
+                                    List.of("regex1", "regex2"), List.of("value1", "value2")))
+                            .setFilter(buildTestFilter()))
+                    .build())
+            .getRulesDetailsList()
+            .get(0);
+
+    List<ApiNamingRule> allRules = getAllApiNamingRules();
+    assertEquals(1, allRules.size());
+    assertTrue(allRules.contains(firstRule.getRule()));
+
+    // Try to create duplicate GenAI rule (same regexes and values)
+    List<ApiNamingRuleDetails> duplicateAttempt =
+        this.spanProcessingConfigServiceStub
+            .createApiNamingRules(
+                CreateApiNamingRulesRequest.newBuilder()
+                    .addAllRulesInfo(
+                        List.of(
+                            ApiNamingRuleInfo.newBuilder()
+                                .setName("genAiRule2_duplicate")
+                                .setDisabled(false)
+                                .setRuleConfig(
+                                    buildGenAiBasedConfig(
+                                        List.of("regex1", "regex2"), List.of("value1", "value2")))
+                                .setFilter(buildTestFilter())
+                                .build()))
+                    .build())
+            .getRulesDetailsList();
+
+    // Should return empty list (duplicate was skipped)
+    assertTrue(duplicateAttempt.isEmpty());
+
+    // Verify only one rule exists
+    allRules = getAllApiNamingRules();
+    assertEquals(1, allRules.size());
+    assertEquals(firstRule.getRule().getId(), allRules.get(0).getId());
+  }
+
+  @Test
+  void testGenAiBasedApiNamingRules_differentContentCreatesNewRule() {
+    // Create first GenAI rule
+    ApiNamingRuleDetails firstRule =
+        this.spanProcessingConfigServiceStub
+            .createApiNamingRules(
+                CreateApiNamingRulesRequest.newBuilder()
+                    .addRulesInfo(
+                        ApiNamingRuleInfo.newBuilder()
+                            .setName("genAiRule1")
+                            .setDisabled(false)
+                            .setRuleConfig(
+                                buildGenAiBasedConfig(List.of("regex1"), List.of("value1")))
+                            .setFilter(buildTestFilter()))
+                    .build())
+            .getRulesDetailsList()
+            .get(0);
+
+    // Create second GenAI rule with different content
+    ApiNamingRuleDetails secondRule =
+        this.spanProcessingConfigServiceStub
+            .createApiNamingRules(
+                CreateApiNamingRulesRequest.newBuilder()
+                    .addRulesInfo(
+                        ApiNamingRuleInfo.newBuilder()
+                            .setName("genAiRule2")
+                            .setDisabled(false)
+                            .setRuleConfig(
+                                buildGenAiBasedConfig(List.of("regex2"), List.of("value2")))
+                            .setFilter(buildTestFilter()))
+                    .build())
+            .getRulesDetailsList()
+            .get(0);
+
+    // Both rules should exist
+    List<ApiNamingRule> allRules = getAllApiNamingRules();
+    assertEquals(2, allRules.size());
+    assertTrue(allRules.contains(firstRule.getRule()));
+    assertTrue(allRules.contains(secondRule.getRule()));
+
+    // IDs should be different
+    assertNotEquals(firstRule.getRule().getId(), secondRule.getRule().getId());
+  }
+
   private List<ApiNamingRule> getAllApiNamingRules() {
     return this.spanProcessingConfigServiceStub
         .getAllApiNamingRules(GetAllApiNamingRulesRequest.newBuilder().build())
@@ -1484,6 +1585,13 @@ class SpanProcessingConfigServiceImplTest {
                 .addAllApiSpecIds(id)
                 .addAllRegexes(regexes)
                 .addAllValues(values))
+        .build();
+  }
+
+  private ApiNamingRuleConfig buildGenAiBasedConfig(List<String> regexes, List<String> values) {
+    return ApiNamingRuleConfig.newBuilder()
+        .setGenAiBasedConfig(
+            GenAiBasedConfig.newBuilder().addAllRegexes(regexes).addAllValues(values))
         .build();
   }
 }

@@ -6,6 +6,7 @@ import static java.util.Collections.unmodifiableMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static java.util.stream.Collectors.toUnmodifiableMap;
+import static java.util.stream.Collectors.toUnmodifiableSet;
 import static java.util.stream.Stream.empty;
 
 import ai.traceable.api.spec.config.service.v1.ApiSpec;
@@ -15,6 +16,7 @@ import ai.traceable.api.spec.config.service.v1.GetApiSpecsRequest;
 import ai.traceable.api.spec.config.service.v1.StringList;
 import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.span.processing.config.service.store.ApiNamingRulesConfigStore;
+import ai.traceable.span.processing.config.service.utils.ApiNamingRuleIdGenerator;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRule;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRuleConfig;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRuleDetails;
@@ -26,6 +28,7 @@ import ai.traceable.span.processing.config.service.v1.CreateApiNamingRuleRequest
 import ai.traceable.span.processing.config.service.v1.CreateApiNamingRulesRequest;
 import ai.traceable.span.processing.config.service.v1.DeleteApiNamingRuleRequest;
 import ai.traceable.span.processing.config.service.v1.DeleteApiNamingRulesRequest;
+import ai.traceable.span.processing.config.service.v1.GenAiBasedConfig;
 import ai.traceable.span.processing.config.service.v1.UpdateApiNamingRule;
 import ai.traceable.span.processing.config.service.v1.UpdateApiNamingRuleRequest;
 import ai.traceable.span.processing.config.service.v1.UpdateApiNamingRulesRequest;
@@ -59,6 +62,7 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
   private final TimestampConverter timestampConverter;
   private final ApiSpecConfigServiceBlockingStub apiSpecConfigServiceBlockingStub;
   private final ApiNamingRulesManagerConfig apiNamingRulesManagerConfig;
+  private final ApiNamingRuleIdGenerator apiNamingRuleIdGenerator;
 
   @Override
   public List<ApiNamingRuleDetails> getAllApiNamingRuleDetails(RequestContext requestContext) {
@@ -97,6 +101,9 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
     List<ApiNamingRuleInfo> apiSpecBasedNamingRulesInfo = new ArrayList<>();
     List<ApiNamingRule> otherRulesToCreate = new ArrayList<>();
 
+    // For GenAI rules, id to ApiNamingRuleInfo map to avoid duplicates
+    Map<String, ApiNamingRuleInfo> genAiRuleIdToInfoMap = new HashMap<>();
+
     for (ApiNamingRuleInfo ruleInfo : request.getRulesInfoList()) {
       ApiNamingRuleConfig.RuleConfigCase configType = ruleInfo.getRuleConfig().getRuleConfigCase();
 
@@ -108,17 +115,22 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
         case SEGMENT_MATCHING_BASED_CONFIG:
         case AST_SCAN_BASED_CONFIG:
         case JOB_BASED_CONFIG:
-        case GEN_AI_BASED_CONFIG:
           ApiNamingRuleCreationContext context = buildApiNamingRule(requestContext, ruleInfo);
           if (context.isNewRule()) {
             otherRulesToCreate.add(context.getApiNamingRule());
           }
+          break;
+        case GEN_AI_BASED_CONFIG:
+          ApiNamingRuleCreationContext genAiContext = buildApiNamingRule(requestContext, ruleInfo);
+          genAiRuleIdToInfoMap.put(genAiContext.getApiNamingRule().getId(), ruleInfo);
           break;
 
         default:
           log.warn("Unrecognized rule config type: {}", configType);
       }
     }
+
+    deduplicateNewGenAiRulesById(requestContext, genAiRuleIdToInfoMap, otherRulesToCreate);
 
     Stream<ApiNamingRule> apiSpecBasedRuleStream =
         buildApiSpecBasedNamingRules(requestContext, apiSpecBasedNamingRulesInfo);
@@ -133,6 +145,35 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
 
     return buildApiNamingRuleDetails(
         this.apiNamingRulesConfigStore.upsertObjects(requestContext, apiNamingRulesToCreate));
+  }
+
+  private void deduplicateNewGenAiRulesById(
+      RequestContext requestContext,
+      Map<String, ApiNamingRuleInfo> genAiRuleIdToInfoMap,
+      List<ApiNamingRule> otherRulesToCreate) {
+
+    if (genAiRuleIdToInfoMap.isEmpty()) {
+      return;
+    }
+
+    ApiNamingRulesFilter filter =
+        ApiNamingRulesFilter.newBuilder().addAllIds(genAiRuleIdToInfoMap.keySet()).build();
+    List<ApiNamingRuleDetails> existingRules = getApiNamingRuleDetails(requestContext, filter);
+
+    final Set<String> existingIds =
+        existingRules.stream()
+            .map(details -> details.getRule().getId())
+            .collect(toUnmodifiableSet());
+
+    genAiRuleIdToInfoMap.entrySet().stream()
+        .filter(entry -> !existingIds.contains(entry.getKey()))
+        .map(
+            entry ->
+                ApiNamingRule.newBuilder()
+                    .setId(entry.getKey())
+                    .setRuleInfo(entry.getValue())
+                    .build())
+        .forEach(otherRulesToCreate::add);
   }
 
   private Stream<ApiNamingRule> buildApiSpecBasedNamingRules(
@@ -269,11 +310,22 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
       case SEGMENT_MATCHING_BASED_CONFIG:
       case JOB_BASED_CONFIG:
       case AST_SCAN_BASED_CONFIG:
-      case GEN_AI_BASED_CONFIG:
         return ApiNamingRuleCreationContext.builder()
             .apiNamingRule(
                 ApiNamingRule.newBuilder()
                     .setId(UUID.randomUUID().toString())
+                    .setRuleInfo(apiNamingRuleInfo)
+                    .build())
+            .isNewRule(true)
+            .build();
+      case GEN_AI_BASED_CONFIG:
+        GenAiBasedConfig genAiBasedConfig = apiNamingRuleInfo.getRuleConfig().getGenAiBasedConfig();
+        return ApiNamingRuleCreationContext.builder()
+            .apiNamingRule(
+                ApiNamingRule.newBuilder()
+                    .setId(
+                        apiNamingRuleIdGenerator.generateGenAiRuleId(
+                            genAiBasedConfig.getRegexesList(), genAiBasedConfig.getValuesList()))
                     .setRuleInfo(apiNamingRuleInfo)
                     .build())
             .isNewRule(true)
