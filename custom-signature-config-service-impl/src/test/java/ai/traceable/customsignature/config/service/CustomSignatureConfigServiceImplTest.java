@@ -10,7 +10,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.customsignature.config.service.migration.CustomSignatureRuleMigrationManager;
 import ai.traceable.customsignature.config.service.modsec.ModsecRulesManager;
 import ai.traceable.customsignature.config.service.rules.RulesManager;
@@ -50,8 +49,6 @@ class CustomSignatureConfigServiceImplTest {
   private RulesValidator rulesValidator;
   private RulesManager rulesManager;
   private ModsecRulesManager modsecRulesManager;
-  private CustomSignatureConfigServiceConfig customSignatureConfigServiceConfig;
-  private FeatureCachingClient featureCachingClient;
   private CustomSignatureEdgeDecisionConverter edgeDecisionConverter;
   private CustomSignatureConfigServiceImpl configService;
 
@@ -61,20 +58,14 @@ class CustomSignatureConfigServiceImplTest {
     rulesManager = mock(RulesManager.class);
     modsecRulesManager = mock(ModsecRulesManager.class);
     edgeDecisionConverter = mock(CustomSignatureEdgeDecisionConverter.class);
-    featureCachingClient = mock(FeatureCachingClient.class);
-    customSignatureConfigServiceConfig = mock(CustomSignatureConfigServiceConfig.class);
     CustomSignatureRuleMigrationManager mockRuleMigrationManager =
         mock(CustomSignatureRuleMigrationManager.class);
-    when(featureCachingClient.isEdgeDecisionEnabledForTenant(any())).thenReturn(true);
-    when(customSignatureConfigServiceConfig.isEdsConversionEnabled()).thenReturn(true);
     configService =
         new CustomSignatureConfigServiceImpl(
             rulesValidator,
             rulesManager,
             modsecRulesManager,
             edgeDecisionConverter,
-            featureCachingClient,
-            customSignatureConfigServiceConfig,
             mockRuleMigrationManager);
     when(mockRuleMigrationManager.migrateCreateCustomSignatureRuleRequest(any()))
         .thenAnswer(invocation -> invocation.getArgument(0));
@@ -495,8 +486,6 @@ class CustomSignatureConfigServiceImplTest {
     when(rulesValidator.validate(any(GetCustomSignatureEdgeDecisionRulesRequest.class)))
         .thenReturn(Status.OK);
     when(rulesManager.getCustomSignatureRules(any(), any())).thenReturn(allRules);
-    when(featureCachingClient.isEdgeDecisionEnabledForTenant(any())).thenReturn(true);
-    when(customSignatureConfigServiceConfig.isEdsConversionEnabled()).thenReturn(true);
 
     EdgeDecisionEngineConfig edgeDecisionEngineConfig =
         EdgeDecisionEngineConfig.newBuilder().setId("test-edge-config").build();
@@ -539,31 +528,7 @@ class CustomSignatureConfigServiceImplTest {
                 .build());
     verify(responseObserver, times(1)).onCompleted();
 
-    // Case 3: Test with edge decision disabled
-    reset(responseObserver);
-    when(featureCachingClient.isEdgeDecisionEnabledForTenant(any())).thenReturn(false);
-    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, successRunnable);
-    verify(responseObserver, times(1))
-        .onNext(
-            GetCustomSignatureEdgeDecisionRulesResponse.newBuilder()
-                .setEdgeDecisionEngineConfig(EdgeDecisionEngineConfig.getDefaultInstance())
-                .build());
-    verify(responseObserver, times(1)).onCompleted();
-
-    // Case 4: Test with EDS conversion disabled
-    reset(responseObserver);
-    when(featureCachingClient.isEdgeDecisionEnabledForTenant(any())).thenReturn(true);
-    when(customSignatureConfigServiceConfig.isEdsConversionEnabled()).thenReturn(false);
-
-    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, successRunnable);
-    verify(responseObserver, times(1))
-        .onNext(
-            GetCustomSignatureEdgeDecisionRulesResponse.newBuilder()
-                .setEdgeDecisionEngineConfig(EdgeDecisionEngineConfig.getDefaultInstance())
-                .build());
-    verify(responseObserver, times(1)).onCompleted();
-
-    // Case 5: Test validation failure
+    // Case 3: Test validation failure
     reset(responseObserver);
     reset(rulesManager);
     reset(rulesValidator);
@@ -571,27 +536,6 @@ class CustomSignatureConfigServiceImplTest {
     when(rulesValidator.validate(any(GetCustomSignatureEdgeDecisionRulesRequest.class)))
         .thenThrow(new RuntimeException("Validation failed"));
     configService.getCustomSignatureEdgeDecisionRules(request, responseObserver);
-    verify(responseObserver, times(1))
-        .onError(
-            argThat(
-                err ->
-                    Status.fromThrowable(err).getCode() == Status.Code.INTERNAL
-                        && Objects.equals(
-                            Status.fromThrowable(err).getDescription(),
-                            "Unable to fetch custom signature edge decision rules")));
-
-    // Case 6: Test exception in edgeDecisionConverter
-    reset(responseObserver);
-    reset(rulesValidator);
-    reset(edgeDecisionConverter);
-    when(rulesValidator.validate(any(GetCustomSignatureEdgeDecisionRulesRequest.class)))
-        .thenReturn(Status.OK);
-    when(rulesManager.getCustomSignatureRules(any(), any())).thenReturn(allRules);
-    when(featureCachingClient.isEdgeDecisionEnabledForTenant(any())).thenReturn(true);
-    when(customSignatureConfigServiceConfig.isEdsConversionEnabled()).thenReturn(true);
-    when(edgeDecisionConverter.convert(any()))
-        .thenThrow(new RuntimeException("Edge decision converter error"));
-    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, successRunnable);
     verify(responseObserver, times(1))
         .onError(
             argThat(

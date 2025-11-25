@@ -1,6 +1,5 @@
 package ai.traceable.customsignature.config.service;
 
-import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.customsignature.config.service.migration.CustomSignatureRuleMigrationManager;
 import ai.traceable.customsignature.config.service.modsec.ModsecRulesManager;
 import ai.traceable.customsignature.config.service.rules.CustomSignatureRulesEdgeDecisionFilter;
@@ -38,8 +37,6 @@ public class CustomSignatureConfigServiceImpl
   private final RulesManager rulesManager;
   private final ModsecRulesManager modsecRulesManager;
   private final CustomSignatureEdgeDecisionConverter edgeDecisionConverter;
-  private final FeatureCachingClient featureCachingClient;
-  private final CustomSignatureConfigServiceConfig customSignatureConfigServiceConfig;
   private final CustomSignatureRuleMigrationManager ruleMigrationManager;
 
   @Inject
@@ -48,15 +45,11 @@ public class CustomSignatureConfigServiceImpl
       RulesManager rulesManager,
       ModsecRulesManager modsecRulesManager,
       CustomSignatureEdgeDecisionConverter edgeDecisionConverter,
-      FeatureCachingClient featureCachingClient,
-      CustomSignatureConfigServiceConfig customSignatureConfigServiceConfig,
       CustomSignatureRuleMigrationManager ruleMigrationManager) {
     this.rulesValidator = rulesValidator;
     this.rulesManager = rulesManager;
     this.modsecRulesManager = modsecRulesManager;
     this.edgeDecisionConverter = edgeDecisionConverter;
-    this.featureCachingClient = featureCachingClient;
-    this.customSignatureConfigServiceConfig = customSignatureConfigServiceConfig;
     this.ruleMigrationManager = ruleMigrationManager;
   }
 
@@ -217,12 +210,10 @@ public class CustomSignatureConfigServiceImpl
       rulesValidator.validate(request);
 
       EdgeDecisionEngineConfig edgeDecisionEngineConfig =
-          featureCachingClient.isEdgeDecisionEnabledForTenant(context)
-                  && customSignatureConfigServiceConfig.isEdsConversionEnabled()
-              ? edgeDecisionConverter.convert(
-                  CustomSignatureRulesEdgeDecisionFilter.getConvertibleRules(
-                      rulesManager.getCustomSignatureRules(context, request.getRulesFilter())))
-              : EdgeDecisionEngineConfig.getDefaultInstance();
+          edgeDecisionConverter.convert(
+              CustomSignatureRulesEdgeDecisionFilter.getConvertibleRules(
+                  rulesManager.getCustomSignatureRules(context, request.getRulesFilter())));
+
       GetCustomSignatureEdgeDecisionRulesResponse response =
           GetCustomSignatureEdgeDecisionRulesResponse.newBuilder()
               .setEdgeDecisionEngineConfig(edgeDecisionEngineConfig)

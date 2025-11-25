@@ -27,7 +27,6 @@ public class CustomSignatureConfigServiceConfig {
   private static final String DEFAULT_AI_APP_PROTECTION_RULES_FILE_PATH =
       "default-ai-app-protection-rules.conf";
   private static final String MODSEC_RULE_VERSION_CONFIG = "modsecurity.rule.version";
-  private static final String EDS_CONVERSION_ENABLED_CONFIG_PATH = "edsConversionEnabled";
   private static final JsonFormat.Parser JSON_PARSER = JsonFormat.parser().ignoringUnknownFields();
   private static final ConfigRenderOptions CONFIG_RENDER_CONCISE = ConfigRenderOptions.concise();
   private static final String MIGRATION_DISABLED_KEY = "migrationDisabled";
@@ -89,10 +88,6 @@ public class CustomSignatureConfigServiceConfig {
     } catch (ConfigException e) {
       return ModsecRuleVersion.MODSEC_RULE_VERSION_V3;
     }
-  }
-
-  public boolean isEdsConversionEnabled() {
-    return this.config.getBoolean(EDS_CONVERSION_ENABLED_CONFIG_PATH);
   }
 
   private List<CustomSignatureRule> convertToCustomSignatureRules(
