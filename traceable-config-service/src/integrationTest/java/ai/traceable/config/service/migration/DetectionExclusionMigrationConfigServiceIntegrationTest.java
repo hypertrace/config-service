@@ -266,8 +266,8 @@ public class DetectionExclusionMigrationConfigServiceIntegrationTest
     upsertDetectionExclusionRuleWithoutRuleEvaluationPoints();
     List<DetectionExclusionRule> fetchedRules = fetchAllDetectionExclusionRules();
 
-    // Default 16 + 1 rule without any rule evaluation points
-    assertEquals(17, fetchedRules.size());
+    // Default 17 + 1 rule without any rule evaluation points
+    assertEquals(18, fetchedRules.size());
 
     /*
      * Now, its expected that all the fetched rules will have a non-empty list of RuleEvaluationPoints
