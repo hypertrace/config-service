@@ -1,5 +1,8 @@
 package ai.traceable.anomaly.config.service.detector.anomalydetection;
 
+import static ai.traceable.anomaly.config.service.v1.ApiProtectThreatRuleConfigMappingProvider.PARAMETER_ANOMALY_UUAD_SUB_RULE_ID;
+import static ai.traceable.anomaly.config.service.v1.ApiProtectThreatRuleConfigMappingProvider.SCHEMA_VALIDATION_URESC_SUB_RULE_ID;
+
 import ai.traceable.anomaly.config.service.detector.DetectorConfigServiceConfig;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.ApiProtectionConfigHandler;
 import ai.traceable.anomaly.config.service.global.ruleinfo.RuleInfoManager;
@@ -29,6 +32,8 @@ public class ApiProtectionConfigResolver {
   private final RuleInfoManager ruleInfoManager;
   private final List<AnomalyDetectionConfig> defaultApiProtectionConfigs;
   private final ApiProtectionConfigHandler apiProtectionConfigHandler;
+  private static final List<String> TAGGED_CATEGORY_RULE_IDS =
+      List.of(PARAMETER_ANOMALY_UUAD_SUB_RULE_ID, SCHEMA_VALIDATION_URESC_SUB_RULE_ID);
 
   @Inject
   public ApiProtectionConfigResolver(
@@ -77,7 +82,8 @@ public class ApiProtectionConfigResolver {
   private AnomalyCategoryConfig getAnomalyCategoryConfig(AnomalySubRuleInfo subRuleInfo) {
     return AnomalyCategoryConfig.newBuilder()
         .setEventScoreCategory(getEventScoreCategory(subRuleInfo.getSeverityLevel()))
-        .setEventCategory(getEventCategory(subRuleInfo.getSubRuleTypesList()))
+        .setEventCategory(
+            getEventCategory(subRuleInfo.getSubRuleTypesList(), subRuleInfo.getRuleId()))
         .build();
   }
 
@@ -96,7 +102,11 @@ public class ApiProtectionConfigResolver {
     }
   }
 
-  private AnomalyEventCategory getEventCategory(List<AnomalySubRuleType> subRuleTypes) {
+  private AnomalyEventCategory getEventCategory(
+      List<AnomalySubRuleType> subRuleTypes, String subRuleId) {
+    if (TAGGED_CATEGORY_RULE_IDS.contains(subRuleId)) {
+      return AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_TAGGED;
+    }
     if (subRuleTypes.contains(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK)
         || subRuleTypes.contains(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE)) {
       return AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_MALICIOUS;
