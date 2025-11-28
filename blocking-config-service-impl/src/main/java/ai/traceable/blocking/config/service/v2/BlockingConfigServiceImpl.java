@@ -47,10 +47,10 @@ class BlockingConfigServiceImpl extends BlockingConfigServiceImplBase {
   @Override
   public void getBlockingRules(
       GetBlockingRulesRequest request, StreamObserver<GetBlockingRulesResponse> responseObserver) {
-
+    RequestContext requestContext = RequestContext.CURRENT.get();
     GetBlockingRulesResponse.Builder responseBuilder = GetBlockingRulesResponse.newBuilder();
+
     try {
-      RequestContext requestContext = RequestContext.CURRENT.get();
       blockingRulesRequestValidator.validateOrThrow(requestContext, request);
 
       Optional<String> environmentId =
@@ -91,7 +91,11 @@ class BlockingConfigServiceImpl extends BlockingConfigServiceImplBase {
       responseObserver.onNext(responseBuilder.build());
       responseObserver.onCompleted();
     } catch (RuntimeException | ExecutionException e) {
-      log.error("Get Blocking Rules RPC failed for request:{}", request, e);
+      log.error(
+          "Get Blocking Rules RPC failed for request:{}, requestContext:{}",
+          request,
+          requestContext,
+          e);
       responseObserver.onError(e);
     }
   }
