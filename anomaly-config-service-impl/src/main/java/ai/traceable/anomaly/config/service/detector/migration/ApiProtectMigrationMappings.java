@@ -79,9 +79,7 @@ public class ApiProtectMigrationMappings {
             ApiProtectThreatRuleConfigMappingProvider.CSTA_THREAT_TYPE_ID,
             ImmutableList.of(ApiProtectThreatRuleConfigMappingProvider.CSTA_CSRF_SUB_RULE_ID),
             ApiProtectThreatRuleConfigMappingProvider.AUTHN_THREAT_TYPE_ID,
-            ImmutableList.of(
-                ApiProtectThreatRuleConfigMappingProvider.AUTHN_AUA_SUB_RULE_ID,
-                ApiProtectThreatRuleConfigMappingProvider.AUTHN_UA_SUB_RULE_ID),
+            ImmutableList.of(ApiProtectThreatRuleConfigMappingProvider.AUTHN_UA_SUB_RULE_ID),
             ApiProtectThreatRuleConfigMappingProvider.SCHEMA_VALIDATION_THREAT_TYPE_ID,
             ImmutableList.of(
                 ApiProtectThreatRuleConfigMappingProvider.SCHEMA_VALIDATION_MREQP_SUB_RULE_ID));

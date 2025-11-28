@@ -75,7 +75,6 @@ public class DetectionExclusionRuleIdMigrationManager {
         ApiProtectThreatRuleConfigMappingProvider.MISSING_PARAM_THREAT_TYPE_ID,
         List.of(
             ApiProtectThreatRuleConfigMappingProvider.CSTA_CSRF_SUB_RULE_ID,
-            ApiProtectThreatRuleConfigMappingProvider.AUTHN_AUA_SUB_RULE_ID,
             ApiProtectThreatRuleConfigMappingProvider.AUTHN_UA_SUB_RULE_ID,
             ApiProtectThreatRuleConfigMappingProvider.SCHEMA_VALIDATION_MREQP_SUB_RULE_ID));
 

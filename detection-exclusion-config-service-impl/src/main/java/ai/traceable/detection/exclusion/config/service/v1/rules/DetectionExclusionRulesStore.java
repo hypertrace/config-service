@@ -4,6 +4,7 @@ import static ai.traceable.detection.exclusion.config.service.v1.rules.Detection
 import static ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionRulesUtils.DETECTION_EXCLUSION_RULE_CONFIG_RESOURCE_NAMESPACE;
 import static ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionRulesUtils.filterConfig;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceConfig;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
@@ -40,11 +41,14 @@ public class DetectionExclusionRulesStore
   private static final Set<ContextualKey<Void>> SSRF_FIXED_TENANTS = new HashSet<>();
 
   private final List<DetectionExclusionRule> defaultDetectionExclusionRules;
+  private final List<DetectionExclusionRule> defaultNewDetectionExclusionRules;
+  private final FeatureCachingClient featureFlagServiceClient;
 
   @Inject
   public DetectionExclusionRulesStore(
       ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
       ConfigChangeEventGenerator configChangeEventGenerator,
+      FeatureCachingClient featureFlagServiceClient,
       DetectionExclusionConfigServiceConfig config) {
     super(
         configServiceBlockingStub,
@@ -52,10 +56,20 @@ public class DetectionExclusionRulesStore
         DETECTION_EXCLUSION_RULE_CONFIG_RESOURCE_NAME,
         configChangeEventGenerator);
     this.defaultDetectionExclusionRules = config.getDefaultDetectionExclusionRules();
+    this.defaultNewDetectionExclusionRules = config.getDefaultNewDetectionExclusionRules();
+    this.featureFlagServiceClient = featureFlagServiceClient;
   }
 
   @Override
   public Optional<DetectionExclusionRule> getData(RequestContext context, String id) {
+    if (featureFlagServiceClient.isApiProtectConfigPoliciesRevampEnabled(context)) {
+      return super.getData(context, id)
+          .or(
+              () ->
+                  defaultNewDetectionExclusionRules.stream()
+                      .filter(rule -> rule.getId().equals(id))
+                      .findFirst());
+    }
     return super.getData(context, id)
         .or(
             () ->
@@ -67,17 +81,34 @@ public class DetectionExclusionRulesStore
   @Override
   public List<DetectionExclusionRule> getAllConfigData(RequestContext context) {
     List<DetectionExclusionRule> detectionExclusionRules = super.getAllConfigData(context);
+    if (featureFlagServiceClient.isApiProtectConfigPoliciesRevampEnabled(context)) {
+      return mergeDetectionExclusionRules(
+          context, detectionExclusionRules, defaultNewDetectionExclusionRules);
+    }
     return mergeDetectionExclusionRules(
         context, detectionExclusionRules, defaultDetectionExclusionRules);
+  }
+
+  public List<DetectionExclusionRule> getAllConfigDataWithoutDefaults(RequestContext context) {
+    return super.getAllConfigData(context);
   }
 
   @Override
   public List<DetectionExclusionRule> getAllConfigData(
       RequestContext context, GetRulesFilter filter) {
-    List<DetectionExclusionRule> filteredDefaultDetectionExclusionRules =
-        defaultDetectionExclusionRules.stream()
-            .filter(rule -> filterConfigData(rule, filter).isPresent())
-            .collect(Collectors.toUnmodifiableList());
+    List<DetectionExclusionRule> filteredDefaultDetectionExclusionRules;
+    if (featureFlagServiceClient.isApiProtectConfigPoliciesRevampEnabled(context)) {
+      filteredDefaultDetectionExclusionRules =
+          defaultNewDetectionExclusionRules.stream()
+              .filter(rule -> filterConfigData(rule, filter).isPresent())
+              .collect(Collectors.toUnmodifiableList());
+    } else {
+      filteredDefaultDetectionExclusionRules =
+          defaultDetectionExclusionRules.stream()
+              .filter(rule -> filterConfigData(rule, filter).isPresent())
+              .collect(Collectors.toUnmodifiableList());
+    }
+
     List<DetectionExclusionRule> detectionExclusionRules = super.getAllConfigData(context, filter);
     return mergeDetectionExclusionRules(
         context, detectionExclusionRules, filteredDefaultDetectionExclusionRules);

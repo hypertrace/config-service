@@ -116,7 +116,6 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
   public static final String AUTHZH_USER_ID_BOLA_SUB_RULE_ID = "authzh_ubola";
   public static final String AUTHZV_BFLA_SUB_RULE_ID = "authzv_bfla";
   public static final String CSTA_CSRF_SUB_RULE_ID = "csta_csrf";
-  public static final String AUTHN_AUA_SUB_RULE_ID = "authn_aua";
   public static final String AUTHN_UA_SUB_RULE_ID = "authn_ua";
   public static final String SESSIONV_LANDSPEED_SUB_RULE_ID = "sessionv_landspeed";
   public static final String SESSIONV_EXPIRY_SUB_RULE_ID = "sessionv_expiry";
@@ -710,16 +709,6 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
         List.of(
             minPercentSeenConfigMetadata,
             csrfRegexStrings,
-            enabledForInternalIpsConfigMetadata,
-            evaluateRequestBodyParamsConfigMetadata,
-            thresholdFamiliesExcluded));
-
-    // authn_aua mapping
-    threatRuleIdToConfigMetadataMapping.put(
-        AUTHN_AUA_SUB_RULE_ID,
-        List.of(
-            minPercentSeenConfigMetadata,
-            authRegexStrings,
             enabledForInternalIpsConfigMetadata,
             evaluateRequestBodyParamsConfigMetadata,
             thresholdFamiliesExcluded));

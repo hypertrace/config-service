@@ -347,7 +347,7 @@ class DetectionExclusionRulesMigrationManagerTest {
   void testMigration_apiProtectionExclusionRules_ForwardMigration() {
     when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext))
         .thenReturn(true);
-    when(newRulesStore.getAllConfigData(any()))
+    when(newRulesStore.getAllConfigDataWithoutDefaults(any()))
         .thenReturn(
             List.of(
                 getSampleApiProtectionRule(false, "id4a"),
@@ -360,7 +360,7 @@ class DetectionExclusionRulesMigrationManagerTest {
     migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
     verify(migrationStore, times(1)).getData(requestContext);
     verify(migrationStore, times(1)).upsertObject(requestContext, completedMigrationConfig);
-    verify(newRulesStore, times(1)).getAllConfigData(requestContext);
+    verify(newRulesStore, times(1)).getAllConfigDataWithoutDefaults(requestContext);
     verify(newRulesStore, times(1)).upsertObjects(eq(requestContext), any());
     verify(newRulesStore, times(1))
         .upsertObjects(
@@ -376,7 +376,7 @@ class DetectionExclusionRulesMigrationManagerTest {
   void testMigrationCompleted_apiProtectionExclusionRules() {
     when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext))
         .thenReturn(true);
-    when(newRulesStore.getAllConfigData(any()))
+    when(newRulesStore.getAllConfigDataWithoutDefaults(any()))
         .thenReturn(
             List.of(
                 sampleNewRule,
@@ -387,7 +387,7 @@ class DetectionExclusionRulesMigrationManagerTest {
     migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
     verify(migrationStore, times(1)).getData(requestContext);
     verify(migrationStore, times(0)).upsertObject(eq(requestContext), any());
-    verify(newRulesStore, times(0)).getAllConfigData(requestContext);
+    verify(newRulesStore, times(0)).getAllConfigDataWithoutDefaults(requestContext);
 
     resetStores();
     migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
@@ -399,7 +399,7 @@ class DetectionExclusionRulesMigrationManagerTest {
     // Feature flag is disabled, migration was completed -> trigger backward migration
     when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext))
         .thenReturn(false);
-    when(newRulesStore.getAllConfigData(any()))
+    when(newRulesStore.getAllConfigDataWithoutDefaults(any()))
         .thenReturn(
             List.of(
                 getSampleApiProtectionRule(true, "id4a"), // Already migrated rule
@@ -412,7 +412,7 @@ class DetectionExclusionRulesMigrationManagerTest {
     migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
     verify(migrationStore, times(1)).getData(requestContext);
     verify(migrationStore, times(1)).upsertObject(requestContext, rollbackMigrationConfig);
-    verify(newRulesStore, times(1)).getAllConfigData(requestContext);
+    verify(newRulesStore, times(1)).getAllConfigDataWithoutDefaults(requestContext);
     verify(newRulesStore, times(1)).upsertObjects(eq(requestContext), any());
     verify(newRulesStore, times(1))
         .upsertObjects(
@@ -425,7 +425,7 @@ class DetectionExclusionRulesMigrationManagerTest {
     // Feature flag is disabled, migration was completed -> trigger backward migration
     when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext))
         .thenReturn(false);
-    when(newRulesStore.getAllConfigData(any()))
+    when(newRulesStore.getAllConfigDataWithoutDefaults(any()))
         .thenReturn(
             List.of(
                 getSampleApiProtectionContentTypeRule(true, "id5a"), // Already migrated rule
@@ -438,7 +438,7 @@ class DetectionExclusionRulesMigrationManagerTest {
     migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
     verify(migrationStore, times(1)).getData(requestContext);
     verify(migrationStore, times(1)).upsertObject(requestContext, rollbackMigrationConfig);
-    verify(newRulesStore, times(1)).getAllConfigData(requestContext);
+    verify(newRulesStore, times(1)).getAllConfigDataWithoutDefaults(requestContext);
     verify(newRulesStore, times(1)).upsertObjects(eq(requestContext), any());
     verify(newRulesStore, times(1))
         .upsertObjects(
@@ -456,7 +456,7 @@ class DetectionExclusionRulesMigrationManagerTest {
     migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
     verify(migrationStore, times(1)).getData(requestContext);
     verify(migrationStore, times(0)).upsertObject(eq(requestContext), any());
-    verify(newRulesStore, times(0)).getAllConfigData(requestContext);
+    verify(newRulesStore, times(0)).getAllConfigDataWithoutDefaults(requestContext);
   }
 
   @Test
@@ -466,7 +466,7 @@ class DetectionExclusionRulesMigrationManagerTest {
     // ==================== PHASE 1: FF ENABLED - Forward Migration ====================
     when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext))
         .thenReturn(true);
-    when(newRulesStore.getAllConfigData(any()))
+    when(newRulesStore.getAllConfigDataWithoutDefaults(any()))
         .thenReturn(List.of(getSampleApiProtectionRule(false, "id4a")));
 
     DetectionExclusionMigrationConfig initialConfig =
@@ -479,7 +479,7 @@ class DetectionExclusionRulesMigrationManagerTest {
 
     verify(migrationStore, times(1)).getData(requestContext);
     verify(migrationStore, times(1)).upsertObject(requestContext, forwardMigrationConfig);
-    verify(newRulesStore, times(1)).getAllConfigData(requestContext);
+    verify(newRulesStore, times(1)).getAllConfigDataWithoutDefaults(requestContext);
     verify(newRulesStore, times(1))
         .upsertObjects(
             eq(requestContext),
@@ -496,13 +496,13 @@ class DetectionExclusionRulesMigrationManagerTest {
 
     verify(migrationStore, times(0)).getData(requestContext);
     verify(migrationStore, times(0)).upsertObject(eq(requestContext), any());
-    verify(newRulesStore, times(0)).getAllConfigData(requestContext);
+    verify(newRulesStore, times(0)).getAllConfigDataWithoutDefaults(requestContext);
 
     // ==================== PHASE 3: FF DISABLED - Backward Migration ====================
     resetStores();
     when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext))
         .thenReturn(false);
-    when(newRulesStore.getAllConfigData(any()))
+    when(newRulesStore.getAllConfigDataWithoutDefaults(any()))
         .thenReturn(List.of(getSampleApiProtectionRule(true, "id4a"))); // Already migrated
 
     DetectionExclusionMigrationConfig backwardMigrationConfig =
@@ -515,7 +515,7 @@ class DetectionExclusionRulesMigrationManagerTest {
 
     verify(migrationStore, times(1)).getData(requestContext);
     verify(migrationStore, times(1)).upsertObject(requestContext, backwardMigrationConfig);
-    verify(newRulesStore, times(1)).getAllConfigData(requestContext);
+    verify(newRulesStore, times(1)).getAllConfigDataWithoutDefaults(requestContext);
     verify(newRulesStore, times(1))
         .upsertObjects(
             eq(requestContext),
@@ -533,13 +533,13 @@ class DetectionExclusionRulesMigrationManagerTest {
 
     verify(migrationStore, times(1)).getData(requestContext);
     verify(migrationStore, times(0)).upsertObject(eq(requestContext), any());
-    verify(newRulesStore, times(0)).getAllConfigData(requestContext);
+    verify(newRulesStore, times(0)).getAllConfigDataWithoutDefaults(requestContext);
 
     // ==================== PHASE 5: FF ENABLED AGAIN - Forward Migration Again ====================
     resetStores();
     when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext))
         .thenReturn(true);
-    when(newRulesStore.getAllConfigData(any()))
+    when(newRulesStore.getAllConfigDataWithoutDefaults(any()))
         .thenReturn(List.of(getSampleApiProtectionRule(false, "id4a")));
 
     DetectionExclusionMigrationConfig reMigrationConfig =
@@ -552,7 +552,7 @@ class DetectionExclusionRulesMigrationManagerTest {
 
     verify(migrationStore, times(1)).getData(requestContext);
     verify(migrationStore, times(1)).upsertObject(requestContext, reMigrationConfig);
-    verify(newRulesStore, times(1)).getAllConfigData(requestContext);
+    verify(newRulesStore, times(1)).getAllConfigDataWithoutDefaults(requestContext);
     verify(newRulesStore, times(1))
         .upsertObjects(
             eq(requestContext),
@@ -563,7 +563,7 @@ class DetectionExclusionRulesMigrationManagerTest {
   void testMigration_apiProtectionExclusionRules_contentTypeMultipleEvents() {
     when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext))
         .thenReturn(true);
-    when(newRulesStore.getAllConfigData(any()))
+    when(newRulesStore.getAllConfigDataWithoutDefaults(any()))
         .thenReturn(
             List.of(
                 sampleNewRule,
@@ -577,7 +577,7 @@ class DetectionExclusionRulesMigrationManagerTest {
     migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
     verify(migrationStore, times(1)).getData(requestContext);
     verify(migrationStore, times(1)).upsertObject(requestContext, completedMigrationConfig);
-    verify(newRulesStore, times(1)).getAllConfigData(requestContext);
+    verify(newRulesStore, times(1)).getAllConfigDataWithoutDefaults(requestContext);
     verify(newRulesStore, times(1)).upsertObjects(eq(requestContext), any());
     verify(newRulesStore, times(1))
         .upsertObjects(

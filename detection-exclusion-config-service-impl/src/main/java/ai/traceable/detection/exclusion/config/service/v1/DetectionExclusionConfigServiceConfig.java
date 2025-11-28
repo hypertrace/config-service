@@ -16,6 +16,7 @@ public class DetectionExclusionConfigServiceConfig {
   private static final JsonFormat.Parser JSON_PARSER = JsonFormat.parser().ignoringUnknownFields();
   private static final ConfigRenderOptions CONFIG_RENDER_CONCISE = ConfigRenderOptions.concise();
   private static final String DETECTION_EXCLUSION_RULES_PATH = "detectionExclusionRules";
+  private static final String DETECTION_NEW_EXCLUSION_RULES_PATH = "detectionExclusionNewRules";
 
   private static final String DETECTION_EXCLUSION_CONFIG_KEY = "detection.exclusion.config.service";
   private static final String DEFAULT_DETECTION_EXCLUSION_RULES_CONFIG_PATH =
@@ -38,6 +39,7 @@ public class DetectionExclusionConfigServiceConfig {
   @Getter private final boolean ruleEvaluationPointsMigrationDisabled;
 
   @Getter private final List<DetectionExclusionRule> defaultDetectionExclusionRules;
+  @Getter private final List<DetectionExclusionRule> defaultNewDetectionExclusionRules;
 
   public DetectionExclusionConfigServiceConfig(Config config) {
     this.config =
@@ -56,18 +58,26 @@ public class DetectionExclusionConfigServiceConfig {
     changeLog4MigrationDisabled =
         this.config.hasPath(CHANGE_LOG_4_MIGRATION_DISABLED_KEY)
             && this.config.getBoolean(CHANGE_LOG_4_MIGRATION_DISABLED_KEY);
-    this.defaultDetectionExclusionRules = loadDefaultDetectionExclusionRules();
+    this.defaultDetectionExclusionRules = loadDefaultDetectionExclusionRules(false);
+    this.defaultNewDetectionExclusionRules = loadDefaultDetectionExclusionRules(true);
     this.ruleEvaluationPointsMigrationDisabled =
         this.config.hasPath(RULE_EVALUATION_POINTS_MIGRATION_DISABLED_KEY)
             && this.config.getBoolean(RULE_EVALUATION_POINTS_MIGRATION_DISABLED_KEY);
   }
 
-  private List<DetectionExclusionRule> loadDefaultDetectionExclusionRules() {
+  private List<DetectionExclusionRule> loadDefaultDetectionExclusionRules(boolean loadNewRules) {
     List<DetectionExclusionRule> defaultDetectionExclusionRules = new ArrayList<>();
     if (config.hasPath(DEFAULT_DETECTION_EXCLUSION_RULES_CONFIG_PATH)) {
       defaultDetectionExclusionRules.addAll(
           convertToDetectionExclusionRules(
               config.getConfigList(DEFAULT_DETECTION_EXCLUSION_RULES_CONFIG_PATH)));
+    }
+    if (loadNewRules) {
+      defaultDetectionExclusionRules.addAll(
+          convertToDetectionExclusionRules(
+              ConfigFactory.parseResources(DEFAULT_EXCLUSION_RULES_FILE_PATH)
+                  .getConfigList(DETECTION_NEW_EXCLUSION_RULES_PATH)));
+      return defaultDetectionExclusionRules;
     }
     defaultDetectionExclusionRules.addAll(
         convertToDetectionExclusionRules(

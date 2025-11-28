@@ -326,13 +326,6 @@ public class ApiProtectMigrationProcessorTest {
     // Verify authn rule and config params
     ApiProtectAnomalyRuleConfig authnRule = findApiProtectRule(apiProtectConfigs, "authn");
     assertNotNull(authnRule);
-    AnomalySubRuleConfig authnAuaRule = findSubRule(authnRule, "authn_aua");
-    assertNotNull(authnAuaRule);
-    assertEquals(
-        AnomalyRuleAction.ANOMALY_RULE_ACTION_MONITOR, authnAuaRule.getAnomalyRuleAction());
-    assertTrue(authnAuaRule.getConfigParamsMap().containsKey("min_percent_seen"));
-    assertEquals(
-        0.9, authnAuaRule.getConfigParamsMap().get("min_percent_seen").getNumberValue(), 0.001);
 
     // Verify authzv rule and config params
     ApiProtectAnomalyRuleConfig authzvRule = findApiProtectRule(apiProtectConfigs, "authzv");

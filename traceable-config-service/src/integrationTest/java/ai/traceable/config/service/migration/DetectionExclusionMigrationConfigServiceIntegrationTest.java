@@ -9,6 +9,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.config.service.TraceableConfigServiceIntegrationTestBase;
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClientConfig;
 import ai.traceable.detection.exclusion.config.service.v1.CreateDetectionExclusionRuleRequest;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceConfig;
@@ -118,10 +120,24 @@ public class DetectionExclusionMigrationConfigServiceIntegrationTest
                         .getClassLoader()
                         .getResource(APPLICATION_CONFIG))));
 
+    FeatureCachingClientConfig featureCachingClientConfig =
+        FeatureCachingClientConfig.builder()
+            .host("localhost")
+            .port(60097)
+            .requestTimeout(java.time.Duration.ofSeconds(10))
+            .refreshDuration(java.time.Duration.ofMinutes(5))
+            .expirationDuration(java.time.Duration.ofMinutes(15))
+            .threadPoolSize(2)
+            .build();
+
+    FeatureCachingClient featureCachingClient =
+        new FeatureCachingClient(featureCachingClientConfig, channelRegistry);
+
     detectionExclusionRulesStore =
         new DetectionExclusionRulesStore(
             configServiceBlockingStub,
             configChangeEventGenerator,
+            featureCachingClient,
             detectionExclusionConfigServiceConfig);
   }
 

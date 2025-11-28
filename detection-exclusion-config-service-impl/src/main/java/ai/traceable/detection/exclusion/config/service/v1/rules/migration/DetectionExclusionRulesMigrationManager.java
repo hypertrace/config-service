@@ -415,7 +415,7 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
       DetectionExclusionMigrationConfig migrationConfig,
       boolean isFeatureFlagEnabled) {
     List<DetectionExclusionRule> updatedRules =
-        newRulesStore.getAllConfigData(requestContext).stream()
+        newRulesStore.getAllConfigDataWithoutDefaults(requestContext).stream()
             .map(
                 rule -> {
                   DetectionExclusionRuleInfo.Builder ruleInfoBuilder =

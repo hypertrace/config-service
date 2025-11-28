@@ -5,11 +5,13 @@ import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget
 import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_BLOCK;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceConfig;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
@@ -57,6 +59,7 @@ class DetectionExclusionRulesStoreTest {
           .setRuleInfo(DetectionExclusionRuleInfo.newBuilder().setName("defaultRule"))
           .build();
   private MockConfigService mockConfigService;
+  private FeatureCachingClient featureCachingClient;
   private Server mockServer;
 
   @BeforeEach
@@ -65,6 +68,8 @@ class DetectionExclusionRulesStoreTest {
     String uniqueName = InProcessServerBuilder.generateName();
     ManagedChannel channel = InProcessChannelBuilder.forName(uniqueName).directExecutor().build();
     when(grpcChannelRegistry.forPlaintextAddress(anyString(), anyInt())).thenReturn(channel);
+    featureCachingClient = mock(FeatureCachingClient.class);
+    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(any())).thenReturn(false);
 
     mockConfigService = new MockConfigService();
     mockServer =
@@ -84,7 +89,10 @@ class DetectionExclusionRulesStoreTest {
         .thenReturn(List.of(DEFAULT_DETECTION_EXCLUSION_RULE));
     detectionExclusionRulesStore =
         new DetectionExclusionRulesStore(
-            configServiceBlockingStub, mock(ConfigChangeEventGenerator.class), config);
+            configServiceBlockingStub,
+            mock(ConfigChangeEventGenerator.class),
+            featureCachingClient,
+            config);
   }
 
   @AfterEach

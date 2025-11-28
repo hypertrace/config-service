@@ -6,10 +6,12 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceConfig;
@@ -41,6 +43,7 @@ class DetectionExclusionRulesManagerTest {
   private UuidGenerator uuidGenerator;
   private DetectionExclusionRulesManager rulesManager;
   private ExclusionModsecRulesManager exclusionModsecRulesManager;
+  private FeatureCachingClient featureCachingClient;
   private final RequestContext requestContext = RequestContext.forTenantId("tenantId");
   private static final DetectionExclusionRule DEFAULT_EXCLUSION_RULE =
       DetectionExclusionRule.newBuilder()
@@ -66,12 +69,17 @@ class DetectionExclusionRulesManagerTest {
         ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
     ConfigChangeEventGenerator mockConfigChangeEventGenerator =
         mock(ConfigChangeEventGenerator.class);
+    featureCachingClient = mock(FeatureCachingClient.class);
+    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(any())).thenReturn(false);
     DetectionExclusionConfigServiceConfig config =
         mock(DetectionExclusionConfigServiceConfig.class);
     when(config.getDefaultDetectionExclusionRules()).thenReturn(List.of(DEFAULT_EXCLUSION_RULE));
     DetectionExclusionRulesStore rulesStore =
         new DetectionExclusionRulesStore(
-            configServiceBlockingStub, mockConfigChangeEventGenerator, config);
+            configServiceBlockingStub,
+            mockConfigChangeEventGenerator,
+            featureCachingClient,
+            config);
     ThresholdExceededDetectionExclusionRuleStore thresholdExceededDetectionExclusionRuleStore =
         new ThresholdExceededDetectionExclusionRuleStore(
             configServiceBlockingStub, mockConfigChangeEventGenerator);
