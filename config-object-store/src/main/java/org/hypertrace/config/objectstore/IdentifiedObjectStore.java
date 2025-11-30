@@ -187,6 +187,30 @@ public abstract class IdentifiedObjectStore<T> {
             .build());
   }
 
+  /**
+   * Upserts an object without generating config change events. This method is intended for
+   * migration scenarios where events should not be triggered.
+   */
+  public ContextualConfigObject<T> upsertObjectWithoutConfigChangeEvent(
+      RequestContext context, T data) {
+    UpsertConfigResponse response =
+        context.call(
+            () ->
+                this.configServiceBlockingStub
+                    .withDeadline(getDeadline())
+                    .upsertConfig(
+                        UpsertConfigRequest.newBuilder()
+                            .setResourceName(this.resourceName)
+                            .setResourceNamespace(this.resourceNamespace)
+                            .setContext(this.getContextFromData(data))
+                            .setConfig(this.buildValueFromData(data))
+                            .build()));
+
+    return ContextualConfigObjectImpl.tryBuild(
+            response, this::buildDataFromValue, this::getContextFromData)
+        .orElseThrow(Status.INTERNAL::asRuntimeException);
+  }
+
   public Optional<DeletedContextualConfigObject<T>> deleteObject(
       RequestContext requestContext, String context) {
     try {
@@ -235,6 +259,40 @@ public abstract class IdentifiedObjectStore<T> {
         .getUpsertedConfigsList()
         .stream()
         .map(upsertedConfig -> this.processUpsertResult(context, upsertedConfig))
+        .flatMap(Optional::stream)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  /**
+   * Upserts multiple objects without generating config change events. This method is intended for
+   * migration scenarios where events should not be triggered.
+   */
+  public List<ContextualConfigObject<T>> upsertObjectsWithoutConfigChangeEvent(
+      RequestContext context, List<T> data) {
+    List<ConfigToUpsert> configs =
+        data.stream()
+            .map(
+                singleData ->
+                    ConfigToUpsert.newBuilder()
+                        .setResourceName(this.resourceName)
+                        .setResourceNamespace(this.resourceNamespace)
+                        .setContext(this.getContextFromData(singleData))
+                        .setConfig(this.buildValueFromData(singleData))
+                        .build())
+            .collect(Collectors.toUnmodifiableList());
+
+    return context
+        .call(
+            () ->
+                this.configServiceBlockingStub
+                    .withDeadline(getDeadline())
+                    .upsertAllConfigs(
+                        UpsertAllConfigsRequest.newBuilder().addAllConfigs(configs).build()))
+        .getUpsertedConfigsList()
+        .stream()
+        .map(
+            upsertedConfig ->
+                ContextualConfigObjectImpl.tryBuild(upsertedConfig, this::buildDataFromValue))
         .flatMap(Optional::stream)
         .collect(Collectors.toUnmodifiableList());
   }

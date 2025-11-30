@@ -268,6 +268,117 @@ class IdentifiedObjectStoreTest {
   }
 
   @Test
+  void generatesConfigUpsertRequestWithoutEvent() {
+    when(this.mockStub.upsertConfig(any()))
+        .thenReturn(
+            UpsertConfigResponse.newBuilder()
+                .setConfig(OBJECT_1_AS_VALUE)
+                .setCreationTimestamp(TEST_CREATE_TIMESTAMP_1.toEpochMilli())
+                .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
+                .build());
+    ContextualConfigObject contextualConfigObject =
+        new ContextualConfigObjectImpl<>(
+            OBJECT_1.getId(), OBJECT_1, TEST_CREATE_TIMESTAMP_1, TEST_UPDATE_TIMESTAMP);
+    assertEquals(
+        contextualConfigObject,
+        this.store.upsertObjectWithoutConfigChangeEvent(this.mockRequestContext, OBJECT_1));
+    verify(this.mockStub, times(1))
+        .upsertConfig(
+            UpsertConfigRequest.newBuilder()
+                .setResourceName(TEST_RESOURCE_NAME)
+                .setResourceNamespace(TEST_RESOURCE_NAMESPACE)
+                .setContext("first-id")
+                .setConfig(OBJECT_1_AS_VALUE)
+                .build());
+    // Verify that no config change event was generated
+    verify(this.configChangeEventGenerator, times(0))
+        .sendCreateNotification(any(), any(), any(), any());
+    verify(this.configChangeEventGenerator, times(0))
+        .sendUpdateNotification(any(), any(), any(), any(), any());
+  }
+
+  @Test
+  void generatesConfigUpdateRequestWithoutEvent() {
+    Value previousValue = OBJECT_2_AS_VALUE;
+    when(this.mockStub.upsertConfig(any()))
+        .thenReturn(
+            UpsertConfigResponse.newBuilder()
+                .setConfig(OBJECT_1_AS_VALUE)
+                .setPrevConfig(previousValue)
+                .setCreationTimestamp(TEST_CREATE_TIMESTAMP_1.toEpochMilli())
+                .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
+                .build());
+    ContextualConfigObject contextualConfigObject =
+        new ContextualConfigObjectImpl<>(
+            OBJECT_1.getId(), OBJECT_1, TEST_CREATE_TIMESTAMP_1, TEST_UPDATE_TIMESTAMP);
+    assertEquals(
+        contextualConfigObject,
+        this.store.upsertObjectWithoutConfigChangeEvent(this.mockRequestContext, OBJECT_1));
+    verify(this.mockStub, times(1))
+        .upsertConfig(
+            UpsertConfigRequest.newBuilder()
+                .setResourceName(TEST_RESOURCE_NAME)
+                .setResourceNamespace(TEST_RESOURCE_NAMESPACE)
+                .setContext("first-id")
+                .setConfig(OBJECT_1_AS_VALUE)
+                .build());
+    // Verify that no config change event was generated even though there was a previous config
+    verify(this.configChangeEventGenerator, times(0))
+        .sendCreateNotification(any(), any(), any(), any());
+    verify(this.configChangeEventGenerator, times(0))
+        .sendUpdateNotification(any(), any(), any(), any(), any());
+  }
+
+  @Test
+  void generatesUpsertRequestsForUpsertAllWithoutEvent() {
+    when(this.mockStub.upsertAllConfigs(any()))
+        .thenAnswer(
+            invocation -> {
+              List<UpsertedConfig> configs =
+                  invocation.<UpsertAllConfigsRequest>getArgument(0).getConfigsList().stream()
+                      .map(
+                          requestedUpsert ->
+                              UpsertedConfig.newBuilder()
+                                  .setConfig(requestedUpsert.getConfig())
+                                  .setContext(requestedUpsert.getContext())
+                                  .setCreationTimestamp(TEST_CREATE_TIMESTAMP_1.toEpochMilli())
+                                  .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli()))
+                      .map(UpsertedConfig.Builder::build)
+                      .collect(Collectors.toUnmodifiableList());
+              return UpsertAllConfigsResponse.newBuilder().addAllUpsertedConfigs(configs).build();
+            });
+    assertEquals(
+        List.of(
+            new ContextualConfigObjectImpl<>(
+                OBJECT_1.getId(), OBJECT_1, TEST_CREATE_TIMESTAMP_1, TEST_UPDATE_TIMESTAMP),
+            new ContextualConfigObjectImpl<>(
+                OBJECT_2.getId(), OBJECT_2, TEST_CREATE_TIMESTAMP_1, TEST_UPDATE_TIMESTAMP)),
+        this.store.upsertObjectsWithoutConfigChangeEvent(
+            this.mockRequestContext, List.of(OBJECT_1, OBJECT_2)));
+    verify(this.mockStub, times(1))
+        .upsertAllConfigs(
+            UpsertAllConfigsRequest.newBuilder()
+                .addConfigs(
+                    ConfigToUpsert.newBuilder()
+                        .setResourceName(TEST_RESOURCE_NAME)
+                        .setResourceNamespace(TEST_RESOURCE_NAMESPACE)
+                        .setContext("first-id")
+                        .setConfig(OBJECT_1_AS_VALUE))
+                .addConfigs(
+                    ConfigToUpsert.newBuilder()
+                        .setResourceName(TEST_RESOURCE_NAME)
+                        .setResourceNamespace(TEST_RESOURCE_NAMESPACE)
+                        .setContext("second-id")
+                        .setConfig(OBJECT_2_AS_VALUE))
+                .build());
+    // Verify that no config change events were generated for bulk upsert
+    verify(this.configChangeEventGenerator, times(0))
+        .sendCreateNotification(any(), any(), any(), any());
+    verify(this.configChangeEventGenerator, times(0))
+        .sendUpdateNotification(any(), any(), any(), any(), any());
+  }
+
+  @Test
   void generatesUpsertRequestsForUpsertAll() {
     when(this.mockStub.upsertAllConfigs(any()))
         .thenAnswer(
