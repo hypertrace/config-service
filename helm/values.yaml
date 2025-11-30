@@ -3283,9 +3283,9 @@ anomalyConfigServiceConfig:
     apiGlobalConfig:
       defaultConfigsType: API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED
       exitSpansEvalEnabled: false
-      newApiProtectionStableVersion: "1.0.0"
+      newApiProtectionStableVersion: "2.0.0"
       newApiProtectionStableVersionPublishedDate: "2020-01-01T00:00:00Z"
-      oldApiProtectionStableVersion: "1.0.0"
+      oldApiProtectionStableVersion: "2.0.0"
       oldApiProtectionStableVersionPublishedDate: "2020-01-01T00:00:00Z"
     modsecGlobalConfig:
       defaultConfigsType: MODSEC_DEFAULT_CONFIGS_TYPE_STANDARD
