@@ -33,8 +33,8 @@ class ContextuallyIdentifiedObjectStoreTest {
   private static final String TEST_RESOURCE_NAME = "test-resource";
   private static final Instant TEST_CREATE_TIMESTAMP = Instant.ofEpochMilli(20);
   private static final Instant TEST_UPDATE_TIMESTAMP = Instant.ofEpochMilli(40);
-  private static final String TEST_CREATED_BY = "test-created-by";
-  private static final String TEST_LAST_MODIFIED_BY = "test-last-modified-by";
+  private static final String TEST_CREATED_BY_EMAIL = "test-created-by";
+  private static final String TEST_LAST_UPDATED_BY_EMAIL = "test-last-modified-by";
 
   @Mock(answer = Answers.RETURNS_SELF)
   ConfigServiceBlockingStub mockStub;
@@ -84,8 +84,8 @@ class ContextuallyIdentifiedObjectStoreTest {
                 .setConfig(Values.of("test"))
                 .setCreationTimestamp(TEST_CREATE_TIMESTAMP.toEpochMilli())
                 .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
-                .setCreatedBy(TEST_CREATED_BY)
-                .setLastModifiedBy(TEST_LAST_MODIFIED_BY)
+                .setCreatedByEmail(TEST_CREATED_BY_EMAIL)
+                .setLastUpdatedByEmail(TEST_LAST_UPDATED_BY_EMAIL)
                 .build());
     assertEquals(
         Optional.of(
@@ -94,8 +94,8 @@ class ContextuallyIdentifiedObjectStoreTest {
                 new TestObject("test"),
                 TEST_CREATE_TIMESTAMP,
                 TEST_UPDATE_TIMESTAMP,
-                TEST_CREATED_BY,
-                TEST_LAST_MODIFIED_BY)),
+                TEST_CREATED_BY_EMAIL,
+                TEST_LAST_UPDATED_BY_EMAIL)),
         this.store.getObject(RequestContext.forTenantId("my-tenant")));
 
     verify(this.mockStub, times(1))
@@ -163,8 +163,8 @@ class ContextuallyIdentifiedObjectStoreTest {
                 .setConfig(Values.of("updated"))
                 .setCreationTimestamp(TEST_CREATE_TIMESTAMP.toEpochMilli())
                 .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
-                .setCreatedBy(TEST_CREATED_BY)
-                .setLastModifiedBy(TEST_LAST_MODIFIED_BY)
+                .setCreatedByEmail(TEST_CREATED_BY_EMAIL)
+                .setLastUpdatedByEmail(TEST_LAST_UPDATED_BY_EMAIL)
                 .build());
     assertEquals(
         new ContextualConfigObjectImpl<>(
@@ -172,8 +172,8 @@ class ContextuallyIdentifiedObjectStoreTest {
             new TestObject("updated"),
             TEST_CREATE_TIMESTAMP,
             TEST_UPDATE_TIMESTAMP,
-            TEST_CREATED_BY,
-            TEST_LAST_MODIFIED_BY),
+            TEST_CREATED_BY_EMAIL,
+            TEST_LAST_UPDATED_BY_EMAIL),
         this.store.upsertObject(
             RequestContext.forTenantId("upsert-tenant"), new TestObject("updated")));
     verify(this.mockStub, times(1))

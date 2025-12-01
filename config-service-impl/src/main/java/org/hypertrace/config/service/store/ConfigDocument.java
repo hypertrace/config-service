@@ -33,7 +33,7 @@ public class ConfigDocument implements Document {
       new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
   public static final String DEFAULT_LATEST_UPDATED_USER_ID = "Unknown";
-  public static final String DEFAULT_LATEST_UPDATED_USER_EMAIL = "Unknown";
+  public static final String DEFAULT_USER_EMAIL = "Unknown";
   public static final String RESOURCE_FIELD_NAME = "resourceName";
   public static final String RESOURCE_NAMESPACE_FIELD_NAME = "resourceNamespace";
   public static final String TENANT_ID_FIELD_NAME = "tenantId";
@@ -102,9 +102,8 @@ public class ConfigDocument implements Document {
     this.lastUpdatedUserId =
         Optional.ofNullable(lastUpdatedUserId).orElse(DEFAULT_LATEST_UPDATED_USER_ID);
     this.lastUpdatedUserEmail =
-        Optional.ofNullable(lastUpdatedUserEmail).orElse(DEFAULT_LATEST_UPDATED_USER_EMAIL);
-    this.createdByUserEmail =
-        Optional.ofNullable(createdByUserEmail).orElse(DEFAULT_LATEST_UPDATED_USER_EMAIL);
+        Optional.ofNullable(lastUpdatedUserEmail).orElse(DEFAULT_USER_EMAIL);
+    this.createdByUserEmail = Optional.ofNullable(createdByUserEmail).orElse(DEFAULT_USER_EMAIL);
     this.config = config;
     this.creationTimestamp = creationTimestamp;
     this.updateTimestamp = updateTimestamp;

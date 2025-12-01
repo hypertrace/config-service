@@ -12,8 +12,8 @@ class ConfigObjectImpl<T> implements ConfigObject<T> {
   T data;
   Instant creationTimestamp;
   Instant lastUpdatedTimestamp;
-  String createdBy;
-  String lastModifiedBy;
+  String createdByEmail;
+  String lastUpdatedByEmail;
 
   static <T> Optional<ConfigObject<T>> tryBuild(
       ContextSpecificConfig contextSpecificConfig, Function<Value, Optional<T>> dataBuilder) {
@@ -21,8 +21,8 @@ class ConfigObjectImpl<T> implements ConfigObject<T> {
         contextSpecificConfig.getConfig(),
         contextSpecificConfig.getCreationTimestamp(),
         contextSpecificConfig.getUpdateTimestamp(),
-        contextSpecificConfig.getCreatedBy(),
-        contextSpecificConfig.getLastModifiedBy(),
+        contextSpecificConfig.getCreatedByEmail(),
+        contextSpecificConfig.getLastUpdatedByEmail(),
         dataBuilder);
   }
 
@@ -32,8 +32,8 @@ class ConfigObjectImpl<T> implements ConfigObject<T> {
         upsertResponse.getConfig(),
         upsertResponse.getCreationTimestamp(),
         upsertResponse.getUpdateTimestamp(),
-        upsertResponse.getCreatedBy(),
-        upsertResponse.getLastModifiedBy(),
+        upsertResponse.getCreatedByEmail(),
+        upsertResponse.getLastUpdatedByEmail(),
         dataBuilder);
   }
 
@@ -41,8 +41,8 @@ class ConfigObjectImpl<T> implements ConfigObject<T> {
       Value config,
       long creationTimestamp,
       long updateTimestamp,
-      String createdBy,
-      String lastModifiedBy,
+      String createdByEmail,
+      String lastUpdatedByEmail,
       Function<Value, Optional<T>> dataBuilder) {
     return dataBuilder
         .apply(config)
@@ -52,7 +52,7 @@ class ConfigObjectImpl<T> implements ConfigObject<T> {
                     data,
                     Instant.ofEpochMilli(creationTimestamp),
                     Instant.ofEpochMilli(updateTimestamp),
-                    createdBy,
-                    lastModifiedBy));
+                    createdByEmail,
+                    lastUpdatedByEmail));
   }
 }

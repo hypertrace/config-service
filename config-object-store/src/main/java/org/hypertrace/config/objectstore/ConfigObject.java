@@ -9,7 +9,7 @@ public interface ConfigObject<T> {
 
   Instant getLastUpdatedTimestamp();
 
-  String getCreatedBy();
+  String getCreatedByEmail();
 
-  String getLastModifiedBy();
+  String getLastUpdatedByEmail();
 }

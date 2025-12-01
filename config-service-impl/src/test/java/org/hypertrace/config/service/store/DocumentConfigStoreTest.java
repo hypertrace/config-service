@@ -246,8 +246,8 @@ class DocumentConfigStoreTest {
             .setContext("context")
             .setCreationTimestamp(TIMESTAMP1)
             .setUpdateTimestamp(TIMESTAMP2)
-            .setCreatedBy(USER_EMAIL)
-            .setLastModifiedBy(USER_EMAIL)
+            .setCreatedByEmail(USER_EMAIL)
+            .setLastUpdatedByEmail(USER_EMAIL)
             .build();
     ConfigResourceContext context = getConfigResourceContext("context");
     Map<ConfigResourceContext, ContextSpecificConfig> actualConfigs =
@@ -269,8 +269,8 @@ class DocumentConfigStoreTest {
             .setContext("context")
             .setCreationTimestamp(TIMESTAMP1)
             .setUpdateTimestamp(TIMESTAMP2)
-            .setCreatedBy(USER_EMAIL)
-            .setLastModifiedBy(USER_EMAIL)
+            .setCreatedByEmail(USER_EMAIL)
+            .setLastUpdatedByEmail(USER_EMAIL)
             .build();
     Optional<ContextSpecificConfig> actualConfig = configStore.getConfig(configResourceContext);
     assertEquals(Optional.of(expectedConfig), actualConfig);
@@ -300,8 +300,8 @@ class DocumentConfigStoreTest {
             .setConfig(config2)
             .setCreationTimestamp(TIMESTAMP3)
             .setUpdateTimestamp(TIMESTAMP3)
-            .setCreatedBy(USER_EMAIL)
-            .setLastModifiedBy(USER_EMAIL)
+            .setCreatedByEmail(USER_EMAIL)
+            .setLastUpdatedByEmail(USER_EMAIL)
             .build(),
         contextSpecificConfigList.get(0));
     assertEquals(
@@ -310,8 +310,8 @@ class DocumentConfigStoreTest {
             .setConfig(config1)
             .setCreationTimestamp(TIMESTAMP1)
             .setUpdateTimestamp(TIMESTAMP2)
-            .setCreatedBy(USER_EMAIL)
-            .setLastModifiedBy(USER_EMAIL)
+            .setCreatedByEmail(USER_EMAIL)
+            .setLastUpdatedByEmail(USER_EMAIL)
             .build(),
         contextSpecificConfigList.get(1));
   }
@@ -351,8 +351,8 @@ class DocumentConfigStoreTest {
                 .setUpdateTimestamp(updateTime)
                 .setConfig(config2)
                 .setPrevConfig(config1)
-                .setCreatedBy(USER_EMAIL)
-                .setLastModifiedBy(USER_EMAIL)
+                .setCreatedByEmail(USER_EMAIL)
+                .setLastUpdatedByEmail(USER_EMAIL)
                 .build(),
             UpsertedConfig.newBuilder()
                 .setContext(resourceContext2.getContext())
@@ -360,8 +360,8 @@ class DocumentConfigStoreTest {
                 .setUpdateTimestamp(updateTime)
                 .setConfig(config1)
                 .setPrevConfig(config2)
-                .setCreatedBy(USER_EMAIL)
-                .setLastModifiedBy(USER_EMAIL)
+                .setCreatedByEmail(USER_EMAIL)
+                .setLastUpdatedByEmail(USER_EMAIL)
                 .build()),
         upsertedConfigs);
 
@@ -521,8 +521,8 @@ class DocumentConfigStoreTest {
         configStore.writeConfig(configResourceContext, USER_ID, request, creatorEmail);
 
     // Verify the upserted config has creator email populated
-    assertEquals(creatorEmail, upsertedConfig.getCreatedBy());
-    assertEquals(creatorEmail, upsertedConfig.getLastModifiedBy());
+    assertEquals(creatorEmail, upsertedConfig.getCreatedByEmail());
+    assertEquals(creatorEmail, upsertedConfig.getLastUpdatedByEmail());
 
     ArgumentCaptor<Document> documentCaptor = ArgumentCaptor.forClass(Document.class);
     verify(collection).upsert(any(Key.class), documentCaptor.capture());
@@ -562,8 +562,8 @@ class DocumentConfigStoreTest {
         configStore.writeConfig(configResourceContext, USER_ID, request, modifier);
 
     // Assert: creator email should still be alice, but last modifier should be bob
-    assertEquals(originalCreator, upsertedConfig.getCreatedBy());
-    assertEquals(modifier, upsertedConfig.getLastModifiedBy());
+    assertEquals(originalCreator, upsertedConfig.getCreatedByEmail());
+    assertEquals(modifier, upsertedConfig.getLastUpdatedByEmail());
 
     ArgumentCaptor<Document> documentCaptor = ArgumentCaptor.forClass(Document.class);
     verify(collection).upsert(any(Key.class), documentCaptor.capture());
@@ -618,8 +618,8 @@ class DocumentConfigStoreTest {
     // Assert audit fields are populated in the response
     assertEquals(true, actualConfig.isPresent());
     ContextSpecificConfig config = actualConfig.get();
-    assertEquals(createdBy, config.getCreatedBy());
-    assertEquals(lastModifiedBy, config.getLastModifiedBy());
+    assertEquals(createdBy, config.getCreatedByEmail());
+    assertEquals(lastModifiedBy, config.getLastUpdatedByEmail());
     assertEquals(TIMESTAMP1, config.getCreationTimestamp());
     assertEquals(TIMESTAMP2, config.getUpdateTimestamp());
   }
@@ -651,12 +651,12 @@ class DocumentConfigStoreTest {
     assertEquals(2, configs.size());
 
     ContextSpecificConfig config1Response = configs.get(0);
-    assertEquals(createdBy1, config1Response.getCreatedBy());
-    assertEquals(modifiedBy1, config1Response.getLastModifiedBy());
+    assertEquals(createdBy1, config1Response.getCreatedByEmail());
+    assertEquals(modifiedBy1, config1Response.getLastUpdatedByEmail());
 
     ContextSpecificConfig config2Response = configs.get(1);
-    assertEquals(createdBy2, config2Response.getCreatedBy());
-    assertEquals(createdBy2, config2Response.getLastModifiedBy());
+    assertEquals(createdBy2, config2Response.getCreatedByEmail());
+    assertEquals(createdBy2, config2Response.getLastUpdatedByEmail());
   }
 
   private Document getConfigDocument(

@@ -478,8 +478,8 @@ public class DocumentConfigStore implements ConfigStore {
             .setContext(configDocument.getContext())
             .setCreationTimestamp(configDocument.getCreationTimestamp())
             .setUpdateTimestamp(configDocument.getUpdateTimestamp())
-            .setCreatedBy(configDocument.getCreatedByUserEmail())
-            .setLastModifiedBy(configDocument.getLastUpdatedUserEmail())
+            .setCreatedByEmail(configDocument.getCreatedByUserEmail())
+            .setLastUpdatedByEmail(configDocument.getLastUpdatedUserEmail())
             .build());
   }
 
@@ -496,8 +496,8 @@ public class DocumentConfigStore implements ConfigStore {
         .setContext(configDocument.getContext())
         .setCreationTimestamp(configDocument.getCreationTimestamp())
         .setUpdateTimestamp(configDocument.getUpdateTimestamp())
-        .setCreatedBy(configDocument.getCreatedByUserEmail())
-        .setLastModifiedBy(configDocument.getLastUpdatedUserEmail())
+        .setCreatedByEmail(configDocument.getCreatedByUserEmail())
+        .setLastUpdatedByEmail(configDocument.getLastUpdatedUserEmail())
         .build();
   }
 
