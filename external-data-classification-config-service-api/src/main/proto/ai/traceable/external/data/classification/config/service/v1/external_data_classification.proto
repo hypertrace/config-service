@@ -106,11 +106,33 @@ enum Operator {
 }
 
 message ObfuscationStrategy {
-  HashFunction hash_function = 1;
+  HashFunction hash_function = 1 [deprecated = true];
   string salt = 2;
+
+  oneof hash_strategy {
+    Sha256Hash sha256 = 3;
+    Argon2IdHash argon2id = 4;
+    ScryptHash scrypt = 5;
+  }
 
   enum HashFunction {
     HASH_FUNCTION_UNSPECIFIED = 0;
     HASH_FUNCTION_SHA256 = 1;
   }
+}
+
+message Sha256Hash {}
+
+message Argon2IdHash {
+  int32 time = 1;
+  int32 memory = 2;
+  int32 threads = 3;
+  int32 key_length = 4;
+}
+
+message ScryptHash {
+  int32 cost = 1;
+  int32 threads = 2;
+  int32 block_size = 3;
+  int32 key_length = 4;
 }
