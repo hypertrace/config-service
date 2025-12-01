@@ -50,6 +50,8 @@ class IdentifiedObjectStoreTest {
   private static final Instant TEST_CREATE_TIMESTAMP_1 = Instant.ofEpochMilli(20);
   private static final Instant TEST_CREATE_TIMESTAMP_2 = Instant.ofEpochMilli(30);
   private static final Instant TEST_UPDATE_TIMESTAMP = Instant.ofEpochMilli(40);
+  private static final String TEST_CREATED_BY = "test-created-by";
+  private static final String TEST_LAST_MODIFIED_BY = "test-last-modified-by";
 
   private static final TestInternalObject OBJECT_1 =
       TestInternalObject.builder().id("first-id").rank(1).build();
@@ -98,20 +100,34 @@ class IdentifiedObjectStoreTest {
                         .setConfig(OBJECT_2_AS_VALUE)
                         .setContext(OBJECT_2.getId())
                         .setCreationTimestamp(TEST_CREATE_TIMESTAMP_2.toEpochMilli())
-                        .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli()))
+                        .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
+                        .setCreatedBy(TEST_CREATED_BY)
+                        .setLastModifiedBy(TEST_LAST_MODIFIED_BY))
                 .addContextSpecificConfigs(
                     ContextSpecificConfig.newBuilder()
                         .setConfig(OBJECT_1_AS_VALUE)
                         .setContext(OBJECT_1.getId())
                         .setCreationTimestamp(TEST_CREATE_TIMESTAMP_1.toEpochMilli())
-                        .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli()))
+                        .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
+                        .setCreatedBy(TEST_CREATED_BY)
+                        .setLastModifiedBy(TEST_LAST_MODIFIED_BY))
                 .build());
     assertEquals(
         List.of(
             new ContextualConfigObjectImpl<>(
-                OBJECT_1.getId(), OBJECT_1, TEST_CREATE_TIMESTAMP_1, TEST_UPDATE_TIMESTAMP),
+                OBJECT_1.getId(),
+                OBJECT_1,
+                TEST_CREATE_TIMESTAMP_1,
+                TEST_UPDATE_TIMESTAMP,
+                TEST_CREATED_BY,
+                TEST_LAST_MODIFIED_BY),
             new ContextualConfigObjectImpl<>(
-                OBJECT_2.getId(), OBJECT_2, TEST_CREATE_TIMESTAMP_2, TEST_UPDATE_TIMESTAMP)),
+                OBJECT_2.getId(),
+                OBJECT_2,
+                TEST_CREATE_TIMESTAMP_2,
+                TEST_UPDATE_TIMESTAMP,
+                TEST_CREATED_BY,
+                TEST_LAST_MODIFIED_BY)),
         this.store.getAllObjects(this.mockRequestContext));
 
     verify(this.mockStub)
@@ -130,12 +146,19 @@ class IdentifiedObjectStoreTest {
                 .setConfig(OBJECT_1_AS_VALUE)
                 .setCreationTimestamp(TEST_CREATE_TIMESTAMP_1.toEpochMilli())
                 .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
+                .setCreatedBy(TEST_CREATED_BY)
+                .setLastModifiedBy(TEST_LAST_MODIFIED_BY)
                 .build());
 
     assertEquals(
         Optional.of(
             new ContextualConfigObjectImpl<>(
-                OBJECT_1.getId(), OBJECT_1, TEST_CREATE_TIMESTAMP_1, TEST_UPDATE_TIMESTAMP)),
+                OBJECT_1.getId(),
+                OBJECT_1,
+                TEST_CREATE_TIMESTAMP_1,
+                TEST_UPDATE_TIMESTAMP,
+                TEST_CREATED_BY,
+                TEST_LAST_MODIFIED_BY)),
         this.store.getObject(this.mockRequestContext, OBJECT_1.getId()));
 
     verify(this.mockStub, times(1))
@@ -239,10 +262,17 @@ class IdentifiedObjectStoreTest {
                 .setConfig(OBJECT_1_AS_VALUE)
                 .setCreationTimestamp(TEST_CREATE_TIMESTAMP_1.toEpochMilli())
                 .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
+                .setCreatedBy(TEST_CREATED_BY)
+                .setLastModifiedBy(TEST_LAST_MODIFIED_BY)
                 .build());
     ContextualConfigObject contextualConfigObject =
         new ContextualConfigObjectImpl<>(
-            OBJECT_1.getId(), OBJECT_1, TEST_CREATE_TIMESTAMP_1, TEST_UPDATE_TIMESTAMP);
+            OBJECT_1.getId(),
+            OBJECT_1,
+            TEST_CREATE_TIMESTAMP_1,
+            TEST_UPDATE_TIMESTAMP,
+            TEST_CREATED_BY,
+            TEST_LAST_MODIFIED_BY);
     assertEquals(
         contextualConfigObject, this.store.upsertObject(this.mockRequestContext, OBJECT_1));
     verify(this.mockStub, times(1))
@@ -280,7 +310,9 @@ class IdentifiedObjectStoreTest {
                                   .setConfig(requestedUpsert.getConfig())
                                   .setContext(requestedUpsert.getContext())
                                   .setCreationTimestamp(TEST_CREATE_TIMESTAMP_1.toEpochMilli())
-                                  .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli()))
+                                  .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
+                                  .setCreatedBy(TEST_CREATED_BY)
+                                  .setLastModifiedBy(TEST_LAST_MODIFIED_BY))
                       .map(UpsertedConfig.Builder::build)
                       .collect(Collectors.toUnmodifiableList());
               return UpsertAllConfigsResponse.newBuilder().addAllUpsertedConfigs(configs).build();
@@ -288,9 +320,19 @@ class IdentifiedObjectStoreTest {
     assertEquals(
         List.of(
             new ContextualConfigObjectImpl<>(
-                OBJECT_1.getId(), OBJECT_1, TEST_CREATE_TIMESTAMP_1, TEST_UPDATE_TIMESTAMP),
+                OBJECT_1.getId(),
+                OBJECT_1,
+                TEST_CREATE_TIMESTAMP_1,
+                TEST_UPDATE_TIMESTAMP,
+                TEST_CREATED_BY,
+                TEST_LAST_MODIFIED_BY),
             new ContextualConfigObjectImpl<>(
-                OBJECT_2.getId(), OBJECT_2, TEST_CREATE_TIMESTAMP_1, TEST_UPDATE_TIMESTAMP)),
+                OBJECT_2.getId(),
+                OBJECT_2,
+                TEST_CREATE_TIMESTAMP_1,
+                TEST_UPDATE_TIMESTAMP,
+                TEST_CREATED_BY,
+                TEST_LAST_MODIFIED_BY)),
         this.store.upsertObjects(this.mockRequestContext, List.of(OBJECT_1, OBJECT_2)));
     verify(this.mockStub, times(1))
         .upsertAllConfigs(

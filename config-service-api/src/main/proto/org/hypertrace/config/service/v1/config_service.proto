@@ -56,6 +56,13 @@ message UpsertConfigResponse {
 
   // prev version of config value in the store
   optional google.protobuf.Value prev_config = 4;
+
+  // Audit fields
+  // email of the user who created this config
+  string created_by = 5;
+
+  // email of the user who last modified this config
+  string last_modified_by = 6;
 }
 
 message GetConfigRequest {
@@ -80,6 +87,13 @@ message GetConfigResponse {
 
   // timestamp (in milliseconds since epoch) at which this config was last updated
   int64 update_timestamp = 3;
+
+  // Audit fields
+  // email of the user who created this config
+  string created_by = 4;
+
+  // email of the user who last modified this config
+  string last_modified_by = 5;
 }
 
 message GetAllConfigsRequest {
@@ -125,6 +139,13 @@ message ContextSpecificConfig {
 
   // timestamp (in milliseconds since epoch) at which this config was last updated
   int64 update_timestamp = 4;
+
+  // Audit fields
+  // email of the user who created this config
+  string created_by = 5;
+
+  // email of the user who last modified this config
+  string last_modified_by = 6;
 }
 
 message DeleteConfigRequest {
@@ -181,6 +202,8 @@ message UpsertAllConfigsResponse {
     int64 creation_timestamp = 3;
     int64 update_timestamp = 4;
     optional google.protobuf.Value prev_config = 5;
+    string created_by = 6;
+    string last_modified_by = 7;
   }
 }
 

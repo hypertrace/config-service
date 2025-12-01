@@ -38,6 +38,8 @@ class IdentifiedObjectStoreWithFilterTest {
   private static final Instant TEST_CREATE_TIMESTAMP_1 = Instant.ofEpochMilli(20);
   private static final Instant TEST_CREATE_TIMESTAMP_2 = Instant.ofEpochMilli(30);
   private static final Instant TEST_UPDATE_TIMESTAMP = Instant.ofEpochMilli(40);
+  private static final String TEST_CREATED_BY = "test-created-by";
+  private static final String TEST_LAST_MODIFIED_BY = "test-last-modified-by";
 
   private static final TestInternalObject OBJECT_1 =
       TestInternalObject.builder()
@@ -138,28 +140,47 @@ class IdentifiedObjectStoreWithFilterTest {
                         .setConfig(OBJECT_2_AS_VALUE)
                         .setContext(OBJECT_2.getId())
                         .setCreationTimestamp(TEST_CREATE_TIMESTAMP_2.toEpochMilli())
-                        .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli()))
+                        .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
+                        .setCreatedBy(TEST_CREATED_BY)
+                        .setLastModifiedBy(TEST_LAST_MODIFIED_BY))
                 .addContextSpecificConfigs(
                     ContextSpecificConfig.newBuilder()
                         .setConfig(OBJECT_1_AS_VALUE)
                         .setContext(OBJECT_1.getId())
                         .setCreationTimestamp(TEST_CREATE_TIMESTAMP_1.toEpochMilli())
-                        .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli()))
+                        .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
+                        .setCreatedBy(TEST_CREATED_BY)
+                        .setLastModifiedBy(TEST_LAST_MODIFIED_BY))
                 .build());
 
     assertEquals(
         List.of(
             new ContextualConfigObjectImpl<>(
-                OBJECT_1.getId(), OBJECT_1, TEST_CREATE_TIMESTAMP_1, TEST_UPDATE_TIMESTAMP),
+                OBJECT_1.getId(),
+                OBJECT_1,
+                TEST_CREATE_TIMESTAMP_1,
+                TEST_UPDATE_TIMESTAMP,
+                TEST_CREATED_BY,
+                TEST_LAST_MODIFIED_BY),
             new ContextualConfigObjectImpl<>(
-                OBJECT_2.getId(), OBJECT_2, TEST_CREATE_TIMESTAMP_2, TEST_UPDATE_TIMESTAMP)),
+                OBJECT_2.getId(),
+                OBJECT_2,
+                TEST_CREATE_TIMESTAMP_2,
+                TEST_UPDATE_TIMESTAMP,
+                TEST_CREATED_BY,
+                TEST_LAST_MODIFIED_BY)),
         this.store.getAllObjects(this.mockRequestContext));
     assertEquals(List.of(OBJECT_1, OBJECT_2), this.store.getAllConfigData(this.mockRequestContext));
 
     assertEquals(
         List.of(
             new ContextualConfigObjectImpl<>(
-                OBJECT_2.getId(), OBJECT_2, TEST_CREATE_TIMESTAMP_2, TEST_UPDATE_TIMESTAMP)),
+                OBJECT_2.getId(),
+                OBJECT_2,
+                TEST_CREATE_TIMESTAMP_2,
+                TEST_UPDATE_TIMESTAMP,
+                TEST_CREATED_BY,
+                TEST_LAST_MODIFIED_BY)),
         this.store.getAllObjects(this.mockRequestContext, FILTER_1));
     assertEquals(List.of(OBJECT_2), this.store.getAllConfigData(this.mockRequestContext, FILTER_1));
 
@@ -169,9 +190,16 @@ class IdentifiedObjectStoreWithFilterTest {
                 OBJECT_1.getId(),
                 OBJECT_1_FILTERED_BY_2,
                 TEST_CREATE_TIMESTAMP_1,
-                TEST_UPDATE_TIMESTAMP),
+                TEST_UPDATE_TIMESTAMP,
+                TEST_CREATED_BY,
+                TEST_LAST_MODIFIED_BY),
             new ContextualConfigObjectImpl<>(
-                OBJECT_2.getId(), OBJECT_2, TEST_CREATE_TIMESTAMP_2, TEST_UPDATE_TIMESTAMP)),
+                OBJECT_2.getId(),
+                OBJECT_2,
+                TEST_CREATE_TIMESTAMP_2,
+                TEST_UPDATE_TIMESTAMP,
+                TEST_CREATED_BY,
+                TEST_LAST_MODIFIED_BY)),
         this.store.getAllObjects(this.mockRequestContext, FILTER_2));
     assertEquals(
         List.of(OBJECT_1_FILTERED_BY_2, OBJECT_2),
@@ -183,7 +211,9 @@ class IdentifiedObjectStoreWithFilterTest {
                 OBJECT_2.getId(),
                 OBJECT_2_FILTERED_BY_3,
                 TEST_CREATE_TIMESTAMP_2,
-                TEST_UPDATE_TIMESTAMP)),
+                TEST_UPDATE_TIMESTAMP,
+                TEST_CREATED_BY,
+                TEST_LAST_MODIFIED_BY)),
         this.store.getAllObjects(this.mockRequestContext, FILTER_3));
     assertEquals(
         List.of(OBJECT_2_FILTERED_BY_3),
@@ -205,12 +235,19 @@ class IdentifiedObjectStoreWithFilterTest {
                 .setConfig(OBJECT_1_AS_VALUE)
                 .setCreationTimestamp(TEST_CREATE_TIMESTAMP_1.toEpochMilli())
                 .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
+                .setCreatedBy(TEST_CREATED_BY)
+                .setLastModifiedBy(TEST_LAST_MODIFIED_BY)
                 .build());
 
     assertEquals(
         Optional.of(
             new ContextualConfigObjectImpl<>(
-                OBJECT_1.getId(), OBJECT_1, TEST_CREATE_TIMESTAMP_1, TEST_UPDATE_TIMESTAMP)),
+                OBJECT_1.getId(),
+                OBJECT_1,
+                TEST_CREATE_TIMESTAMP_1,
+                TEST_UPDATE_TIMESTAMP,
+                TEST_CREATED_BY,
+                TEST_LAST_MODIFIED_BY)),
         this.store.getObject(this.mockRequestContext, OBJECT_1.getId()));
     assertEquals(
         Optional.of(OBJECT_1), this.store.getData(this.mockRequestContext, OBJECT_1.getId()));
@@ -224,7 +261,9 @@ class IdentifiedObjectStoreWithFilterTest {
                 OBJECT_1.getId(),
                 OBJECT_1_FILTERED_BY_2,
                 TEST_CREATE_TIMESTAMP_1,
-                TEST_UPDATE_TIMESTAMP)),
+                TEST_UPDATE_TIMESTAMP,
+                TEST_CREATED_BY,
+                TEST_LAST_MODIFIED_BY)),
         this.store.getObject(this.mockRequestContext, OBJECT_1.getId(), FILTER_2));
     assertEquals(
         Optional.of(OBJECT_1_FILTERED_BY_2),

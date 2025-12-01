@@ -36,6 +36,8 @@ class DefaultObjectStoreTest {
   private static final String TEST_RESOURCE_NAME = "test-resource";
   private static final Instant TEST_CREATE_TIMESTAMP = Instant.ofEpochMilli(20);
   private static final Instant TEST_UPDATE_TIMESTAMP = Instant.ofEpochMilli(40);
+  private static final String TEST_CREATED_BY = "test-created-by";
+  private static final String TEST_LAST_MODIFIED_BY = "test-last-modified-by";
 
   @Mock(answer = Answers.RETURNS_SELF)
   ConfigServiceBlockingStub mockStub;
@@ -60,12 +62,18 @@ class DefaultObjectStoreTest {
                 .setConfig(Values.of("test"))
                 .setCreationTimestamp(TEST_CREATE_TIMESTAMP.toEpochMilli())
                 .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
+                .setCreatedBy(TEST_CREATED_BY)
+                .setLastModifiedBy(TEST_LAST_MODIFIED_BY)
                 .build());
 
     assertEquals(
         Optional.of(
             new ConfigObjectImpl<>(
-                new TestInternalObject("test"), TEST_CREATE_TIMESTAMP, TEST_UPDATE_TIMESTAMP)),
+                new TestInternalObject("test"),
+                TEST_CREATE_TIMESTAMP,
+                TEST_UPDATE_TIMESTAMP,
+                TEST_CREATED_BY,
+                TEST_LAST_MODIFIED_BY)),
         this.store.getObject(this.mockRequestContext));
 
     verify(this.mockStub, times(1))
@@ -123,12 +131,18 @@ class DefaultObjectStoreTest {
                     ContextSpecificConfig.newBuilder()
                         .setConfig(Values.of("test"))
                         .setCreationTimestamp(TEST_CREATE_TIMESTAMP.toEpochMilli())
-                        .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli()))
+                        .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
+                        .setCreatedBy(TEST_CREATED_BY)
+                        .setLastModifiedBy(TEST_LAST_MODIFIED_BY))
                 .build());
     assertEquals(
         Optional.of(
             new ConfigObjectImpl<>(
-                new TestInternalObject("test"), TEST_CREATE_TIMESTAMP, TEST_UPDATE_TIMESTAMP)),
+                new TestInternalObject("test"),
+                TEST_CREATE_TIMESTAMP,
+                TEST_UPDATE_TIMESTAMP,
+                TEST_CREATED_BY,
+                TEST_LAST_MODIFIED_BY)),
         this.store.deleteObject(mockRequestContext));
 
     verify(this.mockStub)
@@ -159,11 +173,17 @@ class DefaultObjectStoreTest {
             UpsertConfigResponse.newBuilder()
                 .setCreationTimestamp(TEST_CREATE_TIMESTAMP.toEpochMilli())
                 .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
+                .setCreatedBy(TEST_CREATED_BY)
+                .setLastModifiedBy(TEST_LAST_MODIFIED_BY)
                 .setConfig(Values.of("updated"))
                 .build());
     ConfigObject configObject =
         new ConfigObjectImpl<>(
-            new TestInternalObject("updated"), TEST_CREATE_TIMESTAMP, TEST_UPDATE_TIMESTAMP);
+            new TestInternalObject("updated"),
+            TEST_CREATE_TIMESTAMP,
+            TEST_UPDATE_TIMESTAMP,
+            TEST_CREATED_BY,
+            TEST_LAST_MODIFIED_BY);
     assertEquals(
         configObject,
         this.store.upsertObject(this.mockRequestContext, new TestInternalObject("updated")));

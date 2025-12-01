@@ -246,6 +246,8 @@ class DocumentConfigStoreTest {
             .setContext("context")
             .setCreationTimestamp(TIMESTAMP1)
             .setUpdateTimestamp(TIMESTAMP2)
+            .setCreatedBy(USER_EMAIL)
+            .setLastModifiedBy(USER_EMAIL)
             .build();
     ConfigResourceContext context = getConfigResourceContext("context");
     Map<ConfigResourceContext, ContextSpecificConfig> actualConfigs =
@@ -267,6 +269,8 @@ class DocumentConfigStoreTest {
             .setContext("context")
             .setCreationTimestamp(TIMESTAMP1)
             .setUpdateTimestamp(TIMESTAMP2)
+            .setCreatedBy(USER_EMAIL)
+            .setLastModifiedBy(USER_EMAIL)
             .build();
     Optional<ContextSpecificConfig> actualConfig = configStore.getConfig(configResourceContext);
     assertEquals(Optional.of(expectedConfig), actualConfig);
@@ -296,6 +300,8 @@ class DocumentConfigStoreTest {
             .setConfig(config2)
             .setCreationTimestamp(TIMESTAMP3)
             .setUpdateTimestamp(TIMESTAMP3)
+            .setCreatedBy(USER_EMAIL)
+            .setLastModifiedBy(USER_EMAIL)
             .build(),
         contextSpecificConfigList.get(0));
     assertEquals(
@@ -304,6 +310,8 @@ class DocumentConfigStoreTest {
             .setConfig(config1)
             .setCreationTimestamp(TIMESTAMP1)
             .setUpdateTimestamp(TIMESTAMP2)
+            .setCreatedBy(USER_EMAIL)
+            .setLastModifiedBy(USER_EMAIL)
             .build(),
         contextSpecificConfigList.get(1));
   }
@@ -343,6 +351,8 @@ class DocumentConfigStoreTest {
                 .setUpdateTimestamp(updateTime)
                 .setConfig(config2)
                 .setPrevConfig(config1)
+                .setCreatedBy(USER_EMAIL)
+                .setLastModifiedBy(USER_EMAIL)
                 .build(),
             UpsertedConfig.newBuilder()
                 .setContext(resourceContext2.getContext())
@@ -350,6 +360,8 @@ class DocumentConfigStoreTest {
                 .setUpdateTimestamp(updateTime)
                 .setConfig(config1)
                 .setPrevConfig(config2)
+                .setCreatedBy(USER_EMAIL)
+                .setLastModifiedBy(USER_EMAIL)
                 .build()),
         upsertedConfigs);
 
@@ -494,6 +506,159 @@ class DocumentConfigStoreTest {
         lhs, org.hypertrace.core.documentstore.expression.operators.RelationalOperator.EQ, rhs);
   }
 
+  @Test
+  void testCreatorEmailIsSetOnCreate() throws IOException {
+    // Test that when creating a new config, the creator email is set correctly
+    CloseableIteratorImpl iterator = new CloseableIteratorImpl(List.of());
+    when(collection.query(any(Query.class), any())).thenReturn(iterator);
+    UpsertConfigRequest request = mock(UpsertConfigRequest.class);
+    when(request.getConfig()).thenReturn(config1);
+    when(request.hasUpsertCondition()).thenReturn(false);
+    when(mockClock.millis()).thenReturn(TIMESTAMP1);
+
+    String creatorEmail = "creator@example.com";
+    UpsertedConfig upsertedConfig =
+        configStore.writeConfig(configResourceContext, USER_ID, request, creatorEmail);
+
+    // Verify the upserted config has creator email populated
+    assertEquals(creatorEmail, upsertedConfig.getCreatedBy());
+    assertEquals(creatorEmail, upsertedConfig.getLastModifiedBy());
+
+    ArgumentCaptor<Document> documentCaptor = ArgumentCaptor.forClass(Document.class);
+    verify(collection).upsert(any(Key.class), documentCaptor.capture());
+
+    ConfigDocument capturedDoc = (ConfigDocument) documentCaptor.getValue();
+    assertEquals(creatorEmail, capturedDoc.getCreatedByUserEmail());
+    assertEquals(creatorEmail, capturedDoc.getLastUpdatedUserEmail());
+  }
+
+  @Test
+  void testCreatorEmailIsPreservedOnUpdate() throws IOException {
+    // Critical test: Creator email should be preserved when updating a config
+    String originalCreator = "alice@example.com";
+    String modifier = "bob@example.com";
+
+    // Setup: existing document was created by alice
+    CloseableIteratorImpl iterator =
+        new CloseableIteratorImpl(
+            Collections.singletonList(
+                getConfigDocumentWithCreator(
+                    configResourceContext.getContext(),
+                    CONFIG_VERSION,
+                    config1,
+                    TIMESTAMP1,
+                    TIMESTAMP2,
+                    originalCreator, // created by alice
+                    originalCreator))); // last modified also by alice initially
+
+    when(collection.query(any(Query.class), any())).thenReturn(iterator);
+    UpsertConfigRequest request = mock(UpsertConfigRequest.class);
+    when(request.getConfig()).thenReturn(config2);
+    when(request.hasUpsertCondition()).thenReturn(false);
+    when(mockClock.millis()).thenReturn(TIMESTAMP3);
+
+    // Act: bob updates the config
+    UpsertedConfig upsertedConfig =
+        configStore.writeConfig(configResourceContext, USER_ID, request, modifier);
+
+    // Assert: creator email should still be alice, but last modifier should be bob
+    assertEquals(originalCreator, upsertedConfig.getCreatedBy());
+    assertEquals(modifier, upsertedConfig.getLastModifiedBy());
+
+    ArgumentCaptor<Document> documentCaptor = ArgumentCaptor.forClass(Document.class);
+    verify(collection).upsert(any(Key.class), documentCaptor.capture());
+
+    ConfigDocument capturedDoc = (ConfigDocument) documentCaptor.getValue();
+    assertEquals(originalCreator, capturedDoc.getCreatedByUserEmail());
+    assertEquals(modifier, capturedDoc.getLastUpdatedUserEmail());
+  }
+
+  @Test
+  void testBackwardCompatibilityForOldDocumentsWithoutCreatorEmail() {
+    // Test that old documents without createdByUserEmail field default gracefully
+    ConfigDocument oldDoc =
+        new ConfigDocument(
+            RESOURCE_NAME,
+            RESOURCE_NAMESPACE,
+            TENANT_ID,
+            "context",
+            1L,
+            USER_ID,
+            USER_EMAIL,
+            null, // null createdByUserEmail simulates old document
+            config1,
+            TIMESTAMP1,
+            TIMESTAMP2);
+
+    // Should default to "Unknown" as specified in the plan
+    assertEquals("Unknown", oldDoc.getCreatedByUserEmail());
+  }
+
+  @Test
+  void testAuditFieldsInGetConfigResponse() throws IOException {
+    String createdBy = "creator@test.com";
+    String lastModifiedBy = "modifier@test.com";
+
+    CloseableIteratorImpl iterator =
+        new CloseableIteratorImpl(
+            Collections.singletonList(
+                getConfigDocumentWithCreator(
+                    "context",
+                    CONFIG_VERSION,
+                    config1,
+                    TIMESTAMP1,
+                    TIMESTAMP2,
+                    createdBy,
+                    lastModifiedBy)));
+
+    when(collection.query(any(Query.class), any())).thenReturn(iterator);
+
+    Optional<ContextSpecificConfig> actualConfig = configStore.getConfig(configResourceContext);
+
+    // Assert audit fields are populated in the response
+    assertEquals(true, actualConfig.isPresent());
+    ContextSpecificConfig config = actualConfig.get();
+    assertEquals(createdBy, config.getCreatedBy());
+    assertEquals(lastModifiedBy, config.getLastModifiedBy());
+    assertEquals(TIMESTAMP1, config.getCreationTimestamp());
+    assertEquals(TIMESTAMP2, config.getUpdateTimestamp());
+  }
+
+  @Test
+  void testAuditFieldsInGetAllConfigsResponse() throws IOException {
+    String createdBy1 = "alice@test.com";
+    String modifiedBy1 = "bob@test.com";
+    String createdBy2 = "charlie@test.com";
+
+    CloseableIteratorImpl iterator =
+        new CloseableIteratorImpl(
+            List.of(
+                getConfigDocumentWithCreator(
+                    CONTEXT1, 1L, config1, TIMESTAMP1, TIMESTAMP2, createdBy1, modifiedBy1),
+                getConfigDocumentWithCreator(
+                    "context2", 2L, config2, TIMESTAMP2, TIMESTAMP3, createdBy2, createdBy2)));
+
+    when(collection.query(any(Query.class), any())).thenReturn(iterator);
+
+    List<ContextSpecificConfig> configs =
+        configStore.getAllConfigs(
+            new ConfigResource(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_ID),
+            Filter.getDefaultInstance(),
+            Pagination.getDefaultInstance(),
+            emptyList());
+
+    // Assert audit fields are present for all configs
+    assertEquals(2, configs.size());
+
+    ContextSpecificConfig config1Response = configs.get(0);
+    assertEquals(createdBy1, config1Response.getCreatedBy());
+    assertEquals(modifiedBy1, config1Response.getLastModifiedBy());
+
+    ContextSpecificConfig config2Response = configs.get(1);
+    assertEquals(createdBy2, config2Response.getCreatedBy());
+    assertEquals(createdBy2, config2Response.getLastModifiedBy());
+  }
+
   private Document getConfigDocument(
       String context, long version, Value config, long creationTimestamp, long updateTimestamp) {
     return new ConfigDocument(
@@ -504,6 +669,29 @@ class DocumentConfigStoreTest {
         version,
         USER_ID,
         USER_EMAIL,
+        USER_EMAIL, // createdByUserEmail defaults to same as lastUpdatedUserEmail
+        config,
+        creationTimestamp,
+        updateTimestamp);
+  }
+
+  private Document getConfigDocumentWithCreator(
+      String context,
+      long version,
+      Value config,
+      long creationTimestamp,
+      long updateTimestamp,
+      String createdByUserEmail,
+      String lastUpdatedUserEmail) {
+    return new ConfigDocument(
+        RESOURCE_NAME,
+        RESOURCE_NAMESPACE,
+        TENANT_ID,
+        context,
+        version,
+        USER_ID,
+        lastUpdatedUserEmail,
+        createdByUserEmail,
         config,
         creationTimestamp,
         updateTimestamp);

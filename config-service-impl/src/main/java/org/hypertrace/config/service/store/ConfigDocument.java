@@ -41,6 +41,7 @@ public class ConfigDocument implements Document {
   public static final String VERSION_FIELD_NAME = "configVersion";
   public static final String LAST_UPDATED_USER_ID_FIELD_NAME = "lastUpdateUserId";
   public static final String LAST_UPDATED_USER_EMAIL_FIELD_NAME = "lastUpdatedUserEmail";
+  public static final String CREATED_BY_USER_EMAIL_FIELD_NAME = "createdByUserEmail";
   public static final String CONFIG_FIELD_NAME = "config";
   public static final String CREATION_TIMESTAMP_FIELD_NAME = "creationTimestamp";
   public static final String UPDATE_TIMESTAMP_FIELD_NAME = "updateTimestamp";
@@ -66,6 +67,9 @@ public class ConfigDocument implements Document {
   @JsonProperty(value = LAST_UPDATED_USER_EMAIL_FIELD_NAME)
   String lastUpdatedUserEmail;
 
+  @JsonProperty(value = CREATED_BY_USER_EMAIL_FIELD_NAME)
+  String createdByUserEmail;
+
   @JsonSerialize(using = ValueSerializer.class)
   @JsonDeserialize(using = ValueDeserializer.class)
   @JsonProperty(value = CONFIG_FIELD_NAME)
@@ -86,6 +90,7 @@ public class ConfigDocument implements Document {
       @JsonProperty(VERSION_FIELD_NAME) long configVersion,
       @JsonProperty(LAST_UPDATED_USER_ID_FIELD_NAME) String lastUpdatedUserId,
       @JsonProperty(LAST_UPDATED_USER_EMAIL_FIELD_NAME) String lastUpdatedUserEmail,
+      @JsonProperty(CREATED_BY_USER_EMAIL_FIELD_NAME) String createdByUserEmail,
       @JsonProperty(CONFIG_FIELD_NAME) Value config,
       @JsonProperty(CREATION_TIMESTAMP_FIELD_NAME) long creationTimestamp,
       @JsonProperty(UPDATE_TIMESTAMP_FIELD_NAME) long updateTimestamp) {
@@ -98,6 +103,8 @@ public class ConfigDocument implements Document {
         Optional.ofNullable(lastUpdatedUserId).orElse(DEFAULT_LATEST_UPDATED_USER_ID);
     this.lastUpdatedUserEmail =
         Optional.ofNullable(lastUpdatedUserEmail).orElse(DEFAULT_LATEST_UPDATED_USER_EMAIL);
+    this.createdByUserEmail =
+        Optional.ofNullable(createdByUserEmail).orElse(DEFAULT_LATEST_UPDATED_USER_EMAIL);
     this.config = config;
     this.creationTimestamp = creationTimestamp;
     this.updateTimestamp = updateTimestamp;

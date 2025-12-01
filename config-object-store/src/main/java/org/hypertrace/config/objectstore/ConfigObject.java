@@ -8,4 +8,8 @@ public interface ConfigObject<T> {
   Instant getCreationTimestamp();
 
   Instant getLastUpdatedTimestamp();
+
+  String getCreatedBy();
+
+  String getLastModifiedBy();
 }

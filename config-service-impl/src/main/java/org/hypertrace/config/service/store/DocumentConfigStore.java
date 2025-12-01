@@ -161,6 +161,9 @@ public class DocumentConfigStore implements ConfigStore {
             .filter(configDocument -> !ConfigServiceUtils.isNull(configDocument.getConfig()))
             .map(ConfigDocument::getCreationTimestamp)
             .orElse(updateTimestamp);
+    // Preserve creator email on updates, set on creates
+    String createdByUserEmail =
+        previousConfigDoc.map(ConfigDocument::getCreatedByUserEmail).orElse(lastUpdatedUserEmail);
     long newVersion =
         previousConfigDoc
             .map(ConfigDocument::getConfigVersion)
@@ -174,6 +177,7 @@ public class DocumentConfigStore implements ConfigStore {
         newVersion,
         lastUpdatedUserId,
         lastUpdatedUserEmail,
+        createdByUserEmail,
         latestConfig,
         creationTimestamp,
         updateTimestamp);
@@ -474,6 +478,8 @@ public class DocumentConfigStore implements ConfigStore {
             .setContext(configDocument.getContext())
             .setCreationTimestamp(configDocument.getCreationTimestamp())
             .setUpdateTimestamp(configDocument.getUpdateTimestamp())
+            .setCreatedBy(configDocument.getCreatedByUserEmail())
+            .setLastModifiedBy(configDocument.getLastUpdatedUserEmail())
             .build());
   }
 
@@ -490,6 +496,8 @@ public class DocumentConfigStore implements ConfigStore {
         .setContext(configDocument.getContext())
         .setCreationTimestamp(configDocument.getCreationTimestamp())
         .setUpdateTimestamp(configDocument.getUpdateTimestamp())
+        .setCreatedBy(configDocument.getCreatedByUserEmail())
+        .setLastModifiedBy(configDocument.getLastUpdatedUserEmail())
         .build();
   }
 

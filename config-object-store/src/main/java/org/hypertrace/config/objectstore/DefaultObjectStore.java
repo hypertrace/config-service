@@ -92,6 +92,8 @@ public abstract class DefaultObjectStore<T> {
           getConfigResponse.getConfig(),
           getConfigResponse.getCreationTimestamp(),
           getConfigResponse.getUpdateTimestamp(),
+          getConfigResponse.getCreatedBy(),
+          getConfigResponse.getLastModifiedBy(),
           this::buildDataFromValue);
     } catch (Exception exception) {
       if (Status.fromThrowable(exception).equals(Status.NOT_FOUND)) {
