@@ -13,7 +13,6 @@ dependencyResolutionManagement {
   }
 }
 
-
 buildscript {
   repositories {
     gradlePluginPortal()
