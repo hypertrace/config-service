@@ -1,7 +1,7 @@
 # Each line is a file pattern followed by one or more owners.
 
 # global
-* @GurtejSohi @aaron-steinfeld @pavan-traceable @skjindal93 @singhalprerana @avinashkolluru @saxenakshitiz @anujgoyal1 @SrikarMannepalli @sunilgattupalle @surajpuvvada @RishabhB99 @varsha-abhinandan
+* @GurtejSohi @aaron-steinfeld @pavan-traceable @skjindal93 @singhalprerana @avinashkolluru @saxenakshitiz @anujgoyal1 @SrikarMannepalli @sunilgattupalle @surajpuvvada @RishabhB99 @varsha-abhinandan @shashank11p @tim-mwangi
 
 # module specific owners
 anomaly-config-service-registry/src/test/resources/modsec @sidharth-jain23 @singhalprerana
@@ -70,6 +70,18 @@ threat-scoring-config-service-impl @singhalprerana @avinashkolluru @bhubam
 attribute-resolution-config-service-api @aman-bansal @sanket-mundra @Vaibhav090420
 attribute-resolution-config-service-impl @aman-bansal @sanket-mundra @Vaibhav090420
 attribute-resolution-config-client @aman-bansal @sanket-mundra @Vaibhav090420
+agent-action-config-service-api @shashank11p @tim-mwangi @varkey98
+agent-action-config-service-impl @shashank11p @tim-mwangi @varkey98
+external-agent-action-config-service-api @shashank11p @tim-mwangi @varkey98
+external-agent-action-config-service-impl @shashank11p @tim-mwangi @varkey98
+external-agent-attribute-config-service-api @shashank11p @tim-mwangi
+external-agent-attribute-config-service-impl @shashank11p @tim-mwangi
+external-data-classification-config-service-api @shashank11p @tim-mwangi
+external-data-classification-config-service-impl @shashank11p @tim-mwangi
+ip-resolution-config-service-api @shashank11p @tim-mwangi @prodion23
+ip-resolution-config-service-impl @shashank11p @tim-mwangi @prodion23
+local-processing-config-service-api @shashank11p @tim-mwangi @varkey98
+local-processing-config-service-impl @shashank11p @tim-mwangi @varkey98
 
 # No owners for lock changes
 **/gradle.lockfile
