@@ -98,14 +98,16 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
             : customSignatureRules;
 
     // filtering on the basis of rule evaluation point
-    filteredCustomSignatureRules =
-        filteredCustomSignatureRules.stream()
-            .filter(
-                rule ->
-                    rule.getEffect()
-                        .getRuleEvaluationPointsList()
-                        .contains(RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT))
-            .collect(Collectors.toUnmodifiableList());
+    if (modsecCrsRulesTarget == ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING) {
+      filteredCustomSignatureRules =
+          filteredCustomSignatureRules.stream()
+              .filter(
+                  rule ->
+                      rule.getEffect()
+                          .getRuleEvaluationPointsList()
+                          .contains(RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT))
+              .collect(Collectors.toUnmodifiableList());
+    }
 
     List<CustomSignatureInlineRule> inlineRuleList = new ArrayList<>();
     List<String> allowModsecRules = new ArrayList<>();
