@@ -597,7 +597,7 @@ class DocumentConfigStoreTest {
   }
 
   @Test
-  void testAuditFieldsInGetConfigResponse() throws IOException {
+  void testUserTrackingFieldsInGetConfigResponse() throws IOException {
     String createdBy = "creator@test.com";
     String lastModifiedBy = "modifier@test.com";
 
@@ -617,7 +617,7 @@ class DocumentConfigStoreTest {
 
     Optional<ContextSpecificConfig> actualConfig = configStore.getConfig(configResourceContext);
 
-    // Assert audit fields are populated in the response
+    // Assert user tracking fields are populated in the response
     assertEquals(true, actualConfig.isPresent());
     ContextSpecificConfig config = actualConfig.get();
     assertEquals(createdBy, config.getCreatedByEmail());
@@ -627,7 +627,7 @@ class DocumentConfigStoreTest {
   }
 
   @Test
-  void testAuditFieldsInGetAllConfigsResponse() throws IOException {
+  void testUserTrackingFieldsInGetAllConfigsResponse() throws IOException {
     String createdBy1 = "alice@test.com";
     String modifiedBy1 = "bob@test.com";
     String createdBy2 = "charlie@test.com";
@@ -649,7 +649,7 @@ class DocumentConfigStoreTest {
             Pagination.getDefaultInstance(),
             emptyList());
 
-    // Assert audit fields are present for all configs
+    // Assert user tracking fields are present for all configs
     assertEquals(2, configs.size());
 
     ContextSpecificConfig config1Response = configs.get(0);
@@ -662,11 +662,11 @@ class DocumentConfigStoreTest {
   }
 
   @Test
-  void testAuditExclusionOnUpdate_PreservesAuditFields() throws IOException {
-    // Setup: Create config with audit exclusion pattern for agent emails
+  void testUserTrackingExclusionOnUpdate_PreservesUserTrackingFields() throws IOException {
+    // Setup: Create config with user tracking exclusion pattern for agent emails
     Config testConfig =
         ConfigFactory.parseString(
-            "generic.config.service.audit.excluded.email.patterns = [\"^agent\\\\+[0-9a-fA-F-]+@traceable\\\\.ai$\"]");
+            "generic.config.service.user.tracking.excluded.email.patterns = [\"^agent\\\\+[0-9a-fA-F-]+@traceable\\\\.ai$\"]");
     DocumentConfigStore storeWithExclusion =
         new DocumentConfigStore(mockClock, mockDatastore, testConfig);
 
@@ -697,13 +697,13 @@ class DocumentConfigStoreTest {
     UpsertedConfig result =
         storeWithExclusion.writeConfig(configResourceContext, "agent-user-id", request, agentEmail);
 
-    // Verify: Audit fields should be preserved from original user
+    // Verify: User tracking fields should be preserved from original user
     assertEquals(originalEmail, result.getLastUpdatedByEmail());
     assertEquals(originalEmail, result.getCreatedByEmail());
     assertEquals(originalTimestamp, result.getUpdateTimestamp());
     assertEquals(TIMESTAMP1, result.getCreationTimestamp());
 
-    // Verify the document was written with preserved audit fields
+    // Verify the document was written with preserved user tracking fields
     ArgumentCaptor<Document> documentCaptor = ArgumentCaptor.forClass(Document.class);
     verify(collection).upsert(any(Key.class), documentCaptor.capture());
     ConfigDocument savedDoc = (ConfigDocument) documentCaptor.getValue();
@@ -713,11 +713,11 @@ class DocumentConfigStoreTest {
   }
 
   @Test
-  void testAuditExclusionOnUpdate_NormalEmailUpdatesAuditFields() throws IOException {
-    // Setup: Config with audit exclusion pattern
+  void testUserTrackingExclusionOnUpdate_NormalEmailUpdatesUserTrackingFields() throws IOException {
+    // Setup: Config with user tracking exclusion pattern
     Config testConfig =
         ConfigFactory.parseString(
-            "generic.config.service.audit.excluded.email.patterns = [\"^agent\\\\+[0-9a-fA-F-]+@traceable\\\\.ai$\"]");
+            "generic.config.service.user.tracking.excluded.email.patterns = [\"^agent\\\\+[0-9a-fA-F-]+@traceable\\\\.ai$\"]");
     DocumentConfigStore storeWithExclusion =
         new DocumentConfigStore(mockClock, mockDatastore, testConfig);
 
@@ -747,11 +747,11 @@ class DocumentConfigStoreTest {
     UpsertedConfig result =
         storeWithExclusion.writeConfig(configResourceContext, normalUserId, request, normalEmail);
 
-    // Verify: Audit fields should be updated to normal user
+    // Verify: User tracking fields should be updated to normal user
     assertEquals(normalEmail, result.getLastUpdatedByEmail());
     assertEquals(TIMESTAMP2, result.getUpdateTimestamp());
 
-    // Verify the document was written with new audit fields
+    // Verify the document was written with new user tracking fields
     ArgumentCaptor<Document> documentCaptor = ArgumentCaptor.forClass(Document.class);
     verify(collection).upsert(any(Key.class), documentCaptor.capture());
     ConfigDocument savedDoc = (ConfigDocument) documentCaptor.getValue();
@@ -761,11 +761,12 @@ class DocumentConfigStoreTest {
   }
 
   @Test
-  void testAuditExclusionOnCreate_AgentEmailStillSetsInitialAuditFields() throws IOException {
-    // Setup: Config with audit exclusion pattern
+  void testUserTrackingExclusionOnCreate_AgentEmailStillSetsInitialUserTrackingFields()
+      throws IOException {
+    // Setup: Config with user tracking exclusion pattern
     Config testConfig =
         ConfigFactory.parseString(
-            "generic.config.service.audit.excluded.email.patterns = [\"^agent\\\\+[0-9a-fA-F-]+@traceable\\\\.ai$\"]");
+            "generic.config.service.user.tracking.excluded.email.patterns = [\"^agent\\\\+[0-9a-fA-F-]+@traceable\\\\.ai$\"]");
     DocumentConfigStore storeWithExclusion =
         new DocumentConfigStore(mockClock, mockDatastore, testConfig);
 
@@ -784,7 +785,7 @@ class DocumentConfigStoreTest {
     UpsertedConfig result =
         storeWithExclusion.writeConfig(configResourceContext, agentUserId, request, agentEmail);
 
-    // Verify: On creation, even agent emails should set audit fields
+    // Verify: On creation, even agent emails should set user tracking fields
     assertEquals(agentEmail, result.getLastUpdatedByEmail());
     assertEquals(agentEmail, result.getCreatedByEmail());
     assertEquals(TIMESTAMP1, result.getUpdateTimestamp());
@@ -793,10 +794,10 @@ class DocumentConfigStoreTest {
 
   @Test
   void testMaskingOnRetrieval_AgentEmailMaskedAsUnknown() throws IOException {
-    // Setup: Config with audit exclusion pattern
+    // Setup: Config with user tracking exclusion pattern
     Config testConfig =
         ConfigFactory.parseString(
-            "generic.config.service.audit.excluded.email.patterns = [\"^agent\\\\+[0-9a-fA-F-]+@traceable\\\\.ai$\"]");
+            "generic.config.service.user.tracking.excluded.email.patterns = [\"^agent\\\\+[0-9a-fA-F-]+@traceable\\\\.ai$\"]");
     DocumentConfigStore storeWithExclusion =
         new DocumentConfigStore(mockClock, mockDatastore, testConfig);
 
@@ -826,10 +827,10 @@ class DocumentConfigStoreTest {
 
   @Test
   void testMaskingOnRetrieval_NormalEmailNotMasked() throws IOException {
-    // Setup: Config with audit exclusion pattern
+    // Setup: Config with user tracking exclusion pattern
     Config testConfig =
         ConfigFactory.parseString(
-            "generic.config.service.audit.excluded.email.patterns = [\"^agent\\\\+[0-9a-fA-F-]+@traceable\\\\.ai$\"]");
+            "generic.config.service.user.tracking.excluded.email.patterns = [\"^agent\\\\+[0-9a-fA-F-]+@traceable\\\\.ai$\"]");
     DocumentConfigStore storeWithExclusion =
         new DocumentConfigStore(mockClock, mockDatastore, testConfig);
 
@@ -861,7 +862,8 @@ class DocumentConfigStoreTest {
   void testNoExclusionPatterns_BehavesNormally() throws IOException {
     // Setup: Config with empty exclusion patterns
     Config testConfig =
-        ConfigFactory.parseString("generic.config.service.audit.excluded.email.patterns = []");
+        ConfigFactory.parseString(
+            "generic.config.service.user.tracking.excluded.email.patterns = []");
     DocumentConfigStore storeWithExclusion =
         new DocumentConfigStore(mockClock, mockDatastore, testConfig);
 
@@ -890,7 +892,7 @@ class DocumentConfigStoreTest {
     UpsertedConfig result =
         storeWithExclusion.writeConfig(configResourceContext, agentUserId, request, agentEmail);
 
-    // Verify: With no exclusion patterns, agent email should update audit fields normally
+    // Verify: With no exclusion patterns, agent email should update user tracking fields normally
     assertEquals(agentEmail, result.getLastUpdatedByEmail());
     assertEquals(TIMESTAMP2, result.getUpdateTimestamp());
   }

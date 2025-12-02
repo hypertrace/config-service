@@ -57,7 +57,6 @@ message UpsertConfigResponse {
   // prev version of config value in the store
   optional google.protobuf.Value prev_config = 4;
 
-  // Audit fields
   // email of the user who created this config
   string created_by_email = 5;
 
@@ -88,7 +87,6 @@ message GetConfigResponse {
   // timestamp (in milliseconds since epoch) at which this config was last updated
   int64 update_timestamp = 3;
 
-  // Audit fields
   // email of the user who created this config
   string created_by_email = 4;
 
@@ -140,7 +138,6 @@ message ContextSpecificConfig {
   // timestamp (in milliseconds since epoch) at which this config was last updated
   int64 update_timestamp = 4;
 
-  // Audit fields
   // email of the user who created this config
   string created_by_email = 5;
 

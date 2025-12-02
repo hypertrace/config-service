@@ -58,14 +58,15 @@ import org.hypertrace.core.documentstore.query.Query;
 public class DocumentConfigStore implements ConfigStore {
   static final String CONFIGURATIONS_COLLECTION = "configurations";
   private static final String GENERIC_CONFIG_SERVICE_CONFIG = "generic.config.service";
-  private static final String AUDIT_EXCLUDED_EMAIL_PATTERNS = "audit.excluded.email.patterns";
+  private static final String USER_TRACKING_EXCLUDED_EMAIL_PATTERNS =
+      "user.tracking.excluded.email.patterns";
 
   private final Clock clock;
   private final Datastore datastore;
   private final Collection collection;
   private final FilterBuilder filterBuilder;
   private final FilterExpressionBuilder filterExpressionBuilder;
-  private final List<Pattern> auditExcludedEmailPatterns;
+  private final List<Pattern> userTrackingExcludedEmailPatterns;
 
   // keeping this constructor for backward compatibility
   public DocumentConfigStore(Clock clock, Datastore datastore) {
@@ -78,26 +79,26 @@ public class DocumentConfigStore implements ConfigStore {
     this.collection = this.datastore.getCollection(CONFIGURATIONS_COLLECTION);
     this.filterBuilder = new FilterBuilder();
     this.filterExpressionBuilder = new FilterExpressionBuilder();
-    this.auditExcludedEmailPatterns = extractAuditExcludedEmailPatterns(config);
+    this.userTrackingExcludedEmailPatterns = extractUserTrackingExcludedEmailPatterns(config);
   }
 
-  private List<Pattern> extractAuditExcludedEmailPatterns(Config config) {
+  private List<Pattern> extractUserTrackingExcludedEmailPatterns(Config config) {
     if (config == null || !config.hasPath(GENERIC_CONFIG_SERVICE_CONFIG)) {
       return Collections.emptyList();
     }
 
     try {
       Config genericConfig = config.getConfig(GENERIC_CONFIG_SERVICE_CONFIG);
-      if (!genericConfig.hasPath(AUDIT_EXCLUDED_EMAIL_PATTERNS)) {
+      if (!genericConfig.hasPath(USER_TRACKING_EXCLUDED_EMAIL_PATTERNS)) {
         return Collections.emptyList();
       }
 
-      return genericConfig.getStringList(AUDIT_EXCLUDED_EMAIL_PATTERNS).stream()
+      return genericConfig.getStringList(USER_TRACKING_EXCLUDED_EMAIL_PATTERNS).stream()
           .filter(pattern -> pattern != null && !pattern.trim().isEmpty())
           .map(Pattern::compile)
           .collect(Collectors.toUnmodifiableList());
     } catch (Exception e) {
-      log.warn("Failed to extract audit excluded email patterns from config", e);
+      log.warn("Failed to extract user tracking excluded email patterns from config", e);
       return Collections.emptyList();
     }
   }
@@ -197,8 +198,8 @@ public class DocumentConfigStore implements ConfigStore {
     String createdByUserEmail =
         previousConfigDoc.map(ConfigDocument::getCreatedByUserEmail).orElse(lastUpdatedUserEmail);
 
-    // If email is excluded and config exists, preserve previous audit fields
-    if (previousConfigDoc.isPresent() && isAuditExcludedEmail(lastUpdatedUserEmail)) {
+    // If email is excluded and config exists, preserve previous user tracking fields
+    if (previousConfigDoc.isPresent() && isUserTrackingExcludedEmail(lastUpdatedUserEmail)) {
       ConfigDocument prevDoc = previousConfigDoc.get();
       lastUpdatedUserId = prevDoc.getLastUpdatedUserId();
       lastUpdatedUserEmail = prevDoc.getLastUpdatedUserEmail();
@@ -570,14 +571,14 @@ public class DocumentConfigStore implements ConfigStore {
                 ConstantExpression.of(configResource.getTenantId()))));
   }
 
-  private boolean isAuditExcludedEmail(String email) {
+  private boolean isUserTrackingExcludedEmail(String email) {
     return email != null
         && !email.isEmpty()
-        && auditExcludedEmailPatterns.stream()
+        && userTrackingExcludedEmailPatterns.stream()
             .anyMatch(pattern -> pattern.matcher(email).matches());
   }
 
   private String maskEmailIfExcluded(String email) {
-    return isAuditExcludedEmail(email) ? ConfigDocument.DEFAULT_USER_EMAIL : email;
+    return isUserTrackingExcludedEmail(email) ? ConfigDocument.DEFAULT_USER_EMAIL : email;
   }
 }
