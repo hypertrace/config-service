@@ -91,7 +91,7 @@ public class ConfigServiceFactory implements GrpcPlatformServiceFactory {
       Datastore datastore) {
     this.grpcServiceContainerEnvironment = grpcServiceContainerEnvironment;
     return Stream.of(
-            new ConfigServiceGrpcImpl(this.buildConfigStore(datastore)),
+            new ConfigServiceGrpcImpl(this.buildConfigStore(datastore, config)),
             new SpacesConfigServiceImpl(localChannel),
             new LabelsConfigServiceImpl(localChannel, config, configChangeEventGenerator),
             new LabelApplicationRuleConfigServiceImpl(
@@ -117,9 +117,9 @@ public class ConfigServiceFactory implements GrpcPlatformServiceFactory {
         .createConfigChangeEventGenerator(config, Clock.systemUTC());
   }
 
-  protected ConfigStore buildConfigStore(Datastore datastore) {
+  protected ConfigStore buildConfigStore(Datastore datastore, Config config) {
     try {
-      ConfigStore configStore = new DocumentConfigStore(Clock.systemUTC(), datastore);
+      ConfigStore configStore = new DocumentConfigStore(Clock.systemUTC(), datastore, config);
       this.store = configStore;
       return configStore;
     } catch (Exception e) {
