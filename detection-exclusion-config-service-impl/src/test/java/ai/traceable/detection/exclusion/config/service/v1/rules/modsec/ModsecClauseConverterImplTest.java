@@ -260,7 +260,7 @@ public class ModsecClauseConverterImplTest {
   }
 
   @Test
-  void testConvert_SimpleUserAgentMatchCondition() {
+  void testConvert_SimpleUserAgentValueMatchCondition() {
     DetectionExclusionRule detectionExclusionRule =
         DetectionExclusionRule.newBuilder()
             .setRuleInfo(
@@ -287,7 +287,7 @@ public class ModsecClauseConverterImplTest {
 
     assertEquals(1, modsecClauses.size());
     Clause clause = modsecClauses.get(0);
-    assertEquals(MatchKey.MATCH_KEY_HEADER_NAME, clause.getMatchExpression().getMatchKey());
+    assertEquals(MatchKey.MATCH_KEY_USER_AGENT, clause.getMatchExpression().getMatchKey());
     assertEquals("user-agent-val", clause.getMatchExpression().getMatchValue());
     assertEquals(
         MatchOperator.MATCH_OPERATOR_EQUALS, clause.getMatchExpression().getMatchOperator());

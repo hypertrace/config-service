@@ -231,9 +231,9 @@ public class ModsecClauseConverterImpl implements ModsecClauseConverter {
             MatchCategory.MATCH_CATEGORY_REQUEST);
       case KEY_METADATA_USER_AGENT:
         return new ClauseDetails(
-            MatchKey.MATCH_KEY_HEADER_NAME,
-            Optional.of(MatchKey.MATCH_KEY_HEADER_VALUE),
-            Optional.of(KeyValueTag.KEY_VALUE_TAG_HEADER),
+            MatchKey.MATCH_KEY_USER_AGENT,
+            Optional.empty(),
+            Optional.empty(),
             MatchCategory.MATCH_CATEGORY_REQUEST);
       case KEY_METADATA_STATUS_CODE:
         return new ClauseDetails(
