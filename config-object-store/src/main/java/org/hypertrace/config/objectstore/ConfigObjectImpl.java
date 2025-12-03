@@ -12,8 +12,8 @@ class ConfigObjectImpl<T> implements ConfigObject<T> {
   T data;
   Instant creationTimestamp;
   Instant lastUpdatedTimestamp;
-  String createdByEmail;
-  String lastUpdatedByEmail;
+  String visibleCreatedByEmail;
+  String visibleLastUpdatedByEmail;
 
   static <T> Optional<ConfigObject<T>> tryBuild(
       ContextSpecificConfig contextSpecificConfig, Function<Value, Optional<T>> dataBuilder) {
@@ -21,8 +21,8 @@ class ConfigObjectImpl<T> implements ConfigObject<T> {
         contextSpecificConfig.getConfig(),
         contextSpecificConfig.getCreationTimestamp(),
         contextSpecificConfig.getUpdateTimestamp(),
-        contextSpecificConfig.getCreatedByEmail(),
-        contextSpecificConfig.getLastUpdatedByEmail(),
+        contextSpecificConfig.getVisibleCreatedByEmail(),
+        contextSpecificConfig.getVisibleLastUpdatedByEmail(),
         dataBuilder);
   }
 
@@ -32,8 +32,8 @@ class ConfigObjectImpl<T> implements ConfigObject<T> {
         upsertResponse.getConfig(),
         upsertResponse.getCreationTimestamp(),
         upsertResponse.getUpdateTimestamp(),
-        upsertResponse.getCreatedByEmail(),
-        upsertResponse.getLastUpdatedByEmail(),
+        upsertResponse.getVisibleCreatedByEmail(),
+        upsertResponse.getVisibleLastUpdatedByEmail(),
         dataBuilder);
   }
 
@@ -41,8 +41,8 @@ class ConfigObjectImpl<T> implements ConfigObject<T> {
       Value config,
       long creationTimestamp,
       long updateTimestamp,
-      String createdByEmail,
-      String lastUpdatedByEmail,
+      String visibleCreatedByEmail,
+      String visibleLastUpdatedByEmail,
       Function<Value, Optional<T>> dataBuilder) {
     return dataBuilder
         .apply(config)
@@ -52,7 +52,7 @@ class ConfigObjectImpl<T> implements ConfigObject<T> {
                     data,
                     Instant.ofEpochMilli(creationTimestamp),
                     Instant.ofEpochMilli(updateTimestamp),
-                    createdByEmail,
-                    lastUpdatedByEmail));
+                    visibleCreatedByEmail,
+                    visibleLastUpdatedByEmail));
   }
 }

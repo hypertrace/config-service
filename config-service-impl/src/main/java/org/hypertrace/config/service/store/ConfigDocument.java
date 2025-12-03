@@ -42,6 +42,8 @@ public class ConfigDocument implements Document {
   public static final String LAST_UPDATED_USER_ID_FIELD_NAME = "lastUpdateUserId";
   public static final String LAST_UPDATED_USER_EMAIL_FIELD_NAME = "lastUpdatedUserEmail";
   public static final String CREATED_BY_USER_EMAIL_FIELD_NAME = "createdByUserEmail";
+  public static final String VISIBLE_CREATED_BY_EMAIL_FIELD_NAME = "visibleCreatedByEmail";
+  public static final String VISIBLE_LAST_UPDATED_BY_EMAIL_FIELD_NAME = "visibleLastUpdatedByEmail";
   public static final String CONFIG_FIELD_NAME = "config";
   public static final String CREATION_TIMESTAMP_FIELD_NAME = "creationTimestamp";
   public static final String UPDATE_TIMESTAMP_FIELD_NAME = "updateTimestamp";
@@ -70,6 +72,12 @@ public class ConfigDocument implements Document {
   @JsonProperty(value = CREATED_BY_USER_EMAIL_FIELD_NAME)
   String createdByUserEmail;
 
+  @JsonProperty(value = VISIBLE_CREATED_BY_EMAIL_FIELD_NAME)
+  String visibleCreatedByEmail;
+
+  @JsonProperty(value = VISIBLE_LAST_UPDATED_BY_EMAIL_FIELD_NAME)
+  String visibleLastUpdatedByEmail;
+
   @JsonSerialize(using = ValueSerializer.class)
   @JsonDeserialize(using = ValueDeserializer.class)
   @JsonProperty(value = CONFIG_FIELD_NAME)
@@ -91,6 +99,8 @@ public class ConfigDocument implements Document {
       @JsonProperty(LAST_UPDATED_USER_ID_FIELD_NAME) String lastUpdatedUserId,
       @JsonProperty(LAST_UPDATED_USER_EMAIL_FIELD_NAME) String lastUpdatedUserEmail,
       @JsonProperty(CREATED_BY_USER_EMAIL_FIELD_NAME) String createdByUserEmail,
+      @JsonProperty(VISIBLE_CREATED_BY_EMAIL_FIELD_NAME) String visibleCreatedByEmail,
+      @JsonProperty(VISIBLE_LAST_UPDATED_BY_EMAIL_FIELD_NAME) String visibleLastUpdatedByEmail,
       @JsonProperty(CONFIG_FIELD_NAME) Value config,
       @JsonProperty(CREATION_TIMESTAMP_FIELD_NAME) long creationTimestamp,
       @JsonProperty(UPDATE_TIMESTAMP_FIELD_NAME) long updateTimestamp) {
@@ -104,6 +114,10 @@ public class ConfigDocument implements Document {
     this.lastUpdatedUserEmail =
         Optional.ofNullable(lastUpdatedUserEmail).orElse(DEFAULT_USER_EMAIL);
     this.createdByUserEmail = Optional.ofNullable(createdByUserEmail).orElse(DEFAULT_USER_EMAIL);
+    this.visibleCreatedByEmail =
+        Optional.ofNullable(visibleCreatedByEmail).orElse(DEFAULT_USER_EMAIL);
+    this.visibleLastUpdatedByEmail =
+        Optional.ofNullable(visibleLastUpdatedByEmail).orElse(DEFAULT_USER_EMAIL);
     this.config = config;
     this.creationTimestamp = creationTimestamp;
     this.updateTimestamp = updateTimestamp;

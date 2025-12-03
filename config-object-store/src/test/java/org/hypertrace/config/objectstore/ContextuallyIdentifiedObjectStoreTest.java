@@ -84,8 +84,8 @@ class ContextuallyIdentifiedObjectStoreTest {
                 .setConfig(Values.of("test"))
                 .setCreationTimestamp(TEST_CREATE_TIMESTAMP.toEpochMilli())
                 .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
-                .setCreatedByEmail(TEST_CREATED_BY_EMAIL)
-                .setLastUpdatedByEmail(TEST_LAST_UPDATED_BY_EMAIL)
+                .setVisibleCreatedByEmail(TEST_CREATED_BY_EMAIL)
+                .setVisibleLastUpdatedByEmail(TEST_LAST_UPDATED_BY_EMAIL)
                 .build());
     assertEquals(
         Optional.of(
@@ -163,8 +163,8 @@ class ContextuallyIdentifiedObjectStoreTest {
                 .setConfig(Values.of("updated"))
                 .setCreationTimestamp(TEST_CREATE_TIMESTAMP.toEpochMilli())
                 .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
-                .setCreatedByEmail(TEST_CREATED_BY_EMAIL)
-                .setLastUpdatedByEmail(TEST_LAST_UPDATED_BY_EMAIL)
+                .setVisibleCreatedByEmail(TEST_CREATED_BY_EMAIL)
+                .setVisibleLastUpdatedByEmail(TEST_LAST_UPDATED_BY_EMAIL)
                 .build());
     assertEquals(
         new ContextualConfigObjectImpl<>(

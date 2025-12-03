@@ -16,8 +16,8 @@ class ContextualConfigObjectImpl<T> implements ContextualConfigObject<T> {
   T data;
   Instant creationTimestamp;
   Instant lastUpdatedTimestamp;
-  String createdByEmail;
-  String lastUpdatedByEmail;
+  String visibleCreatedByEmail;
+  String visibleLastUpdatedByEmail;
 
   static <T> Optional<ContextualConfigObject<T>> tryBuild(
       ContextSpecificConfig contextSpecificConfig, Function<Value, Optional<T>> dataBuilder) {
@@ -26,8 +26,8 @@ class ContextualConfigObjectImpl<T> implements ContextualConfigObject<T> {
         contextSpecificConfig.getConfig(),
         contextSpecificConfig.getCreationTimestamp(),
         contextSpecificConfig.getUpdateTimestamp(),
-        contextSpecificConfig.getCreatedByEmail(),
-        contextSpecificConfig.getLastUpdatedByEmail(),
+        contextSpecificConfig.getVisibleCreatedByEmail(),
+        contextSpecificConfig.getVisibleLastUpdatedByEmail(),
         dataBuilder);
   }
 
@@ -38,8 +38,8 @@ class ContextualConfigObjectImpl<T> implements ContextualConfigObject<T> {
         upsertedConfig.getConfig(),
         upsertedConfig.getCreationTimestamp(),
         upsertedConfig.getUpdateTimestamp(),
-        upsertedConfig.getCreatedByEmail(),
-        upsertedConfig.getLastUpdatedByEmail(),
+        upsertedConfig.getVisibleCreatedByEmail(),
+        upsertedConfig.getVisibleLastUpdatedByEmail(),
         dataBuilder);
   }
 
@@ -56,8 +56,8 @@ class ContextualConfigObjectImpl<T> implements ContextualConfigObject<T> {
                     data,
                     Instant.ofEpochMilli(upsertResponse.getCreationTimestamp()),
                     Instant.ofEpochMilli(upsertResponse.getUpdateTimestamp()),
-                    upsertResponse.getCreatedByEmail(),
-                    upsertResponse.getLastUpdatedByEmail()));
+                    upsertResponse.getVisibleCreatedByEmail(),
+                    upsertResponse.getVisibleLastUpdatedByEmail()));
   }
 
   private static <T> Optional<ContextualConfigObject<T>> tryBuild(
@@ -65,8 +65,8 @@ class ContextualConfigObjectImpl<T> implements ContextualConfigObject<T> {
       Value config,
       long creationTimestamp,
       long updateTimestamp,
-      String createdByEmail,
-      String lastUpdatedByEmail,
+      String visibleCreatedByEmail,
+      String visibleLastUpdatedByEmail,
       Function<Value, Optional<T>> dataBuilder) {
     return dataBuilder
         .apply(config)
@@ -77,7 +77,7 @@ class ContextualConfigObjectImpl<T> implements ContextualConfigObject<T> {
                     data,
                     Instant.ofEpochMilli(creationTimestamp),
                     Instant.ofEpochMilli(updateTimestamp),
-                    createdByEmail,
-                    lastUpdatedByEmail));
+                    visibleCreatedByEmail,
+                    visibleLastUpdatedByEmail));
   }
 }

@@ -58,10 +58,10 @@ message UpsertConfigResponse {
   optional google.protobuf.Value prev_config = 4;
 
   // email of the user who created this config
-  string created_by_email = 5;
+  string visible_created_by_email = 5;
 
   // email of the user who last modified this config
-  string last_updated_by_email = 6;
+  string visible_last_updated_by_email = 6;
 }
 
 message GetConfigRequest {
@@ -88,10 +88,10 @@ message GetConfigResponse {
   int64 update_timestamp = 3;
 
   // email of the user who created this config
-  string created_by_email = 4;
+  string visible_created_by_email = 4;
 
   // email of the user who last modified this config
-  string last_updated_by_email = 5;
+  string visible_last_updated_by_email = 5;
 }
 
 message GetAllConfigsRequest {
@@ -139,10 +139,10 @@ message ContextSpecificConfig {
   int64 update_timestamp = 4;
 
   // email of the user who created this config
-  string created_by_email = 5;
+  string visible_created_by_email = 5;
 
   // email of the user who last modified this config
-  string last_updated_by_email = 6;
+  string visible_last_updated_by_email = 6;
 }
 
 message DeleteConfigRequest {
@@ -199,8 +199,8 @@ message UpsertAllConfigsResponse {
     int64 creation_timestamp = 3;
     int64 update_timestamp = 4;
     optional google.protobuf.Value prev_config = 5;
-    string created_by_email = 6;
-    string last_updated_by_email = 7;
+    string visible_created_by_email = 6;
+    string visible_last_updated_by_email = 7;
   }
 }
 

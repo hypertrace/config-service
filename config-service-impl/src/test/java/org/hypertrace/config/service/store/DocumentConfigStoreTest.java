@@ -64,7 +64,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -88,11 +87,13 @@ class DocumentConfigStoreTest {
   @Mock(answer = Answers.RETURNS_DEEP_STUBS)
   private Datastore mockDatastore;
 
-  @InjectMocks private DocumentConfigStore configStore;
+  private DocumentConfigStore configStore;
 
   @BeforeEach
   void beforeEach() {
     this.collection = mockDatastore.getCollection(CONFIGURATIONS_COLLECTION);
+    DocumentConfigStoreConfig storeConfig = new DocumentConfigStoreConfig(Collections.emptyList());
+    this.configStore = new DocumentConfigStore(mockClock, mockDatastore, storeConfig);
   }
 
   @Test
@@ -248,8 +249,8 @@ class DocumentConfigStoreTest {
             .setContext("context")
             .setCreationTimestamp(TIMESTAMP1)
             .setUpdateTimestamp(TIMESTAMP2)
-            .setCreatedByEmail(USER_EMAIL)
-            .setLastUpdatedByEmail(USER_EMAIL)
+            .setVisibleCreatedByEmail(USER_EMAIL)
+            .setVisibleLastUpdatedByEmail(USER_EMAIL)
             .build();
     ConfigResourceContext context = getConfigResourceContext("context");
     Map<ConfigResourceContext, ContextSpecificConfig> actualConfigs =
@@ -271,8 +272,8 @@ class DocumentConfigStoreTest {
             .setContext("context")
             .setCreationTimestamp(TIMESTAMP1)
             .setUpdateTimestamp(TIMESTAMP2)
-            .setCreatedByEmail(USER_EMAIL)
-            .setLastUpdatedByEmail(USER_EMAIL)
+            .setVisibleCreatedByEmail(USER_EMAIL)
+            .setVisibleLastUpdatedByEmail(USER_EMAIL)
             .build();
     Optional<ContextSpecificConfig> actualConfig = configStore.getConfig(configResourceContext);
     assertEquals(Optional.of(expectedConfig), actualConfig);
@@ -302,8 +303,8 @@ class DocumentConfigStoreTest {
             .setConfig(config2)
             .setCreationTimestamp(TIMESTAMP3)
             .setUpdateTimestamp(TIMESTAMP3)
-            .setCreatedByEmail(USER_EMAIL)
-            .setLastUpdatedByEmail(USER_EMAIL)
+            .setVisibleCreatedByEmail(USER_EMAIL)
+            .setVisibleLastUpdatedByEmail(USER_EMAIL)
             .build(),
         contextSpecificConfigList.get(0));
     assertEquals(
@@ -312,8 +313,8 @@ class DocumentConfigStoreTest {
             .setConfig(config1)
             .setCreationTimestamp(TIMESTAMP1)
             .setUpdateTimestamp(TIMESTAMP2)
-            .setCreatedByEmail(USER_EMAIL)
-            .setLastUpdatedByEmail(USER_EMAIL)
+            .setVisibleCreatedByEmail(USER_EMAIL)
+            .setVisibleLastUpdatedByEmail(USER_EMAIL)
             .build(),
         contextSpecificConfigList.get(1));
   }
@@ -353,8 +354,8 @@ class DocumentConfigStoreTest {
                 .setUpdateTimestamp(updateTime)
                 .setConfig(config2)
                 .setPrevConfig(config1)
-                .setCreatedByEmail(USER_EMAIL)
-                .setLastUpdatedByEmail(USER_EMAIL)
+                .setVisibleCreatedByEmail(USER_EMAIL)
+                .setVisibleLastUpdatedByEmail(USER_EMAIL)
                 .build(),
             UpsertedConfig.newBuilder()
                 .setContext(resourceContext2.getContext())
@@ -362,8 +363,8 @@ class DocumentConfigStoreTest {
                 .setUpdateTimestamp(updateTime)
                 .setConfig(config1)
                 .setPrevConfig(config2)
-                .setCreatedByEmail(USER_EMAIL)
-                .setLastUpdatedByEmail(USER_EMAIL)
+                .setVisibleCreatedByEmail(USER_EMAIL)
+                .setVisibleLastUpdatedByEmail(USER_EMAIL)
                 .build()),
         upsertedConfigs);
 
@@ -523,8 +524,8 @@ class DocumentConfigStoreTest {
         configStore.writeConfig(configResourceContext, USER_ID, request, creatorEmail);
 
     // Verify the upserted config has creator email populated
-    assertEquals(creatorEmail, upsertedConfig.getCreatedByEmail());
-    assertEquals(creatorEmail, upsertedConfig.getLastUpdatedByEmail());
+    assertEquals(creatorEmail, upsertedConfig.getVisibleCreatedByEmail());
+    assertEquals(creatorEmail, upsertedConfig.getVisibleLastUpdatedByEmail());
 
     ArgumentCaptor<Document> documentCaptor = ArgumentCaptor.forClass(Document.class);
     verify(collection).upsert(any(Key.class), documentCaptor.capture());
@@ -564,8 +565,8 @@ class DocumentConfigStoreTest {
         configStore.writeConfig(configResourceContext, USER_ID, request, modifier);
 
     // Assert: creator email should still be alice, but last modifier should be bob
-    assertEquals(originalCreator, upsertedConfig.getCreatedByEmail());
-    assertEquals(modifier, upsertedConfig.getLastUpdatedByEmail());
+    assertEquals(originalCreator, upsertedConfig.getVisibleCreatedByEmail());
+    assertEquals(modifier, upsertedConfig.getVisibleLastUpdatedByEmail());
 
     ArgumentCaptor<Document> documentCaptor = ArgumentCaptor.forClass(Document.class);
     verify(collection).upsert(any(Key.class), documentCaptor.capture());
@@ -588,6 +589,8 @@ class DocumentConfigStoreTest {
             USER_ID,
             USER_EMAIL,
             null, // null createdByUserEmail simulates old document
+            null, // null visibleCreatedByEmail for old document
+            null, // null visibleLastUpdatedByEmail for old document
             config1,
             TIMESTAMP1,
             TIMESTAMP2);
@@ -620,8 +623,8 @@ class DocumentConfigStoreTest {
     // Assert user tracking fields are populated in the response
     assertEquals(true, actualConfig.isPresent());
     ContextSpecificConfig config = actualConfig.get();
-    assertEquals(createdBy, config.getCreatedByEmail());
-    assertEquals(lastModifiedBy, config.getLastUpdatedByEmail());
+    assertEquals(createdBy, config.getVisibleCreatedByEmail());
+    assertEquals(lastModifiedBy, config.getVisibleLastUpdatedByEmail());
     assertEquals(TIMESTAMP1, config.getCreationTimestamp());
     assertEquals(TIMESTAMP2, config.getUpdateTimestamp());
   }
@@ -653,12 +656,12 @@ class DocumentConfigStoreTest {
     assertEquals(2, configs.size());
 
     ContextSpecificConfig config1Response = configs.get(0);
-    assertEquals(createdBy1, config1Response.getCreatedByEmail());
-    assertEquals(modifiedBy1, config1Response.getLastUpdatedByEmail());
+    assertEquals(createdBy1, config1Response.getVisibleCreatedByEmail());
+    assertEquals(modifiedBy1, config1Response.getVisibleLastUpdatedByEmail());
 
     ContextSpecificConfig config2Response = configs.get(1);
-    assertEquals(createdBy2, config2Response.getCreatedByEmail());
-    assertEquals(createdBy2, config2Response.getLastUpdatedByEmail());
+    assertEquals(createdBy2, config2Response.getVisibleCreatedByEmail());
+    assertEquals(createdBy2, config2Response.getVisibleLastUpdatedByEmail());
   }
 
   @Test
@@ -666,9 +669,10 @@ class DocumentConfigStoreTest {
     // Setup: Create config with user tracking exclusion pattern for agent emails
     Config testConfig =
         ConfigFactory.parseString(
-            "generic.config.service.user.tracking.excluded.email.patterns = [\"^agent\\\\+[0-9a-fA-F-]+@traceable\\\\.ai$\"]");
+            "generic.config.service.customer.visible.excluded.email.patterns = [\"^agent\\\\+[0-9a-fA-F-]+@traceable\\\\.ai$\"]");
     DocumentConfigStore storeWithExclusion =
-        new DocumentConfigStore(mockClock, mockDatastore, testConfig);
+        new DocumentConfigStore(
+            mockClock, mockDatastore, DocumentConfigStoreConfig.from(testConfig));
 
     String agentEmail = "agent+00a74175-7735-4374-b345-0e92e0fa09d9@traceable.ai";
     String originalEmail = "original@test.com";
@@ -697,19 +701,24 @@ class DocumentConfigStoreTest {
     UpsertedConfig result =
         storeWithExclusion.writeConfig(configResourceContext, "agent-user-id", request, agentEmail);
 
-    // Verify: User tracking fields should be preserved from original user
-    assertEquals(originalEmail, result.getLastUpdatedByEmail());
-    assertEquals(originalEmail, result.getCreatedByEmail());
-    assertEquals(originalTimestamp, result.getUpdateTimestamp());
+    // Verify: Visible fields should be preserved from original user
+    assertEquals(originalEmail, result.getVisibleLastUpdatedByEmail());
+    assertEquals(originalEmail, result.getVisibleCreatedByEmail());
+    // Update timestamp should reflect actual update time
+    assertEquals(TIMESTAMP2, result.getUpdateTimestamp());
     assertEquals(TIMESTAMP1, result.getCreationTimestamp());
 
-    // Verify the document was written with preserved user tracking fields
+    // Verify the document was written with real audit data but preserved visible fields
     ArgumentCaptor<Document> documentCaptor = ArgumentCaptor.forClass(Document.class);
     verify(collection).upsert(any(Key.class), documentCaptor.capture());
     ConfigDocument savedDoc = (ConfigDocument) documentCaptor.getValue();
-    assertEquals(originalEmail, savedDoc.getLastUpdatedUserEmail());
-    assertEquals(USER_ID, savedDoc.getLastUpdatedUserId()); // userId from existing document
-    assertEquals(originalTimestamp, savedDoc.getUpdateTimestamp());
+    // Audit fields should have real agent data
+    assertEquals(agentEmail, savedDoc.getLastUpdatedUserEmail());
+    assertEquals("agent-user-id", savedDoc.getLastUpdatedUserId());
+    assertEquals(TIMESTAMP2, savedDoc.getUpdateTimestamp());
+    // Visible fields should preserve original user
+    assertEquals(originalEmail, savedDoc.getVisibleLastUpdatedByEmail());
+    assertEquals(originalEmail, savedDoc.getVisibleCreatedByEmail());
   }
 
   @Test
@@ -717,9 +726,10 @@ class DocumentConfigStoreTest {
     // Setup: Config with user tracking exclusion pattern
     Config testConfig =
         ConfigFactory.parseString(
-            "generic.config.service.user.tracking.excluded.email.patterns = [\"^agent\\\\+[0-9a-fA-F-]+@traceable\\\\.ai$\"]");
+            "generic.config.service.customer.visible.excluded.email.patterns = [\"^agent\\\\+[0-9a-fA-F-]+@traceable\\\\.ai$\"]");
     DocumentConfigStore storeWithExclusion =
-        new DocumentConfigStore(mockClock, mockDatastore, testConfig);
+        new DocumentConfigStore(
+            mockClock, mockDatastore, DocumentConfigStoreConfig.from(testConfig));
 
     String normalEmail = "normal@test.com";
     String normalUserId = "normal-user";
@@ -748,16 +758,18 @@ class DocumentConfigStoreTest {
         storeWithExclusion.writeConfig(configResourceContext, normalUserId, request, normalEmail);
 
     // Verify: User tracking fields should be updated to normal user
-    assertEquals(normalEmail, result.getLastUpdatedByEmail());
+    assertEquals(normalEmail, result.getVisibleLastUpdatedByEmail());
     assertEquals(TIMESTAMP2, result.getUpdateTimestamp());
 
     // Verify the document was written with new user tracking fields
     ArgumentCaptor<Document> documentCaptor = ArgumentCaptor.forClass(Document.class);
     verify(collection).upsert(any(Key.class), documentCaptor.capture());
     ConfigDocument savedDoc = (ConfigDocument) documentCaptor.getValue();
+    // Both audit and visible fields should be updated with normal email
     assertEquals(normalEmail, savedDoc.getLastUpdatedUserEmail());
     assertEquals(normalUserId, savedDoc.getLastUpdatedUserId());
     assertEquals(TIMESTAMP2, savedDoc.getUpdateTimestamp());
+    assertEquals(normalEmail, savedDoc.getVisibleLastUpdatedByEmail());
   }
 
   @Test
@@ -766,9 +778,10 @@ class DocumentConfigStoreTest {
     // Setup: Config with user tracking exclusion pattern
     Config testConfig =
         ConfigFactory.parseString(
-            "generic.config.service.user.tracking.excluded.email.patterns = [\"^agent\\\\+[0-9a-fA-F-]+@traceable\\\\.ai$\"]");
+            "generic.config.service.customer.visible.excluded.email.patterns = [\"^agent\\\\+[0-9a-fA-F-]+@traceable\\\\.ai$\"]");
     DocumentConfigStore storeWithExclusion =
-        new DocumentConfigStore(mockClock, mockDatastore, testConfig);
+        new DocumentConfigStore(
+            mockClock, mockDatastore, DocumentConfigStoreConfig.from(testConfig));
 
     String agentEmail = "agent+12345678-1234-1234-1234-123456789012@traceable.ai";
     String agentUserId = "agent-user";
@@ -785,9 +798,9 @@ class DocumentConfigStoreTest {
     UpsertedConfig result =
         storeWithExclusion.writeConfig(configResourceContext, agentUserId, request, agentEmail);
 
-    // Verify: On creation, even agent emails should set user tracking fields
-    assertEquals(agentEmail, result.getLastUpdatedByEmail());
-    assertEquals(agentEmail, result.getCreatedByEmail());
+    // Verify: On creation with excluded email, visible fields should be masked
+    assertEquals("Unknown", result.getVisibleLastUpdatedByEmail());
+    assertEquals("Unknown", result.getVisibleCreatedByEmail());
     assertEquals(TIMESTAMP1, result.getUpdateTimestamp());
     assertEquals(TIMESTAMP1, result.getCreationTimestamp());
   }
@@ -797,32 +810,35 @@ class DocumentConfigStoreTest {
     // Setup: Config with user tracking exclusion pattern
     Config testConfig =
         ConfigFactory.parseString(
-            "generic.config.service.user.tracking.excluded.email.patterns = [\"^agent\\\\+[0-9a-fA-F-]+@traceable\\\\.ai$\"]");
+            "generic.config.service.customer.visible.excluded.email.patterns = [\"^agent\\\\+[0-9a-fA-F-]+@traceable\\\\.ai$\"]");
     DocumentConfigStore storeWithExclusion =
-        new DocumentConfigStore(mockClock, mockDatastore, testConfig);
+        new DocumentConfigStore(
+            mockClock, mockDatastore, DocumentConfigStoreConfig.from(testConfig));
 
     String agentEmail = "agent+abcd1234-5678-90ab-cdef-123456789012@traceable.ai";
 
-    // Existing config with agent email
+    // Existing config created by agent - visible fields should be masked
     CloseableIteratorImpl iterator =
         new CloseableIteratorImpl(
             List.of(
-                getConfigDocumentWithCreator(
+                getConfigDocumentWithVisibleFields(
                     CONTEXT1,
                     CONFIG_VERSION,
                     config1,
                     TIMESTAMP1,
                     TIMESTAMP2,
                     agentEmail,
-                    agentEmail)));
+                    agentEmail,
+                    "Unknown",
+                    "Unknown")));
     when(collection.query(any(Query.class), any())).thenReturn(iterator);
 
     Optional<ContextSpecificConfig> result = storeWithExclusion.getConfig(configResourceContext);
 
     // Verify: Agent email should be masked as "Unknown" in response
     assertEquals(true, result.isPresent());
-    assertEquals("Unknown", result.get().getLastUpdatedByEmail());
-    assertEquals("Unknown", result.get().getCreatedByEmail());
+    assertEquals("Unknown", result.get().getVisibleLastUpdatedByEmail());
+    assertEquals("Unknown", result.get().getVisibleCreatedByEmail());
   }
 
   @Test
@@ -830,9 +846,10 @@ class DocumentConfigStoreTest {
     // Setup: Config with user tracking exclusion pattern
     Config testConfig =
         ConfigFactory.parseString(
-            "generic.config.service.user.tracking.excluded.email.patterns = [\"^agent\\\\+[0-9a-fA-F-]+@traceable\\\\.ai$\"]");
+            "generic.config.service.customer.visible.excluded.email.patterns = [\"^agent\\\\+[0-9a-fA-F-]+@traceable\\\\.ai$\"]");
     DocumentConfigStore storeWithExclusion =
-        new DocumentConfigStore(mockClock, mockDatastore, testConfig);
+        new DocumentConfigStore(
+            mockClock, mockDatastore, DocumentConfigStoreConfig.from(testConfig));
 
     String normalEmail = "john.doe@test.com";
 
@@ -854,8 +871,8 @@ class DocumentConfigStoreTest {
 
     // Verify: Normal email should NOT be masked
     assertEquals(true, result.isPresent());
-    assertEquals(normalEmail, result.get().getLastUpdatedByEmail());
-    assertEquals(normalEmail, result.get().getCreatedByEmail());
+    assertEquals(normalEmail, result.get().getVisibleLastUpdatedByEmail());
+    assertEquals(normalEmail, result.get().getVisibleCreatedByEmail());
   }
 
   @Test
@@ -863,9 +880,10 @@ class DocumentConfigStoreTest {
     // Setup: Config with empty exclusion patterns
     Config testConfig =
         ConfigFactory.parseString(
-            "generic.config.service.user.tracking.excluded.email.patterns = []");
+            "generic.config.service.customer.visible.excluded.email.patterns = []");
     DocumentConfigStore storeWithExclusion =
-        new DocumentConfigStore(mockClock, mockDatastore, testConfig);
+        new DocumentConfigStore(
+            mockClock, mockDatastore, DocumentConfigStoreConfig.from(testConfig));
 
     String agentEmail = "agent+12345678-1234-1234-1234-123456789012@traceable.ai";
     String agentUserId = "agent-user";
@@ -893,7 +911,7 @@ class DocumentConfigStoreTest {
         storeWithExclusion.writeConfig(configResourceContext, agentUserId, request, agentEmail);
 
     // Verify: With no exclusion patterns, agent email should update user tracking fields normally
-    assertEquals(agentEmail, result.getLastUpdatedByEmail());
+    assertEquals(agentEmail, result.getVisibleLastUpdatedByEmail());
     assertEquals(TIMESTAMP2, result.getUpdateTimestamp());
   }
 
@@ -907,7 +925,9 @@ class DocumentConfigStoreTest {
         version,
         USER_ID,
         USER_EMAIL,
-        USER_EMAIL, // createdByUserEmail defaults to same as lastUpdatedUserEmail
+        USER_EMAIL,
+        USER_EMAIL,
+        USER_EMAIL,
         config,
         creationTimestamp,
         updateTimestamp);
@@ -930,6 +950,34 @@ class DocumentConfigStoreTest {
         USER_ID,
         lastUpdatedUserEmail,
         createdByUserEmail,
+        createdByUserEmail,
+        lastUpdatedUserEmail,
+        config,
+        creationTimestamp,
+        updateTimestamp);
+  }
+
+  private Document getConfigDocumentWithVisibleFields(
+      String context,
+      long version,
+      Value config,
+      long creationTimestamp,
+      long updateTimestamp,
+      String createdByUserEmail,
+      String lastUpdatedUserEmail,
+      String visibleCreatedByEmail,
+      String visibleLastUpdatedByEmail) {
+    return new ConfigDocument(
+        RESOURCE_NAME,
+        RESOURCE_NAMESPACE,
+        TENANT_ID,
+        context,
+        version,
+        USER_ID,
+        lastUpdatedUserEmail,
+        createdByUserEmail,
+        visibleCreatedByEmail,
+        visibleLastUpdatedByEmail,
         config,
         creationTimestamp,
         updateTimestamp);

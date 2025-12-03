@@ -141,16 +141,16 @@ class IdentifiedObjectStoreWithFilterTest {
                         .setContext(OBJECT_2.getId())
                         .setCreationTimestamp(TEST_CREATE_TIMESTAMP_2.toEpochMilli())
                         .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
-                        .setCreatedByEmail(TEST_CREATED_BY_EMAIL)
-                        .setLastUpdatedByEmail(TEST_LAST_UPDATED_BY_EMAIL))
+                        .setVisibleCreatedByEmail(TEST_CREATED_BY_EMAIL)
+                        .setVisibleLastUpdatedByEmail(TEST_LAST_UPDATED_BY_EMAIL))
                 .addContextSpecificConfigs(
                     ContextSpecificConfig.newBuilder()
                         .setConfig(OBJECT_1_AS_VALUE)
                         .setContext(OBJECT_1.getId())
                         .setCreationTimestamp(TEST_CREATE_TIMESTAMP_1.toEpochMilli())
                         .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
-                        .setCreatedByEmail(TEST_CREATED_BY_EMAIL)
-                        .setLastUpdatedByEmail(TEST_LAST_UPDATED_BY_EMAIL))
+                        .setVisibleCreatedByEmail(TEST_CREATED_BY_EMAIL)
+                        .setVisibleLastUpdatedByEmail(TEST_LAST_UPDATED_BY_EMAIL))
                 .build());
 
     assertEquals(
@@ -235,8 +235,8 @@ class IdentifiedObjectStoreWithFilterTest {
                 .setConfig(OBJECT_1_AS_VALUE)
                 .setCreationTimestamp(TEST_CREATE_TIMESTAMP_1.toEpochMilli())
                 .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
-                .setCreatedByEmail(TEST_CREATED_BY_EMAIL)
-                .setLastUpdatedByEmail(TEST_LAST_UPDATED_BY_EMAIL)
+                .setVisibleCreatedByEmail(TEST_CREATED_BY_EMAIL)
+                .setVisibleLastUpdatedByEmail(TEST_LAST_UPDATED_BY_EMAIL)
                 .build());
 
     assertEquals(

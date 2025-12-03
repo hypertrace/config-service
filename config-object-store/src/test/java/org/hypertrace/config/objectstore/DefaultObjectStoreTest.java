@@ -62,8 +62,8 @@ class DefaultObjectStoreTest {
                 .setConfig(Values.of("test"))
                 .setCreationTimestamp(TEST_CREATE_TIMESTAMP.toEpochMilli())
                 .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
-                .setCreatedByEmail(TEST_CREATED_BY_EMAIL)
-                .setLastUpdatedByEmail(TEST_LAST_UPDATED_BY_EMAIL)
+                .setVisibleCreatedByEmail(TEST_CREATED_BY_EMAIL)
+                .setVisibleLastUpdatedByEmail(TEST_LAST_UPDATED_BY_EMAIL)
                 .build());
 
     assertEquals(
@@ -132,8 +132,8 @@ class DefaultObjectStoreTest {
                         .setConfig(Values.of("test"))
                         .setCreationTimestamp(TEST_CREATE_TIMESTAMP.toEpochMilli())
                         .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
-                        .setCreatedByEmail(TEST_CREATED_BY_EMAIL)
-                        .setLastUpdatedByEmail(TEST_LAST_UPDATED_BY_EMAIL))
+                        .setVisibleCreatedByEmail(TEST_CREATED_BY_EMAIL)
+                        .setVisibleLastUpdatedByEmail(TEST_LAST_UPDATED_BY_EMAIL))
                 .build());
     assertEquals(
         Optional.of(
@@ -173,8 +173,8 @@ class DefaultObjectStoreTest {
             UpsertConfigResponse.newBuilder()
                 .setCreationTimestamp(TEST_CREATE_TIMESTAMP.toEpochMilli())
                 .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
-                .setCreatedByEmail(TEST_CREATED_BY_EMAIL)
-                .setLastUpdatedByEmail(TEST_LAST_UPDATED_BY_EMAIL)
+                .setVisibleCreatedByEmail(TEST_CREATED_BY_EMAIL)
+                .setVisibleLastUpdatedByEmail(TEST_LAST_UPDATED_BY_EMAIL)
                 .setConfig(Values.of("updated"))
                 .build());
     ConfigObject configObject =

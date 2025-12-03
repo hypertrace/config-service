@@ -66,8 +66,8 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
       builder.setConfig(request.getConfig());
       builder.setCreationTimestamp(upsertedConfig.getCreationTimestamp());
       builder.setUpdateTimestamp(upsertedConfig.getUpdateTimestamp());
-      builder.setCreatedByEmail(upsertedConfig.getCreatedByEmail());
-      builder.setLastUpdatedByEmail(upsertedConfig.getLastUpdatedByEmail());
+      builder.setVisibleCreatedByEmail(upsertedConfig.getVisibleCreatedByEmail());
+      builder.setVisibleLastUpdatedByEmail(upsertedConfig.getVisibleLastUpdatedByEmail());
       if (upsertedConfig.hasPrevConfig()) {
         builder.setPrevConfig(upsertedConfig.getPrevConfig());
       }
@@ -107,8 +107,8 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
                       .setConfig(nonNullConfig.getConfig())
                       .setCreationTimestamp(nonNullConfig.getCreationTimestamp())
                       .setUpdateTimestamp(nonNullConfig.getUpdateTimestamp())
-                      .setCreatedByEmail(nonNullConfig.getCreatedByEmail())
-                      .setLastUpdatedByEmail(nonNullConfig.getLastUpdatedByEmail())
+                      .setVisibleCreatedByEmail(nonNullConfig.getVisibleCreatedByEmail())
+                      .setVisibleLastUpdatedByEmail(nonNullConfig.getVisibleLastUpdatedByEmail())
                       .build())
           .ifPresentOrElse(
               response -> {

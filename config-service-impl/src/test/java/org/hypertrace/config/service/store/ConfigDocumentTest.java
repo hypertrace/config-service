@@ -30,6 +30,8 @@ public class ConfigDocumentTest {
             "user1",
             "user1@email.com",
             "user1@email.com",
+            "user1@email.com",
+            "user1@email.com",
             getConfig1(),
             timestamp,
             timestamp);
@@ -48,6 +50,8 @@ public class ConfigDocumentTest {
             "context",
             15,
             "user1",
+            "user1@email.com",
+            "user1@email.com",
             "user1@email.com",
             "user1@email.com",
             nullValue,
@@ -87,6 +91,8 @@ public class ConfigDocumentTest {
             null,
             null,
             null,
+            null,
+            null,
             Value.newBuilder().build(),
             1622547800000L,
             1625149800000L);
@@ -94,6 +100,8 @@ public class ConfigDocumentTest {
     assertEquals("Unknown", configDocument.getLastUpdatedUserId());
     assertEquals("Unknown", configDocument.getLastUpdatedUserEmail());
     assertEquals("Unknown", configDocument.getCreatedByUserEmail());
+    assertEquals("Unknown", configDocument.getVisibleCreatedByEmail());
+    assertEquals("Unknown", configDocument.getVisibleLastUpdatedByEmail());
 
     String jsonString =
         "{"

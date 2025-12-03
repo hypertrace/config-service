@@ -10,7 +10,6 @@ import static org.hypertrace.core.documentstore.Filter.Op.OR;
 
 import com.google.common.collect.Maps;
 import com.google.protobuf.Value;
-import com.typesafe.config.Config;
 import io.grpc.Status;
 import java.io.IOException;
 import java.time.Clock;
@@ -23,7 +22,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.SneakyThrows;
@@ -57,50 +55,22 @@ import org.hypertrace.core.documentstore.query.Query;
 @Slf4j
 public class DocumentConfigStore implements ConfigStore {
   static final String CONFIGURATIONS_COLLECTION = "configurations";
-  private static final String GENERIC_CONFIG_SERVICE_CONFIG = "generic.config.service";
-  private static final String USER_TRACKING_EXCLUDED_EMAIL_PATTERNS =
-      "user.tracking.excluded.email.patterns";
 
   private final Clock clock;
   private final Datastore datastore;
   private final Collection collection;
   private final FilterBuilder filterBuilder;
   private final FilterExpressionBuilder filterExpressionBuilder;
-  private final List<Pattern> userTrackingExcludedEmailPatterns;
+  private final DocumentConfigStoreConfig storeConfig;
 
-  // keeping this constructor for backward compatibility
-  public DocumentConfigStore(Clock clock, Datastore datastore) {
-    this(clock, datastore, null);
-  }
-
-  public DocumentConfigStore(Clock clock, Datastore datastore, Config config) {
+  public DocumentConfigStore(
+      Clock clock, Datastore datastore, DocumentConfigStoreConfig storeConfig) {
     this.clock = clock;
     this.datastore = datastore;
     this.collection = this.datastore.getCollection(CONFIGURATIONS_COLLECTION);
     this.filterBuilder = new FilterBuilder();
     this.filterExpressionBuilder = new FilterExpressionBuilder();
-    this.userTrackingExcludedEmailPatterns = extractUserTrackingExcludedEmailPatterns(config);
-  }
-
-  private List<Pattern> extractUserTrackingExcludedEmailPatterns(Config config) {
-    if (config == null || !config.hasPath(GENERIC_CONFIG_SERVICE_CONFIG)) {
-      return Collections.emptyList();
-    }
-
-    try {
-      Config genericConfig = config.getConfig(GENERIC_CONFIG_SERVICE_CONFIG);
-      if (!genericConfig.hasPath(USER_TRACKING_EXCLUDED_EMAIL_PATTERNS)) {
-        return Collections.emptyList();
-      }
-
-      return genericConfig.getStringList(USER_TRACKING_EXCLUDED_EMAIL_PATTERNS).stream()
-          .filter(pattern -> pattern != null && !pattern.trim().isEmpty())
-          .map(Pattern::compile)
-          .collect(Collectors.toUnmodifiableList());
-    } catch (Exception e) {
-      log.warn("Failed to extract user tracking excluded email patterns from config", e);
-      return Collections.emptyList();
-    }
+    this.storeConfig = storeConfig;
   }
 
   @Override
@@ -198,12 +168,21 @@ public class DocumentConfigStore implements ConfigStore {
     String createdByUserEmail =
         previousConfigDoc.map(ConfigDocument::getCreatedByUserEmail).orElse(lastUpdatedUserEmail);
 
-    // If email is excluded and config exists, preserve previous user tracking fields
-    if (previousConfigDoc.isPresent() && isUserTrackingExcludedEmail(lastUpdatedUserEmail)) {
-      ConfigDocument prevDoc = previousConfigDoc.get();
-      lastUpdatedUserId = prevDoc.getLastUpdatedUserId();
-      lastUpdatedUserEmail = prevDoc.getLastUpdatedUserEmail();
-      updateTimestamp = prevDoc.getUpdateTimestamp();
+    boolean isExcludedEmail =
+        storeConfig.getCustomerVisibleExcludedEmailPatterns().stream()
+            .anyMatch(pattern -> pattern.matcher(lastUpdatedUserEmail).matches());
+
+    String visibleCreatedByEmail =
+        previousConfigDoc
+            .map(ConfigDocument::getVisibleCreatedByEmail)
+            .orElse(isExcludedEmail ? ConfigDocument.DEFAULT_USER_EMAIL : lastUpdatedUserEmail);
+
+    String visibleLastUpdatedByEmail;
+    if (previousConfigDoc.isPresent() && isExcludedEmail) {
+      visibleLastUpdatedByEmail = previousConfigDoc.get().getVisibleLastUpdatedByEmail();
+    } else {
+      visibleLastUpdatedByEmail =
+          isExcludedEmail ? ConfigDocument.DEFAULT_USER_EMAIL : lastUpdatedUserEmail;
     }
 
     long newVersion =
@@ -221,6 +200,8 @@ public class DocumentConfigStore implements ConfigStore {
         lastUpdatedUserId,
         lastUpdatedUserEmail,
         createdByUserEmail,
+        visibleCreatedByEmail,
+        visibleLastUpdatedByEmail,
         latestConfig,
         creationTimestamp,
         updateTimestamp);
@@ -521,8 +502,8 @@ public class DocumentConfigStore implements ConfigStore {
             .setContext(configDocument.getContext())
             .setCreationTimestamp(configDocument.getCreationTimestamp())
             .setUpdateTimestamp(configDocument.getUpdateTimestamp())
-            .setCreatedByEmail(maskEmailIfExcluded(configDocument.getCreatedByUserEmail()))
-            .setLastUpdatedByEmail(maskEmailIfExcluded(configDocument.getLastUpdatedUserEmail()))
+            .setVisibleCreatedByEmail(configDocument.getVisibleCreatedByEmail())
+            .setVisibleLastUpdatedByEmail(configDocument.getVisibleLastUpdatedByEmail())
             .build());
   }
 
@@ -539,8 +520,8 @@ public class DocumentConfigStore implements ConfigStore {
         .setContext(configDocument.getContext())
         .setCreationTimestamp(configDocument.getCreationTimestamp())
         .setUpdateTimestamp(configDocument.getUpdateTimestamp())
-        .setCreatedByEmail(configDocument.getCreatedByUserEmail())
-        .setLastUpdatedByEmail(configDocument.getLastUpdatedUserEmail())
+        .setVisibleCreatedByEmail(configDocument.getVisibleCreatedByEmail())
+        .setVisibleLastUpdatedByEmail(configDocument.getVisibleLastUpdatedByEmail())
         .build();
   }
 
@@ -569,16 +550,5 @@ public class DocumentConfigStore implements ConfigStore {
                 IdentifierExpression.of(TENANT_ID_FIELD_NAME),
                 RelationalOperator.EQ,
                 ConstantExpression.of(configResource.getTenantId()))));
-  }
-
-  private boolean isUserTrackingExcludedEmail(String email) {
-    return email != null
-        && !email.isEmpty()
-        && userTrackingExcludedEmailPatterns.stream()
-            .anyMatch(pattern -> pattern.matcher(email).matches());
-  }
-
-  private String maskEmailIfExcluded(String email) {
-    return isUserTrackingExcludedEmail(email) ? ConfigDocument.DEFAULT_USER_EMAIL : email;
   }
 }
