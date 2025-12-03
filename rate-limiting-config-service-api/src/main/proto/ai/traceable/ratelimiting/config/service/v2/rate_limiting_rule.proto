@@ -24,6 +24,8 @@ message RateLimitingMigrationConfig {
   bool change_log_1_migration_completed = 1;
   // migration with respect to rule evaluation points
   bool rule_evaluation_points_migration_completed = 4;
+  // migration to exclude PLATFORM rule evaluation point for rules having ALLOW action
+  bool allow_rules_platform_exclusion_migration_completed = 5;
 }
 
 message ModsecRuleIdInfo {

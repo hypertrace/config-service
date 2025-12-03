@@ -1,9 +1,11 @@
 package ai.traceable.ratelimiting.service.v2.rules.migration;
 
+import ai.traceable.ratelimiting.config.service.v2.Action;
 import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleRequest;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingMigrationConfig;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
+import ai.traceable.ratelimiting.config.service.v2.RuleEvaluationPoint;
 import ai.traceable.ratelimiting.config.service.v2.RuleStatus;
 import ai.traceable.ratelimiting.config.service.v2.UpdateRateLimitingRuleRequest;
 import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceConfig;
@@ -26,6 +28,9 @@ public class RateLimitingMigrationManagerImpl implements RateLimitingMigrationMa
   private final Set<ContextualKey<Void>> changeLog1MigrationCompletedTenantsSet = new HashSet<>();
   private final Set<ContextualKey<Void>> ruleEvaluationPointsMigrationCompletedTenantsSet =
       new HashSet<>();
+  private final Set<ContextualKey<Void>> allowRulesPlatformExclusionMigrationCompletedTenantsSet =
+      new HashSet<>();
+
   private final RateLimitingRuleEvaluationPointsMigrator ruleEvaluationPointsMigrator;
 
   @Override
@@ -83,6 +88,27 @@ public class RateLimitingMigrationManagerImpl implements RateLimitingMigrationMa
     }
   }
 
+  @Override
+  public void migrateAllowRulesPlatformExclusion(RequestContext requestContext) {
+    if (config.isAllowRulesPlatformExclusionMigrationDisabled()) {
+      return;
+    }
+    ContextualKey<Void> contextualKey = requestContext.buildInternalContextualKey();
+    if (allowRulesPlatformExclusionMigrationCompletedTenantsSet.contains(contextualKey)) {
+      return;
+    }
+    RateLimitingMigrationConfig rateLimitingMigrationConfig =
+        migrationStore
+            .getData(requestContext)
+            .orElse(RateLimitingMigrationConfig.getDefaultInstance());
+    if (rateLimitingMigrationConfig.getAllowRulesPlatformExclusionMigrationCompleted()) {
+      allowRulesPlatformExclusionMigrationCompletedTenantsSet.add(contextualKey);
+    } else {
+      updateRateLimitingRulesForPlatformExclusionInAllowRules(
+          requestContext, rateLimitingMigrationConfig);
+    }
+  }
+
   private void updateRateLimitingRulesFromChangeLog1(
       RequestContext requestContext, RateLimitingMigrationConfig migrationConfig) {
     List<RateLimitingRule> updatedRateLimitingRules =
@@ -116,15 +142,60 @@ public class RateLimitingMigrationManagerImpl implements RateLimitingMigrationMa
                                 .build())
                         .build())
             .collect(Collectors.toUnmodifiableList());
+
     if (!updatedRateLimitingRules.isEmpty()) {
       rulesStore.upsertObjects(requestContext, updatedRateLimitingRules);
     }
+
     migrationStore.upsertObject(
         requestContext,
         rateLimitingMigrationConfig.toBuilder()
             .setRuleEvaluationPointsMigrationCompleted(true)
             .build());
     ruleEvaluationPointsMigrationCompletedTenantsSet.add(
+        requestContext.buildInternalContextualKey());
+  }
+
+  private void updateRateLimitingRulesForPlatformExclusionInAllowRules(
+      RequestContext requestContext, RateLimitingMigrationConfig rateLimitingMigrationConfig) {
+    List<RateLimitingRule> updatedRateLimitingRules =
+        rulesStore.getAllConfigData(requestContext).stream()
+            .filter(
+                rateLimitingRule ->
+                    checkForPlatformRuleEvaluationPointExclusion(rateLimitingRule.getData()))
+            .map(
+                rateLimitingRule -> {
+                  List<RuleEvaluationPoint> filteredRuleEvaluationPoints =
+                      rateLimitingRule.getData().getRuleEvaluationPointsList().stream()
+                          .filter(
+                              ruleEvaluationPoint ->
+                                  ruleEvaluationPoint
+                                      != RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+                          .collect(Collectors.toList());
+                  if (filteredRuleEvaluationPoints.isEmpty()) {
+                    filteredRuleEvaluationPoints.add(
+                        RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT);
+                  }
+                  return rateLimitingRule.toBuilder()
+                      .setData(
+                          rateLimitingRule.getData().toBuilder()
+                              .clearRuleEvaluationPoints()
+                              .addAllRuleEvaluationPoints(filteredRuleEvaluationPoints)
+                              .build())
+                      .build();
+                })
+            .collect(Collectors.toList());
+
+    if (!updatedRateLimitingRules.isEmpty()) {
+      rulesStore.upsertObjects(requestContext, updatedRateLimitingRules);
+    }
+
+    migrationStore.upsertObject(
+        requestContext,
+        rateLimitingMigrationConfig.toBuilder()
+            .setAllowRulesPlatformExclusionMigrationCompleted(true)
+            .build());
+    allowRulesPlatformExclusionMigrationCompletedTenantsSet.add(
         requestContext.buildInternalContextualKey());
   }
 
@@ -136,5 +207,20 @@ public class RateLimitingMigrationManagerImpl implements RateLimitingMigrationMa
         rule.getData().toBuilder().setRuleStatus(ruleStatusBuilder);
 
     return rule.toBuilder().setData(ruleDataBuilder).build();
+  }
+
+  private static boolean checkForPlatformRuleEvaluationPointExclusion(
+      RateLimitingRuleData rateLimitingRuleData) {
+    return rateLimitingRuleData
+            .getRuleEvaluationPointsList()
+            .contains(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+        && hasAllowAction(rateLimitingRuleData);
+  }
+
+  private static boolean hasAllowAction(RateLimitingRuleData rateLimitingRuleData) {
+    return rateLimitingRuleData.getTransactionActionConfig().getAction().hasAllow()
+        || rateLimitingRuleData.getThresholdActionConfigsList().stream()
+            .flatMap(thresholdActionConfig -> thresholdActionConfig.getActionsList().stream())
+            .anyMatch(Action::hasAllow);
   }
 }

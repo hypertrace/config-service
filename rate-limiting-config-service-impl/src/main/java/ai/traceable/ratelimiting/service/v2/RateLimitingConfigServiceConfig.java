@@ -35,9 +35,13 @@ public class RateLimitingConfigServiceConfig {
       "changeLog1." + MIGRATION_DISABLED_KEY;
   private static final String RULE_EVALUATION_POINTS_MIGRATION_DISABLED_KEY =
       "ruleEvaluationPoints." + MIGRATION_DISABLED_KEY;
+  private static final String ALLOW_RULES_PLATFORM_EXCLUSION_MIGRATION_DISABLED_KEY =
+      "allowRulesPlatformExclusion." + MIGRATION_DISABLED_KEY;
+
   @Getter private final List<RateLimitingRule> defaultRateLimitingRules;
   @Getter private final boolean changeLog1MigrationDisabled;
   @Getter private final boolean ruleEvaluationPointsMigrationDisabled;
+  @Getter private final boolean allowRulesPlatformExclusionMigrationDisabled;
 
   public RateLimitingConfigServiceConfig(Config config) {
     this.config = config.getConfig(RATE_LIMITING_CONFIG_SERVICE);
@@ -63,6 +67,9 @@ public class RateLimitingConfigServiceConfig {
     ruleEvaluationPointsMigrationDisabled =
         this.config.hasPath(RULE_EVALUATION_POINTS_MIGRATION_DISABLED_KEY)
             && this.config.getBoolean(RULE_EVALUATION_POINTS_MIGRATION_DISABLED_KEY);
+    allowRulesPlatformExclusionMigrationDisabled =
+        this.config.hasPath(ALLOW_RULES_PLATFORM_EXCLUSION_MIGRATION_DISABLED_KEY)
+            && this.config.getBoolean(ALLOW_RULES_PLATFORM_EXCLUSION_MIGRATION_DISABLED_KEY);
   }
 
   private List<RateLimitingRule> convert(List<? extends Config> configList) {

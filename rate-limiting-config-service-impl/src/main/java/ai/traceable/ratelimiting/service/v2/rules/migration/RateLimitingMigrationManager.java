@@ -14,4 +14,6 @@ public interface RateLimitingMigrationManager {
       UpdateRateLimitingRuleRequest updateRateLimitingRuleRequest);
 
   void migrateForRuleEvaluationPointsIfApplicable(RequestContext requestContext);
+
+  void migrateAllowRulesPlatformExclusion(RequestContext requestContext);
 }

@@ -312,6 +312,7 @@ data:
     rate.limiting.config.service {
       changeLog1.migrationDisabled = {{ .Values.traceableConfigServiceConfig.rateLimitingConfigService.changeLog1.migrationDisabled }}
       ruleEvaluationPoints.migrationDisabled = {{ .Values.traceableConfigServiceConfig.rateLimitingConfigService.ruleEvaluationPoints.migrationDisabled }}
+      allowRulesPlatformExclusion.migrationDisabled = {{ .Values.traceableConfigServiceConfig.rateLimitingConfigService.allowRulesPlatformExclusion.migrationDisabled }}
     }
     iprange.config.service {
       changeLog1.migrationDisabled = {{ .Values.traceableConfigServiceConfig.iprangeConfigService.changeLog1.migrationDisabled }}

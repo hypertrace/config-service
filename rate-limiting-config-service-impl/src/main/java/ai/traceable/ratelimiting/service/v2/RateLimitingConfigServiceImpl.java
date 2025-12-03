@@ -61,6 +61,7 @@ public class RateLimitingConfigServiceImpl extends RateLimitingConfigServiceImpl
 
       migrationManager.migrateFromChangeLog1IfApplicable(context);
       migrationManager.migrateForRuleEvaluationPointsIfApplicable(context);
+      migrationManager.migrateAllowRulesPlatformExclusion(context);
 
       if (request.hasFilter()) { // backward compatibility
         request.toBuilder()
