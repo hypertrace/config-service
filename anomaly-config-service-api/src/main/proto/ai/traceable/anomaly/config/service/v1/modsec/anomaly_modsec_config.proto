@@ -51,14 +51,6 @@ message ImpactScoringRules {
   string impact_scoring_blob = 1;
 }
 
-enum RuleEvaluationPoint {
-  option deprecated = true;
-
-  RULE_EVALUATION_POINT_UNSPECIFIED = 0;
-  RULE_EVALUATION_POINT_EDGE = 1;
-  RULE_EVALUATION_POINT_PLATFORM = 2;
-}
-
 enum ModsecCrsRulesTarget {
   MODSEC_CRS_RULES_TARGET_UNSPECIFIED = 0;
   MODSEC_CRS_RULES_TARGET_PLATFORM_DETECTION = 1;

@@ -16,6 +16,7 @@ import ai.traceable.anomaly.config.service.v1.AnomalyRuleAction;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
+import ai.traceable.anomaly.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.anomaly.config.service.v1.RuleVersion;
 import ai.traceable.anomaly.config.service.v1.RuleVersionData;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
@@ -28,7 +29,6 @@ import ai.traceable.anomaly.config.service.v1.global.GlobalModsecConfig;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.modsec.GetWebAppEvaluationConfigContextRequest;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
-import ai.traceable.anomaly.config.service.v1.modsec.RuleEvaluationPoint;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
 import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
@@ -208,14 +208,22 @@ public class WebAppEvaluationConfigContextManagerImpl
 
     for (AnomalyConfigScope configScope : configScopes) {
       log.debug("Processing config scope: {}", configScope.getScopeCase());
+      List<AnomalyConfigScope> scopesWithDecreasingPriority =
+          AnomalyConfigScopeUtils.getConfigScopesWithDecreasingPriority(configScope);
+
+      ScopedAnomalyConfigStatus scopedAnomalyConfigStatus =
+          scopesWithDecreasingPriority.stream()
+              .filter(scopedAnomalyConfigStatusMap::containsKey)
+              .findFirst()
+              .map(scopedAnomalyConfigStatusMap::get)
+              .orElse(ScopedAnomalyConfigStatus.getDefaultInstance());
 
       ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig =
-          scopedAnomalyDetectionConfigMap.getOrDefault(
-              configScope, ScopedAnomalyDetectionConfig.getDefaultInstance());
-      ScopedAnomalyConfigStatus scopedAnomalyConfigStatus =
-          scopedAnomalyConfigStatusMap.getOrDefault(
-              configScope, ScopedAnomalyConfigStatus.getDefaultInstance());
-
+          scopesWithDecreasingPriority.stream()
+              .filter(scopedAnomalyDetectionConfigMap::containsKey)
+              .findFirst()
+              .map(scopedAnomalyDetectionConfigMap::get)
+              .orElse(ScopedAnomalyDetectionConfig.getDefaultInstance());
       ModsecRuleVersion modsecRuleVersion = getModsecRuleVersion(scopedAnomalyDetectionConfig);
       log.debug("Using modsec rule version: {}", modsecRuleVersion);
 
@@ -760,7 +768,7 @@ public class WebAppEvaluationConfigContextManagerImpl
     List<AnomalySubRuleType> subRuleTypes;
 
     static RequestData from(GetWebAppEvaluationConfigContextRequest request) {
-      // Sort sub rule types for consistent cache keys
+      // Sort sub-rule types for consistent cache keys
       List<AnomalySubRuleType> sortedSubRuleTypes =
           request.getSubRuleTypesList().stream()
               .sorted(Comparator.comparing(Enum::ordinal))

@@ -29,6 +29,7 @@ import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
+import ai.traceable.anomaly.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAllDetectionConfig;
@@ -41,7 +42,6 @@ import ai.traceable.anomaly.config.service.v1.global.ModsecEvaluationEngineConfi
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.modsec.GetWebAppEvaluationConfigContextRequest;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
-import ai.traceable.anomaly.config.service.v1.modsec.RuleEvaluationPoint;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider.ApiIdentifierEntity;
@@ -358,9 +358,9 @@ class WebAppEvaluationConfigContextManagerImplTest {
     assertEquals(
         List.of("subRule1", "subRule2", "subRule3"), evaluationConfig2.getDisabledSecRuleIdsList());
 
-    assertEquals(1, result.getSecRuleProcessorConfigsList().size());
+    assertEquals(3, result.getSecRuleProcessorConfigsList().size());
     SecRuleProcessorConfig secRuleProcessorConfig = result.getSecRuleProcessorConfigs(0);
-    assertEquals(CUSTOMER_SCOPE_CONTEXT, secRuleProcessorConfig.getScopeContext());
+    assertEquals(API_SCOPE_CONTEXT, secRuleProcessorConfig.getScopeContext());
     assertEquals(
         ai.traceable.protection.processor.secrules.v1.CorazaEngineVersion
             .CORAZA_ENGINE_VERSION_LATEST_STABLE,
@@ -394,9 +394,9 @@ class WebAppEvaluationConfigContextManagerImplTest {
     assertEquals(API_SCOPE_CONTEXT, evaluationConfig.getScopeContext());
     assertEquals(List.of("subRule3"), evaluationConfig.getDisabledSecRuleIdsList());
 
-    assertEquals(1, result.getSecRuleProcessorConfigsList().size());
+    assertEquals(3, result.getSecRuleProcessorConfigsList().size());
     SecRuleProcessorConfig secRuleProcessorConfig = result.getSecRuleProcessorConfigs(0);
-    assertEquals(CUSTOMER_SCOPE_CONTEXT, secRuleProcessorConfig.getScopeContext());
+    assertEquals(API_SCOPE_CONTEXT, secRuleProcessorConfig.getScopeContext());
     assertEquals(
         ai.traceable.protection.processor.secrules.v1.CorazaEngineVersion
             .CORAZA_ENGINE_VERSION_LATEST_STABLE,
