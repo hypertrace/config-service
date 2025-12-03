@@ -589,7 +589,6 @@ class DocumentConfigStoreTest {
             USER_ID,
             USER_EMAIL,
             null, // null createdByUserEmail simulates old document
-            null, // null visibleCreatedByEmail for old document
             null, // null visibleLastUpdatedByEmail for old document
             config1,
             TIMESTAMP1,
@@ -597,6 +596,7 @@ class DocumentConfigStoreTest {
 
     // Should default to "Unknown" as specified in the plan
     assertEquals("Unknown", oldDoc.getCreatedByUserEmail());
+    assertEquals("Unknown", oldDoc.getVisibleLastUpdatedByEmail());
   }
 
   @Test
@@ -701,24 +701,24 @@ class DocumentConfigStoreTest {
     UpsertedConfig result =
         storeWithExclusion.writeConfig(configResourceContext, "agent-user-id", request, agentEmail);
 
-    // Verify: Visible fields should be preserved from original user
+    // Verify: Visible fields should preserve original user (not the agent)
     assertEquals(originalEmail, result.getVisibleLastUpdatedByEmail());
     assertEquals(originalEmail, result.getVisibleCreatedByEmail());
     // Update timestamp should reflect actual update time
     assertEquals(TIMESTAMP2, result.getUpdateTimestamp());
     assertEquals(TIMESTAMP1, result.getCreationTimestamp());
 
-    // Verify the document was written with real audit data but preserved visible fields
+    // Verify the document was written with real agent email but preserved visible fields
     ArgumentCaptor<Document> documentCaptor = ArgumentCaptor.forClass(Document.class);
     verify(collection).upsert(any(Key.class), documentCaptor.capture());
     ConfigDocument savedDoc = (ConfigDocument) documentCaptor.getValue();
     // Audit fields should have real agent data
     assertEquals(agentEmail, savedDoc.getLastUpdatedUserEmail());
     assertEquals("agent-user-id", savedDoc.getLastUpdatedUserId());
+    assertEquals(originalEmail, savedDoc.getCreatedByUserEmail());
     assertEquals(TIMESTAMP2, savedDoc.getUpdateTimestamp());
-    // Visible fields should preserve original user
+    // Visible field should preserve original user
     assertEquals(originalEmail, savedDoc.getVisibleLastUpdatedByEmail());
-    assertEquals(originalEmail, savedDoc.getVisibleCreatedByEmail());
   }
 
   @Test
@@ -765,11 +765,10 @@ class DocumentConfigStoreTest {
     ArgumentCaptor<Document> documentCaptor = ArgumentCaptor.forClass(Document.class);
     verify(collection).upsert(any(Key.class), documentCaptor.capture());
     ConfigDocument savedDoc = (ConfigDocument) documentCaptor.getValue();
-    // Both audit and visible fields should be updated with normal email
+    // Audit fields should be updated with normal email
     assertEquals(normalEmail, savedDoc.getLastUpdatedUserEmail());
     assertEquals(normalUserId, savedDoc.getLastUpdatedUserId());
     assertEquals(TIMESTAMP2, savedDoc.getUpdateTimestamp());
-    assertEquals(normalEmail, savedDoc.getVisibleLastUpdatedByEmail());
   }
 
   @Test
@@ -817,25 +816,30 @@ class DocumentConfigStoreTest {
 
     String agentEmail = "agent+abcd1234-5678-90ab-cdef-123456789012@traceable.ai";
 
-    // Existing config created by agent - visible fields should be masked
-    CloseableIteratorImpl iterator =
-        new CloseableIteratorImpl(
-            List.of(
-                getConfigDocumentWithVisibleFields(
-                    CONTEXT1,
-                    CONFIG_VERSION,
-                    config1,
-                    TIMESTAMP1,
-                    TIMESTAMP2,
-                    agentEmail,
-                    agentEmail,
-                    "Unknown",
-                    "Unknown")));
+    // Config created by agent - visibleLastUpdatedByEmail would be "Unknown" since agent is
+    // excluded
+    // We need to create a helper that sets visibleLastUpdatedByEmail to "Unknown"
+    ConfigDocument agentCreatedDoc =
+        new ConfigDocument(
+            RESOURCE_NAME,
+            RESOURCE_NAMESPACE,
+            TENANT_ID,
+            CONTEXT1,
+            CONFIG_VERSION,
+            USER_ID,
+            agentEmail,
+            agentEmail,
+            ConfigDocument.DEFAULT_USER_EMAIL, // visibleLastUpdatedByEmail = "Unknown"
+            config1,
+            TIMESTAMP1,
+            TIMESTAMP2);
+
+    CloseableIteratorImpl iterator = new CloseableIteratorImpl(List.of(agentCreatedDoc));
     when(collection.query(any(Query.class), any())).thenReturn(iterator);
 
     Optional<ContextSpecificConfig> result = storeWithExclusion.getConfig(configResourceContext);
 
-    // Verify: Agent email should be masked as "Unknown" in response
+    // Verify: Both fields should be "Unknown" since created by agent
     assertEquals(true, result.isPresent());
     assertEquals("Unknown", result.get().getVisibleLastUpdatedByEmail());
     assertEquals("Unknown", result.get().getVisibleCreatedByEmail());
@@ -927,7 +931,6 @@ class DocumentConfigStoreTest {
         USER_EMAIL,
         USER_EMAIL,
         USER_EMAIL,
-        USER_EMAIL,
         config,
         creationTimestamp,
         updateTimestamp);
@@ -950,34 +953,7 @@ class DocumentConfigStoreTest {
         USER_ID,
         lastUpdatedUserEmail,
         createdByUserEmail,
-        createdByUserEmail,
         lastUpdatedUserEmail,
-        config,
-        creationTimestamp,
-        updateTimestamp);
-  }
-
-  private Document getConfigDocumentWithVisibleFields(
-      String context,
-      long version,
-      Value config,
-      long creationTimestamp,
-      long updateTimestamp,
-      String createdByUserEmail,
-      String lastUpdatedUserEmail,
-      String visibleCreatedByEmail,
-      String visibleLastUpdatedByEmail) {
-    return new ConfigDocument(
-        RESOURCE_NAME,
-        RESOURCE_NAMESPACE,
-        TENANT_ID,
-        context,
-        version,
-        USER_ID,
-        lastUpdatedUserEmail,
-        createdByUserEmail,
-        visibleCreatedByEmail,
-        visibleLastUpdatedByEmail,
         config,
         creationTimestamp,
         updateTimestamp);
