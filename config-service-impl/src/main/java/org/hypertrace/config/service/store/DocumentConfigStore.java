@@ -515,13 +515,6 @@ public class DocumentConfigStore implements ConfigStore {
             .build());
   }
 
-  private String maskEmailIfExcluded(String email) {
-    boolean isExcluded =
-        storeConfig.getCustomerVisibleExcludedEmailPatterns().stream()
-            .anyMatch(pattern -> pattern.matcher(email).matches());
-    return isExcluded ? ConfigDocument.DEFAULT_USER_EMAIL : email;
-  }
-
   private UpsertedConfig buildUpsertResult(
       ConfigDocument configDocument, ContextSpecificConfig existingConfig) {
     return this.buildUpsertResult(configDocument).toBuilder()

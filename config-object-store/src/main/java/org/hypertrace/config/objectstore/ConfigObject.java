@@ -10,4 +10,8 @@ public interface ConfigObject<T> {
   Instant getLastUpdatedTimestamp();
 
   String getCreatedByEmail();
+
+  String getLastUserUpdateEmail();
+
+  String getLastUpdateEmail();
 }
