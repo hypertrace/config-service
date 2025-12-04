@@ -62,8 +62,10 @@ class DefaultObjectStoreTest {
                 .setConfig(Values.of("test"))
                 .setCreationTimestamp(TEST_CREATE_TIMESTAMP.toEpochMilli())
                 .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
-                .setVisibleCreatedByEmail(TEST_CREATED_BY_EMAIL)
-                .setVisibleLastUpdatedByEmail(TEST_LAST_UPDATED_BY_EMAIL)
+                .setCreatedByEmail(TEST_CREATED_BY_EMAIL)
+                .setLastUserUpdateEmail(TEST_LAST_UPDATED_BY_EMAIL)
+                .setLastUserUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
+                .setLastUpdateEmail(TEST_LAST_UPDATED_BY_EMAIL)
                 .build());
 
     assertEquals(
@@ -73,6 +75,7 @@ class DefaultObjectStoreTest {
                 TEST_CREATE_TIMESTAMP,
                 TEST_UPDATE_TIMESTAMP,
                 TEST_CREATED_BY_EMAIL,
+                TEST_LAST_UPDATED_BY_EMAIL,
                 TEST_LAST_UPDATED_BY_EMAIL)),
         this.store.getObject(this.mockRequestContext));
 
@@ -132,8 +135,10 @@ class DefaultObjectStoreTest {
                         .setConfig(Values.of("test"))
                         .setCreationTimestamp(TEST_CREATE_TIMESTAMP.toEpochMilli())
                         .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
-                        .setVisibleCreatedByEmail(TEST_CREATED_BY_EMAIL)
-                        .setVisibleLastUpdatedByEmail(TEST_LAST_UPDATED_BY_EMAIL))
+                        .setCreatedByEmail(TEST_CREATED_BY_EMAIL)
+                        .setLastUserUpdateEmail(TEST_LAST_UPDATED_BY_EMAIL)
+                        .setLastUserUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
+                        .setLastUpdateEmail(TEST_LAST_UPDATED_BY_EMAIL))
                 .build());
     assertEquals(
         Optional.of(
@@ -142,6 +147,7 @@ class DefaultObjectStoreTest {
                 TEST_CREATE_TIMESTAMP,
                 TEST_UPDATE_TIMESTAMP,
                 TEST_CREATED_BY_EMAIL,
+                TEST_LAST_UPDATED_BY_EMAIL,
                 TEST_LAST_UPDATED_BY_EMAIL)),
         this.store.deleteObject(mockRequestContext));
 
@@ -173,8 +179,10 @@ class DefaultObjectStoreTest {
             UpsertConfigResponse.newBuilder()
                 .setCreationTimestamp(TEST_CREATE_TIMESTAMP.toEpochMilli())
                 .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
-                .setVisibleCreatedByEmail(TEST_CREATED_BY_EMAIL)
-                .setVisibleLastUpdatedByEmail(TEST_LAST_UPDATED_BY_EMAIL)
+                .setCreatedByEmail(TEST_CREATED_BY_EMAIL)
+                .setLastUserUpdateEmail(TEST_LAST_UPDATED_BY_EMAIL)
+                .setLastUserUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
+                .setLastUpdateEmail(TEST_LAST_UPDATED_BY_EMAIL)
                 .setConfig(Values.of("updated"))
                 .build());
     ConfigObject configObject =
@@ -183,6 +191,7 @@ class DefaultObjectStoreTest {
             TEST_CREATE_TIMESTAMP,
             TEST_UPDATE_TIMESTAMP,
             TEST_CREATED_BY_EMAIL,
+            TEST_LAST_UPDATED_BY_EMAIL,
             TEST_LAST_UPDATED_BY_EMAIL);
     assertEquals(
         configObject,

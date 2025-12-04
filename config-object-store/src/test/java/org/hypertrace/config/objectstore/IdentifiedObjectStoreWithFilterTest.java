@@ -141,16 +141,20 @@ class IdentifiedObjectStoreWithFilterTest {
                         .setContext(OBJECT_2.getId())
                         .setCreationTimestamp(TEST_CREATE_TIMESTAMP_2.toEpochMilli())
                         .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
-                        .setVisibleCreatedByEmail(TEST_CREATED_BY_EMAIL)
-                        .setVisibleLastUpdatedByEmail(TEST_LAST_UPDATED_BY_EMAIL))
+                        .setCreatedByEmail(TEST_CREATED_BY_EMAIL)
+                        .setLastUserUpdateEmail(TEST_LAST_UPDATED_BY_EMAIL)
+                        .setLastUserUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
+                        .setLastUpdateEmail(TEST_LAST_UPDATED_BY_EMAIL))
                 .addContextSpecificConfigs(
                     ContextSpecificConfig.newBuilder()
                         .setConfig(OBJECT_1_AS_VALUE)
                         .setContext(OBJECT_1.getId())
                         .setCreationTimestamp(TEST_CREATE_TIMESTAMP_1.toEpochMilli())
                         .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
-                        .setVisibleCreatedByEmail(TEST_CREATED_BY_EMAIL)
-                        .setVisibleLastUpdatedByEmail(TEST_LAST_UPDATED_BY_EMAIL))
+                        .setCreatedByEmail(TEST_CREATED_BY_EMAIL)
+                        .setLastUserUpdateEmail(TEST_LAST_UPDATED_BY_EMAIL)
+                        .setLastUserUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
+                        .setLastUpdateEmail(TEST_LAST_UPDATED_BY_EMAIL))
                 .build());
 
     assertEquals(
@@ -161,6 +165,7 @@ class IdentifiedObjectStoreWithFilterTest {
                 TEST_CREATE_TIMESTAMP_1,
                 TEST_UPDATE_TIMESTAMP,
                 TEST_CREATED_BY_EMAIL,
+                TEST_LAST_UPDATED_BY_EMAIL,
                 TEST_LAST_UPDATED_BY_EMAIL),
             new ContextualConfigObjectImpl<>(
                 OBJECT_2.getId(),
@@ -168,6 +173,7 @@ class IdentifiedObjectStoreWithFilterTest {
                 TEST_CREATE_TIMESTAMP_2,
                 TEST_UPDATE_TIMESTAMP,
                 TEST_CREATED_BY_EMAIL,
+                TEST_LAST_UPDATED_BY_EMAIL,
                 TEST_LAST_UPDATED_BY_EMAIL)),
         this.store.getAllObjects(this.mockRequestContext));
     assertEquals(List.of(OBJECT_1, OBJECT_2), this.store.getAllConfigData(this.mockRequestContext));
@@ -180,6 +186,7 @@ class IdentifiedObjectStoreWithFilterTest {
                 TEST_CREATE_TIMESTAMP_2,
                 TEST_UPDATE_TIMESTAMP,
                 TEST_CREATED_BY_EMAIL,
+                TEST_LAST_UPDATED_BY_EMAIL,
                 TEST_LAST_UPDATED_BY_EMAIL)),
         this.store.getAllObjects(this.mockRequestContext, FILTER_1));
     assertEquals(List.of(OBJECT_2), this.store.getAllConfigData(this.mockRequestContext, FILTER_1));
@@ -192,6 +199,7 @@ class IdentifiedObjectStoreWithFilterTest {
                 TEST_CREATE_TIMESTAMP_1,
                 TEST_UPDATE_TIMESTAMP,
                 TEST_CREATED_BY_EMAIL,
+                TEST_LAST_UPDATED_BY_EMAIL,
                 TEST_LAST_UPDATED_BY_EMAIL),
             new ContextualConfigObjectImpl<>(
                 OBJECT_2.getId(),
@@ -199,6 +207,7 @@ class IdentifiedObjectStoreWithFilterTest {
                 TEST_CREATE_TIMESTAMP_2,
                 TEST_UPDATE_TIMESTAMP,
                 TEST_CREATED_BY_EMAIL,
+                TEST_LAST_UPDATED_BY_EMAIL,
                 TEST_LAST_UPDATED_BY_EMAIL)),
         this.store.getAllObjects(this.mockRequestContext, FILTER_2));
     assertEquals(
@@ -213,6 +222,7 @@ class IdentifiedObjectStoreWithFilterTest {
                 TEST_CREATE_TIMESTAMP_2,
                 TEST_UPDATE_TIMESTAMP,
                 TEST_CREATED_BY_EMAIL,
+                TEST_LAST_UPDATED_BY_EMAIL,
                 TEST_LAST_UPDATED_BY_EMAIL)),
         this.store.getAllObjects(this.mockRequestContext, FILTER_3));
     assertEquals(
@@ -235,8 +245,10 @@ class IdentifiedObjectStoreWithFilterTest {
                 .setConfig(OBJECT_1_AS_VALUE)
                 .setCreationTimestamp(TEST_CREATE_TIMESTAMP_1.toEpochMilli())
                 .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
-                .setVisibleCreatedByEmail(TEST_CREATED_BY_EMAIL)
-                .setVisibleLastUpdatedByEmail(TEST_LAST_UPDATED_BY_EMAIL)
+                .setCreatedByEmail(TEST_CREATED_BY_EMAIL)
+                .setLastUserUpdateEmail(TEST_LAST_UPDATED_BY_EMAIL)
+                .setLastUserUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
+                .setLastUpdateEmail(TEST_LAST_UPDATED_BY_EMAIL)
                 .build());
 
     assertEquals(
@@ -247,6 +259,7 @@ class IdentifiedObjectStoreWithFilterTest {
                 TEST_CREATE_TIMESTAMP_1,
                 TEST_UPDATE_TIMESTAMP,
                 TEST_CREATED_BY_EMAIL,
+                TEST_LAST_UPDATED_BY_EMAIL,
                 TEST_LAST_UPDATED_BY_EMAIL)),
         this.store.getObject(this.mockRequestContext, OBJECT_1.getId()));
     assertEquals(
@@ -263,6 +276,7 @@ class IdentifiedObjectStoreWithFilterTest {
                 TEST_CREATE_TIMESTAMP_1,
                 TEST_UPDATE_TIMESTAMP,
                 TEST_CREATED_BY_EMAIL,
+                TEST_LAST_UPDATED_BY_EMAIL,
                 TEST_LAST_UPDATED_BY_EMAIL)),
         this.store.getObject(this.mockRequestContext, OBJECT_1.getId(), FILTER_2));
     assertEquals(

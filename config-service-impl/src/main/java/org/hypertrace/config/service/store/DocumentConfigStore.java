@@ -173,14 +173,22 @@ public class DocumentConfigStore implements ConfigStore {
         storeConfig.getCustomerVisibleExcludedEmailPatterns().stream()
             .anyMatch(pattern -> pattern.matcher(lastUpdatedUserEmail).matches());
 
-    // Preserve the last non-excluded user email for visibility
-    String visibleLastUpdatedByEmail = lastUpdatedUserEmail;
+    // Track last user (non-excluded) update - preserve if current update is from excluded user
+    String lastUserUpdateEmail;
+    long lastUserUpdateTimestamp;
     if (isExcludedEmail) {
-      visibleLastUpdatedByEmail =
+      // Preserve previous user update info if current updater is excluded
+      lastUserUpdateEmail =
           previousConfigDoc
-              .map(ConfigDocument::getVisibleLastUpdatedByEmail)
+              .map(ConfigDocument::getLastUserUpdateEmail)
               .filter(Predicate.not(String::isEmpty))
               .orElse(ConfigDocument.DEFAULT_USER_EMAIL);
+      lastUserUpdateTimestamp =
+          previousConfigDoc.map(ConfigDocument::getLastUserUpdateTimestamp).orElse(0L);
+    } else {
+      // Update to current user info if current updater is not excluded
+      lastUserUpdateEmail = lastUpdatedUserEmail;
+      lastUserUpdateTimestamp = updateTimestamp;
     }
 
     long newVersion =
@@ -198,7 +206,8 @@ public class DocumentConfigStore implements ConfigStore {
         lastUpdatedUserId,
         lastUpdatedUserEmail,
         createdByUserEmail,
-        visibleLastUpdatedByEmail,
+        lastUserUpdateEmail,
+        lastUserUpdateTimestamp,
         latestConfig,
         creationTimestamp,
         updateTimestamp);
@@ -499,8 +508,10 @@ public class DocumentConfigStore implements ConfigStore {
             .setContext(configDocument.getContext())
             .setCreationTimestamp(configDocument.getCreationTimestamp())
             .setUpdateTimestamp(configDocument.getUpdateTimestamp())
-            .setVisibleCreatedByEmail(maskEmailIfExcluded(configDocument.getCreatedByUserEmail()))
-            .setVisibleLastUpdatedByEmail(configDocument.getVisibleLastUpdatedByEmail())
+            .setCreatedByEmail(configDocument.getCreatedByUserEmail())
+            .setLastUserUpdateEmail(configDocument.getLastUserUpdateEmail())
+            .setLastUserUpdateTimestamp(configDocument.getLastUserUpdateTimestamp())
+            .setLastUpdateEmail(configDocument.getLastUpdatedUserEmail())
             .build());
   }
 
@@ -524,8 +535,10 @@ public class DocumentConfigStore implements ConfigStore {
         .setContext(configDocument.getContext())
         .setCreationTimestamp(configDocument.getCreationTimestamp())
         .setUpdateTimestamp(configDocument.getUpdateTimestamp())
-        .setVisibleCreatedByEmail(maskEmailIfExcluded(configDocument.getCreatedByUserEmail()))
-        .setVisibleLastUpdatedByEmail(configDocument.getVisibleLastUpdatedByEmail())
+        .setCreatedByEmail(configDocument.getCreatedByUserEmail())
+        .setLastUserUpdateEmail(configDocument.getLastUserUpdateEmail())
+        .setLastUserUpdateTimestamp(configDocument.getLastUserUpdateTimestamp())
+        .setLastUpdateEmail(configDocument.getLastUpdatedUserEmail())
         .build();
   }
 

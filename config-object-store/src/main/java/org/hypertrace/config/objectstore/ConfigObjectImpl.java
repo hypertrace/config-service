@@ -12,8 +12,9 @@ class ConfigObjectImpl<T> implements ConfigObject<T> {
   T data;
   Instant creationTimestamp;
   Instant lastUpdatedTimestamp;
-  String visibleCreatedByEmail;
-  String visibleLastUpdatedByEmail;
+  String createdByEmail;
+  String lastUserUpdateEmail;
+  String lastUpdateEmail;
 
   static <T> Optional<ConfigObject<T>> tryBuild(
       ContextSpecificConfig contextSpecificConfig, Function<Value, Optional<T>> dataBuilder) {
@@ -21,8 +22,9 @@ class ConfigObjectImpl<T> implements ConfigObject<T> {
         contextSpecificConfig.getConfig(),
         contextSpecificConfig.getCreationTimestamp(),
         contextSpecificConfig.getUpdateTimestamp(),
-        contextSpecificConfig.getVisibleCreatedByEmail(),
-        contextSpecificConfig.getVisibleLastUpdatedByEmail(),
+        contextSpecificConfig.getCreatedByEmail(),
+        contextSpecificConfig.getLastUserUpdateEmail(),
+        contextSpecificConfig.getLastUpdateEmail(),
         dataBuilder);
   }
 
@@ -32,8 +34,9 @@ class ConfigObjectImpl<T> implements ConfigObject<T> {
         upsertResponse.getConfig(),
         upsertResponse.getCreationTimestamp(),
         upsertResponse.getUpdateTimestamp(),
-        upsertResponse.getVisibleCreatedByEmail(),
-        upsertResponse.getVisibleLastUpdatedByEmail(),
+        upsertResponse.getCreatedByEmail(),
+        upsertResponse.getLastUserUpdateEmail(),
+        upsertResponse.getLastUpdateEmail(),
         dataBuilder);
   }
 
@@ -41,8 +44,9 @@ class ConfigObjectImpl<T> implements ConfigObject<T> {
       Value config,
       long creationTimestamp,
       long updateTimestamp,
-      String visibleCreatedByEmail,
-      String visibleLastUpdatedByEmail,
+      String createdByEmail,
+      String lastUserUpdateEmail,
+      String lastUpdateEmail,
       Function<Value, Optional<T>> dataBuilder) {
     return dataBuilder
         .apply(config)
@@ -52,7 +56,8 @@ class ConfigObjectImpl<T> implements ConfigObject<T> {
                     data,
                     Instant.ofEpochMilli(creationTimestamp),
                     Instant.ofEpochMilli(updateTimestamp),
-                    visibleCreatedByEmail,
-                    visibleLastUpdatedByEmail));
+                    createdByEmail,
+                    lastUserUpdateEmail,
+                    lastUpdateEmail));
   }
 }

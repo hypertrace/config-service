@@ -393,8 +393,7 @@ public class MockGenericConfigService {
                         .setConfig(config)
                         .setCreationTimestamp(creationTimestamp)
                         .setUpdateTimestamp(updateTimestamp)
-                        .setVisibleCreatedByEmail("")
-                        .setVisibleLastUpdatedByEmail("")
+                        .setCreatedByEmail("")
                         .build()))
             .map(ContextSpecificConfig::getConfig);
 
@@ -404,8 +403,9 @@ public class MockGenericConfigService {
             .setContext(configContext)
             .setCreationTimestamp(creationTimestamp)
             .setUpdateTimestamp(updateTimestamp)
-            .setVisibleCreatedByEmail("")
-            .setVisibleLastUpdatedByEmail("");
+            .setCreatedByEmail("")
+            .setLastUserUpdateEmail("")
+            .setLastUserUpdateTimestamp(updateTimestamp);
 
     previousConfig.ifPresent(resultBuilder::setPrevConfig);
 

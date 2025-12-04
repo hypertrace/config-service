@@ -92,8 +92,9 @@ public abstract class DefaultObjectStore<T> {
           getConfigResponse.getConfig(),
           getConfigResponse.getCreationTimestamp(),
           getConfigResponse.getUpdateTimestamp(),
-          getConfigResponse.getVisibleCreatedByEmail(),
-          getConfigResponse.getVisibleLastUpdatedByEmail(),
+          getConfigResponse.getCreatedByEmail(),
+          getConfigResponse.getLastUserUpdateEmail(),
+          getConfigResponse.getLastUpdateEmail(),
           this::buildDataFromValue);
     } catch (Exception exception) {
       if (Status.fromThrowable(exception).equals(Status.NOT_FOUND)) {
