@@ -11,10 +11,13 @@ import ai.traceable.jira.integration.config.service.api.v1.DeleteJiraTemplateReq
 import ai.traceable.jira.integration.config.service.api.v1.DeleteProjectIssueConfigurationRequest;
 import ai.traceable.jira.integration.config.service.api.v1.EncryptedData;
 import ai.traceable.jira.integration.config.service.api.v1.GetJiraIntegrationsRequest;
+import ai.traceable.jira.integration.config.service.api.v1.GetJiraTemplatesFilter;
+import ai.traceable.jira.integration.config.service.api.v1.GetJiraTemplatesRequest;
 import ai.traceable.jira.integration.config.service.api.v1.GetProjectIssueConfigurationsFilter;
 import ai.traceable.jira.integration.config.service.api.v1.GetProjectIssueConfigurationsRequest;
 import ai.traceable.jira.integration.config.service.api.v1.JiraCloudAuthCredentials;
 import ai.traceable.jira.integration.config.service.api.v1.JiraFieldConfiguration;
+import ai.traceable.jira.integration.config.service.api.v1.JiraFieldTemplate;
 import ai.traceable.jira.integration.config.service.api.v1.JiraIntegration;
 import ai.traceable.jira.integration.config.service.api.v1.JiraIntegrationDetails;
 import ai.traceable.jira.integration.config.service.api.v1.JiraIntegrationFilter;
@@ -22,6 +25,7 @@ import ai.traceable.jira.integration.config.service.api.v1.JiraStatusMapping;
 import ai.traceable.jira.integration.config.service.api.v1.JiraTemplateDetails;
 import ai.traceable.jira.integration.config.service.api.v1.Scope;
 import ai.traceable.jira.integration.config.service.api.v1.TraceableEntityType;
+import ai.traceable.jira.integration.config.service.api.v1.TraceableField;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateJiraIntegrationRequest;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateJiraTemplateRequest;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateProjectIssueConfigurationRequest;
@@ -29,6 +33,7 @@ import com.google.inject.Inject;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -79,6 +84,7 @@ public class JiraIntegrationConfigServiceValidator {
       UpdateJiraTemplateRequest request, RequestContext requestContext) {
     validateRequestContextOrThrow(requestContext);
     validateNonDefaultPresenceOrThrow(request, UpdateJiraTemplateRequest.TEMPLATE_ID_FIELD_NUMBER);
+    // For update, we don't have entity type in request, so skip entity type validation
     this.validateJiraTemplateDetails(request.getJiraTemplateDetails());
   }
 
@@ -86,6 +92,26 @@ public class JiraIntegrationConfigServiceValidator {
       DeleteJiraTemplateRequest request, RequestContext requestContext) {
     validateRequestContextOrThrow(requestContext);
     validateNonDefaultPresenceOrThrow(request, DeleteJiraTemplateRequest.TEMPLATE_ID_FIELD_NUMBER);
+  }
+
+  public void validateGetJiraTemplates(
+      GetJiraTemplatesRequest request, RequestContext requestContext) {
+    validateRequestContextOrThrow(requestContext);
+    if (request.hasFilter()) {
+      validateGetJiraTemplatesFilter(request.getFilter());
+    }
+  }
+
+  private void validateGetJiraTemplatesFilter(GetJiraTemplatesFilter filter) {
+    if (filter.getEntityTypesList().stream()
+        .anyMatch(
+            entityType ->
+                (entityType == TraceableEntityType.UNRECOGNIZED
+                    || entityType == TraceableEntityType.TRACEABLE_ENTITY_TYPE_UNSPECIFIED))) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Entity types must be valid when filtering templates")
+          .asRuntimeException();
+    }
   }
 
   public void validateCreateProjectIssueConfiguration(
@@ -182,8 +208,94 @@ public class JiraIntegrationConfigServiceValidator {
 
   private void validateJiraTemplateDetails(JiraTemplateDetails details) {
     validateNonDefaultPresenceOrThrow(details, JiraTemplateDetails.NAME_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(
-        details, JiraTemplateDetails.MARKDOWN_FORMAT_VALUE_FIELD_NUMBER);
+
+    if (!details.getFieldTemplatesList().isEmpty()) {
+      validateFieldTemplates(details.getFieldTemplatesList());
+    }
+  }
+
+  private void validateFieldTemplates(List<JiraFieldTemplate> fieldTemplates) {
+    Set<String> fieldKeys = new HashSet<>();
+
+    for (JiraFieldTemplate fieldTemplate : fieldTemplates) {
+      validateFieldTemplate(fieldTemplate, fieldKeys);
+    }
+  }
+
+  private void validateFieldTemplate(JiraFieldTemplate fieldTemplate, Set<String> fieldKeys) {
+    validateNonDefaultPresenceOrThrow(fieldTemplate, JiraFieldTemplate.FIELD_KEY_FIELD_NUMBER);
+
+    String fieldKey = fieldTemplate.getFieldKey();
+    if (fieldKey.isBlank()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Field key cannot be empty in field template")
+          .asRuntimeException();
+    }
+
+    if (fieldKeys.contains(fieldKey)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              String.format(
+                  "Duplicate field key found: %s. Each field key must be unique.", fieldKey))
+          .asRuntimeException();
+    }
+    fieldKeys.add(fieldKey);
+
+    if (fieldTemplate.hasStaticValue()) {
+      validateStaticValue(fieldTemplate, fieldKey);
+    }
+
+    if (fieldTemplate.hasTraceableField()) {
+      validateTraceableField(fieldTemplate, fieldKey);
+    }
+  }
+
+  private void validateStaticValue(JiraFieldTemplate fieldTemplate, String fieldKey) {
+    String jsonValue = fieldTemplate.getStaticValue().getValueJson();
+
+    if (jsonValue.isBlank()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              String.format("Static value JSON cannot be empty for field: %s", fieldKey))
+          .asRuntimeException();
+    }
+
+    try {
+      if (!isValidJsonStructure(jsonValue)) {
+        throw Status.INVALID_ARGUMENT
+            .withDescription(
+                String.format("Invalid JSON format for static value in field: %s", fieldKey))
+            .asRuntimeException();
+      }
+    } catch (Exception e) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              String.format(
+                  "Invalid JSON for static value in field %s: %s", fieldKey, e.getMessage()))
+          .asRuntimeException();
+    }
+  }
+
+  private void validateTraceableField(JiraFieldTemplate fieldTemplate, String fieldKey) {
+    TraceableField mapping = fieldTemplate.getTraceableField();
+    if (mapping == TraceableField.TRACEABLE_FIELD_UNSPECIFIED
+        || mapping == TraceableField.UNRECOGNIZED) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              String.format("Traceable field mapping must be specified for field: %s", fieldKey))
+          .asRuntimeException();
+    }
+  }
+
+  private boolean isValidJsonStructure(String json) {
+    if (json == null || json.isBlank()) {
+      return false;
+    }
+    json = json.trim();
+    return json.startsWith("{")
+        || json.startsWith("[")
+        || json.startsWith("\"")
+        || json.matches("^(true|false|null|-?\\d+(\\.\\d+)?([eE][+-]?\\d+)?)$");
   }
 
   private void validateJiraIntegrationDetailsOrThrow(

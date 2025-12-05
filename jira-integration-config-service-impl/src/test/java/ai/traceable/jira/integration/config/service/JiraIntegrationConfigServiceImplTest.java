@@ -6,16 +6,22 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import ai.traceable.jira.integration.config.service.api.v1.AddJiraTemplateRequest;
 import ai.traceable.jira.integration.config.service.api.v1.CreateJiraIntegrationRequest;
 import ai.traceable.jira.integration.config.service.api.v1.CreateProjectIssueConfigurationRequest;
 import ai.traceable.jira.integration.config.service.api.v1.DeleteJiraIntegrationRequest;
+import ai.traceable.jira.integration.config.service.api.v1.DeleteJiraTemplateRequest;
 import ai.traceable.jira.integration.config.service.api.v1.DeleteProjectIssueConfigurationRequest;
 import ai.traceable.jira.integration.config.service.api.v1.EncryptedData;
 import ai.traceable.jira.integration.config.service.api.v1.GetJiraIntegrationsRequest;
 import ai.traceable.jira.integration.config.service.api.v1.GetJiraIntegrationsResponse;
+import ai.traceable.jira.integration.config.service.api.v1.GetJiraTemplatesFilter;
+import ai.traceable.jira.integration.config.service.api.v1.GetJiraTemplatesRequest;
+import ai.traceable.jira.integration.config.service.api.v1.GetJiraTemplatesResponse;
 import ai.traceable.jira.integration.config.service.api.v1.GetProjectIssueConfigurationsFilter;
 import ai.traceable.jira.integration.config.service.api.v1.GetProjectIssueConfigurationsRequest;
 import ai.traceable.jira.integration.config.service.api.v1.GetProjectIssueConfigurationsResponse;
+import ai.traceable.jira.integration.config.service.api.v1.JiraFieldTemplate;
 import ai.traceable.jira.integration.config.service.api.v1.JiraIntegration;
 import ai.traceable.jira.integration.config.service.api.v1.JiraIntegrationConfigServiceGrpc;
 import ai.traceable.jira.integration.config.service.api.v1.JiraIntegrationConfigServiceGrpc.JiraIntegrationConfigServiceBlockingStub;
@@ -24,11 +30,16 @@ import ai.traceable.jira.integration.config.service.api.v1.JiraProjectIssueConfi
 import ai.traceable.jira.integration.config.service.api.v1.JiraProjectIssueConfigurationDetails;
 import ai.traceable.jira.integration.config.service.api.v1.JiraStatusMapping;
 import ai.traceable.jira.integration.config.service.api.v1.JiraStatusMappingConfiguration;
+import ai.traceable.jira.integration.config.service.api.v1.JiraTemplate;
+import ai.traceable.jira.integration.config.service.api.v1.JiraTemplateDetails;
 import ai.traceable.jira.integration.config.service.api.v1.Scope;
+import ai.traceable.jira.integration.config.service.api.v1.StaticFieldValue;
 import ai.traceable.jira.integration.config.service.api.v1.StringList;
 import ai.traceable.jira.integration.config.service.api.v1.TraceableEntityStatus;
 import ai.traceable.jira.integration.config.service.api.v1.TraceableEntityType;
+import ai.traceable.jira.integration.config.service.api.v1.TraceableField;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateJiraIntegrationRequest;
+import ai.traceable.jira.integration.config.service.api.v1.UpdateJiraTemplateRequest;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateProjectIssueConfigurationRequest;
 import io.grpc.StatusRuntimeException;
 import java.util.Arrays;
@@ -50,8 +61,23 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class JiraIntegrationConfigServiceImplTest {
   public static final String TENANT_ID = "default tenant";
   private final String PROJECT_ID = "project_id";
+  private final String PROJECT_ID_2 = "project2";
   private final String ISSUE_TYPE = "issue_type";
+  private final String ISSUE_TYPE_BUG = "bug";
   private final String CONFIG_ID = "config_id";
+  private static final String TEMPLATE_NAME_VULNERABILITY = "Vulnerability Template";
+  private static final String TEMPLATE_NAME_AST_VULNERABILITY = "AST Vulnerability Template";
+  private static final String TEMPLATE_NAME_THREAT_ACTIVITY = "Threat Activity Template";
+  private static final String TEMPLATE_NAME_ORIGINAL = "Original Template";
+  private static final String TEMPLATE_NAME_UPDATED = "Updated Template";
+  private static final String TEMPLATE_NAME_TO_DELETE = "Template to Delete";
+  private static final String MARKDOWN_VULNERABILITY_DETAILS = "## Vulnerability Details";
+  private static final String MARKDOWN_ORIGINAL_CONTENT = "## Original Content";
+  private static final String MARKDOWN_UPDATED_CONTENT = "## Updated Content";
+  private static final String JIRA_FIELD_KEY_1 = "summary";
+  private static final String JIRA_FIELD_KEY_2 = "severity";
+  private static final String STATIC_VALUE_1 = "{\"value\": \"Vulnerability Issue\"}";
+  private static final String STATIC_VALUE_2 = "{\"value\": \"Original description\"}";
   JiraIntegrationStore jiraIntegrationStore;
   JiraAdditionalConfigurationStore jiraAdditionalConfigurationStore;
   MockGenericConfigService mockGenericConfigService;
@@ -734,6 +760,352 @@ class JiraIntegrationConfigServiceImplTest {
         jiraAdditionalConfigurationStore
             .getData(requestContext, jiraProjectIssueConfiguration2.getConfigurationId())
             .isPresent());
+  }
+
+  @Test
+  @Tag("useMockUpsert")
+  @Tag("useMockGetAll")
+  void addJiraTemplateTest() {
+    RequestContext requestContext = RequestContext.forTenantId(TENANT_ID);
+    JiraIntegration jiraIntegration1 = dummyJiraIntegration(1, "env1");
+    jiraIntegrationStore.upsertObject(requestContext, jiraIntegration1);
+
+    // Should succeed in adding a template
+    JiraFieldTemplate fieldTemplate1 =
+        JiraFieldTemplate.newBuilder()
+            .setFieldKey(JIRA_FIELD_KEY_1)
+            .setIsEnabled(true)
+            .setStaticValue(StaticFieldValue.newBuilder().setValueJson(STATIC_VALUE_1).build())
+            .build();
+    JiraFieldTemplate fieldTemplate2 =
+        JiraFieldTemplate.newBuilder()
+            .setFieldKey(JIRA_FIELD_KEY_2)
+            .setIsEnabled(true)
+            .setTraceableField(TraceableField.TRACEABLE_FIELD_VULNERABILITY_SEVERITY)
+            .build();
+    AddJiraTemplateRequest addRequest =
+        AddJiraTemplateRequest.newBuilder()
+            .setIntegrationId(jiraIntegration1.getId())
+            .setProjectId(PROJECT_ID)
+            .setIssueType(ISSUE_TYPE)
+            .setSupportedEntityType(TraceableEntityType.TRACEABLE_ENTITY_TYPE_AST_VULNERABILITY)
+            .setJiraTemplateDetails(
+                JiraTemplateDetails.newBuilder()
+                    .setName(TEMPLATE_NAME_VULNERABILITY)
+                    .setMarkdownFormatValue(MARKDOWN_VULNERABILITY_DETAILS)
+                    .addFieldTemplates(fieldTemplate1)
+                    .addFieldTemplates(fieldTemplate2)
+                    .build())
+            .build();
+    JiraTemplate createdTemplate =
+        assertDoesNotThrow(() -> stub.addJiraTemplate(addRequest).getJiraTemplate());
+    assertEquals(jiraIntegration1.getId(), createdTemplate.getIntegrationId());
+    assertEquals(PROJECT_ID, createdTemplate.getProjectId());
+    assertEquals(ISSUE_TYPE, createdTemplate.getIssueType());
+    assertEquals(
+        TraceableEntityType.TRACEABLE_ENTITY_TYPE_AST_VULNERABILITY,
+        createdTemplate.getEntityType());
+    assertEquals(TEMPLATE_NAME_VULNERABILITY, createdTemplate.getJiraTemplateDetails().getName());
+    assertEquals(2, createdTemplate.getJiraTemplateDetails().getFieldTemplatesCount());
+    assertEquals(
+        JIRA_FIELD_KEY_1,
+        createdTemplate.getJiraTemplateDetails().getFieldTemplates(0).getFieldKey());
+    assertTrue(createdTemplate.getJiraTemplateDetails().getFieldTemplates(0).hasStaticValue());
+    assertEquals(
+        JIRA_FIELD_KEY_2,
+        createdTemplate.getJiraTemplateDetails().getFieldTemplates(1).getFieldKey());
+    assertTrue(createdTemplate.getJiraTemplateDetails().getFieldTemplates(1).hasTraceableField());
+    assertEquals(
+        TraceableField.TRACEABLE_FIELD_VULNERABILITY_SEVERITY,
+        createdTemplate.getJiraTemplateDetails().getFieldTemplates(1).getTraceableField());
+
+    // Should fail with invalid entity type
+    AddJiraTemplateRequest invalidRequest =
+        addRequest.toBuilder()
+            .setSupportedEntityType(TraceableEntityType.TRACEABLE_ENTITY_TYPE_UNSPECIFIED)
+            .build();
+    assertThrows(StatusRuntimeException.class, () -> stub.addJiraTemplate(invalidRequest));
+  }
+
+  @Test
+  @Tag("useMockUpsert")
+  @Tag("useMockGetAll")
+  void updateJiraTemplateTest() {
+    RequestContext requestContext = RequestContext.forTenantId(TENANT_ID);
+    JiraIntegration jiraIntegration1 = dummyJiraIntegration(1, "env1");
+    jiraIntegrationStore.upsertObject(requestContext, jiraIntegration1);
+
+    // Add a template first
+    JiraFieldTemplate originalFieldTemplate =
+        JiraFieldTemplate.newBuilder()
+            .setFieldKey(JIRA_FIELD_KEY_1)
+            .setIsEnabled(true)
+            .setStaticValue(StaticFieldValue.newBuilder().setValueJson(STATIC_VALUE_1).build())
+            .build();
+    AddJiraTemplateRequest addRequest =
+        AddJiraTemplateRequest.newBuilder()
+            .setIntegrationId(jiraIntegration1.getId())
+            .setProjectId(PROJECT_ID)
+            .setIssueType(ISSUE_TYPE)
+            .setSupportedEntityType(TraceableEntityType.TRACEABLE_ENTITY_TYPE_AST_VULNERABILITY)
+            .setJiraTemplateDetails(
+                JiraTemplateDetails.newBuilder()
+                    .setName(TEMPLATE_NAME_ORIGINAL)
+                    .setMarkdownFormatValue(MARKDOWN_ORIGINAL_CONTENT)
+                    .addFieldTemplates(originalFieldTemplate)
+                    .build())
+            .build();
+    JiraTemplate createdTemplate = stub.addJiraTemplate(addRequest).getJiraTemplate();
+
+    // Should fail with non-existent template id
+    UpdateJiraTemplateRequest updateRequestWrong =
+        UpdateJiraTemplateRequest.newBuilder()
+            .setTemplateId("non_existent_id")
+            .setJiraTemplateDetails(
+                JiraTemplateDetails.newBuilder().setName("Updated Template").build())
+            .build();
+    assertThrows(StatusRuntimeException.class, () -> stub.updateJiraTemplate(updateRequestWrong));
+
+    // Should succeed with valid template id
+    JiraFieldTemplate updatedFieldTemplate1 =
+        JiraFieldTemplate.newBuilder()
+            .setFieldKey(JIRA_FIELD_KEY_1)
+            .setIsEnabled(true)
+            .setStaticValue(StaticFieldValue.newBuilder().setValueJson(STATIC_VALUE_2).build())
+            .build();
+    JiraFieldTemplate updatedFieldTemplate2 =
+        JiraFieldTemplate.newBuilder()
+            .setFieldKey(JIRA_FIELD_KEY_2)
+            .setIsEnabled(false)
+            .setTraceableField(TraceableField.TRACEABLE_FIELD_VULNERABILITY_CWE)
+            .build();
+    UpdateJiraTemplateRequest updateRequest =
+        UpdateJiraTemplateRequest.newBuilder()
+            .setTemplateId(createdTemplate.getTemplateId())
+            .setJiraTemplateDetails(
+                JiraTemplateDetails.newBuilder()
+                    .setName(TEMPLATE_NAME_UPDATED)
+                    .setMarkdownFormatValue(MARKDOWN_UPDATED_CONTENT)
+                    .addFieldTemplates(updatedFieldTemplate1)
+                    .addFieldTemplates(updatedFieldTemplate2)
+                    .build())
+            .build();
+    JiraTemplate updatedTemplate =
+        assertDoesNotThrow(() -> stub.updateJiraTemplate(updateRequest).getJiraTemplate());
+    assertEquals(createdTemplate.getTemplateId(), updatedTemplate.getTemplateId());
+    assertEquals(TEMPLATE_NAME_UPDATED, updatedTemplate.getJiraTemplateDetails().getName());
+    assertEquals(
+        MARKDOWN_UPDATED_CONTENT,
+        updatedTemplate.getJiraTemplateDetails().getMarkdownFormatValue());
+    assertEquals(2, updatedTemplate.getJiraTemplateDetails().getFieldTemplatesCount());
+    assertEquals(
+        JIRA_FIELD_KEY_1,
+        updatedTemplate.getJiraTemplateDetails().getFieldTemplates(0).getFieldKey());
+    assertEquals(
+        STATIC_VALUE_2,
+        updatedTemplate
+            .getJiraTemplateDetails()
+            .getFieldTemplates(0)
+            .getStaticValue()
+            .getValueJson());
+    assertEquals(
+        JIRA_FIELD_KEY_2,
+        updatedTemplate.getJiraTemplateDetails().getFieldTemplates(1).getFieldKey());
+    assertFalse(updatedTemplate.getJiraTemplateDetails().getFieldTemplates(1).getIsEnabled());
+    assertEquals(
+        TraceableField.TRACEABLE_FIELD_VULNERABILITY_CWE,
+        updatedTemplate.getJiraTemplateDetails().getFieldTemplates(1).getTraceableField());
+  }
+
+  @Test
+  @Tag("useMockUpsert")
+  @Tag("useMockGetAll")
+  @Tag("useMockDelete")
+  void deleteJiraTemplateTest() {
+    RequestContext requestContext = RequestContext.forTenantId(TENANT_ID);
+    JiraIntegration jiraIntegration1 = dummyJiraIntegration(1, "env1");
+    jiraIntegrationStore.upsertObject(requestContext, jiraIntegration1);
+
+    // Add a template first
+    JiraFieldTemplate deleteFieldTemplate =
+        JiraFieldTemplate.newBuilder()
+            .setFieldKey(JIRA_FIELD_KEY_1)
+            .setIsEnabled(true)
+            .setStaticValue(StaticFieldValue.newBuilder().setValueJson(STATIC_VALUE_1).build())
+            .build();
+    AddJiraTemplateRequest addRequest =
+        AddJiraTemplateRequest.newBuilder()
+            .setIntegrationId(jiraIntegration1.getId())
+            .setProjectId(PROJECT_ID)
+            .setIssueType(ISSUE_TYPE)
+            .setSupportedEntityType(TraceableEntityType.TRACEABLE_ENTITY_TYPE_AST_VULNERABILITY)
+            .setJiraTemplateDetails(
+                JiraTemplateDetails.newBuilder()
+                    .setName(TEMPLATE_NAME_TO_DELETE)
+                    .addFieldTemplates(deleteFieldTemplate)
+                    .build())
+            .build();
+    JiraTemplate createdTemplate = stub.addJiraTemplate(addRequest).getJiraTemplate();
+
+    // Should fail with non-existent template id
+    DeleteJiraTemplateRequest deleteRequestWrong =
+        DeleteJiraTemplateRequest.newBuilder().setTemplateId("non_existent_id").build();
+    assertThrows(StatusRuntimeException.class, () -> stub.deleteJiraTemplate(deleteRequestWrong));
+
+    // Should succeed with valid template id
+    DeleteJiraTemplateRequest deleteRequest =
+        DeleteJiraTemplateRequest.newBuilder()
+            .setTemplateId(createdTemplate.getTemplateId())
+            .build();
+    assertDoesNotThrow(() -> stub.deleteJiraTemplate(deleteRequest));
+
+    // Verify template is deleted by trying to get it
+    GetJiraTemplatesRequest getRequest =
+        GetJiraTemplatesRequest.newBuilder()
+            .setFilter(
+                GetJiraTemplatesFilter.newBuilder()
+                    .setTemplateId(createdTemplate.getTemplateId())
+                    .build())
+            .build();
+    GetJiraTemplatesResponse getResponse = stub.getJiraTemplates(getRequest);
+    assertEquals(0, getResponse.getJiraTemplatesCount());
+  }
+
+  @Test
+  @Tag("useMockUpsert")
+  @Tag("useMockGetAll")
+  void getJiraTemplatesTest() {
+    RequestContext requestContext = RequestContext.forTenantId(TENANT_ID);
+    JiraIntegration jiraIntegration1 = dummyJiraIntegration(1, "env1");
+    jiraIntegrationStore.upsertObject(requestContext, jiraIntegration1);
+
+    // Add multiple templates with different entity types
+    JiraFieldTemplate astVulnFieldTemplate =
+        JiraFieldTemplate.newBuilder()
+            .setFieldKey(JIRA_FIELD_KEY_1)
+            .setIsEnabled(true)
+            .setTraceableField(TraceableField.TRACEABLE_FIELD_VULNERABILITY_SEVERITY)
+            .build();
+    AddJiraTemplateRequest addRequest1 =
+        AddJiraTemplateRequest.newBuilder()
+            .setIntegrationId(jiraIntegration1.getId())
+            .setProjectId(PROJECT_ID)
+            .setIssueType(ISSUE_TYPE)
+            .setSupportedEntityType(TraceableEntityType.TRACEABLE_ENTITY_TYPE_AST_VULNERABILITY)
+            .setJiraTemplateDetails(
+                JiraTemplateDetails.newBuilder()
+                    .setName(TEMPLATE_NAME_AST_VULNERABILITY)
+                    .addFieldTemplates(astVulnFieldTemplate)
+                    .build())
+            .build();
+    JiraTemplate template1 = stub.addJiraTemplate(addRequest1).getJiraTemplate();
+
+    JiraFieldTemplate threatActivityFieldTemplate =
+        JiraFieldTemplate.newBuilder()
+            .setFieldKey(JIRA_FIELD_KEY_2)
+            .setIsEnabled(true)
+            .setTraceableField(TraceableField.TRACEABLE_FIELD_THREAT_ACTIVITY_SEVERITY)
+            .build();
+    AddJiraTemplateRequest addRequest2 =
+        AddJiraTemplateRequest.newBuilder()
+            .setIntegrationId(jiraIntegration1.getId())
+            .setProjectId(PROJECT_ID)
+            .setIssueType(ISSUE_TYPE_BUG)
+            .setSupportedEntityType(TraceableEntityType.TRACEABLE_ENTITY_TYPE_THREAT_ACTIVITY)
+            .setJiraTemplateDetails(
+                JiraTemplateDetails.newBuilder()
+                    .setName(TEMPLATE_NAME_THREAT_ACTIVITY)
+                    .addFieldTemplates(threatActivityFieldTemplate)
+                    .build())
+            .build();
+    JiraTemplate template2 = stub.addJiraTemplate(addRequest2).getJiraTemplate();
+
+    JiraFieldTemplate vulnFieldTemplate =
+        JiraFieldTemplate.newBuilder()
+            .setFieldKey(JIRA_FIELD_KEY_2)
+            .setIsEnabled(true)
+            .setTraceableField(TraceableField.TRACEABLE_FIELD_VULNERABILITY_CWE)
+            .build();
+    AddJiraTemplateRequest addRequest3 =
+        AddJiraTemplateRequest.newBuilder()
+            .setIntegrationId(jiraIntegration1.getId())
+            .setProjectId(PROJECT_ID_2)
+            .setIssueType(ISSUE_TYPE)
+            .setSupportedEntityType(TraceableEntityType.TRACEABLE_ENTITY_TYPE_VULNERABILITY)
+            .setJiraTemplateDetails(
+                JiraTemplateDetails.newBuilder()
+                    .setName(TEMPLATE_NAME_VULNERABILITY)
+                    .addFieldTemplates(vulnFieldTemplate)
+                    .build())
+            .build();
+    JiraTemplate template3 = stub.addJiraTemplate(addRequest3).getJiraTemplate();
+
+    // Get all templates (no filter)
+    GetJiraTemplatesRequest getAllRequest = GetJiraTemplatesRequest.newBuilder().build();
+    GetJiraTemplatesResponse getAllResponse = stub.getJiraTemplates(getAllRequest);
+    assertEquals(3, getAllResponse.getJiraTemplatesCount());
+
+    // Get templates by specific template id
+    GetJiraTemplatesRequest getByIdRequest =
+        GetJiraTemplatesRequest.newBuilder()
+            .setFilter(
+                GetJiraTemplatesFilter.newBuilder()
+                    .setTemplateId(template1.getTemplateId())
+                    .build())
+            .build();
+    GetJiraTemplatesResponse getByIdResponse = stub.getJiraTemplates(getByIdRequest);
+    assertEquals(1, getByIdResponse.getJiraTemplatesCount());
+    assertEquals(template1.getTemplateId(), getByIdResponse.getJiraTemplates(0).getTemplateId());
+    assertEquals(
+        1, getByIdResponse.getJiraTemplates(0).getJiraTemplateDetails().getFieldTemplatesCount());
+    assertEquals(
+        JIRA_FIELD_KEY_1,
+        getByIdResponse
+            .getJiraTemplates(0)
+            .getJiraTemplateDetails()
+            .getFieldTemplates(0)
+            .getFieldKey());
+
+    // Get templates by entity type
+    GetJiraTemplatesRequest getByEntityTypeRequest =
+        GetJiraTemplatesRequest.newBuilder()
+            .setFilter(
+                GetJiraTemplatesFilter.newBuilder()
+                    .addEntityTypes(TraceableEntityType.TRACEABLE_ENTITY_TYPE_AST_VULNERABILITY)
+                    .build())
+            .build();
+    GetJiraTemplatesResponse getByEntityTypeResponse =
+        stub.getJiraTemplates(getByEntityTypeRequest);
+    assertEquals(1, getByEntityTypeResponse.getJiraTemplatesCount());
+    assertEquals(
+        TraceableEntityType.TRACEABLE_ENTITY_TYPE_AST_VULNERABILITY,
+        getByEntityTypeResponse.getJiraTemplates(0).getEntityType());
+    assertEquals(
+        1,
+        getByEntityTypeResponse
+            .getJiraTemplates(0)
+            .getJiraTemplateDetails()
+            .getFieldTemplatesCount());
+    assertEquals(
+        TraceableField.TRACEABLE_FIELD_VULNERABILITY_SEVERITY,
+        getByEntityTypeResponse
+            .getJiraTemplates(0)
+            .getJiraTemplateDetails()
+            .getFieldTemplates(0)
+            .getTraceableField());
+
+    // Get templates by multiple entity types
+    GetJiraTemplatesRequest getByMultipleEntityTypesRequest =
+        GetJiraTemplatesRequest.newBuilder()
+            .setFilter(
+                GetJiraTemplatesFilter.newBuilder()
+                    .addEntityTypes(TraceableEntityType.TRACEABLE_ENTITY_TYPE_AST_VULNERABILITY)
+                    .addEntityTypes(TraceableEntityType.TRACEABLE_ENTITY_TYPE_THREAT_ACTIVITY)
+                    .build())
+            .build();
+    GetJiraTemplatesResponse getByMultipleEntityTypesResponse =
+        stub.getJiraTemplates(getByMultipleEntityTypesRequest);
+    assertEquals(2, getByMultipleEntityTypesResponse.getJiraTemplatesCount());
   }
 
   private JiraIntegration dummyJiraIntegration(int sr, String... environmentId) {

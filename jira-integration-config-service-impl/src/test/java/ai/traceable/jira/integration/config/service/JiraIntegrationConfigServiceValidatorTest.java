@@ -3,13 +3,16 @@ package ai.traceable.jira.integration.config.service;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.jira.integration.config.service.api.v1.AddJiraTemplateRequest;
 import ai.traceable.jira.integration.config.service.api.v1.CreateJiraIntegrationRequest;
 import ai.traceable.jira.integration.config.service.api.v1.CreateProjectIssueConfigurationRequest;
 import ai.traceable.jira.integration.config.service.api.v1.DeleteJiraIntegrationRequest;
+import ai.traceable.jira.integration.config.service.api.v1.DeleteJiraTemplateRequest;
 import ai.traceable.jira.integration.config.service.api.v1.DeleteProjectIssueConfigurationRequest;
 import ai.traceable.jira.integration.config.service.api.v1.DynamicField;
 import ai.traceable.jira.integration.config.service.api.v1.EncryptedData;
 import ai.traceable.jira.integration.config.service.api.v1.GetJiraIntegrationsRequest;
+import ai.traceable.jira.integration.config.service.api.v1.GetJiraTemplatesRequest;
 import ai.traceable.jira.integration.config.service.api.v1.GetProjectIssueConfigurationsFilter;
 import ai.traceable.jira.integration.config.service.api.v1.GetProjectIssueConfigurationsRequest;
 import ai.traceable.jira.integration.config.service.api.v1.JiraCloudAuthCredentials;
@@ -25,6 +28,7 @@ import ai.traceable.jira.integration.config.service.api.v1.StringList;
 import ai.traceable.jira.integration.config.service.api.v1.TraceableEntityStatus;
 import ai.traceable.jira.integration.config.service.api.v1.TraceableEntityType;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateJiraIntegrationRequest;
+import ai.traceable.jira.integration.config.service.api.v1.UpdateJiraTemplateRequest;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateProjectIssueConfigurationRequest;
 import io.grpc.StatusRuntimeException;
 import java.util.List;
@@ -439,6 +443,187 @@ class JiraIntegrationConfigServiceValidatorTest {
         request.toBuilder().addAllConfigurationIds(List.of(CONFIG_ID)).build();
     Assertions.assertDoesNotThrow(
         () -> validator.validateDeleteProjectIssueConfiguration(request2, requestContext1));
+  }
+
+  @Test
+  void validateAddJiraTemplate() {
+    AddJiraTemplateRequest request = AddJiraTemplateRequest.newBuilder().build();
+
+    // Should throw runtime exception, no tenant id
+    RequestContext requestContext = new RequestContext();
+    Assertions.assertThrows(
+        StatusRuntimeException.class,
+        () -> validator.validateAddJiraTemplate(request, requestContext));
+
+    // Should throw runtime exception, fields not declared
+    RequestContext requestContext1 = RequestContext.forTenantId(TENANT_ID);
+    Assertions.assertThrows(
+        StatusRuntimeException.class,
+        () -> validator.validateAddJiraTemplate(request, requestContext1));
+
+    // Should throw runtime exception, missing integration_id
+    AddJiraTemplateRequest request1 =
+        request.toBuilder()
+            .setProjectId(PROJECT_ID)
+            .setIssueType(ISSUE_TYPE)
+            .setSupportedEntityType(TraceableEntityType.TRACEABLE_ENTITY_TYPE_AST_VULNERABILITY)
+            .build();
+    Assertions.assertThrows(
+        StatusRuntimeException.class,
+        () -> validator.validateAddJiraTemplate(request1, requestContext1));
+
+    // Should throw runtime exception, missing project_id
+    AddJiraTemplateRequest request2 =
+        request.toBuilder()
+            .setIntegrationId(INTEGRATION_ID)
+            .setIssueType(ISSUE_TYPE)
+            .setSupportedEntityType(TraceableEntityType.TRACEABLE_ENTITY_TYPE_AST_VULNERABILITY)
+            .build();
+    Assertions.assertThrows(
+        StatusRuntimeException.class,
+        () -> validator.validateAddJiraTemplate(request2, requestContext1));
+
+    // Should throw runtime exception, missing issue_type
+    AddJiraTemplateRequest request3 =
+        request.toBuilder()
+            .setIntegrationId(INTEGRATION_ID)
+            .setProjectId(PROJECT_ID)
+            .setSupportedEntityType(TraceableEntityType.TRACEABLE_ENTITY_TYPE_AST_VULNERABILITY)
+            .build();
+    Assertions.assertThrows(
+        StatusRuntimeException.class,
+        () -> validator.validateAddJiraTemplate(request3, requestContext1));
+
+    // Should throw runtime exception, missing supported_entity_type
+    AddJiraTemplateRequest request4 =
+        request.toBuilder()
+            .setIntegrationId(INTEGRATION_ID)
+            .setProjectId(PROJECT_ID)
+            .setIssueType(ISSUE_TYPE)
+            .build();
+    Assertions.assertThrows(
+        StatusRuntimeException.class,
+        () -> validator.validateAddJiraTemplate(request4, requestContext1));
+
+    // Should pass with all required fields set
+    AddJiraTemplateRequest request5 =
+        request.toBuilder()
+            .setIntegrationId(INTEGRATION_ID)
+            .setProjectId(PROJECT_ID)
+            .setIssueType(ISSUE_TYPE)
+            .setSupportedEntityType(TraceableEntityType.TRACEABLE_ENTITY_TYPE_AST_VULNERABILITY)
+            .setJiraTemplateDetails(
+                ai.traceable.jira.integration.config.service.api.v1.JiraTemplateDetails.newBuilder()
+                    .setName("Template Name")
+                    .build())
+            .build();
+    Assertions.assertDoesNotThrow(
+        () -> validator.validateAddJiraTemplate(request5, requestContext1));
+  }
+
+  @Test
+  void validateUpdateJiraTemplate() {
+    UpdateJiraTemplateRequest request = UpdateJiraTemplateRequest.newBuilder().build();
+
+    // Should throw runtime exception, no tenant id
+    RequestContext requestContext = new RequestContext();
+    Assertions.assertThrows(
+        StatusRuntimeException.class,
+        () -> validator.validateUpdateJiraTemplate(request, requestContext));
+
+    // Should throw runtime exception, missing template_id
+    RequestContext requestContext1 = RequestContext.forTenantId(TENANT_ID);
+    Assertions.assertThrows(
+        StatusRuntimeException.class,
+        () -> validator.validateUpdateJiraTemplate(request, requestContext1));
+
+    // Should pass with template_id set
+    UpdateJiraTemplateRequest request1 =
+        request.toBuilder()
+            .setTemplateId("template_id")
+            .setJiraTemplateDetails(
+                ai.traceable.jira.integration.config.service.api.v1.JiraTemplateDetails.newBuilder()
+                    .setName("Updated Template Name")
+                    .build())
+            .build();
+    Assertions.assertDoesNotThrow(
+        () -> validator.validateUpdateJiraTemplate(request1, requestContext1));
+  }
+
+  @Test
+  void validateDeleteJiraTemplate() {
+    DeleteJiraTemplateRequest request = DeleteJiraTemplateRequest.newBuilder().build();
+
+    // Should throw runtime exception, no tenant id
+    RequestContext requestContext = new RequestContext();
+    Assertions.assertThrows(
+        StatusRuntimeException.class,
+        () -> validator.validateDeleteJiraTemplate(request, requestContext));
+
+    // Should throw runtime exception, missing template_id
+    RequestContext requestContext1 = RequestContext.forTenantId(TENANT_ID);
+    Assertions.assertThrows(
+        StatusRuntimeException.class,
+        () -> validator.validateDeleteJiraTemplate(request, requestContext1));
+
+    // Should pass with template_id set
+    DeleteJiraTemplateRequest request1 = request.toBuilder().setTemplateId("template_id").build();
+    Assertions.assertDoesNotThrow(
+        () -> validator.validateDeleteJiraTemplate(request1, requestContext1));
+  }
+
+  @Test
+  void validateGetJiraTemplates() {
+    GetJiraTemplatesRequest request = GetJiraTemplatesRequest.newBuilder().build();
+
+    // Should throw runtime exception, no tenant id
+    RequestContext requestContext = new RequestContext();
+    Assertions.assertThrows(
+        StatusRuntimeException.class,
+        () -> validator.validateGetJiraTemplates(request, requestContext));
+
+    // Should pass with no filter (default request)
+    RequestContext requestContext1 = RequestContext.forTenantId(TENANT_ID);
+    Assertions.assertDoesNotThrow(
+        () -> validator.validateGetJiraTemplates(request, requestContext1));
+
+    // Should pass with valid entity types filter
+    GetJiraTemplatesRequest request1 =
+        request.toBuilder()
+            .setFilter(
+                ai.traceable.jira.integration.config.service.api.v1.GetJiraTemplatesFilter
+                    .newBuilder()
+                    .addEntityTypes(TraceableEntityType.TRACEABLE_ENTITY_TYPE_AST_VULNERABILITY)
+                    .addEntityTypes(TraceableEntityType.TRACEABLE_ENTITY_TYPE_THREAT_ACTIVITY)
+                    .build())
+            .build();
+    Assertions.assertDoesNotThrow(
+        () -> validator.validateGetJiraTemplates(request1, requestContext1));
+
+    // Should throw runtime exception with invalid entity type (UNSPECIFIED)
+    GetJiraTemplatesRequest request2 =
+        request.toBuilder()
+            .setFilter(
+                ai.traceable.jira.integration.config.service.api.v1.GetJiraTemplatesFilter
+                    .newBuilder()
+                    .addEntityTypes(TraceableEntityType.TRACEABLE_ENTITY_TYPE_UNSPECIFIED)
+                    .build())
+            .build();
+    Assertions.assertThrows(
+        StatusRuntimeException.class,
+        () -> validator.validateGetJiraTemplates(request2, requestContext1));
+
+    // Should pass with template_id filter
+    GetJiraTemplatesRequest request3 =
+        request.toBuilder()
+            .setFilter(
+                ai.traceable.jira.integration.config.service.api.v1.GetJiraTemplatesFilter
+                    .newBuilder()
+                    .setTemplateId("template_id")
+                    .build())
+            .build();
+    Assertions.assertDoesNotThrow(
+        () -> validator.validateGetJiraTemplates(request3, requestContext1));
   }
 
   private JiraStatusMapping CreateJiraStatusMapping(

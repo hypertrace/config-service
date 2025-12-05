@@ -12,6 +12,8 @@ import ai.traceable.jira.integration.config.service.api.v1.DeleteJiraTemplateRes
 import ai.traceable.jira.integration.config.service.api.v1.DeleteProjectIssueConfigurationRequest;
 import ai.traceable.jira.integration.config.service.api.v1.DeleteProjectIssueConfigurationResponse;
 import ai.traceable.jira.integration.config.service.api.v1.GetJiraIntegrationsRequest;
+import ai.traceable.jira.integration.config.service.api.v1.GetJiraTemplatesRequest;
+import ai.traceable.jira.integration.config.service.api.v1.GetJiraTemplatesResponse;
 import ai.traceable.jira.integration.config.service.api.v1.GetProjectIssueConfigurationsFilter;
 import ai.traceable.jira.integration.config.service.api.v1.GetProjectIssueConfigurationsRequest;
 import ai.traceable.jira.integration.config.service.api.v1.GetProjectIssueConfigurationsResponse;
@@ -173,6 +175,11 @@ public class JiraIntegrationCoordinator {
   public AddJiraTemplateResponse addJiraTemplate(
       RequestContext requestContext, AddJiraTemplateRequest request) {
     return this.jiraAdditionalConfigurationCoordinator.addJiraTemplate(request, requestContext);
+  }
+
+  public GetJiraTemplatesResponse getJiraTemplates(
+      RequestContext requestContext, GetJiraTemplatesRequest request) {
+    return this.jiraAdditionalConfigurationCoordinator.getJiraTemplates(request, requestContext);
   }
 
   public UpdateJiraTemplateResponse updateJiraTemplate(

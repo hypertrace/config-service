@@ -14,6 +14,8 @@ import ai.traceable.jira.integration.config.service.api.v1.DeleteProjectIssueCon
 import ai.traceable.jira.integration.config.service.api.v1.DeleteProjectIssueConfigurationResponse;
 import ai.traceable.jira.integration.config.service.api.v1.GetJiraIntegrationsRequest;
 import ai.traceable.jira.integration.config.service.api.v1.GetJiraIntegrationsResponse;
+import ai.traceable.jira.integration.config.service.api.v1.GetJiraTemplatesRequest;
+import ai.traceable.jira.integration.config.service.api.v1.GetJiraTemplatesResponse;
 import ai.traceable.jira.integration.config.service.api.v1.GetProjectIssueConfigurationsRequest;
 import ai.traceable.jira.integration.config.service.api.v1.GetProjectIssueConfigurationsResponse;
 import ai.traceable.jira.integration.config.service.api.v1.JiraIntegrationConfigServiceGrpc;
@@ -140,6 +142,25 @@ class JiraIntegrationConfigServiceImpl
     } catch (Exception e) {
       log.error(
           "Failed during adding jira template for request: {} within context: {}",
+          request,
+          requestContext,
+          e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getJiraTemplates(
+      GetJiraTemplatesRequest request, StreamObserver<GetJiraTemplatesResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      validator.validateGetJiraTemplates(request, requestContext);
+      responseObserver.onNext(
+          this.jiraIntegrationCoordinator.getJiraTemplates(requestContext, request));
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error(
+          "Failed during getting jira templates for request: {} within context: {}",
           request,
           requestContext,
           e);

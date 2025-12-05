@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import org.hypertrace.config.objectstore.IdentifiedObjectStoreWithFilter;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
@@ -106,5 +107,26 @@ class JiraAdditionalConfigurationStore
                 config.getJiraProjectIssueConfigurationDetails().getJiraTemplateList().stream())
         .filter(jiraTemplate -> jiraTemplate.getTemplateId().equals(templateId))
         .findAny();
+  }
+
+  List<JiraTemplate> getJiraTemplates(
+      RequestContext requestContext, String templateId, List<TraceableEntityType> entityTypes) {
+    List<Function<JiraTemplate, Boolean>> filters = new ArrayList<>();
+
+    if (templateId != null && !templateId.isEmpty()) {
+      filters.add(template -> template.getTemplateId().equals(templateId));
+    }
+
+    if (entityTypes != null && !entityTypes.isEmpty()) {
+      filters.add(template -> entityTypes.contains(template.getEntityType()));
+    }
+
+    return this.getAllConfigData(requestContext).stream()
+        .flatMap(
+            config ->
+                config.getJiraProjectIssueConfigurationDetails().getJiraTemplateList().stream())
+        .filter(
+            template -> filters.stream().allMatch(filterFunction -> filterFunction.apply(template)))
+        .collect(Collectors.toList());
   }
 }

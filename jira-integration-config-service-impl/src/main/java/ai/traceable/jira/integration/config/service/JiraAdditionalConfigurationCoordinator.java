@@ -8,10 +8,14 @@ import ai.traceable.jira.integration.config.service.api.v1.DeleteJiraTemplateReq
 import ai.traceable.jira.integration.config.service.api.v1.DeleteJiraTemplateResponse;
 import ai.traceable.jira.integration.config.service.api.v1.DeleteProjectIssueConfigurationRequest;
 import ai.traceable.jira.integration.config.service.api.v1.DeleteProjectIssueConfigurationResponse;
+import ai.traceable.jira.integration.config.service.api.v1.GetJiraTemplatesFilter;
+import ai.traceable.jira.integration.config.service.api.v1.GetJiraTemplatesRequest;
+import ai.traceable.jira.integration.config.service.api.v1.GetJiraTemplatesResponse;
 import ai.traceable.jira.integration.config.service.api.v1.GetProjectIssueConfigurationsFilter;
 import ai.traceable.jira.integration.config.service.api.v1.JiraProjectIssueConfiguration;
 import ai.traceable.jira.integration.config.service.api.v1.JiraProjectIssueConfigurationDetails;
 import ai.traceable.jira.integration.config.service.api.v1.JiraTemplate;
+import ai.traceable.jira.integration.config.service.api.v1.TraceableEntityType;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateJiraTemplateRequest;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateJiraTemplateResponse;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateProjectIssueConfigurationRequest;
@@ -37,7 +41,7 @@ class JiraAdditionalConfigurationCoordinator {
         this.getJiraAdditionalConfiguration(
             requestContext,
             GetProjectIssueConfigurationsFilter.newBuilder()
-                .setIntegrationId(request.getIntegrationId())
+                .addIntegrationIds(request.getIntegrationId())
                 .setIssueType(request.getIssueType())
                 .setProjectId(request.getProjectId())
                 .build())
@@ -90,16 +94,23 @@ class JiraAdditionalConfigurationCoordinator {
         this.getJiraAdditionalConfiguration(
                 requestContext,
                 GetProjectIssueConfigurationsFilter.newBuilder()
-                    .setIntegrationId(updatedJiraTemplate.getIntegrationId())
+                    .addIntegrationIds(updatedJiraTemplate.getIntegrationId())
                     .setIssueType(updatedJiraTemplate.getIssueType())
                     .setProjectId(updatedJiraTemplate.getProjectId())
-                    .addSupportedEntityTypes(updatedJiraTemplate.getEntityType())
                     .build())
             .stream()
             .findFirst()
             .map(JiraProjectIssueConfiguration::toBuilder)
-            .orElseThrow();
-
+            .orElseThrow(
+                () ->
+                    Status.NOT_FOUND
+                        .withDescription(
+                            String.format(
+                                "Jira configuration not found for integrationId: %s, projectId: %s, issueType: %s",
+                                updatedJiraTemplate.getIntegrationId(),
+                                updatedJiraTemplate.getProjectId(),
+                                updatedJiraTemplate.getIssueType()))
+                        .asRuntimeException());
     List<JiraTemplate> updatedTemplateList =
         configurationBuilder
             .getJiraProjectIssueConfigurationDetails()
@@ -135,43 +146,83 @@ class JiraAdditionalConfigurationCoordinator {
                         .withDescription("Jira Template not found for id")
                         .asRuntimeException());
 
-    JiraProjectIssueConfiguration.Builder configurationBuilder =
+    JiraProjectIssueConfiguration configuration =
         this.getJiraAdditionalConfiguration(
                 requestContext,
                 GetProjectIssueConfigurationsFilter.newBuilder()
-                    .setIntegrationId(template.getIntegrationId())
+                    .addIntegrationIds(template.getIntegrationId())
                     .setIssueType(template.getIssueType())
                     .setProjectId(template.getProjectId())
-                    .addSupportedEntityTypes(template.getEntityType())
                     .build())
             .stream()
             .findFirst()
-            .map(JiraProjectIssueConfiguration::toBuilder)
             .orElseThrow(
                 () ->
                     Status.NOT_FOUND
                         .withDescription(
-                            "Jira additional configuration not found for given integrationId, projectId, issueType, entityType")
+                            String.format(
+                                "Jira configuration not found for integrationId: %s, projectId: %s, issueType: %s",
+                                template.getIntegrationId(),
+                                template.getProjectId(),
+                                template.getIssueType()))
                         .asRuntimeException());
 
     List<JiraTemplate> updatedTemplateList =
-        configurationBuilder
-            .getJiraProjectIssueConfigurationDetails()
-            .getJiraTemplateList()
-            .stream()
+        configuration.getJiraProjectIssueConfigurationDetails().getJiraTemplateList().stream()
             .filter(jiraTemplate -> !jiraTemplate.getTemplateId().equals(template.getTemplateId()))
             .collect(Collectors.toList());
 
-    this.jiraAdditionalConfigurationStore.upsertObject(
-        requestContext,
-        configurationBuilder
-            .setJiraProjectIssueConfigurationDetails(
-                configurationBuilder.getJiraProjectIssueConfigurationDetails().toBuilder()
-                    .clearJiraTemplate()
-                    .addAllJiraTemplate(updatedTemplateList))
-            .build());
+    // Check if we should delete the entire document or just update it
+    boolean hasStatusMappings =
+        configuration.getJiraProjectIssueConfigurationDetails().hasJiraStatusMappingConfiguration()
+            && !configuration
+                .getJiraProjectIssueConfigurationDetails()
+                .getJiraStatusMappingConfiguration()
+                .getStatusMappingsList()
+                .isEmpty();
+
+    boolean hasFieldConfigurations =
+        !configuration
+            .getJiraProjectIssueConfigurationDetails()
+            .getFieldConfigurationsList()
+            .isEmpty();
+
+    // Delete entire document if templates will be empty and no status mappings or field
+    // configurations exist
+    if (updatedTemplateList.isEmpty() && !hasStatusMappings && !hasFieldConfigurations) {
+      this.jiraAdditionalConfigurationStore.deleteObject(
+          requestContext, configuration.getConfigurationId());
+    } else {
+      // Otherwise, just update with the remaining templates
+      this.jiraAdditionalConfigurationStore.upsertObject(
+          requestContext,
+          configuration.toBuilder()
+              .setJiraProjectIssueConfigurationDetails(
+                  configuration.getJiraProjectIssueConfigurationDetails().toBuilder()
+                      .clearJiraTemplate()
+                      .addAllJiraTemplate(updatedTemplateList))
+              .build());
+    }
 
     return DeleteJiraTemplateResponse.newBuilder().build();
+  }
+
+  GetJiraTemplatesResponse getJiraTemplates(
+      GetJiraTemplatesRequest request, RequestContext requestContext) {
+
+    String templateId = null;
+    List<TraceableEntityType> entityTypes = null;
+    if (request.hasFilter()) {
+      GetJiraTemplatesFilter filter = request.getFilter();
+      templateId = filter.hasTemplateId() ? filter.getTemplateId() : null;
+      entityTypes = !filter.getEntityTypesList().isEmpty() ? filter.getEntityTypesList() : null;
+    }
+
+    List<JiraTemplate> templates =
+        this.jiraAdditionalConfigurationStore.getJiraTemplates(
+            requestContext, templateId, entityTypes);
+
+    return GetJiraTemplatesResponse.newBuilder().addAllJiraTemplates(templates).build();
   }
 
   CreateProjectIssueConfigurationResponse createProjectIssueConfiguration(
