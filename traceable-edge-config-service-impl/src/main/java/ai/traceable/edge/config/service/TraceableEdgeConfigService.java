@@ -75,7 +75,8 @@ public class TraceableEdgeConfigService
         webAppEvaluationConfigContextSupplier.getConfigType(),
         webAppEvaluationConfigContextSupplier);
     this.configSuppliersByType.put(
-        apiProtectEvaluationConfigContextSupplier.getConfigType(), apiIdResolverConfigSupplier);
+        apiProtectEvaluationConfigContextSupplier.getConfigType(),
+        apiProtectEvaluationConfigContextSupplier);
     this.configSuppliersByType.put(
         preDetectionFilteringConfigContextSupplier.getConfigType(),
         preDetectionFilteringConfigContextSupplier);
