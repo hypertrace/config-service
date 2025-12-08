@@ -57,7 +57,12 @@ enum TestStatus {
 message AstHookTestFilter {
   oneof filter {
     TestStatusFilter test_status_filter = 1;
+    TestIdFilter test_id_filter = 2;
   }
+}
+
+message TestIdFilter {
+  repeated string ids = 1;
 }
 
 message TestStatusFilter {
