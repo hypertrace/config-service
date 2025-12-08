@@ -21,6 +21,7 @@ import ai.traceable.ast.hooks.config.service.v1.GetAstHookTestsRequest;
 import ai.traceable.ast.hooks.config.service.v1.HookConfig;
 import ai.traceable.ast.hooks.config.service.v1.HookScope;
 import ai.traceable.ast.hooks.config.service.v1.Role;
+import ai.traceable.ast.hooks.config.service.v1.TestIdFilter;
 import ai.traceable.ast.hooks.config.service.v1.TestStatus;
 import ai.traceable.ast.hooks.config.service.v1.TestStatusFilter;
 import ai.traceable.ast.hooks.config.service.v1.UpdateAstHookRequest;
@@ -186,6 +187,9 @@ public class RequestValidator extends ValidatorBase {
       case TEST_STATUS_FILTER:
         validateTestStatusFilter(requestContext, astHookTestFilter.getTestStatusFilter());
         break;
+      case TEST_ID_FILTER:
+        validateTestIdFilter(requestContext, astHookTestFilter.getTestIdFilter());
+        break;
       default:
         throw Status.INVALID_ARGUMENT
             .withDescription("Encountered unknown ast hook test filer type: {}" + astHookTestFilter)
@@ -203,6 +207,24 @@ public class RequestValidator extends ValidatorBase {
     testStatusFilter
         .getStatusesList()
         .forEach(status -> this.validateTestStatus(requestContext, status));
+  }
+
+  private void validateTestIdFilter(RequestContext requestContext, TestIdFilter testIdFilter) {
+    if (testIdFilter.getIdsCount() == 0) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("IDs not found within test id filter: " + testIdFilter)
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+    testIdFilter
+        .getIdsList()
+        .forEach(
+            id -> {
+              if (isBlank(id)) {
+                throw Status.INVALID_ARGUMENT
+                    .withDescription("Empty ID found within test id filter: " + testIdFilter)
+                    .asRuntimeException(requestContext.buildTrailers());
+              }
+            });
   }
 
   public void validateOrThrow(RequestContext requestContext, CreateAstHookTestRequest request) {

@@ -24,6 +24,7 @@ import ai.traceable.ast.hooks.config.service.v1.GetAstHookTestsRequest;
 import ai.traceable.ast.hooks.config.service.v1.HookScope;
 import ai.traceable.ast.hooks.config.service.v1.Role;
 import ai.traceable.ast.hooks.config.service.v1.RunnerInfo;
+import ai.traceable.ast.hooks.config.service.v1.TestIdFilter;
 import ai.traceable.ast.hooks.config.service.v1.TestStatusFilter;
 import ai.traceable.ast.hooks.config.service.v1.UpdateAstHookTestRequest;
 import io.grpc.Status;
@@ -253,6 +254,49 @@ class RequestValidatorTest {
                                 TestStatusFilter.newBuilder()
                                     .addStatuses(TEST_STATUS_ABORTED)
                                     .build())
+                            .build())
+                    .build()));
+  }
+
+  @Test
+  void validateTestIdFilter() {
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+
+    // Test empty IDs list
+    assertInvalidArgStatusContaining(
+        "IDs not found within test id filter",
+        () ->
+            requestValidator.validateOrThrow(
+                mockRequestContext,
+                GetAstHookTestsRequest.newBuilder()
+                    .addAstHookTestFilters(
+                        AstHookTestFilter.newBuilder()
+                            .setTestIdFilter(TestIdFilter.getDefaultInstance())
+                            .build())
+                    .build()));
+
+    // Test with empty ID string
+    assertInvalidArgStatusContaining(
+        "Empty ID found within test id filter",
+        () ->
+            requestValidator.validateOrThrow(
+                mockRequestContext,
+                GetAstHookTestsRequest.newBuilder()
+                    .addAstHookTestFilters(
+                        AstHookTestFilter.newBuilder()
+                            .setTestIdFilter(TestIdFilter.newBuilder().addIds(""))
+                            .build())
+                    .build()));
+
+    // Test valid ID filter
+    assertDoesNotThrow(
+        () ->
+            requestValidator.validateOrThrow(
+                mockRequestContext,
+                GetAstHookTestsRequest.newBuilder()
+                    .addAstHookTestFilters(
+                        AstHookTestFilter.newBuilder()
+                            .setTestIdFilter(TestIdFilter.newBuilder().addIds("test-id-1"))
                             .build())
                     .build()));
   }

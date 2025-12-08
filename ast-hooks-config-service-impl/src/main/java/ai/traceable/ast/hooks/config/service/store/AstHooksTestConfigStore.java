@@ -70,6 +70,8 @@ public class AstHooksTestConfigStore extends IdentifiedObjectStore<AstHookTest> 
     switch (filter.getFilterCase()) {
       case TEST_STATUS_FILTER:
         return filter.getTestStatusFilter().getStatusesList().contains(astHookTest.getTestStatus());
+      case TEST_ID_FILTER:
+        return filter.getTestIdFilter().getIdsList().contains(astHookTest.getId());
       case FILTER_NOT_SET:
         return true;
       default:
