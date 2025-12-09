@@ -390,7 +390,7 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
             .setKey(FIELD_DENY_LIST_REGEX)
             .setConfigValueMetadata(
                 ConfigValueMetadata.newBuilder()
-                    .setType(ConfigValueType.CONFIG_VALUE_TYPE_ARRAY)
+                    .setType(ConfigValueType.CONFIG_VALUE_TYPE_STRING)
                     .build())
             .build();
 
@@ -399,7 +399,7 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
             .setKey(OPERATION_DENY_LIST_REGEX)
             .setConfigValueMetadata(
                 ConfigValueMetadata.newBuilder()
-                    .setType(ConfigValueType.CONFIG_VALUE_TYPE_ARRAY)
+                    .setType(ConfigValueType.CONFIG_VALUE_TYPE_STRING)
                     .build())
             .build();
 
