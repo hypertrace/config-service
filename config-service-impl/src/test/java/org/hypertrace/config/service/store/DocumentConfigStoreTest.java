@@ -858,7 +858,7 @@ class DocumentConfigStoreTest {
     assertEquals(true, result.isPresent());
     assertEquals("System", result.get().getCreatedByEmail());
     assertEquals("Unknown", result.get().getLastUserUpdateEmail());
-    assertEquals(0L, result.get().getLastUserUpdateTimestamp());
+    assertEquals(TIMESTAMP2, result.get().getLastUserUpdateTimestamp());
     // last_update_email shows actual last updater (including agents/system)
     assertEquals(agentEmail, result.get().getLastUpdateEmail());
   }
