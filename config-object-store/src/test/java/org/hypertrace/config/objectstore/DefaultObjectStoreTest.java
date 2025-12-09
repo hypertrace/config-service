@@ -73,9 +73,10 @@ class DefaultObjectStoreTest {
             new ConfigObjectImpl<>(
                 new TestInternalObject("test"),
                 TEST_CREATE_TIMESTAMP,
-                TEST_UPDATE_TIMESTAMP,
                 TEST_CREATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
                 TEST_LAST_UPDATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
                 TEST_LAST_UPDATED_BY_EMAIL)),
         this.store.getObject(this.mockRequestContext));
 
@@ -145,9 +146,10 @@ class DefaultObjectStoreTest {
             new ConfigObjectImpl<>(
                 new TestInternalObject("test"),
                 TEST_CREATE_TIMESTAMP,
-                TEST_UPDATE_TIMESTAMP,
                 TEST_CREATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
                 TEST_LAST_UPDATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
                 TEST_LAST_UPDATED_BY_EMAIL)),
         this.store.deleteObject(mockRequestContext));
 
@@ -189,9 +191,10 @@ class DefaultObjectStoreTest {
         new ConfigObjectImpl<>(
             new TestInternalObject("updated"),
             TEST_CREATE_TIMESTAMP,
-            TEST_UPDATE_TIMESTAMP,
             TEST_CREATED_BY_EMAIL,
+            TEST_UPDATE_TIMESTAMP,
             TEST_LAST_UPDATED_BY_EMAIL,
+            TEST_UPDATE_TIMESTAMP,
             TEST_LAST_UPDATED_BY_EMAIL);
     assertEquals(
         configObject,

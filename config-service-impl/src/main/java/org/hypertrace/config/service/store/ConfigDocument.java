@@ -33,7 +33,8 @@ public class ConfigDocument implements Document {
       new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
   public static final String DEFAULT_LATEST_UPDATED_USER_ID = "Unknown";
-  public static final String DEFAULT_USER_EMAIL = "Unknown";
+  public static final String DEFAULT_LATEST_UPDATED_USER_EMAIL = "Unknown";
+  public static final String DEFAULT_SYSTEM_USER_EMAIL = "System";
   public static final String RESOURCE_FIELD_NAME = "resourceName";
   public static final String RESOURCE_NAMESPACE_FIELD_NAME = "resourceNamespace";
   public static final String TENANT_ID_FIELD_NAME = "tenantId";
@@ -41,7 +42,7 @@ public class ConfigDocument implements Document {
   public static final String VERSION_FIELD_NAME = "configVersion";
   public static final String LAST_UPDATED_USER_ID_FIELD_NAME = "lastUpdateUserId";
   public static final String LAST_UPDATED_USER_EMAIL_FIELD_NAME = "lastUpdatedUserEmail";
-  public static final String CREATED_BY_USER_EMAIL_FIELD_NAME = "createdByUserEmail";
+  public static final String CREATED_BY_EMAIL_FIELD_NAME = "createdByEmail";
   public static final String LAST_USER_UPDATE_EMAIL_FIELD_NAME = "lastUserUpdateEmail";
   public static final String LAST_USER_UPDATE_TIMESTAMP_FIELD_NAME = "lastUserUpdateTimestamp";
   public static final String CONFIG_FIELD_NAME = "config";
@@ -69,8 +70,8 @@ public class ConfigDocument implements Document {
   @JsonProperty(value = LAST_UPDATED_USER_EMAIL_FIELD_NAME)
   String lastUpdatedUserEmail;
 
-  @JsonProperty(value = CREATED_BY_USER_EMAIL_FIELD_NAME)
-  String createdByUserEmail;
+  @JsonProperty(value = CREATED_BY_EMAIL_FIELD_NAME)
+  String createdByEmail;
 
   @JsonProperty(value = LAST_USER_UPDATE_EMAIL_FIELD_NAME)
   String lastUserUpdateEmail;
@@ -98,7 +99,7 @@ public class ConfigDocument implements Document {
       @JsonProperty(VERSION_FIELD_NAME) long configVersion,
       @JsonProperty(LAST_UPDATED_USER_ID_FIELD_NAME) String lastUpdatedUserId,
       @JsonProperty(LAST_UPDATED_USER_EMAIL_FIELD_NAME) String lastUpdatedUserEmail,
-      @JsonProperty(CREATED_BY_USER_EMAIL_FIELD_NAME) String createdByUserEmail,
+      @JsonProperty(CREATED_BY_EMAIL_FIELD_NAME) String createdByEmail,
       @JsonProperty(LAST_USER_UPDATE_EMAIL_FIELD_NAME) String lastUserUpdateEmail,
       @JsonProperty(LAST_USER_UPDATE_TIMESTAMP_FIELD_NAME) long lastUserUpdateTimestamp,
       @JsonProperty(CONFIG_FIELD_NAME) Value config,
@@ -111,10 +112,9 @@ public class ConfigDocument implements Document {
     this.configVersion = configVersion;
     this.lastUpdatedUserId =
         Optional.ofNullable(lastUpdatedUserId).orElse(DEFAULT_LATEST_UPDATED_USER_ID);
-    this.lastUpdatedUserEmail =
-        Optional.ofNullable(lastUpdatedUserEmail).orElse(DEFAULT_USER_EMAIL);
-    this.createdByUserEmail = Optional.ofNullable(createdByUserEmail).orElse(DEFAULT_USER_EMAIL);
-    this.lastUserUpdateEmail = Optional.ofNullable(lastUserUpdateEmail).orElse(DEFAULT_USER_EMAIL);
+    this.lastUpdatedUserEmail = lastUpdatedUserEmail;
+    this.createdByEmail = createdByEmail;
+    this.lastUserUpdateEmail = lastUserUpdateEmail;
     this.lastUserUpdateTimestamp = lastUserUpdateTimestamp;
     this.config = config;
     this.creationTimestamp = creationTimestamp;

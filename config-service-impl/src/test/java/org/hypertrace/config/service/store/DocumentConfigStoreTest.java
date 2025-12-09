@@ -11,6 +11,7 @@ import static org.hypertrace.config.service.TestUtils.getConfigResourceContext;
 import static org.hypertrace.config.service.store.DocumentConfigStore.CONFIGURATIONS_COLLECTION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -542,7 +543,7 @@ class DocumentConfigStoreTest {
     verify(collection).upsert(any(Key.class), documentCaptor.capture());
 
     ConfigDocument capturedDoc = (ConfigDocument) documentCaptor.getValue();
-    assertEquals(creatorEmail, capturedDoc.getCreatedByUserEmail());
+    assertEquals(creatorEmail, capturedDoc.getCreatedByEmail());
     assertEquals(creatorEmail, capturedDoc.getLastUpdatedUserEmail());
   }
 
@@ -582,7 +583,7 @@ class DocumentConfigStoreTest {
     verify(collection).upsert(any(Key.class), documentCaptor.capture());
 
     ConfigDocument capturedDoc = (ConfigDocument) documentCaptor.getValue();
-    assertEquals(originalCreator, capturedDoc.getCreatedByUserEmail());
+    assertEquals(originalCreator, capturedDoc.getCreatedByEmail());
     assertEquals(modifier, capturedDoc.getLastUpdatedUserEmail());
   }
 
@@ -605,9 +606,9 @@ class DocumentConfigStoreTest {
             TIMESTAMP1,
             TIMESTAMP2);
 
-    // Should default to "Unknown" as specified in the plan
-    assertEquals("Unknown", oldDoc.getCreatedByUserEmail());
-    assertEquals("Unknown", oldDoc.getLastUserUpdateEmail());
+    // After write-time substitution removal, these should be null in the document
+    assertNull(oldDoc.getCreatedByEmail());
+    assertNull(oldDoc.getLastUserUpdateEmail());
   }
 
   @Test
@@ -725,7 +726,7 @@ class DocumentConfigStoreTest {
     // Audit fields should have real agent data
     assertEquals(agentEmail, savedDoc.getLastUpdatedUserEmail());
     assertEquals("agent-user-id", savedDoc.getLastUpdatedUserId());
-    assertEquals(originalEmail, savedDoc.getCreatedByUserEmail());
+    assertEquals(originalEmail, savedDoc.getCreatedByEmail());
     assertEquals(TIMESTAMP2, savedDoc.getUpdateTimestamp());
     // lastUserUpdate fields should preserve original user
     assertEquals(originalEmail, savedDoc.getLastUserUpdateEmail());
@@ -808,8 +809,8 @@ class DocumentConfigStoreTest {
         storeWithExclusion.writeConfig(configResourceContext, agentUserId, request, agentEmail);
 
     // Verify: On creation with excluded email
-    // created_by_email shows the actual creator (including agents/system)
-    assertEquals(agentEmail, result.getCreatedByEmail());
+    // created_by_email shows "System" for excluded emails
+    assertEquals("System", result.getCreatedByEmail());
     // lastUserUpdate fields should be "Unknown"/0 since no non-excluded user has updated
     assertEquals("Unknown", result.getLastUserUpdateEmail());
     assertEquals(0L, result.getLastUserUpdateTimestamp());
@@ -842,7 +843,7 @@ class DocumentConfigStoreTest {
             USER_ID,
             agentEmail,
             agentEmail,
-            ConfigDocument.DEFAULT_USER_EMAIL, // lastUserUpdateEmail = "Unknown"
+            null, // lastUserUpdateEmail = null (will be converted to "Unknown" at read-time)
             0L, // lastUserUpdateTimestamp = 0
             config1,
             TIMESTAMP1,
@@ -853,9 +854,9 @@ class DocumentConfigStoreTest {
 
     Optional<ContextSpecificConfig> result = storeWithExclusion.getConfig(configResourceContext);
 
-    // Verify: created_by_email shows actual creator (including agents/system)
+    // Verify: created_by_email shows "System" for excluded emails
     assertEquals(true, result.isPresent());
-    assertEquals(agentEmail, result.get().getCreatedByEmail());
+    assertEquals("System", result.get().getCreatedByEmail());
     assertEquals("Unknown", result.get().getLastUserUpdateEmail());
     assertEquals(0L, result.get().getLastUserUpdateTimestamp());
     // last_update_email shows actual last updater (including agents/system)

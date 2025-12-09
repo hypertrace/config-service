@@ -163,17 +163,19 @@ class IdentifiedObjectStoreWithFilterTest {
                 OBJECT_1.getId(),
                 OBJECT_1,
                 TEST_CREATE_TIMESTAMP_1,
-                TEST_UPDATE_TIMESTAMP,
                 TEST_CREATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
                 TEST_LAST_UPDATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
                 TEST_LAST_UPDATED_BY_EMAIL),
             new ContextualConfigObjectImpl<>(
                 OBJECT_2.getId(),
                 OBJECT_2,
                 TEST_CREATE_TIMESTAMP_2,
-                TEST_UPDATE_TIMESTAMP,
                 TEST_CREATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
                 TEST_LAST_UPDATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
                 TEST_LAST_UPDATED_BY_EMAIL)),
         this.store.getAllObjects(this.mockRequestContext));
     assertEquals(List.of(OBJECT_1, OBJECT_2), this.store.getAllConfigData(this.mockRequestContext));
@@ -184,9 +186,10 @@ class IdentifiedObjectStoreWithFilterTest {
                 OBJECT_2.getId(),
                 OBJECT_2,
                 TEST_CREATE_TIMESTAMP_2,
-                TEST_UPDATE_TIMESTAMP,
                 TEST_CREATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
                 TEST_LAST_UPDATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
                 TEST_LAST_UPDATED_BY_EMAIL)),
         this.store.getAllObjects(this.mockRequestContext, FILTER_1));
     assertEquals(List.of(OBJECT_2), this.store.getAllConfigData(this.mockRequestContext, FILTER_1));
@@ -197,17 +200,19 @@ class IdentifiedObjectStoreWithFilterTest {
                 OBJECT_1.getId(),
                 OBJECT_1_FILTERED_BY_2,
                 TEST_CREATE_TIMESTAMP_1,
-                TEST_UPDATE_TIMESTAMP,
                 TEST_CREATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
                 TEST_LAST_UPDATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
                 TEST_LAST_UPDATED_BY_EMAIL),
             new ContextualConfigObjectImpl<>(
                 OBJECT_2.getId(),
                 OBJECT_2,
                 TEST_CREATE_TIMESTAMP_2,
-                TEST_UPDATE_TIMESTAMP,
                 TEST_CREATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
                 TEST_LAST_UPDATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
                 TEST_LAST_UPDATED_BY_EMAIL)),
         this.store.getAllObjects(this.mockRequestContext, FILTER_2));
     assertEquals(
@@ -220,9 +225,10 @@ class IdentifiedObjectStoreWithFilterTest {
                 OBJECT_2.getId(),
                 OBJECT_2_FILTERED_BY_3,
                 TEST_CREATE_TIMESTAMP_2,
-                TEST_UPDATE_TIMESTAMP,
                 TEST_CREATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
                 TEST_LAST_UPDATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
                 TEST_LAST_UPDATED_BY_EMAIL)),
         this.store.getAllObjects(this.mockRequestContext, FILTER_3));
     assertEquals(
@@ -257,9 +263,10 @@ class IdentifiedObjectStoreWithFilterTest {
                 OBJECT_1.getId(),
                 OBJECT_1,
                 TEST_CREATE_TIMESTAMP_1,
-                TEST_UPDATE_TIMESTAMP,
                 TEST_CREATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
                 TEST_LAST_UPDATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
                 TEST_LAST_UPDATED_BY_EMAIL)),
         this.store.getObject(this.mockRequestContext, OBJECT_1.getId()));
     assertEquals(
@@ -274,9 +281,10 @@ class IdentifiedObjectStoreWithFilterTest {
                 OBJECT_1.getId(),
                 OBJECT_1_FILTERED_BY_2,
                 TEST_CREATE_TIMESTAMP_1,
-                TEST_UPDATE_TIMESTAMP,
                 TEST_CREATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
                 TEST_LAST_UPDATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
                 TEST_LAST_UPDATED_BY_EMAIL)),
         this.store.getObject(this.mockRequestContext, OBJECT_1.getId(), FILTER_2));
     assertEquals(

@@ -93,6 +93,7 @@ public abstract class DefaultObjectStore<T> {
           getConfigResponse.getCreationTimestamp(),
           getConfigResponse.getUpdateTimestamp(),
           getConfigResponse.getCreatedByEmail(),
+          getConfigResponse.getLastUserUpdateTimestamp(),
           getConfigResponse.getLastUserUpdateEmail(),
           getConfigResponse.getLastUpdateEmail(),
           this::buildDataFromValue);

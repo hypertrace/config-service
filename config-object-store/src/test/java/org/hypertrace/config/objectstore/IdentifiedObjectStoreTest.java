@@ -122,17 +122,19 @@ class IdentifiedObjectStoreTest {
                 OBJECT_1.getId(),
                 OBJECT_1,
                 TEST_CREATE_TIMESTAMP_1,
-                TEST_UPDATE_TIMESTAMP,
                 TEST_CREATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
                 TEST_LAST_UPDATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
                 TEST_LAST_UPDATED_BY_EMAIL),
             new ContextualConfigObjectImpl<>(
                 OBJECT_2.getId(),
                 OBJECT_2,
                 TEST_CREATE_TIMESTAMP_2,
-                TEST_UPDATE_TIMESTAMP,
                 TEST_CREATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
                 TEST_LAST_UPDATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
                 TEST_LAST_UPDATED_BY_EMAIL)),
         this.store.getAllObjects(this.mockRequestContext));
 
@@ -164,9 +166,10 @@ class IdentifiedObjectStoreTest {
                 OBJECT_1.getId(),
                 OBJECT_1,
                 TEST_CREATE_TIMESTAMP_1,
-                TEST_UPDATE_TIMESTAMP,
                 TEST_CREATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
                 TEST_LAST_UPDATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
                 TEST_LAST_UPDATED_BY_EMAIL)),
         this.store.getObject(this.mockRequestContext, OBJECT_1.getId()));
 
@@ -281,9 +284,10 @@ class IdentifiedObjectStoreTest {
             OBJECT_1.getId(),
             OBJECT_1,
             TEST_CREATE_TIMESTAMP_1,
-            TEST_UPDATE_TIMESTAMP,
             TEST_CREATED_BY_EMAIL,
+            TEST_UPDATE_TIMESTAMP,
             TEST_LAST_UPDATED_BY_EMAIL,
+            TEST_UPDATE_TIMESTAMP,
             TEST_LAST_UPDATED_BY_EMAIL);
     assertEquals(
         contextualConfigObject, this.store.upsertObject(this.mockRequestContext, OBJECT_1));
@@ -337,17 +341,19 @@ class IdentifiedObjectStoreTest {
                 OBJECT_1.getId(),
                 OBJECT_1,
                 TEST_CREATE_TIMESTAMP_1,
-                TEST_UPDATE_TIMESTAMP,
                 TEST_CREATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
                 TEST_LAST_UPDATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
                 TEST_LAST_UPDATED_BY_EMAIL),
             new ContextualConfigObjectImpl<>(
                 OBJECT_2.getId(),
                 OBJECT_2,
                 TEST_CREATE_TIMESTAMP_1,
-                TEST_UPDATE_TIMESTAMP,
                 TEST_CREATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
                 TEST_LAST_UPDATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
                 TEST_LAST_UPDATED_BY_EMAIL)),
         this.store.upsertObjects(this.mockRequestContext, List.of(OBJECT_1, OBJECT_2)));
     verify(this.mockStub, times(1))

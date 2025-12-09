@@ -95,9 +95,10 @@ class ContextuallyIdentifiedObjectStoreTest {
                 "my-tenant",
                 new TestObject("test"),
                 TEST_CREATE_TIMESTAMP,
-                TEST_UPDATE_TIMESTAMP,
                 TEST_CREATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
                 TEST_LAST_UPDATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
                 TEST_LAST_UPDATED_BY_EMAIL)),
         this.store.getObject(RequestContext.forTenantId("my-tenant")));
 
@@ -176,9 +177,10 @@ class ContextuallyIdentifiedObjectStoreTest {
             "upsert-tenant",
             new TestObject("updated"),
             TEST_CREATE_TIMESTAMP,
-            TEST_UPDATE_TIMESTAMP,
             TEST_CREATED_BY_EMAIL,
+            TEST_UPDATE_TIMESTAMP,
             TEST_LAST_UPDATED_BY_EMAIL,
+            TEST_UPDATE_TIMESTAMP,
             TEST_LAST_UPDATED_BY_EMAIL),
         this.store.upsertObject(
             RequestContext.forTenantId("upsert-tenant"), new TestObject("updated")));
