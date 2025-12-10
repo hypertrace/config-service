@@ -20,6 +20,8 @@ message IpResolutionStrategyConfigData {
   Scope scope = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Scope (environment/service) where the strategy should be enforced"];
   // Optionally disable this config without deleting it
   bool disabled = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Flag to temporarily disable the configuration without removing it"];
+  // Designated name of the config
+  string name = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Designated name for this IPResolutionStrategyConfig"];
 }
 
 // Scope definition (environment and service)
