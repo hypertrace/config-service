@@ -12,7 +12,7 @@ option java_multiple_files = true;
 message TriageConfig {
   string malicious_sql = 1;
   string non_malicious_sql = 2;
-  bool generate_detection_event_spans = 3;
+  bool generate_detection_event_spans = 3 [deprecated = true];
   bool enable_fingerprinting = 4;
   bool enable_edge_enforcement = 5;
   ActionConfig action = 6;

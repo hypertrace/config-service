@@ -23,7 +23,7 @@ enum SummaryFormat {
 }
 
 message SummaryPlaceholder {
-  Source source = 1;
+  Source source = 1 [deprecated = true];
   string fqn = 2;
   SummaryFormat format = 3;
 }
