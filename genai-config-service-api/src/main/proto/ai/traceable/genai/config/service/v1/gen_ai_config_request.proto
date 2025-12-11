@@ -26,6 +26,7 @@ message FeatureLevelConfigUpdate {
   IssuesSummaryFeatureConfig issues_summary_feature_config_update = 1;
   ThreatActivitySummaryFeatureConfig threat_activity_summary_feature_config_update = 2;
   ChatbotFeatureConfig chatbot_feature_config_update = 3;
+  AstAuthHookGeneratorAgentFeatureConfig ast_auth_hook_generator_agent_feature_config_update = 4;
 }
 
 message GenAiFeatureConfigUpdate {

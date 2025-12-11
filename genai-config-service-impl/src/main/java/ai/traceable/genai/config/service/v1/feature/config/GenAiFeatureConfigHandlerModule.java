@@ -14,5 +14,6 @@ public class GenAiFeatureConfigHandlerModule extends AbstractModule {
     handlerBinder.addBinding().to(IssuesSummaryFeatureConfigHandler.class);
     handlerBinder.addBinding().to(ThreatActivitySummaryFeatureConfigHandler.class);
     handlerBinder.addBinding().to(ChatbotFeatureConfigHandler.class);
+    handlerBinder.addBinding().to(AstAuthHookGeneratorAgentFeatureConfigHandler.class);
   }
 }

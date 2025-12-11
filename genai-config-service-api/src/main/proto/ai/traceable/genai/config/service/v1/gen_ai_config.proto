@@ -19,6 +19,7 @@ message GenAiConfig {
   IssuesSummaryFeatureConfig issues_summary_feature_config = 2;
   ThreatActivitySummaryFeatureConfig threat_activity_summary_feature_config = 3;
   ChatbotFeatureConfig chat_bot_feature_config = 5;
+  AstAuthHookGeneratorAgentFeatureConfig ast_auth_hook_generator_agent_feature_config = 6;
 }
 
 message GlobalConfig {
@@ -34,5 +35,9 @@ message ThreatActivitySummaryFeatureConfig {
 }
 
 message ChatbotFeatureConfig {
+  bool enabled = 1;
+}
+
+message AstAuthHookGeneratorAgentFeatureConfig {
   bool enabled = 1;
 }
