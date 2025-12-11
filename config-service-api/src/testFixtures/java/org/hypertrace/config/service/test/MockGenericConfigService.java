@@ -132,7 +132,10 @@ public class MockGenericConfigService {
                   UpsertConfigResponse.newBuilder()
                       .setConfig(upsertedConfig.getConfig())
                       .setCreationTimestamp(upsertedConfig.getCreationTimestamp())
-                      .setUpdateTimestamp(upsertedConfig.getUpdateTimestamp());
+                      .setUpdateTimestamp(upsertedConfig.getUpdateTimestamp())
+                      .setCreatedByEmail(upsertedConfig.getCreatedByEmail())
+                      .setLastUserUpdateEmail(upsertedConfig.getLastUserUpdateEmail())
+                      .setLastUserUpdateTimestamp(upsertedConfig.getLastUserUpdateTimestamp());
               if (upsertedConfig.hasPrevConfig()) {
                 responseBuilder.setPrevConfig(upsertedConfig.getPrevConfig());
               }
