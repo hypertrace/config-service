@@ -113,6 +113,8 @@ message ObfuscationStrategy {
     Sha256Hash sha256 = 3;
     Argon2IdHash argon2id = 4;
     ScryptHash scrypt = 5;
+    // This is the default option considered by TPA when HashFunction is unspecified. Keeping this for behavioral consistency.
+    Sha1Hash sha1 = 6;
   }
 
   enum HashFunction {
@@ -122,6 +124,8 @@ message ObfuscationStrategy {
 }
 
 message Sha256Hash {}
+
+message Sha1Hash {}
 
 message Argon2IdHash {
   int32 time = 1;
