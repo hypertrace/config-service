@@ -238,9 +238,6 @@ public class ApiProtectConfigContextClientProvider implements ApiProtectConfigCo
         return detectionConfig.getConfigStatus().getDisabled()
             || subRuleConfig
                 .getAnomalyRuleAction()
-                .equals(AnomalyRuleAction.ANOMALY_RULE_ACTION_BLOCK)
-            || subRuleConfig
-                .getAnomalyRuleAction()
                 .equals(AnomalyRuleAction.ANOMALY_RULE_ACTION_DISABLE);
       default:
         log.error("Unsupported rule evaluation point: {}", ruleEvaluationPoint);

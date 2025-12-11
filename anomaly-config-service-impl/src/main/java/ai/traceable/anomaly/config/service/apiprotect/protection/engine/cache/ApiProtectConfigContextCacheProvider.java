@@ -18,6 +18,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.util.Collections;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -29,6 +30,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.core.kafka.event.listener.KafkaLiveEventListener;
 import org.hypertrace.core.serviceframework.metrics.PlatformMetricsRegistry;
 
+@Singleton
 @Slf4j
 public class ApiProtectConfigContextCacheProvider extends ApiProtectConfigContextClientProvider {
   private static final String CACHE_NAME = "apiProtectConfigContextCache";

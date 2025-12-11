@@ -51,6 +51,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -76,6 +77,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.core.kafka.event.listener.KafkaLiveEventListener;
 import org.hypertrace.core.serviceframework.metrics.PlatformMetricsRegistry;
 
+@Singleton
 @Slf4j
 public class WebAppEvaluationConfigContextManagerImpl
     implements WebAppEvaluationConfigContextManager {

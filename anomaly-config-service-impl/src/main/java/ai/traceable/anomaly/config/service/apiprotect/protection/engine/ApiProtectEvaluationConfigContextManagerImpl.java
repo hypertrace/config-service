@@ -11,9 +11,11 @@ import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.protection.engine.config.apiprotect.v1.ApiProtectionConfigContext;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import jakarta.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
+@Singleton
 @Slf4j
 public class ApiProtectEvaluationConfigContextManagerImpl
     implements ApiProtectEvaluationConfigContextManager {

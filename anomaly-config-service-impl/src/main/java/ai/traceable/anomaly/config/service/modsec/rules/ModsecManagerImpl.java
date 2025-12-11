@@ -82,8 +82,6 @@ public class ModsecManagerImpl implements ModsecManager {
     // if edge is enabled and protection engine web app protection is enabled for tenant
     // then don't send TA blocking modsec rules since those will get evaluated in eds via
     // protection engine
-    // currently we are not sending only if its coraza directive since protection engine supports
-    // coraza evaluation only but eventually it will support both coraza and modsec-jni
     if (featureCachingClient.isEdgeDecisionEnabledForTenant(requestContext)
         && featureCachingClient.isProtectionEngineWebAppProtectionEnabledForTenant(requestContext)
         && rulesTarget.equals(ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING)) {
