@@ -79,23 +79,6 @@ public class ModsecManagerImpl implements ModsecManager {
       List<AnomalySubRuleType> subRuleTypes,
       boolean removeDisabledRules,
       AnomalyConfigScope anomalyConfigScope) {
-    // if edge is enabled and protection engine web app protection is enabled for tenant
-    // then don't send TA blocking modsec rules since those will get evaluated in eds via
-    // protection engine
-    if (featureCachingClient.isEdgeDecisionEnabledForTenant(requestContext)
-        && featureCachingClient.isProtectionEngineWebAppProtectionEnabledForTenant(requestContext)
-        && rulesTarget.equals(ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING)) {
-      log.debug(
-          "Not sending TA blocking modsec rules for tenant: {}", requestContext.getTenantId());
-      return new ModsecCrsRules(subRuleTypes);
-    } else if (featureCachingClient.isEdgeDecisionEnabledForTenant(requestContext)
-        && featureCachingClient.isProtectionEngineWebAppProtectionEnabledForTenant(requestContext)
-        && !rulesTarget.equals(ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_PLATFORM_DETECTION)) {
-      log.debug(
-          "Sending actual modsec rules for tenant: {}, target: {}",
-          requestContext.getTenantId(),
-          rulesTarget);
-    }
     ScopedAnomalyConfigStatus globalConfig =
         globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(
             requestContext, anomalyConfigScope);
