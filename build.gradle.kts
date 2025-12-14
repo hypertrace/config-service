@@ -20,6 +20,13 @@ subprojects {
     }
   }
   apply(plugin = rootProject.commonLibs.plugins.hypertrace.codestyle.get().pluginId)
+
+  configurations.all {
+    resolutionStrategy.dependencySubstitution {
+      substitute(module("at.yawk.lz4:lz4-java")).using(module("org.lz4:lz4-java:1.8.1"))
+        .because("Resolve capability conflict between org.lz4:lz4-java and at.yawk.lz4:lz4-java")
+    }
+  }
 }
 
 dependencyCheck {
