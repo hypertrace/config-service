@@ -217,6 +217,11 @@ public class ModsecManagerImpl implements ModsecManager {
     return builder.build();
   }
 
+  @Override
+  public String getImpactScoringRulesBlob(RuleVersion ruleVersion) {
+    return webAppRuleInfoProvider.getImpactScoringBlob(ruleVersion);
+  }
+
   private Set<String> getDisabledModsecRuleIds(
       RequestContext requestContext,
       boolean checkBlockingStatus,

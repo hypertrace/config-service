@@ -3,13 +3,17 @@ package ai.traceable.anomaly.config.service.modsec;
 import ai.traceable.anomaly.config.service.modsec.protection.engine.WebAppEvaluationConfigContextManager;
 import ai.traceable.anomaly.config.service.modsec.rules.ModsecManager;
 import ai.traceable.anomaly.config.service.modsec.rules.ModsecValidator;
+import ai.traceable.anomaly.config.service.v1.RuleVersion;
 import ai.traceable.anomaly.config.service.v1.modsec.AnomalyModsecConfigServiceGrpc.AnomalyModsecConfigServiceImplBase;
 import ai.traceable.anomaly.config.service.v1.modsec.GetDefaultModsecCrsRulesRequest;
 import ai.traceable.anomaly.config.service.v1.modsec.GetDefaultModsecCrsRulesResponse;
+import ai.traceable.anomaly.config.service.v1.modsec.GetImpactScoringRulesRequest;
+import ai.traceable.anomaly.config.service.v1.modsec.GetImpactScoringRulesResponse;
 import ai.traceable.anomaly.config.service.v1.modsec.GetModsecCrsRulesRequest;
 import ai.traceable.anomaly.config.service.v1.modsec.GetModsecCrsRulesResponse;
 import ai.traceable.anomaly.config.service.v1.modsec.GetWebAppEvaluationConfigContextRequest;
 import ai.traceable.anomaly.config.service.v1.modsec.GetWebAppEvaluationConfigContextResponse;
+import ai.traceable.anomaly.config.service.v1.modsec.ImpactScoringRules;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import ai.traceable.protection.engine.config.webapp.v1.WebAppEvaluationConfigContext;
 import io.grpc.Status;
@@ -121,6 +125,27 @@ public class AnomalyModsecConfigServiceImpl extends AnomalyModsecConfigServiceIm
       GetWebAppEvaluationConfigContextResponse response =
           GetWebAppEvaluationConfigContextResponse.newBuilder()
               .setWebAppEvaluationConfigContext(configContext.toByteString())
+              .build();
+      responseObserver.onNext(response);
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error(e.getMessage(), e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getImpactScoringRules(
+      GetImpactScoringRulesRequest request,
+      StreamObserver<GetImpactScoringRulesResponse> responseObserver) {
+    try {
+      GetImpactScoringRulesResponse response =
+          GetImpactScoringRulesResponse.newBuilder()
+              .setImpactScoringRules(
+                  ImpactScoringRules.newBuilder()
+                      .setImpactScoringBlob(
+                          manager.getImpactScoringRulesBlob(RuleVersion.getDefaultInstance()))
+                      .build())
               .build();
       responseObserver.onNext(response);
       responseObserver.onCompleted();

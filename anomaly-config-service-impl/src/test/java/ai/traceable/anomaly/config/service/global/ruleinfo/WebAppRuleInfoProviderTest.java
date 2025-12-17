@@ -47,4 +47,26 @@ public class WebAppRuleInfoProviderTest {
     assertNotNull(crsRulesBlob, "CRS rules blob should not be null");
     assertFalse(crsRulesBlob.isEmpty(), "CRS rules blob should not be empty");
   }
+
+  @Test
+  void testGetImpactScoringBlobWithDefaultVersion() {
+    // Test with default version
+    String impactScoringBlob =
+        webAppRuleInfoProvider.getImpactScoringBlob(RuleVersion.getDefaultInstance());
+    assertNotNull(impactScoringBlob, "Impact scoring blob should not be null");
+    assertFalse(impactScoringBlob.isEmpty(), "Impact scoring blob should not be empty");
+  }
+
+  @Test
+  void testGetImpactScoringBlobWithSpecificVersion() {
+    // Test with specific version
+    RuleVersion stableVersion =
+        RuleVersion.newBuilder()
+            .setVersion("1.0.0")
+            .setVersionType(RuleVersionType.RULE_VERSION_TYPE_STABLE)
+            .build();
+    String impactScoringBlob = webAppRuleInfoProvider.getImpactScoringBlob(stableVersion);
+    assertNotNull(impactScoringBlob, "Impact scoring blob should not be null");
+    assertFalse(impactScoringBlob.isEmpty(), "Impact scoring blob should not be empty");
+  }
 }

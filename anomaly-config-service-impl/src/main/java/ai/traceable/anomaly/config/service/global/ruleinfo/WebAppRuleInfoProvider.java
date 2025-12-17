@@ -17,4 +17,6 @@ public interface WebAppRuleInfoProvider {
       Set<String> disabledRuleIds,
       RuleVersion version,
       boolean includeDirectives);
+
+  String getImpactScoringBlob(RuleVersion version);
 }

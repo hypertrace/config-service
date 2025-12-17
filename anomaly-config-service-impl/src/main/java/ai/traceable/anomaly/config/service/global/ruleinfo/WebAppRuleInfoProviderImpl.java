@@ -12,6 +12,7 @@ import ai.traceable.modsecurity.utils.ModsecRuleUtils;
 import ai.traceable.protection.processor.secrules.v1.CorazaRuleDirectivesType;
 import ai.traceable.protection.processor.secrules.v1.ModsecJniRuleDirectivesType;
 import ai.traceable.protection.processor.secrules.v1.impl.utils.SecRulesUtils;
+import ai.traceable.protection.rules.webapp.v1.WebAppImpactScoringRulesFilter;
 import ai.traceable.protection.rules.webapp.v1.WebAppProtectionRulesProvider;
 import ai.traceable.protection.rules.webapp.v1.WebAppRulesData;
 import ai.traceable.protection.rules.webapp.v1.WebAppRulesVersion;
@@ -23,6 +24,7 @@ import ai.traceable.protection.rules.webapp.v1.WebAppThreatRule;
 import ai.traceable.protection.rules.webapp.v1.WebAppThreatRuleDefinition;
 import ai.traceable.protection.rules.webapp.v1.WebAppThreatRuleType;
 import ai.traceable.protection.rules.webapp.v1.WebAppThreatType;
+import ai.traceable.protection.rules.webapp.v1.WebAppVersionedImpactScoringRules;
 import ai.traceable.protection.rules.webapp.v1.WebAppVersionedRules;
 import ai.traceable.protection.rules.webapp.v1.WebAppVersionedRulesFilter;
 import com.google.inject.Inject;
@@ -100,6 +102,13 @@ public class WebAppRuleInfoProviderImpl implements WebAppRuleInfoProvider {
         NEWLINE_DELIMITER, crsRulesBlob, String.join(NEWLINE_DELIMITER, idsToBeRemoved));
   }
 
+  @Override
+  public String getImpactScoringBlob(RuleVersion version) {
+    return getWebAppVersionedImpactScoringRules(version)
+        .getImpactScoringRulesBlob()
+        .getImpactScoringRulesBlob();
+  }
+
   private WebAppVersionedRules getWebAppVersionedRules(WebAppRulesVersion version) {
     WebAppVersionedRulesFilter filter =
         WebAppVersionedRulesFilter.newBuilder()
@@ -107,6 +116,21 @@ public class WebAppRuleInfoProviderImpl implements WebAppRuleInfoProvider {
             .addRulesVersionTypes(version.getVersionType())
             .build();
     return webAppProtectionRulesProvider.getWebAppVersionedRules(filter).get(0);
+  }
+
+  private WebAppVersionedImpactScoringRules getWebAppVersionedImpactScoringRules(
+      RuleVersion version) {
+    if (version.equals(RuleVersion.getDefaultInstance())) {
+      return webAppProtectionRulesProvider.getWebAppImpactScoringRules(
+          WebAppImpactScoringRulesFilter.getDefaultInstance());
+    }
+    WebAppRulesVersion rulesVersion = convertToWebAppRulesVersion(version);
+    WebAppImpactScoringRulesFilter filter =
+        WebAppImpactScoringRulesFilter.newBuilder()
+            .addRulesVersions(rulesVersion.getVersion())
+            .addRulesVersionTypes(rulesVersion.getVersionType())
+            .build();
+    return webAppProtectionRulesProvider.getWebAppImpactScoringRules(filter);
   }
 
   private List<AnomalyRuleInfo> convertToAnomalyRuleInfos(WebAppVersionedRules versionedRules) {

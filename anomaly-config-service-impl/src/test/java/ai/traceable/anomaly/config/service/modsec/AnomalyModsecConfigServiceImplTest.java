@@ -16,8 +16,12 @@ import static org.mockito.Mockito.when;
 import ai.traceable.anomaly.config.service.modsec.rules.ModsecManager;
 import ai.traceable.anomaly.config.service.modsec.rules.ModsecValidator;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
+import ai.traceable.anomaly.config.service.v1.RuleVersion;
+import ai.traceable.anomaly.config.service.v1.modsec.GetImpactScoringRulesRequest;
+import ai.traceable.anomaly.config.service.v1.modsec.GetImpactScoringRulesResponse;
 import ai.traceable.anomaly.config.service.v1.modsec.GetModsecCrsRulesRequest;
 import ai.traceable.anomaly.config.service.v1.modsec.GetModsecCrsRulesResponse;
+import ai.traceable.anomaly.config.service.v1.modsec.ImpactScoringRules;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesData;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import io.grpc.Status;
@@ -26,6 +30,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -135,5 +140,51 @@ class AnomalyModsecConfigServiceImplTest {
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
     verify(responseStreamObserver, times(1))
         .onError(argThat(err -> err.getClass() == RuntimeException.class));
+  }
+
+  @Test
+  @DisplayName("Should get impact scoring rules successfully")
+  void getImpactScoringRules_success() {
+    String expectedBlob = "impact scoring rules blob content";
+    when(modsecManager.getImpactScoringRulesBlob(RuleVersion.getDefaultInstance()))
+        .thenReturn(expectedBlob);
+
+    StreamObserver<GetImpactScoringRulesResponse> responseStreamObserver =
+        mock(StreamObserver.class);
+
+    Runnable runnable =
+        () ->
+            modsecConfigService.getImpactScoringRules(
+                GetImpactScoringRulesRequest.getDefaultInstance(), responseStreamObserver);
+    RequestContext.forTenantId(TENANT_ID).run(runnable);
+
+    GetImpactScoringRulesResponse expectedResponse =
+        GetImpactScoringRulesResponse.newBuilder()
+            .setImpactScoringRules(
+                ImpactScoringRules.newBuilder().setImpactScoringBlob(expectedBlob).build())
+            .build();
+
+    verify(responseStreamObserver, times(1)).onNext(expectedResponse);
+    verify(responseStreamObserver, times(1)).onCompleted();
+  }
+
+  @Test
+  @DisplayName("Should propagate exception from manager in getImpactScoringRules")
+  void getImpactScoringRules_error() {
+    RuntimeException expectedException = new RuntimeException("Test exception");
+    when(modsecManager.getImpactScoringRulesBlob(any(RuleVersion.class)))
+        .thenThrow(expectedException);
+
+    StreamObserver<GetImpactScoringRulesResponse> responseStreamObserver =
+        mock(StreamObserver.class);
+
+    Runnable runnable =
+        () ->
+            modsecConfigService.getImpactScoringRules(
+                GetImpactScoringRulesRequest.getDefaultInstance(), responseStreamObserver);
+    RequestContext.forTenantId(TENANT_ID).run(runnable);
+
+    verify(responseStreamObserver, times(1)).onError(expectedException);
+    verify(responseStreamObserver, times(0)).onCompleted();
   }
 }

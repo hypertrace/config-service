@@ -32,6 +32,8 @@ public interface ModsecManager {
       RuleVersion ruleVersion,
       boolean includeDirectives);
 
+  String getImpactScoringRulesBlob(RuleVersion ruleVersion);
+
   @Builder
   class ModsecCrsRules {
     private final Map<AnomalySubRuleType, String> modsecBlobsForRuleTypes;

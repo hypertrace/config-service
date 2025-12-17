@@ -393,6 +393,41 @@ class ModsecManagerImplTest {
             .build());
   }
 
+  @Test
+  @DisplayName("Should return impact scoring rules blob")
+  void testGetImpactScoringRulesBlob() {
+    // Mock the webAppRuleInfoProvider to return impact scoring blob
+    String expectedBlob = "impact scoring rules blob content";
+    when(webAppRuleInfoProvider.getImpactScoringBlob(RuleVersion.getDefaultInstance()))
+        .thenReturn(expectedBlob);
+
+    // Call the method
+    String actualBlob = modsecManager.getImpactScoringRulesBlob(RuleVersion.getDefaultInstance());
+
+    // Verify the result
+    assertEquals(expectedBlob, actualBlob, "Impact scoring blob should match expected value");
+  }
+
+  @Test
+  @DisplayName("Should return impact scoring rules blob with specific version")
+  void testGetImpactScoringRulesBlobWithSpecificVersion() {
+    RuleVersion specificVersion =
+        RuleVersion.newBuilder()
+            .setVersion("1.0.0")
+            .setVersionType(
+                ai.traceable.anomaly.config.service.v1.RuleVersionType.RULE_VERSION_TYPE_STABLE)
+            .build();
+    String expectedBlob = "impact scoring rules for version 1.0.0";
+    when(webAppRuleInfoProvider.getImpactScoringBlob(specificVersion)).thenReturn(expectedBlob);
+
+    String actualBlob = modsecManager.getImpactScoringRulesBlob(specificVersion);
+
+    assertEquals(
+        expectedBlob,
+        actualBlob,
+        "Impact scoring blob should match expected value for specific version");
+  }
+
   private void verifyLists(
       List<ModsecCrsRulesData> expected, ModsecManager.ModsecCrsRules crsRules) {
     List<ModsecCrsRulesData> actual = crsRules.getModsecCrsRulesData();
