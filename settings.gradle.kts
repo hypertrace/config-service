@@ -21,7 +21,7 @@ buildscript {
   dependencies {
     classpath("com.google.cloud.artifactregistry.gradle-plugin:com.google.cloud.artifactregistry.gradle-plugin.gradle.plugin:2.2.5")
     classpath("org.hypertrace.gradle.versioning:hypertrace-gradle-version-settings-plugin:0.3.0")
-    classpath("org.hypertrace.gradle.dependency:hypertrace-gradle-dependency-settings-plugin:0.2.0")
+    classpath("org.hypertrace.gradle.dependency:hypertrace-gradle-dependency-settings-plugin:0.2.2")
   }
 }
 
