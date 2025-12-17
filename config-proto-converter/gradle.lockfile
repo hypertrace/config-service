@@ -24,6 +24,6 @@ io.netty:netty-bom:4.1.125.Final=compileClasspath,runtimeClasspath,testCompileCl
 org.checkerframework:checker-qual:3.33.0=compileClasspath,testCompileClasspath
 org.checkerframework:checker-qual:3.43.0=runtimeClasspath,testRuntimeClasspath
 org.eclipse.jetty:jetty-bom:11.0.24=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-org.hypertrace.bom:hypertrace-bom:0.3.66=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.hypertrace.bom:hypertrace-bom:0.3.67=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.kafkastreams.framework:kafka-bom:0.6.4=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 empty=annotationProcessor
