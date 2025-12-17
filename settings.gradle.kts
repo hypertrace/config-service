@@ -12,7 +12,7 @@ pluginManagement {
 
 plugins {
   id("org.hypertrace.version-settings") version "0.3.0"
-  id("org.hypertrace.dependency-settings") version "0.2.0"
+  id("org.hypertrace.dependency-settings") version "0.2.2"
 }
 
 configure<DependencyPluginSettingExtension> {
