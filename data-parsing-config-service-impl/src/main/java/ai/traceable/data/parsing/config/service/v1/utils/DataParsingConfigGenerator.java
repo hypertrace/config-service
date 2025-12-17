@@ -17,7 +17,7 @@ public class DataParsingConfigGenerator {
   public DataParsingConfig generateNewConfig(CreateDataParsingRuleRequest request) {
     return DataParsingConfig.newBuilder()
         .setId(this.uuidGenerator.generateRandomId())
-        .mergeFrom(request.getDataParsingRule())
+        .setDataParsingRule(request.getDataParsingRule())
         .build();
   }
 }
