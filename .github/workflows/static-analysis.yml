@@ -24,18 +24,18 @@ jobs:
           path: .github/actions
 
       - name: Setup gradle auth
-        uses: ./.github/actions/gradle-setup
+        uses: traceableai/github-actions/gradle-setup@main
 
-      - name: Compile source
+      - name: Build and test
         uses: hypertrace/github-actions/gradle@main
         with:
-          args: classes testClasses
+          args: classes jacocoTestReport
 
       - name: Sonarqube Analysis
-        uses: ./.github/actions/sonarqube-analysis
+        uses: traceableai/github-actions/sonarqube-analysis@main
         with:
           sonar-host-url: ${{ secrets.SONAR_HOST_URL }}
           sonar-login: ${{ secrets.SONAR_LOGIN }}
 
       - name: Secret Scanning
-        uses: ./.github/actions/secret-scanning
+        uses: traceableai/github-actions/secret-scanning@main
