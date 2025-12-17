@@ -62,8 +62,6 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
       "disallow_unauthenticated_sessions";
   private static final String PRIMARY_API_MODEL_TYPE = "primary_api_model";
   private static final String SECONDARY_API_MODEL_TYPE = "secondary_api_model";
-  private static final String USE_LEARNT_MODEL_FOR_PARAM_WITH_EMPTY_ENUM_VALUES =
-      "use_learnt_model_for_param_with_empty_enum_values";
   private static final String USE_LEARNT_MODEL_FOR_PARAM_TYPE_INFO_MISSING =
       "use_learnt_model_for_param_type_info_missing";
   private static final String USE_LEARNT_MODEL_FOR_MISSING_RESPONSE_CODE =
@@ -581,14 +579,6 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
                     .setType(ConfigValueType.CONFIG_VALUE_TYPE_STRING)
                     .build())
             .build();
-    ConfigMetadata useLearntModelForParamWithEmptyEnumValuesConfigMetadata =
-        ConfigMetadata.newBuilder()
-            .setKey(USE_LEARNT_MODEL_FOR_PARAM_WITH_EMPTY_ENUM_VALUES)
-            .setConfigValueMetadata(
-                ConfigValueMetadata.newBuilder()
-                    .setType(ConfigValueType.CONFIG_VALUE_TYPE_BOOL)
-                    .build())
-            .build();
     ConfigMetadata useLearntModelForParamTypeInfoMissingConfigMetadata =
         ConfigMetadata.newBuilder()
             .setKey(USE_LEARNT_MODEL_FOR_PARAM_TYPE_INFO_MISSING)
@@ -830,8 +820,7 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
             enabledForInternalIpsConfigMetadata,
             thresholdFamiliesExcluded,
             primaryApiModelTypeConfigMetadata,
-            secondaryApiModelTypeConfigMetadata,
-            useLearntModelForParamWithEmptyEnumValuesConfigMetadata));
+            secondaryApiModelTypeConfigMetadata));
 
     // schemaValidation_reqptve mapping
     threatRuleIdToConfigMetadataMapping.put(

@@ -54,6 +54,7 @@ message Component {
     string libtraceable_version = 1;
     string traceable_platform_agent_version = 2;
     string service_name = 3;
+    bool eds_enabled = 4;
   }
 }
 
