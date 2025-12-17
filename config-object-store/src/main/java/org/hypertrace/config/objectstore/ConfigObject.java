@@ -7,5 +7,13 @@ public interface ConfigObject<T> {
 
   Instant getCreationTimestamp();
 
+  String getCreatedByEmail();
+
+  Instant getLastUserUpdateTimestamp();
+
+  String getLastUserUpdateEmail();
+
   Instant getLastUpdatedTimestamp();
+
+  String getLastUpdateEmail();
 }

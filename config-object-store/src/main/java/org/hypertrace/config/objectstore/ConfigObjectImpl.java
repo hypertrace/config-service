@@ -11,7 +11,11 @@ import org.hypertrace.config.service.v1.UpsertConfigResponse;
 class ConfigObjectImpl<T> implements ConfigObject<T> {
   T data;
   Instant creationTimestamp;
+  String createdByEmail;
+  Instant lastUserUpdateTimestamp;
+  String lastUserUpdateEmail;
   Instant lastUpdatedTimestamp;
+  String lastUpdateEmail;
 
   static <T> Optional<ConfigObject<T>> tryBuild(
       ContextSpecificConfig contextSpecificConfig, Function<Value, Optional<T>> dataBuilder) {
@@ -19,6 +23,10 @@ class ConfigObjectImpl<T> implements ConfigObject<T> {
         contextSpecificConfig.getConfig(),
         contextSpecificConfig.getCreationTimestamp(),
         contextSpecificConfig.getUpdateTimestamp(),
+        contextSpecificConfig.getCreatedByEmail(),
+        contextSpecificConfig.getLastUserUpdateTimestamp(),
+        contextSpecificConfig.getLastUserUpdateEmail(),
+        contextSpecificConfig.getLastUpdateEmail(),
         dataBuilder);
   }
 
@@ -28,6 +36,10 @@ class ConfigObjectImpl<T> implements ConfigObject<T> {
         upsertResponse.getConfig(),
         upsertResponse.getCreationTimestamp(),
         upsertResponse.getUpdateTimestamp(),
+        upsertResponse.getCreatedByEmail(),
+        upsertResponse.getLastUserUpdateTimestamp(),
+        upsertResponse.getLastUserUpdateEmail(),
+        upsertResponse.getLastUpdateEmail(),
         dataBuilder);
   }
 
@@ -35,6 +47,10 @@ class ConfigObjectImpl<T> implements ConfigObject<T> {
       Value config,
       long creationTimestamp,
       long updateTimestamp,
+      String createdByEmail,
+      long lastUserUpdateTimestamp,
+      String lastUserUpdateEmail,
+      String lastUpdateEmail,
       Function<Value, Optional<T>> dataBuilder) {
     return dataBuilder
         .apply(config)
@@ -43,6 +59,10 @@ class ConfigObjectImpl<T> implements ConfigObject<T> {
                 new ConfigObjectImpl<>(
                     data,
                     Instant.ofEpochMilli(creationTimestamp),
-                    Instant.ofEpochMilli(updateTimestamp)));
+                    createdByEmail,
+                    Instant.ofEpochMilli(lastUserUpdateTimestamp),
+                    lastUserUpdateEmail,
+                    Instant.ofEpochMilli(updateTimestamp),
+                    lastUpdateEmail));
   }
 }

@@ -6,6 +6,7 @@ import static org.hypertrace.config.service.TestUtils.TENANT_ID;
 import static org.hypertrace.config.service.TestUtils.getConfig1;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.google.common.io.Resources;
 import com.google.protobuf.NullValue;
@@ -29,6 +30,9 @@ public class ConfigDocumentTest {
             15,
             "user1",
             "user1@email.com",
+            "user1@email.com",
+            "user1@email.com",
+            timestamp,
             getConfig1(),
             timestamp,
             timestamp);
@@ -48,6 +52,9 @@ public class ConfigDocumentTest {
             15,
             "user1",
             "user1@email.com",
+            "user1@email.com",
+            "user1@email.com",
+            timestamp,
             nullValue,
             timestamp,
             timestamp);
@@ -84,12 +91,17 @@ public class ConfigDocumentTest {
             1,
             null,
             null,
+            null,
+            null,
+            0L,
             Value.newBuilder().build(),
             1622547800000L,
             1625149800000L);
-    assertDoesNotThrow(() -> configDocument.toJson());
+    assertDoesNotThrow(configDocument::toJson);
     assertEquals("Unknown", configDocument.getLastUpdatedUserId());
-    assertEquals("Unknown", configDocument.getLastUpdatedUserEmail());
+    assertNull(configDocument.getLastUpdatedUserEmail());
+    assertNull(configDocument.getCreatedByEmail());
+    assertNull(configDocument.getLastUserUpdateEmail());
 
     String jsonString =
         "{"
@@ -106,6 +118,6 @@ public class ConfigDocumentTest {
     ConfigDocument configDocument1 = ConfigDocument.fromJson(jsonString);
 
     assertEquals("Unknown", configDocument1.getLastUpdatedUserId());
-    assertEquals("Unknown", configDocument1.getLastUpdatedUserEmail());
+    assertNull(configDocument1.getLastUpdatedUserEmail());
   }
 }

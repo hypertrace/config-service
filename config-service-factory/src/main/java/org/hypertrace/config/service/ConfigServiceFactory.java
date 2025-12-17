@@ -16,6 +16,7 @@ import org.hypertrace.config.service.change.event.impl.ConfigChangeEventGenerato
 import org.hypertrace.config.service.metric.ConfigMetricsReporter;
 import org.hypertrace.config.service.store.ConfigStore;
 import org.hypertrace.config.service.store.DocumentConfigStore;
+import org.hypertrace.config.service.store.DocumentConfigStoreConfig;
 import org.hypertrace.core.documentstore.Datastore;
 import org.hypertrace.core.documentstore.DatastoreProvider;
 import org.hypertrace.core.documentstore.model.config.TypesafeConfigDatastoreConfigExtractor;
@@ -91,7 +92,7 @@ public class ConfigServiceFactory implements GrpcPlatformServiceFactory {
       Datastore datastore) {
     this.grpcServiceContainerEnvironment = grpcServiceContainerEnvironment;
     return Stream.of(
-            new ConfigServiceGrpcImpl(this.buildConfigStore(datastore)),
+            new ConfigServiceGrpcImpl(this.buildConfigStore(datastore, config)),
             new SpacesConfigServiceImpl(localChannel),
             new LabelsConfigServiceImpl(localChannel, config, configChangeEventGenerator),
             new LabelApplicationRuleConfigServiceImpl(
@@ -117,9 +118,10 @@ public class ConfigServiceFactory implements GrpcPlatformServiceFactory {
         .createConfigChangeEventGenerator(config, Clock.systemUTC());
   }
 
-  protected ConfigStore buildConfigStore(Datastore datastore) {
+  protected ConfigStore buildConfigStore(Datastore datastore, Config config) {
     try {
-      ConfigStore configStore = new DocumentConfigStore(Clock.systemUTC(), datastore);
+      DocumentConfigStoreConfig storeConfig = DocumentConfigStoreConfig.from(config);
+      ConfigStore configStore = new DocumentConfigStore(Clock.systemUTC(), datastore, storeConfig);
       this.store = configStore;
       return configStore;
     } catch (Exception e) {

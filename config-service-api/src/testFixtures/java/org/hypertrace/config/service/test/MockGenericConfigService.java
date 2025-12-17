@@ -132,7 +132,10 @@ public class MockGenericConfigService {
                   UpsertConfigResponse.newBuilder()
                       .setConfig(upsertedConfig.getConfig())
                       .setCreationTimestamp(upsertedConfig.getCreationTimestamp())
-                      .setUpdateTimestamp(upsertedConfig.getUpdateTimestamp());
+                      .setUpdateTimestamp(upsertedConfig.getUpdateTimestamp())
+                      .setCreatedByEmail(upsertedConfig.getCreatedByEmail())
+                      .setLastUserUpdateEmail(upsertedConfig.getLastUserUpdateEmail())
+                      .setLastUserUpdateTimestamp(upsertedConfig.getLastUserUpdateTimestamp());
               if (upsertedConfig.hasPrevConfig()) {
                 responseBuilder.setPrevConfig(upsertedConfig.getPrevConfig());
               }
@@ -393,6 +396,7 @@ public class MockGenericConfigService {
                         .setConfig(config)
                         .setCreationTimestamp(creationTimestamp)
                         .setUpdateTimestamp(updateTimestamp)
+                        .setCreatedByEmail("")
                         .build()))
             .map(ContextSpecificConfig::getConfig);
 
@@ -401,7 +405,10 @@ public class MockGenericConfigService {
             .setConfig(config)
             .setContext(configContext)
             .setCreationTimestamp(creationTimestamp)
-            .setUpdateTimestamp(updateTimestamp);
+            .setUpdateTimestamp(updateTimestamp)
+            .setCreatedByEmail("")
+            .setLastUserUpdateEmail("")
+            .setLastUserUpdateTimestamp(updateTimestamp);
 
     previousConfig.ifPresent(resultBuilder::setPrevConfig);
 

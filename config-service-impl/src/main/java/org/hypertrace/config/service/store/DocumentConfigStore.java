@@ -55,27 +55,30 @@ import org.hypertrace.core.documentstore.query.Query;
 @Slf4j
 public class DocumentConfigStore implements ConfigStore {
   static final String CONFIGURATIONS_COLLECTION = "configurations";
-  private final Clock clock;
 
+  private final Clock clock;
   private final Datastore datastore;
   private final Collection collection;
   private final FilterBuilder filterBuilder;
   private final FilterExpressionBuilder filterExpressionBuilder;
+  private final DocumentConfigStoreConfig storeConfig;
 
-  public DocumentConfigStore(Clock clock, Datastore datastore) {
+  public DocumentConfigStore(
+      Clock clock, Datastore datastore, DocumentConfigStoreConfig storeConfig) {
     this.clock = clock;
     this.datastore = datastore;
     this.collection = this.datastore.getCollection(CONFIGURATIONS_COLLECTION);
     this.filterBuilder = new FilterBuilder();
     this.filterExpressionBuilder = new FilterExpressionBuilder();
+    this.storeConfig = storeConfig;
   }
 
   @Override
   public UpsertedConfig writeConfig(
       ConfigResourceContext configResourceContext,
-      String lastUpdatedUserId,
+      String userId,
       UpsertConfigRequest request,
-      String lastUpdatedUserEmail)
+      String userEmail)
       throws IOException {
     Optional<ConfigDocument> previousConfigDoc = getConfigDocument(configResourceContext);
     Optional<ContextSpecificConfig> optionalPreviousConfig =
@@ -91,11 +94,7 @@ public class DocumentConfigStore implements ConfigStore {
     Key latestDocKey = new ConfigDocumentKey(configResourceContext);
     ConfigDocument latestConfigDocument =
         buildConfigDocument(
-            configResourceContext,
-            request.getConfig(),
-            lastUpdatedUserId,
-            previousConfigDoc,
-            lastUpdatedUserEmail);
+            configResourceContext, request.getConfig(), previousConfigDoc, userId, userEmail);
 
     if (request.hasUpsertCondition()) {
       Filter filter = this.filterBuilder.buildDocStoreFilter(request.getUpsertCondition());
@@ -127,7 +126,7 @@ public class DocumentConfigStore implements ConfigStore {
           }
           documentsToBeUpserted.put(
               new ConfigDocumentKey(key),
-              buildConfigDocument(key, resourceContextValueMap.get(key), userId, value, userEmail));
+              buildConfigDocument(key, resourceContextValueMap.get(key), value, userId, userEmail));
         });
 
     boolean successfulBulkUpsertDocuments = collection.bulkUpsert(documentsToBeUpserted);
@@ -149,34 +148,25 @@ public class DocumentConfigStore implements ConfigStore {
     return Collections.emptyList();
   }
 
+  /**
+   * Builds a ConfigDocument for storage.
+   *
+   * @param userId Current user ID making this request (not historical audit data)
+   * @param userEmail Current user email making this request (not historical audit data)
+   *     <p>Note: These parameters represent the CURRENT caller, while the ConfigDocument contains
+   *     HISTORICAL fields (lastUpdatedUserId, lastUpdatedUserEmail) for audit tracking.
+   */
   private ConfigDocument buildConfigDocument(
       ConfigResourceContext configResourceContext,
       Value latestConfig,
-      String lastUpdatedUserId,
       Optional<ConfigDocument> previousConfigDoc,
-      String lastUpdatedUserEmail) {
-    long updateTimestamp = clock.millis();
-    long creationTimestamp =
-        previousConfigDoc
-            .filter(configDocument -> !ConfigServiceUtils.isNull(configDocument.getConfig()))
-            .map(ConfigDocument::getCreationTimestamp)
-            .orElse(updateTimestamp);
-    long newVersion =
-        previousConfigDoc
-            .map(ConfigDocument::getConfigVersion)
-            .map(previousVersion -> previousVersion + 1)
-            .orElse(1L);
-    return new ConfigDocument(
-        configResourceContext.getConfigResource().getResourceName(),
-        configResourceContext.getConfigResource().getResourceNamespace(),
-        configResourceContext.getConfigResource().getTenantId(),
-        configResourceContext.getContext(),
-        newVersion,
-        lastUpdatedUserId,
-        lastUpdatedUserEmail,
-        latestConfig,
-        creationTimestamp,
-        updateTimestamp);
+      String userId,
+      String userEmail) {
+
+    return isPreviousConfigPresent(previousConfigDoc)
+        ? buildConfigDocumentForUpdate(
+            configResourceContext, latestConfig, previousConfigDoc.get(), userId, userEmail)
+        : buildConfigDocumentForCreate(configResourceContext, latestConfig, userId, userEmail);
   }
 
   @Override
@@ -281,6 +271,59 @@ public class DocumentConfigStore implements ConfigStore {
     FilterTypeExpression docStoreFilter =
         filterExpressionBuilder.buildFilterTypeExpression(additionalFilter);
     return LogicalExpression.and(resourceFilter, docStoreFilter);
+  }
+
+  private ConfigDocument buildConfigDocumentForUpdate(
+      ConfigResourceContext configResourceContext,
+      Value latestConfig,
+      ConfigDocument previousConfig,
+      String userId,
+      String userEmail) {
+    long updateTimestamp = clock.millis();
+    boolean excludedEmail = isExcludedEmail(userEmail);
+    return new ConfigDocument(
+        configResourceContext.getConfigResource().getResourceName(),
+        configResourceContext.getConfigResource().getResourceNamespace(),
+        configResourceContext.getConfigResource().getTenantId(),
+        configResourceContext.getContext(),
+        previousConfig.getConfigVersion() + 1,
+        userId,
+        userEmail,
+        previousConfig.getCreatedByEmail(),
+        excludedEmail ? previousConfig.getLastUserUpdateEmail() : userEmail,
+        excludedEmail ? previousConfig.getLastUserUpdateTimestamp() : updateTimestamp,
+        latestConfig,
+        previousConfig.getCreationTimestamp(),
+        updateTimestamp);
+  }
+
+  private boolean isPreviousConfigPresent(Optional<ConfigDocument> previousConfigDoc) {
+    return previousConfigDoc
+        .filter(configDocument -> !ConfigServiceUtils.isNull(configDocument.getConfig()))
+        .isPresent();
+  }
+
+  private ConfigDocument buildConfigDocumentForCreate(
+      ConfigResourceContext configResourceContext,
+      Value latestConfig,
+      String userId,
+      String userEmail) {
+    long updateTimestamp = clock.millis();
+    boolean excludedEmail = isExcludedEmail(userEmail);
+    return new ConfigDocument(
+        configResourceContext.getConfigResource().getResourceName(),
+        configResourceContext.getConfigResource().getResourceNamespace(),
+        configResourceContext.getConfigResource().getTenantId(),
+        configResourceContext.getContext(),
+        1L,
+        userId,
+        userEmail,
+        userEmail,
+        excludedEmail ? null : userEmail,
+        excludedEmail ? 0L : updateTimestamp,
+        latestConfig,
+        updateTimestamp,
+        updateTimestamp);
   }
 
   @SneakyThrows
@@ -474,7 +517,18 @@ public class DocumentConfigStore implements ConfigStore {
             .setContext(configDocument.getContext())
             .setCreationTimestamp(configDocument.getCreationTimestamp())
             .setUpdateTimestamp(configDocument.getUpdateTimestamp())
+            .setCreatedByEmail(getEmailOrDefaultWithSystemMask(configDocument.getCreatedByEmail()))
+            .setLastUserUpdateEmail(getEmailOrDefault(configDocument.getLastUserUpdateEmail()))
+            .setLastUserUpdateTimestamp(
+                getNonDefaultTimestamp(
+                    configDocument.getLastUserUpdateTimestamp(),
+                    configDocument.getUpdateTimestamp()))
+            .setLastUpdateEmail(getEmailOrDefault(configDocument.getLastUpdatedUserEmail()))
             .build());
+  }
+
+  private long getNonDefaultTimestamp(long timestampFirstChoice, long timestampSecondChoice) {
+    return timestampFirstChoice == 0 ? timestampSecondChoice : timestampFirstChoice;
   }
 
   private UpsertedConfig buildUpsertResult(
@@ -490,6 +544,10 @@ public class DocumentConfigStore implements ConfigStore {
         .setContext(configDocument.getContext())
         .setCreationTimestamp(configDocument.getCreationTimestamp())
         .setUpdateTimestamp(configDocument.getUpdateTimestamp())
+        .setCreatedByEmail(getEmailOrDefaultWithSystemMask(configDocument.getCreatedByEmail()))
+        .setLastUserUpdateEmail(getEmailOrDefault(configDocument.getLastUserUpdateEmail()))
+        .setLastUserUpdateTimestamp(configDocument.getLastUserUpdateTimestamp())
+        .setLastUpdateEmail(getEmailOrDefault(configDocument.getLastUpdatedUserEmail()))
         .build();
   }
 
@@ -518,5 +576,35 @@ public class DocumentConfigStore implements ConfigStore {
                 IdentifierExpression.of(TENANT_ID_FIELD_NAME),
                 RelationalOperator.EQ,
                 ConstantExpression.of(configResource.getTenantId()))));
+  }
+
+  private boolean isExcludedEmail(String userEmail) {
+    return storeConfig.getCustomerVisibleExcludedEmailPatterns().stream()
+        .anyMatch(pattern -> pattern.matcher(userEmail).matches());
+  }
+
+  /**
+   * Applies default substitution for email fields at read-time. Returns "Unknown" for null or empty
+   * email values to ensure protobuf compatibility.
+   */
+  private String getEmailOrDefault(String email) {
+    return (email == null || email.isEmpty())
+        ? ConfigDocument.DEFAULT_LATEST_UPDATED_USER_EMAIL
+        : email;
+  }
+
+  /**
+   * Applies default substitution for email fields at read-time with system email masking. Returns
+   * "System" for excluded emails (agents/system accounts), "Unknown" for null/empty values, or the
+   * actual email otherwise.
+   */
+  private String getEmailOrDefaultWithSystemMask(String email) {
+    if (email == null || email.isEmpty()) {
+      return ConfigDocument.DEFAULT_LATEST_UPDATED_USER_EMAIL;
+    }
+    if (isExcludedEmail(email)) {
+      return ConfigDocument.DEFAULT_SYSTEM_USER_EMAIL;
+    }
+    return email;
   }
 }

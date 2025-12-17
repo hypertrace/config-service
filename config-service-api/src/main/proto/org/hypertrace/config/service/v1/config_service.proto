@@ -56,6 +56,18 @@ message UpsertConfigResponse {
 
   // prev version of config value in the store
   optional google.protobuf.Value prev_config = 4;
+
+  // email of the user (including agents/system) who created this config
+  string created_by_email = 5;
+
+  // email of the last non-excluded user who modified this config
+  string last_user_update_email = 6;
+
+  // timestamp (in milliseconds since epoch) of the last non-excluded user update
+  int64 last_user_update_timestamp = 7;
+
+  // email of the last user (including agents/system) who modified this config
+  string last_update_email = 8;
 }
 
 message GetConfigRequest {
@@ -80,6 +92,18 @@ message GetConfigResponse {
 
   // timestamp (in milliseconds since epoch) at which this config was last updated
   int64 update_timestamp = 3;
+
+  // email of the user who created this config
+  string created_by_email = 4;
+
+  // email of the last non-excluded user who modified this config
+  string last_user_update_email = 5;
+
+  // timestamp (in milliseconds since epoch) of the last non-excluded user update
+  int64 last_user_update_timestamp = 6;
+
+  // email of the last user (including agents/system) who modified this config
+  string last_update_email = 7;
 }
 
 message GetAllConfigsRequest {
@@ -125,6 +149,18 @@ message ContextSpecificConfig {
 
   // timestamp (in milliseconds since epoch) at which this config was last updated
   int64 update_timestamp = 4;
+
+  // email of the user (including agents/system) who created this config
+  string created_by_email = 5;
+
+  // email of the last non-excluded user who modified this config
+  string last_user_update_email = 6;
+
+  // timestamp (in milliseconds since epoch) of the last non-excluded user update
+  int64 last_user_update_timestamp = 7;
+
+  // email of the last user (including agents/system) who modified this config
+  string last_update_email = 8;
 }
 
 message DeleteConfigRequest {
@@ -181,6 +217,10 @@ message UpsertAllConfigsResponse {
     int64 creation_timestamp = 3;
     int64 update_timestamp = 4;
     optional google.protobuf.Value prev_config = 5;
+    string created_by_email = 6;
+    string last_user_update_email = 7;
+    int64 last_user_update_timestamp = 8;
+    string last_update_email = 9;
   }
 }
 

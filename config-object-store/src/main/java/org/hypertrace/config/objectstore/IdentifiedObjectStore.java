@@ -140,6 +140,10 @@ public abstract class IdentifiedObjectStore<T> {
               .setConfig(getConfigResponse.getConfig())
               .setCreationTimestamp(getConfigResponse.getCreationTimestamp())
               .setUpdateTimestamp(getConfigResponse.getUpdateTimestamp())
+              .setCreatedByEmail(getConfigResponse.getCreatedByEmail())
+              .setLastUserUpdateEmail(getConfigResponse.getLastUserUpdateEmail())
+              .setLastUserUpdateTimestamp(getConfigResponse.getLastUserUpdateTimestamp())
+              .setLastUpdateEmail(getConfigResponse.getLastUpdateEmail())
               .build();
       return ContextualConfigObjectImpl.tryBuild(contextSpecificConfig, this::buildDataFromValue);
     } catch (Exception exception) {

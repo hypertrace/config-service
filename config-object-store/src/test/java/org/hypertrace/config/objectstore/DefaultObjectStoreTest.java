@@ -36,6 +36,8 @@ class DefaultObjectStoreTest {
   private static final String TEST_RESOURCE_NAME = "test-resource";
   private static final Instant TEST_CREATE_TIMESTAMP = Instant.ofEpochMilli(20);
   private static final Instant TEST_UPDATE_TIMESTAMP = Instant.ofEpochMilli(40);
+  private static final String TEST_CREATED_BY_EMAIL = "test-created-by";
+  private static final String TEST_LAST_UPDATED_BY_EMAIL = "test-last-modified-by";
 
   @Mock(answer = Answers.RETURNS_SELF)
   ConfigServiceBlockingStub mockStub;
@@ -60,12 +62,22 @@ class DefaultObjectStoreTest {
                 .setConfig(Values.of("test"))
                 .setCreationTimestamp(TEST_CREATE_TIMESTAMP.toEpochMilli())
                 .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
+                .setCreatedByEmail(TEST_CREATED_BY_EMAIL)
+                .setLastUserUpdateEmail(TEST_LAST_UPDATED_BY_EMAIL)
+                .setLastUserUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
+                .setLastUpdateEmail(TEST_LAST_UPDATED_BY_EMAIL)
                 .build());
 
     assertEquals(
         Optional.of(
             new ConfigObjectImpl<>(
-                new TestInternalObject("test"), TEST_CREATE_TIMESTAMP, TEST_UPDATE_TIMESTAMP)),
+                new TestInternalObject("test"),
+                TEST_CREATE_TIMESTAMP,
+                TEST_CREATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
+                TEST_LAST_UPDATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
+                TEST_LAST_UPDATED_BY_EMAIL)),
         this.store.getObject(this.mockRequestContext));
 
     verify(this.mockStub, times(1))
@@ -123,12 +135,22 @@ class DefaultObjectStoreTest {
                     ContextSpecificConfig.newBuilder()
                         .setConfig(Values.of("test"))
                         .setCreationTimestamp(TEST_CREATE_TIMESTAMP.toEpochMilli())
-                        .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli()))
+                        .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
+                        .setCreatedByEmail(TEST_CREATED_BY_EMAIL)
+                        .setLastUserUpdateEmail(TEST_LAST_UPDATED_BY_EMAIL)
+                        .setLastUserUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
+                        .setLastUpdateEmail(TEST_LAST_UPDATED_BY_EMAIL))
                 .build());
     assertEquals(
         Optional.of(
             new ConfigObjectImpl<>(
-                new TestInternalObject("test"), TEST_CREATE_TIMESTAMP, TEST_UPDATE_TIMESTAMP)),
+                new TestInternalObject("test"),
+                TEST_CREATE_TIMESTAMP,
+                TEST_CREATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
+                TEST_LAST_UPDATED_BY_EMAIL,
+                TEST_UPDATE_TIMESTAMP,
+                TEST_LAST_UPDATED_BY_EMAIL)),
         this.store.deleteObject(mockRequestContext));
 
     verify(this.mockStub)
@@ -159,11 +181,21 @@ class DefaultObjectStoreTest {
             UpsertConfigResponse.newBuilder()
                 .setCreationTimestamp(TEST_CREATE_TIMESTAMP.toEpochMilli())
                 .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
+                .setCreatedByEmail(TEST_CREATED_BY_EMAIL)
+                .setLastUserUpdateEmail(TEST_LAST_UPDATED_BY_EMAIL)
+                .setLastUserUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
+                .setLastUpdateEmail(TEST_LAST_UPDATED_BY_EMAIL)
                 .setConfig(Values.of("updated"))
                 .build());
     ConfigObject configObject =
         new ConfigObjectImpl<>(
-            new TestInternalObject("updated"), TEST_CREATE_TIMESTAMP, TEST_UPDATE_TIMESTAMP);
+            new TestInternalObject("updated"),
+            TEST_CREATE_TIMESTAMP,
+            TEST_CREATED_BY_EMAIL,
+            TEST_UPDATE_TIMESTAMP,
+            TEST_LAST_UPDATED_BY_EMAIL,
+            TEST_UPDATE_TIMESTAMP,
+            TEST_LAST_UPDATED_BY_EMAIL);
     assertEquals(
         configObject,
         this.store.upsertObject(this.mockRequestContext, new TestInternalObject("updated")));

@@ -15,7 +15,11 @@ public class ContextualConfigObjectImpl<T> implements ContextualConfigObject<T> 
   String context;
   T data;
   Instant creationTimestamp;
+  String createdByEmail;
+  Instant lastUserUpdateTimestamp;
+  String lastUserUpdateEmail;
   Instant lastUpdatedTimestamp;
+  String lastUpdateEmail;
 
   static <T> Optional<ContextualConfigObject<T>> tryBuild(
       ContextSpecificConfig contextSpecificConfig, Function<Value, Optional<T>> dataBuilder) {
@@ -24,6 +28,10 @@ public class ContextualConfigObjectImpl<T> implements ContextualConfigObject<T> 
         contextSpecificConfig.getConfig(),
         contextSpecificConfig.getCreationTimestamp(),
         contextSpecificConfig.getUpdateTimestamp(),
+        contextSpecificConfig.getCreatedByEmail(),
+        contextSpecificConfig.getLastUserUpdateTimestamp(),
+        contextSpecificConfig.getLastUserUpdateEmail(),
+        contextSpecificConfig.getLastUpdateEmail(),
         dataBuilder);
   }
 
@@ -34,6 +42,10 @@ public class ContextualConfigObjectImpl<T> implements ContextualConfigObject<T> 
         upsertedConfig.getConfig(),
         upsertedConfig.getCreationTimestamp(),
         upsertedConfig.getUpdateTimestamp(),
+        upsertedConfig.getCreatedByEmail(),
+        upsertedConfig.getLastUserUpdateTimestamp(),
+        upsertedConfig.getLastUserUpdateEmail(),
+        upsertedConfig.getLastUpdateEmail(),
         dataBuilder);
   }
 
@@ -49,7 +61,11 @@ public class ContextualConfigObjectImpl<T> implements ContextualConfigObject<T> 
                     contextBuilder.apply(data),
                     data,
                     Instant.ofEpochMilli(upsertResponse.getCreationTimestamp()),
-                    Instant.ofEpochMilli(upsertResponse.getUpdateTimestamp())));
+                    upsertResponse.getCreatedByEmail(),
+                    Instant.ofEpochMilli(upsertResponse.getLastUserUpdateTimestamp()),
+                    upsertResponse.getLastUserUpdateEmail(),
+                    Instant.ofEpochMilli(upsertResponse.getUpdateTimestamp()),
+                    upsertResponse.getLastUpdateEmail()));
   }
 
   private static <T> Optional<ContextualConfigObject<T>> tryBuild(
@@ -57,6 +73,10 @@ public class ContextualConfigObjectImpl<T> implements ContextualConfigObject<T> 
       Value config,
       long creationTimestamp,
       long updateTimestamp,
+      String createdByEmail,
+      long lastUserUpdateTimestamp,
+      String lastUserUpdateEmail,
+      String lastUpdateEmail,
       Function<Value, Optional<T>> dataBuilder) {
     return dataBuilder
         .apply(config)
@@ -66,6 +86,10 @@ public class ContextualConfigObjectImpl<T> implements ContextualConfigObject<T> 
                     context,
                     data,
                     Instant.ofEpochMilli(creationTimestamp),
-                    Instant.ofEpochMilli(updateTimestamp)));
+                    createdByEmail,
+                    Instant.ofEpochMilli(lastUserUpdateTimestamp),
+                    lastUserUpdateEmail,
+                    Instant.ofEpochMilli(updateTimestamp),
+                    lastUpdateEmail));
   }
 }
