@@ -11,7 +11,7 @@ import org.hypertrace.config.service.v1.UpsertConfigResponse;
 
 @lombok.Value
 @Builder(toBuilder = true)
-public class ContextualConfigObjectImpl<T> implements ContextualConfigObject<T> {
+class ContextualConfigObjectImpl<T> implements ContextualConfigObject<T> {
   String context;
   T data;
   Instant creationTimestamp;
