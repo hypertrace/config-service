@@ -438,7 +438,7 @@ traceableConfigServiceConfig:
     ruleEvaluationPoints:
       migrationDisabled: false
     allowRulesPlatformExclusion:
-      migrationDisabled: true
+      migrationDisabled: false
   iprangeConfigService:
     changeLog1:
       migrationDisabled: true
