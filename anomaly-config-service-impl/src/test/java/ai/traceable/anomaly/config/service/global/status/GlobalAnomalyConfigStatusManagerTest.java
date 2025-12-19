@@ -75,6 +75,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.Value;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
@@ -1733,42 +1734,25 @@ public class GlobalAnomalyConfigStatusManagerTest {
           Instant lastUpdatedTimestamp) {
 
     return new SampleContextualConfigObject<>(
-        scopedAnomalyConfigStatusChange, context, Instant.now(), lastUpdatedTimestamp);
+        scopedAnomalyConfigStatusChange,
+        context,
+        Instant.now(),
+        "system",
+        lastUpdatedTimestamp,
+        "system",
+        lastUpdatedTimestamp,
+        "system");
   }
 
+  @Value
   private static class SampleContextualConfigObject<T> implements ContextualConfigObject<T> {
-
-    private final T data;
-    private final String context;
-    private final Instant creationTimestamp;
-    private final Instant lastUpdatedTimestamp;
-
-    SampleContextualConfigObject(
-        T data, String context, Instant creationTimestamp, Instant lastUpdatedTimestamp) {
-      this.data = data;
-      this.context = context;
-      this.creationTimestamp = creationTimestamp;
-      this.lastUpdatedTimestamp = lastUpdatedTimestamp;
-    }
-
-    @Override
-    public T getData() {
-      return data;
-    }
-
-    @Override
-    public Instant getCreationTimestamp() {
-      return creationTimestamp;
-    }
-
-    @Override
-    public Instant getLastUpdatedTimestamp() {
-      return lastUpdatedTimestamp;
-    }
-
-    @Override
-    public String getContext() {
-      return context;
-    }
+    T data;
+    String context;
+    Instant creationTimestamp;
+    String createdByEmail;
+    Instant lastUserUpdateTimestamp;
+    String lastUserUpdateEmail;
+    Instant lastUpdatedTimestamp;
+    String lastUpdateEmail;
   }
 }

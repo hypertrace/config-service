@@ -908,6 +908,9 @@ class DetectionExclusionRulesMigrationManagerTest {
         sampleOldRuleConfig.toBuilder().setId(context).build(),
         context,
         creationTimestamp,
+        "system",
+        lastUpdatedTimestamp,
+        "system",
         lastUpdatedTimestamp);
   }
 
@@ -917,6 +920,9 @@ class DetectionExclusionRulesMigrationManagerTest {
         sampleNewRule.toBuilder().setId(context).build(),
         context,
         creationTimestamp,
+        "system",
+        lastUpdatedTimestamp,
+        "system",
         lastUpdatedTimestamp);
   }
 
@@ -972,14 +978,28 @@ class DetectionExclusionRulesMigrationManagerTest {
     private final T data;
     private final String context;
     private final Instant creationTimestamp;
+    private final String createdByEmail;
+    private final Instant lastUserUpdateTimestamp;
+    private final String lastUserUpdateEmail;
     private final Instant lastUpdatedTimestamp;
+    private final String lastUpdateEmail;
 
     SampleContextualConfigObject(
-        T data, String context, Instant creationTimestamp, Instant lastUpdatedTimestamp) {
+        T data,
+        String context,
+        Instant creationTimestamp,
+        String createdByEmail,
+        Instant lastUserUpdateTimestamp,
+        String lastUserUpdateEmail,
+        Instant lastUpdatedTimestamp) {
       this.data = data;
       this.context = context;
       this.creationTimestamp = creationTimestamp;
+      this.createdByEmail = createdByEmail;
+      this.lastUserUpdateTimestamp = lastUserUpdateTimestamp;
+      this.lastUserUpdateEmail = lastUserUpdateEmail;
       this.lastUpdatedTimestamp = lastUpdatedTimestamp;
+      this.lastUpdateEmail = "system";
     }
 
     @Override
@@ -993,8 +1013,28 @@ class DetectionExclusionRulesMigrationManagerTest {
     }
 
     @Override
+    public String getCreatedByEmail() {
+      return createdByEmail;
+    }
+
+    @Override
+    public Instant getLastUserUpdateTimestamp() {
+      return lastUserUpdateTimestamp;
+    }
+
+    @Override
+    public String getLastUserUpdateEmail() {
+      return lastUserUpdateEmail;
+    }
+
+    @Override
     public Instant getLastUpdatedTimestamp() {
       return lastUpdatedTimestamp;
+    }
+
+    @Override
+    public String getLastUpdateEmail() {
+      return lastUpdateEmail;
     }
 
     @Override

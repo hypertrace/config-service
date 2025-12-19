@@ -137,8 +137,21 @@ class EventConfidenceScoringConfigManagerTest {
       implements ContextualConfigObject<ScopedThreatScoringConfigs> {
     private ScopedThreatScoringConfigs data;
 
+    private final Instant creationTimestamp;
+    private final String createdByEmail;
+    private final Instant lastUserUpdateTimestamp;
+    private final String lastUserUpdateEmail;
+    private final Instant lastUpdatedTimestamp;
+    private final String lastUpdateEmail;
+
     ContextualConfigObjectImpl(ScopedThreatScoringConfigs data) {
       this.data = data;
+      this.creationTimestamp = Instant.EPOCH;
+      this.createdByEmail = "system";
+      this.lastUserUpdateTimestamp = Instant.EPOCH;
+      this.lastUserUpdateEmail = "system";
+      this.lastUpdatedTimestamp = Instant.EPOCH;
+      this.lastUpdateEmail = "system";
     }
 
     @Override
@@ -148,12 +161,32 @@ class EventConfidenceScoringConfigManagerTest {
 
     @Override
     public Instant getCreationTimestamp() {
-      return null;
+      return creationTimestamp;
+    }
+
+    @Override
+    public String getCreatedByEmail() {
+      return createdByEmail;
+    }
+
+    @Override
+    public Instant getLastUserUpdateTimestamp() {
+      return lastUserUpdateTimestamp;
+    }
+
+    @Override
+    public String getLastUserUpdateEmail() {
+      return lastUserUpdateEmail;
     }
 
     @Override
     public Instant getLastUpdatedTimestamp() {
-      return null;
+      return lastUpdatedTimestamp;
+    }
+
+    @Override
+    public String getLastUpdateEmail() {
+      return lastUpdateEmail;
     }
 
     @Override
