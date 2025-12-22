@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.4.4114=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.4145=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform:coraza-waf-service-api:0.3.42=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:coraza-waf-service-client:0.3.42=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:jni-modsecurity:0.1.140=runtimeClasspath,testRuntimeClasspath
@@ -73,9 +73,9 @@ org.checkerframework:checker-qual:3.43.0=compileClasspath,runtimeClasspath,testC
 org.codehaus.mojo:animal-sniffer-annotations:1.24=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.eclipse.jetty:jetty-bom:11.0.24=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.glassfish.jersey:jersey-bom:2.41=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-org.hypertrace.bom:hypertrace-bom:0.3.66=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-org.hypertrace.core.grpcutils:grpc-client-utils:0.13.17=runtimeClasspath,testRuntimeClasspath
-org.hypertrace.core.grpcutils:grpc-context-utils:0.13.17=runtimeClasspath,testRuntimeClasspath
+org.hypertrace.bom:hypertrace-bom:0.3.67=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.hypertrace.core.grpcutils:grpc-client-utils:0.13.18=runtimeClasspath,testRuntimeClasspath
+org.hypertrace.core.grpcutils:grpc-context-utils:0.13.18=runtimeClasspath,testRuntimeClasspath
 org.hypertrace.core.kafkastreams.framework:kafka-bom:0.6.4=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-api:5.10.2=testCompileClasspath,testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-engine:5.10.2=testRuntimeClasspath
