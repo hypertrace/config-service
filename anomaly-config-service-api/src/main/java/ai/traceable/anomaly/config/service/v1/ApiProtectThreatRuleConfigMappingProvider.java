@@ -28,6 +28,7 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
   private static final String REQUIRED_OCCURRENCES_OF_HOST = "required_occurrences_of_host";
   private static final String ALLOWED_DOMAINS = "allowed_domains";
   private static final String DISABLED_FOR_UNKNOWN_ROLES = "disabled_for_unknown_roles";
+  private static final String USER_DEFINED_ONLY = "user_defined_only";
   private static final String TIME_DIFFERENCE_BUFFER_MILLIS = "time_difference_buffer_millis";
   private static final String MIN_TOTAL_TRAFFIC_SEEN = "min_total_traffic_seen";
   private static final String EXCLUDE_SPECIAL_CHARACTERS = "exclude_special_characters";
@@ -325,6 +326,15 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
     ConfigMetadata disabledForUnknownRolesConfigMetadata =
         ConfigMetadata.newBuilder()
             .setKey(DISABLED_FOR_UNKNOWN_ROLES)
+            .setConfigValueMetadata(
+                ConfigValueMetadata.newBuilder()
+                    .setType(ConfigValueType.CONFIG_VALUE_TYPE_BOOL)
+                    .build())
+            .build();
+
+    ConfigMetadata userDefinedOnlyConfigMetadata =
+        ConfigMetadata.newBuilder()
+            .setKey(USER_DEFINED_ONLY)
             .setConfigValueMetadata(
                 ConfigValueMetadata.newBuilder()
                     .setType(ConfigValueType.CONFIG_VALUE_TYPE_BOOL)
@@ -702,7 +712,10 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
     // authzv_bfla mapping
     threatRuleIdToConfigMetadataMapping.put(
         AUTHZV_BFLA_SUB_RULE_ID,
-        List.of(minPercentSeenConfigMetadata, disabledForUnknownRolesConfigMetadata));
+        List.of(
+            minPercentSeenConfigMetadata,
+            disabledForUnknownRolesConfigMetadata,
+            userDefinedOnlyConfigMetadata));
 
     // csta_csrf mapping
     threatRuleIdToConfigMetadataMapping.put(
