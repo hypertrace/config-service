@@ -22,7 +22,6 @@ message JiraTemplateDetails {
 message JiraFieldTemplate {
   string field_key = 1;
   bool is_enabled = 2;
-  // if not set, field is just visible with no default
   oneof field_value_source {
     StaticFieldValue static_value = 3;
     TraceableField traceable_field = 4;
@@ -30,7 +29,8 @@ message JiraFieldTemplate {
 }
 
 message StaticFieldValue {
-  string value_json = 1;
+  string value_json = 1 [deprecated = true];
+  string field_value = 2;
 }
 
 enum TraceableField {

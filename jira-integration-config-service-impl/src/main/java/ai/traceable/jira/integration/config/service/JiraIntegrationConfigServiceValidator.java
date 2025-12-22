@@ -24,6 +24,7 @@ import ai.traceable.jira.integration.config.service.api.v1.JiraIntegrationFilter
 import ai.traceable.jira.integration.config.service.api.v1.JiraStatusMapping;
 import ai.traceable.jira.integration.config.service.api.v1.JiraTemplateDetails;
 import ai.traceable.jira.integration.config.service.api.v1.Scope;
+import ai.traceable.jira.integration.config.service.api.v1.StaticFieldValue;
 import ai.traceable.jira.integration.config.service.api.v1.TraceableEntityType;
 import ai.traceable.jira.integration.config.service.api.v1.TraceableField;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateJiraIntegrationRequest;
@@ -251,27 +252,14 @@ public class JiraIntegrationConfigServiceValidator {
   }
 
   private void validateStaticValue(JiraFieldTemplate fieldTemplate, String fieldKey) {
-    String jsonValue = fieldTemplate.getStaticValue().getValueJson();
-
-    if (jsonValue.isBlank()) {
+    StaticFieldValue staticValue = fieldTemplate.getStaticValue();
+    String value =
+        !staticValue.getFieldValue().isBlank()
+            ? staticValue.getFieldValue()
+            : staticValue.getValueJson();
+    if (value.isBlank()) {
       throw Status.INVALID_ARGUMENT
-          .withDescription(
-              String.format("Static value JSON cannot be empty for field: %s", fieldKey))
-          .asRuntimeException();
-    }
-
-    try {
-      if (!isValidJsonStructure(jsonValue)) {
-        throw Status.INVALID_ARGUMENT
-            .withDescription(
-                String.format("Invalid JSON format for static value in field: %s", fieldKey))
-            .asRuntimeException();
-      }
-    } catch (Exception e) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription(
-              String.format(
-                  "Invalid JSON for static value in field %s: %s", fieldKey, e.getMessage()))
+          .withDescription(String.format("Static value cannot be empty for field: %s", fieldKey))
           .asRuntimeException();
     }
   }
@@ -285,17 +273,6 @@ public class JiraIntegrationConfigServiceValidator {
               String.format("Traceable field mapping must be specified for field: %s", fieldKey))
           .asRuntimeException();
     }
-  }
-
-  private boolean isValidJsonStructure(String json) {
-    if (json == null || json.isBlank()) {
-      return false;
-    }
-    json = json.trim();
-    return json.startsWith("{")
-        || json.startsWith("[")
-        || json.startsWith("\"")
-        || json.matches("^(true|false|null|-?\\d+(\\.\\d+)?([eE][+-]?\\d+)?)$");
   }
 
   private void validateJiraIntegrationDetailsOrThrow(

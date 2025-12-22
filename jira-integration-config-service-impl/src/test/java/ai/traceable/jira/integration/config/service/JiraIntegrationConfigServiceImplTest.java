@@ -76,8 +76,8 @@ class JiraIntegrationConfigServiceImplTest {
   private static final String MARKDOWN_UPDATED_CONTENT = "## Updated Content";
   private static final String JIRA_FIELD_KEY_1 = "summary";
   private static final String JIRA_FIELD_KEY_2 = "severity";
-  private static final String STATIC_VALUE_1 = "{\"value\": \"Vulnerability Issue\"}";
-  private static final String STATIC_VALUE_2 = "{\"value\": \"Original description\"}";
+  private static final String STATIC_VALUE_1 = "Critical";
+  private static final String STATIC_VALUE_2 = "High";
   JiraIntegrationStore jiraIntegrationStore;
   JiraAdditionalConfigurationStore jiraAdditionalConfigurationStore;
   MockGenericConfigService mockGenericConfigService;
@@ -775,7 +775,7 @@ class JiraIntegrationConfigServiceImplTest {
         JiraFieldTemplate.newBuilder()
             .setFieldKey(JIRA_FIELD_KEY_1)
             .setIsEnabled(true)
-            .setStaticValue(StaticFieldValue.newBuilder().setValueJson(STATIC_VALUE_1).build())
+            .setStaticValue(StaticFieldValue.newBuilder().setFieldValue(STATIC_VALUE_1).build())
             .build();
     JiraFieldTemplate fieldTemplate2 =
         JiraFieldTemplate.newBuilder()
@@ -840,7 +840,7 @@ class JiraIntegrationConfigServiceImplTest {
         JiraFieldTemplate.newBuilder()
             .setFieldKey(JIRA_FIELD_KEY_1)
             .setIsEnabled(true)
-            .setStaticValue(StaticFieldValue.newBuilder().setValueJson(STATIC_VALUE_1).build())
+            .setStaticValue(StaticFieldValue.newBuilder().setFieldValue(STATIC_VALUE_1).build())
             .build();
     AddJiraTemplateRequest addRequest =
         AddJiraTemplateRequest.newBuilder()
@@ -871,7 +871,7 @@ class JiraIntegrationConfigServiceImplTest {
         JiraFieldTemplate.newBuilder()
             .setFieldKey(JIRA_FIELD_KEY_1)
             .setIsEnabled(true)
-            .setStaticValue(StaticFieldValue.newBuilder().setValueJson(STATIC_VALUE_2).build())
+            .setStaticValue(StaticFieldValue.newBuilder().setFieldValue(STATIC_VALUE_2).build())
             .build();
     JiraFieldTemplate updatedFieldTemplate2 =
         JiraFieldTemplate.newBuilder()
@@ -907,7 +907,7 @@ class JiraIntegrationConfigServiceImplTest {
             .getJiraTemplateDetails()
             .getFieldTemplates(0)
             .getStaticValue()
-            .getValueJson());
+            .getFieldValue());
     assertEquals(
         JIRA_FIELD_KEY_2,
         updatedTemplate.getJiraTemplateDetails().getFieldTemplates(1).getFieldKey());
@@ -931,7 +931,7 @@ class JiraIntegrationConfigServiceImplTest {
         JiraFieldTemplate.newBuilder()
             .setFieldKey(JIRA_FIELD_KEY_1)
             .setIsEnabled(true)
-            .setStaticValue(StaticFieldValue.newBuilder().setValueJson(STATIC_VALUE_1).build())
+            .setStaticValue(StaticFieldValue.newBuilder().setFieldValue(STATIC_VALUE_1).build())
             .build();
     AddJiraTemplateRequest addRequest =
         AddJiraTemplateRequest.newBuilder()
