@@ -32,6 +32,8 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
   private static final String MIN_TOTAL_TRAFFIC_SEEN = "min_total_traffic_seen";
   private static final String EXCLUDE_SPECIAL_CHARACTERS = "exclude_special_characters";
   private static final String MAX_DEPTH_DIFFERENCE_ALLOWED = "max_depth_difference_allowed";
+  private static final String URL_REGEX_TO_REQD_PARAM_REGEX_DETAILS =
+      "url_regex_to_reqd_param_regex_details";
   private static final String MAX_ALIASES = "max_aliases";
   private static final String MAX_DUPLICATES = "max_duplicates";
   private static final String MAX_BATCHES = "max_batches";
@@ -155,6 +157,15 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
             .setConfigValueMetadata(
                 ConfigValueMetadata.newBuilder()
                     .setType(ConfigValueType.CONFIG_VALUE_TYPE_NUMBER)
+                    .build())
+            .build();
+
+    ConfigMetadata urlRegexToReqdParamRegexDetailsConfigMetadata =
+        ConfigMetadata.newBuilder()
+            .setKey(URL_REGEX_TO_REQD_PARAM_REGEX_DETAILS)
+            .setConfigValueMetadata(
+                ConfigValueMetadata.newBuilder()
+                    .setType(ConfigValueType.CONFIG_VALUE_TYPE_OBJECT)
                     .build())
             .build();
 
@@ -701,7 +712,8 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
             csrfRegexStrings,
             enabledForInternalIpsConfigMetadata,
             evaluateRequestBodyParamsConfigMetadata,
-            thresholdFamiliesExcluded));
+            thresholdFamiliesExcluded,
+            urlRegexToReqdParamRegexDetailsConfigMetadata));
 
     // authn_ua mapping
     threatRuleIdToConfigMetadataMapping.put(
