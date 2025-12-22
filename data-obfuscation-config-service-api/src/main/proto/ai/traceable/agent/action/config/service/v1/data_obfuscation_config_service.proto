@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package ai.traceable.agent.action.config.service.v1;
+
+import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
+import "ai/traceable/graphql/autogen/schema/annotations/method/v1/graphql_method_options.proto";
+
+option java_multiple_files = true;
+
+service DataObfuscationConfigService {
+  rpc CreateDataObfuscationStrategy(CreateDataObfuscationStrategyRequest) returns (CreateDataObfuscationStrategyResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "Create a new data obfuscation strategy";
+  }
+  rpc GetDataObfuscationStrategy(GetDataObfuscationStrategyRequest) returns (GetDataObfuscationStrategyResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "Get data obfuscation strategy for this tenant";
+  }
+  rpc UpdateDataObfuscationStrategy(UpdateDataObfuscationStrategyRequest) returns (UpdateDataObfuscationStrategyResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "Update data obfuscation strategy";
+  }
+  rpc DeleteDataObfuscationStrategy(DeleteDataObfuscationStrategyRequest) returns (DeleteDataObfuscationStrategyResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "Delete data obfuscation strategy";
+  }
+}
+
+message CreateDataObfuscationStrategyRequest {
+  ObfuscationStrategyInput obfuscation_strategy = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Data obfuscation strategy input to create"];
+}
+
+message CreateDataObfuscationStrategyResponse {
+  ObfuscationStrategy obfuscation_strategy = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Created data obfuscation strategy"];
+}
+
+message GetDataObfuscationStrategyRequest {}
+
+message GetDataObfuscationStrategyResponse {
+  repeated ObfuscationStrategy obfuscation_strategies = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Data obfuscation strategies for this tenant"];
+}
+
+message UpdateDataObfuscationStrategyRequest {
+  ObfuscationStrategyInput obfuscation_strategy = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Updated data obfuscation strategy input"];
+}
+
+message UpdateDataObfuscationStrategyResponse {
+  ObfuscationStrategy obfuscation_strategy = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Updated data obfuscation strategy"];
+}
+
+message DeleteDataObfuscationStrategyRequest {}
+
+message DeleteDataObfuscationStrategyResponse {}
+
+message ObfuscationStrategyInput {
+  string salt = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Salt to be used for obfuscating the value"];
+  HashStrategy hash_strategy = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Hash strategy to be used for obfuscating the value"];
+}
+
+message ObfuscationStrategy {
+  string id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Id of the data obfuscation strategy"];
+  string salt = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Salt to be used for obfuscating the value"];
+  HashStrategy hash_strategy = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Hash strategy to be used for obfuscating the value"];
+}
+
+message HashStrategy {
+  oneof hash_strategy {
+    Sha256Hash sha256 = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Use SHA256 hash for obfuscating the value"];
+    Argon2IdHash argon2id = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Use Argon2ID hash for obfuscating the value"];
+    ScryptHash scrypt = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Use Scrypt hash for obfuscating the value"];
+    // This is the default option considered by TPA when HashFunction is unspecified. Keeping this for behavioral consistency.
+    Sha1Hash sha1 = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Use SHA1 hash for obfuscating the value"];
+  }
+}
+
+message Sha256Hash {}
+
+message Sha1Hash {}
+
+message Argon2IdHash {
+  int32 time = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Time parameter for Argon2ID"];
+  int32 memory = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Memory parameter for Argon2ID"];
+  int32 threads = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Threads parameter for Argon2ID"];
+  int32 key_length = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Key length for Argon2ID"];
+}
+
+message ScryptHash {
+  int32 cost = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Cost parameter for Scrypt"];
+  int32 threads = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Parallelization parameter for Scrypt"];
+  int32 block_size = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Block size parameter for Scrypt"];
+  int32 key_length = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Key length for Scrypt"];
+}
