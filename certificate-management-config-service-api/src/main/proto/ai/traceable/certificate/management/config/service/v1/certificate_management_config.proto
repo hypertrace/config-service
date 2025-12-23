@@ -12,6 +12,13 @@ message Certificate {
   CertificateMetadata metadata = 3; // Extracted metadata and user-provided info
   repeated CertificateStorageDetails storage = 4;
   CertificateStatusDetails status_details = 5;
+  CertificateType certificate_type = 6;
+}
+
+enum CertificateType {
+  CERTIFICATE_TYPE_UNSPECIFIED = 0;
+  CERTIFICATE_TYPE_HOSTED = 1;
+  CERTIFICATE_TYPE_MANAGED = 2;
 }
 
 message CertificateMetadata {

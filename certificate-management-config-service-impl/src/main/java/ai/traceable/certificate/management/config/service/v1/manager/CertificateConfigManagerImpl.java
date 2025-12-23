@@ -41,6 +41,7 @@ public class CertificateConfigManagerImpl implements CertificateConfigManager {
             .setMetadata(request.getMetadata())
             .addAllStorage(request.getStorageList())
             .setStatusDetails(request.getStatusDetails())
+            .setCertificateType(request.getCertificateType())
             .build();
 
     return store.createCertificate(ctx, certificate);

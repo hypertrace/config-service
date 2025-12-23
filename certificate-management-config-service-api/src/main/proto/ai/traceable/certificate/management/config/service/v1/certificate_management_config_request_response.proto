@@ -11,6 +11,7 @@ message CreateCertificateRequest {
   CertificateMetadata metadata = 2;
   CertificateStatusDetails status_details = 3;
   repeated CertificateStorageDetails storage = 4;
+  CertificateType certificate_type = 5;
 }
 
 message CreateCertificateResponse {
@@ -29,6 +30,7 @@ message CertificateFilter {
   message AwsFilter {
     repeated string regions = 1;
   }
+  CertificateType certificate_type = 5;
 }
 
 message GetCertificatesRequest {

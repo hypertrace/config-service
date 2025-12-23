@@ -3,6 +3,7 @@ package ai.traceable.certificate.management.config.service.v1.store;
 import ai.traceable.certificate.management.config.service.v1.Certificate;
 import ai.traceable.certificate.management.config.service.v1.CertificateFilter;
 import ai.traceable.certificate.management.config.service.v1.CertificateStorageDetails;
+import ai.traceable.certificate.management.config.service.v1.CertificateType;
 import com.google.protobuf.Value;
 import jakarta.inject.Inject;
 import java.util.List;
@@ -134,6 +135,11 @@ public class CertificateConfigStore extends IdentifiedObjectStore<Certificate> {
           return false;
         }
       }
+    }
+
+    // filter by certificate type if Specified
+    if (filter.getCertificateType() != CertificateType.CERTIFICATE_TYPE_UNSPECIFIED) {
+      return certificate.getCertificateType().equals(filter.getCertificateType());
     }
 
     return true;

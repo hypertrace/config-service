@@ -8,6 +8,7 @@ import ai.traceable.certificate.management.config.service.v1.Certificate;
 import ai.traceable.certificate.management.config.service.v1.CertificateFilter;
 import ai.traceable.certificate.management.config.service.v1.CertificateMetadata;
 import ai.traceable.certificate.management.config.service.v1.CertificateStorageDetails;
+import ai.traceable.certificate.management.config.service.v1.CertificateType;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.junit.jupiter.api.Test;
@@ -120,5 +121,66 @@ class CertificateConfigStoreTest {
 
     // Certificate without region filter will match anything
     assertTrue(store.matchesFilter(multiRegionCertificate, CertificateFilter.newBuilder().build()));
+  }
+
+  @Test
+  void testCertificateTypeFiltering() {
+    // Create the store
+    CertificateConfigStore store =
+        new CertificateConfigStore(configServiceBlockingStub, configChangeEventGenerator);
+
+    // Create a hosted certificate
+    Certificate hostedCertificate =
+        Certificate.newBuilder()
+            .setId("cert-hosted")
+            .setMetadata(CertificateMetadata.newBuilder().addDomainNames("hosted.example.com"))
+            .setCertificateType(CertificateType.CERTIFICATE_TYPE_HOSTED)
+            .build();
+
+    // Create a managed certificate
+    Certificate managedCertificate =
+        Certificate.newBuilder()
+            .setId("cert-managed")
+            .setMetadata(CertificateMetadata.newBuilder().addDomainNames("managed.example.com"))
+            .setCertificateType(CertificateType.CERTIFICATE_TYPE_MANAGED)
+            .build();
+
+    // Create a certificate with unspecified type
+    Certificate unspecifiedCertificate =
+        Certificate.newBuilder()
+            .setId("cert-unspecified")
+            .setMetadata(CertificateMetadata.newBuilder().addDomainNames("unspecified.example.com"))
+            .setCertificateType(CertificateType.CERTIFICATE_TYPE_UNSPECIFIED)
+            .build();
+
+    // Test filter for hosted certificates
+    CertificateFilter hostedFilter =
+        CertificateFilter.newBuilder()
+            .setCertificateType(CertificateType.CERTIFICATE_TYPE_HOSTED)
+            .build();
+
+    assertTrue(store.matchesFilter(hostedCertificate, hostedFilter));
+    assertFalse(store.matchesFilter(managedCertificate, hostedFilter));
+    assertFalse(store.matchesFilter(unspecifiedCertificate, hostedFilter));
+
+    // Test filter for managed certificates
+    CertificateFilter managedFilter =
+        CertificateFilter.newBuilder()
+            .setCertificateType(CertificateType.CERTIFICATE_TYPE_MANAGED)
+            .build();
+
+    assertFalse(store.matchesFilter(hostedCertificate, managedFilter));
+    assertTrue(store.matchesFilter(managedCertificate, managedFilter));
+    assertFalse(store.matchesFilter(unspecifiedCertificate, managedFilter));
+
+    // Test filter with unspecified type (should match all certificates)
+    CertificateFilter unspecifiedFilter =
+        CertificateFilter.newBuilder()
+            .setCertificateType(CertificateType.CERTIFICATE_TYPE_UNSPECIFIED)
+            .build();
+
+    assertTrue(store.matchesFilter(hostedCertificate, unspecifiedFilter));
+    assertTrue(store.matchesFilter(managedCertificate, unspecifiedFilter));
+    assertTrue(store.matchesFilter(unspecifiedCertificate, unspecifiedFilter));
   }
 }
