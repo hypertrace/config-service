@@ -58,7 +58,8 @@ public class TraceableExternalConfigServiceFactory implements GrpcPlatformServic
                     providers.getLocalChannel(),
                     providers.getConfig(),
                     environment.getChannelRegistry(),
-                    providers.getFeatureCachingClient())
+                    providers.getFeatureCachingClient(),
+                    providers.getKafkaLiveEventEntityListener())
                     .stream()))
         .map(GrpcPlatformService::new)
         .collect(Collectors.toUnmodifiableList());

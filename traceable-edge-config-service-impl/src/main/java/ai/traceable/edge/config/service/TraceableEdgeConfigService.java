@@ -9,6 +9,7 @@ import ai.traceable.edge.config.service.supplier.CloudBotDeploymentConfigSupplie
 import ai.traceable.edge.config.service.supplier.EdgeDecisionEngineConfigSupplier;
 import ai.traceable.edge.config.service.supplier.FlowConfigSupplier;
 import ai.traceable.edge.config.service.supplier.InvisibleCaptchaPolicySupplier;
+import ai.traceable.edge.config.service.supplier.SecuritySchemeConfigSupplier;
 import ai.traceable.edge.config.service.supplier.WebAppEvaluationConfigContextSupplier;
 import ai.traceable.edge.config.service.supplier.api.resolution.url.pattern.trie.ApiIdResolverConfigSupplier;
 import ai.traceable.edge.config.service.supplier.filtering.config.context.PostDetectionFilteringConfigContextSupplier;
@@ -57,6 +58,7 @@ public class TraceableEdgeConfigService
       PreDetectionFilteringConfigContextSupplier preDetectionFilteringConfigContextSupplier,
       PostDetectionFilteringConfigContextSupplier postDetectionFilteringConfigContextSupplier,
       ApiIdResolverConfigSupplier apiIdResolverConfigSupplier,
+      SecuritySchemeConfigSupplier securitySchemeConfigSupplier,
       TraceableEdgeConfig traceableEdgeConfig) {
     this.uuidGenerator = uuidGenerator;
     this.configSuppliersByType = new HashMap<>();
@@ -85,6 +87,8 @@ public class TraceableEdgeConfigService
         postDetectionFilteringConfigContextSupplier);
     this.configSuppliersByType.put(
         apiIdResolverConfigSupplier.getConfigType(), apiIdResolverConfigSupplier);
+    this.configSuppliersByType.put(
+        securitySchemeConfigSupplier.getConfigType(), securitySchemeConfigSupplier);
     // todo: use configSupplier to automatically instantiate the appropriate class.
     //    var configTypeSupplierConfigs = config.getConfigList(CONFIG_TYPES_CONFIG_NAME);
     //    for (var configTypeSupplierConfig : configTypeSupplierConfigs) {

@@ -10,6 +10,8 @@ import org.hypertrace.config.change.event.v1.ConfigChangeEventValue;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.core.grpcutils.client.InProcessGrpcChannelRegistry;
 import org.hypertrace.core.kafka.event.listener.KafkaLiveEventListener;
+import org.hypertrace.entity.change.event.v1.EntityChangeEventKey;
+import org.hypertrace.entity.change.event.v1.EntityChangeEventValue;
 
 @Value
 class SharedConfigServiceProviders {
@@ -20,4 +22,5 @@ class SharedConfigServiceProviders {
   Channel localChannel;
   Clock clock;
   KafkaLiveEventListener<ConfigChangeEventKey, ConfigChangeEventValue> kafkaLiveEventListener;
+  KafkaLiveEventListener<EntityChangeEventKey, EntityChangeEventValue> kafkaLiveEventEntityListener;
 }

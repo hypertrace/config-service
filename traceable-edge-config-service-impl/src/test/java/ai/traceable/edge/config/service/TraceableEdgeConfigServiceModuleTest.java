@@ -14,6 +14,7 @@ import com.typesafe.config.Config;
 import io.grpc.Channel;
 import io.grpc.ManagedChannel;
 import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
+import org.hypertrace.core.kafka.event.listener.KafkaLiveEventListener;
 import org.junit.jupiter.api.Test;
 
 class TraceableEdgeConfigServiceModuleTest {
@@ -31,7 +32,8 @@ class TraceableEdgeConfigServiceModuleTest {
                         mockChannel,
                         config,
                         mockGrpcChannelRegistry,
-                        mock(FeatureCachingClient.class)))
+                        mock(FeatureCachingClient.class),
+                        mock(KafkaLiveEventListener.class)))
                 .getAllBindings());
   }
 }

@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package ai.traceable.edge.config.service.v1;
+
+option go_package = "github.com/Traceableai/config-service/gen/go/ai/traceable/edge/config/service/v1";
+option java_multiple_files = true;
+
+message SecuritySchemeConfig {
+  map<string, ApiSecurityScheme> api_security_schemes = 1;
+}
+
+message ApiSecurityScheme {
+  repeated UserRoleScheme user_roles = 1;
+  repeated UserScopeScheme user_scopes = 2;
+}
+
+message UserRoleScheme {
+  string role_id = 1;
+  string role_name = 2;
+  bool is_user_defined = 3;
+}
+
+message UserScopeScheme {
+  string scope_id = 1;
+  string scope_name = 2;
+  bool is_user_defined = 3;
+}

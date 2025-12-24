@@ -13,6 +13,8 @@ dependencies {
   implementation(localLibs.hypertrace.configservice.partitioner.config.impl)
   implementation(commonLibs.hypertrace.framework.documentstore.metrics)
   implementation(commonLibs.hypertrace.kafkaStreams.eventListener)
+  implementation(commonLibs.kafka.streams.protobuf.serde)
+  implementation(commonLibs.hypertrace.entitychangeevent.api)
   implementation(localLibs.hypertrace.configservice.changeeventapi)
 
   implementation(projects.traceableConfigServiceRest)

@@ -34,6 +34,8 @@ dependencies {
   implementation(commonLibs.hypertrace.grpcutils.client)
   implementation(commonLibs.hypertrace.framework.metrics.jakarta)
   implementation(localLibs.hypertrace.configservice.protoconverter)
+  implementation(commonLibs.hypertrace.entitychangeevent.api)
+  implementation(commonLibs.hypertrace.kafkaStreams.eventListener)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

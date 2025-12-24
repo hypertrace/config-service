@@ -10,18 +10,26 @@ import io.grpc.Channel;
 import java.util.Collections;
 import java.util.Set;
 import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
+import org.hypertrace.core.kafka.event.listener.KafkaLiveEventListener;
+import org.hypertrace.entity.change.event.v1.EntityChangeEventKey;
+import org.hypertrace.entity.change.event.v1.EntityChangeEventValue;
 
 public class TraceableEdgeConfigServiceFactory {
   public static Set<BindableService> build(
       Channel channel,
       Config config,
       GrpcChannelRegistry grpcChannelRegistry,
-      FeatureCachingClient featureCachingClient) {
+      FeatureCachingClient featureCachingClient,
+      KafkaLiveEventListener<EntityChangeEventKey, EntityChangeEventValue> kafkaLiveEventListener) {
     Injector injector =
         Guice.createInjector(
             Stage.PRODUCTION,
             new TraceableEdgeConfigServiceModule(
-                channel, config, grpcChannelRegistry, featureCachingClient));
+                channel,
+                config,
+                grpcChannelRegistry,
+                featureCachingClient,
+                kafkaLiveEventListener));
     return Collections.singleton(injector.getInstance(BindableService.class));
   }
 }

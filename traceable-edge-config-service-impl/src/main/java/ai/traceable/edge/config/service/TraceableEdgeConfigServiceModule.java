@@ -10,6 +10,7 @@ import ai.traceable.edge.config.service.config.TraceableEdgeConfig;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionConfigServiceGrpc;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionConfigServiceGrpc.EdgeDecisionConfigServiceBlockingStub;
 import ai.traceable.entity.fetcher.cache.CachedServiceMappingProviderModule;
+import ai.traceable.entity.fetcher.cache.StreamingSecuritySchemeProviderModule;
 import ai.traceable.policy.config.service.v1.TraceablePolicyConfigServiceGrpc;
 import ai.traceable.policy.config.service.v1.TraceablePolicyConfigServiceGrpc.TraceablePolicyConfigServiceBlockingStub;
 import ai.traceable.protection.rules.filtering.v1.ProtectionFilteringRulesProviderModule;
@@ -22,6 +23,9 @@ import java.time.Clock;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
+import org.hypertrace.core.kafka.event.listener.KafkaLiveEventListener;
+import org.hypertrace.entity.change.event.v1.EntityChangeEventKey;
+import org.hypertrace.entity.change.event.v1.EntityChangeEventValue;
 
 public class TraceableEdgeConfigServiceModule extends AbstractModule {
   private final Channel channel;
@@ -29,17 +33,21 @@ public class TraceableEdgeConfigServiceModule extends AbstractModule {
   private final TraceableEdgeConfig edgeConfig;
   private final GrpcChannelRegistry grpcChannelRegistry;
   private final FeatureCachingClient featureCachingClient;
+  private final KafkaLiveEventListener<EntityChangeEventKey, EntityChangeEventValue>
+      kafkaLiveEventListener;
 
   public TraceableEdgeConfigServiceModule(
       Channel channel,
       Config config,
       GrpcChannelRegistry grpcChannelRegistry,
-      FeatureCachingClient featureCachingClient) {
+      FeatureCachingClient featureCachingClient,
+      KafkaLiveEventListener<EntityChangeEventKey, EntityChangeEventValue> kafkaLiveEventListener) {
     this.channel = channel;
     this.config = config;
     this.edgeConfig = new TraceableEdgeConfig(config);
     this.grpcChannelRegistry = grpcChannelRegistry;
     this.featureCachingClient = featureCachingClient;
+    this.kafkaLiveEventListener = kafkaLiveEventListener;
   }
 
   @Override
@@ -55,6 +63,9 @@ public class TraceableEdgeConfigServiceModule extends AbstractModule {
     install(
         new CachedServiceMappingProviderModule(
             this.grpcChannelRegistry, this.config, "serviceMappingCache-edgeConfigService"));
+    install(
+        new StreamingSecuritySchemeProviderModule(
+            this.grpcChannelRegistry, this.config, this.kafkaLiveEventListener));
   }
 
   @Provides
