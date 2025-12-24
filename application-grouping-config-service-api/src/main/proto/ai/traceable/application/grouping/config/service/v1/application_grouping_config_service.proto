@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package ai.traceable.application.grouping.config.service.v1;
+
+import "ai/traceable/application/grouping/config/service/v1/application_grouping_rule_config.proto";
+
+option java_multiple_files = true;
+
+service ApplicationGroupingConfigService {
+  rpc GetAllApplicationGroupingRuleConfigs(GetAllApplicationGroupingRuleConfigsRequest) returns (GetAllApplicationGroupingRuleConfigsResponse);
+
+  rpc CreateApplicationGroupingRuleConfig(CreateApplicationGroupingRuleConfigRequest) returns (CreateApplicationGroupingRuleConfigResponse);
+
+  rpc UpdateApplicationGroupingRuleConfig(UpdateApplicationGroupingRuleConfigRequest) returns (UpdateApplicationGroupingRuleConfigResponse);
+
+  rpc DeleteApplicationGroupingRuleConfigs(DeleteApplicationGroupingRuleConfigsRequest) returns (DeleteApplicationGroupingRuleConfigsResponse);
+}
+
+message GetAllApplicationGroupingRuleConfigsRequest {}
+
+message GetAllApplicationGroupingRuleConfigsResponse {
+  repeated ApplicationGroupingRuleConfig application_grouping_rule_configs = 1;
+}
+
+message CreateApplicationGroupingRuleConfigRequest {
+  ApplicationGroupingRuleConfigInfo application_grouping_rule_config_info = 1;
+}
+
+message CreateApplicationGroupingRuleConfigResponse {
+  ApplicationGroupingRuleConfig application_grouping_rule_config = 1;
+}
+
+message UpdateApplicationGroupingRuleConfigRequest {
+  string id = 1;
+  ApplicationGroupingRuleConfigInfo application_grouping_rule_config_info = 2;
+}
+
+message UpdateApplicationGroupingRuleConfigResponse {
+  ApplicationGroupingRuleConfig application_grouping_rule_config = 1;
+}
+
+message DeleteApplicationGroupingRuleConfigsRequest {
+  repeated string ids = 1;
+}
+
+message DeleteApplicationGroupingRuleConfigsResponse {}

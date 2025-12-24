@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package ai.traceable.application.grouping.config.service.v1;
+
+option java_multiple_files = true;
+
+message ApplicationGroupingRuleConfig {
+  string id = 1;
+  ApplicationGroupingRuleConfigInfo application_grouping_rule_config_info = 2;
+}
+
+message ApplicationGroupingRuleConfigInfo {
+  string rule_name = 1;
+  GroupName group_name = 2;
+  repeated AssetSelector selector = 3;
+  optional string description = 4;
+  optional Severity severity = 5;
+  optional string owner = 6;
+}
+
+message GroupName {
+  oneof source {
+    string static = 1;
+  }
+}
+
+message AssetSelector {
+  AssetType asset_type = 1;
+  Filter filter = 2;
+}
+
+message Filter {
+  oneof type {
+    SavedFilterReference saved_filter = 1;
+  }
+}
+
+message SavedFilterReference {
+  string id = 1;
+}
+
+message AssetType {
+  oneof category {
+    WellKnownAssetType well_known_asset_type = 1;
+  }
+}
+
+enum WellKnownAssetType {
+  WELL_KNOWN_ASSET_TYPE_UNSPECIFIED = 0;
+  WELL_KNOWN_ASSET_TYPE_API = 1;
+  WELL_KNOWN_ASSET_TYPE_SERVICE = 2;
+  WELL_KNOWN_ASSET_TYPE_ENVIRONMENT = 3;
+}
+
+enum Severity {
+  SEVERITY_UNSPECIFIED = 0;
+  SEVERITY_LOW = 1;
+  SEVERITY_MEDIUM = 2;
+  SEVERITY_HIGH = 3;
+  SEVERITY_CRITICAL = 4;
+}
