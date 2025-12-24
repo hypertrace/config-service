@@ -73,7 +73,6 @@ jobs:
           workflow_run_head_sha: ${{ github.event.workflow_run.head_sha }}
           workflow_run_conclusion: ${{ github.event.workflow_run.conclusion }}
           repository: ${{ github.repository }}
-          max_retries: '3'
           github_token: ${{ secrets.GITHUB_TOKEN }}
           ci_trigger_token: ${{ steps.generate-token.outputs.token }}
           gcp_service_account_key: ${{ secrets.AUTOFIX_GCP_SERVICE_ACCOUNT_KEY }}
