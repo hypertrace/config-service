@@ -100,8 +100,8 @@ public class ApiIdResolverConfigSupplier implements TraceableEdgeConfigSupplier 
       case API_TYPE_HTTP:
       case API_TYPE_SOAP:
       case API_TYPE_XML_RPC:
-        Stream<HttpApiDetails> learntHttpApis =
-            apiMappingProvider.getLearntHttpApiDetails(requestContext, serviceName, environment);
+        Stream<HttpApiDetails> allHttpApis =
+            apiMappingProvider.getAllHttpApiDetails(requestContext, serviceName, environment);
         BiConsumer<UrlSegmentTrieNode.Builder, Map.Entry<String, String>> apiDetailsUpdater =
             (nodeBuilder, entry) -> {
               // Ensure uniqueness by HTTP method: update existing if present, else add new
@@ -127,7 +127,7 @@ public class ApiIdResolverConfigSupplier implements TraceableEdgeConfigSupplier 
                         .build());
               }
             };
-        return serializeTrie(buildUrlSegmentTrie(learntHttpApis, apiDetailsUpdater));
+        return serializeTrie(buildUrlSegmentTrie(allHttpApis, apiDetailsUpdater));
       case API_TYPE_GRPC:
       case API_TYPE_GRAPHQL:
       default:

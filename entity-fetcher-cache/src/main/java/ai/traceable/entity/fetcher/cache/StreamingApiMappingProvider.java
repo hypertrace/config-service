@@ -9,6 +9,9 @@ public interface StreamingApiMappingProvider {
   Stream<HttpApiDetails> getLearntHttpApiDetails(
       RequestContext requestContext, String serviceName, String environment);
 
+  Stream<HttpApiDetails> getAllHttpApiDetails(
+      RequestContext requestContext, String serviceName, String environment);
+
   @Value
   class HttpApiDetails {
     String apiId;

@@ -16,4 +16,11 @@ public class DefaultStreamingApiMappingProvider implements StreamingApiMappingPr
     return entityQueryServiceClient.getAllLearntHttpApiEndpoints(
         requestContext, serviceName, environment);
   }
+
+  @Override
+  public Stream<HttpApiDetails> getAllHttpApiDetails(
+      RequestContext requestContext, String serviceName, String environment) {
+    return entityQueryServiceClient.getAllHttpApiEndpoints(
+        requestContext, serviceName, environment);
+  }
 }

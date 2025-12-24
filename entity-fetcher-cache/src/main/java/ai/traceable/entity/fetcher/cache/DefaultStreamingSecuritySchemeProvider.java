@@ -21,8 +21,7 @@ public class DefaultStreamingSecuritySchemeProvider implements StreamingSecurity
       RequestContext requestContext, String serviceName, String environment) {
 
     Stream<HttpApiDetails> apis =
-        entityQueryServiceClient.getAllLearntHttpApiEndpoints(
-            requestContext, serviceName, environment);
+        entityQueryServiceClient.getAllHttpApiEndpoints(requestContext, serviceName, environment);
 
     return apis.map(
             api -> {

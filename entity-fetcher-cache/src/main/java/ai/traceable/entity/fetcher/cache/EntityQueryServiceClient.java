@@ -52,19 +52,30 @@ class EntityQueryServiceClient {
       RequestContext requestContext, String serviceName, String environment) {
     EntityQueryRequest serviceEntityQueryRequest =
         buildLearntApiQueryRequest(serviceName, environment, ApiType.HTTP);
+    return executeApiQueryRequest(requestContext, serviceName, serviceEntityQueryRequest);
+  }
+
+  public Stream<HttpApiDetails> getAllHttpApiEndpoints(
+      RequestContext requestContext, String serviceName, String environment) {
+    EntityQueryRequest serviceEntityQueryRequest =
+        buildAllApiQueryRequest(serviceName, environment, ApiType.HTTP);
+    return executeApiQueryRequest(requestContext, serviceName, serviceEntityQueryRequest);
+  }
+
+  private Stream<HttpApiDetails> executeApiQueryRequest(
+      RequestContext requestContext, String serviceName, EntityQueryRequest queryRequest) {
     Iterator<ResultSetChunk> resultSetChunkIterator =
         requestContext.call(
             () ->
                 entityQueryServiceBlockingStub
                     .withDeadlineAfter(timeoutMillis, TimeUnit.MILLISECONDS)
-                    .execute(serviceEntityQueryRequest));
+                    .execute(queryRequest));
 
-    // no Api has been learnt for this service-id
     if (!resultSetChunkIterator.hasNext()) {
       return Stream.empty();
     }
 
-    int selectionCount = serviceEntityQueryRequest.getSelectionCount();
+    int selectionCount = queryRequest.getSelectionCount();
     return Streams.stream(resultSetChunkIterator)
         .map(ResultSetChunk::getRowList)
         .flatMap(List::stream)
@@ -266,6 +277,28 @@ class EntityQueryServiceClient {
         .build();
   }
 
+  private EntityQueryRequest buildAllApiQueryRequest(
+      String serviceId, String environment, ApiType apiType) {
+    EntityQueryRequest.Builder requestBuilder =
+        getInitializedApiQueryRequestBuilder(serviceId, environment, apiType);
+    switch (apiType) {
+      case SOAP:
+      case XML_RPC:
+      case HTTP:
+        // HTTP, SOAP and XML_RPC APIs have httpMethod and resolvedUrlPatterns columns
+        Expression httpMethodCol =
+            buildSelectionExpression(entityQueryServiceConfig.getHttpMethodColumnName());
+        Expression rUrlPattern =
+            buildSelectionExpression(
+                entityQueryServiceConfig.getApiResolvedUrlPatternsColumnName());
+        return requestBuilder.addSelection(httpMethodCol).addSelection(rUrlPattern).build();
+      case GRAPHQL:
+      case GRPC:
+      default:
+        throw new IllegalArgumentException("Unsupported API type: " + apiType);
+    }
+  }
+
   private EntityQueryRequest buildLearntApiQueryRequest(
       String serviceId, String environment, ApiType apiType) {
     EntityQueryRequest.Builder requestBuilder =
@@ -286,6 +319,29 @@ class EntityQueryServiceClient {
       default:
         throw new IllegalArgumentException("Unsupported API type: " + apiType);
     }
+  }
+
+  private EntityQueryRequest.Builder getInitializedApiQueryRequestBuilder(
+      String serviceName, String environment, ApiType apiType) {
+    Filter apiTypeFilter =
+        buildStringLiteralConstantEqualsFilter(
+            entityQueryServiceConfig.getApiTypeColumnName(), apiType.name());
+    Filter environmentFilter =
+        buildStringLiteralConstantEqualsFilter(
+            entityQueryServiceConfig.getApiEnvironmentColumnName(), environment);
+    Filter serviceNameFilter =
+        buildStringLiteralConstantEqualsFilter(
+            entityQueryServiceConfig.getApiServiceNameColumnName(), serviceName);
+
+    return EntityQueryRequest.newBuilder()
+        .setEntityType(EntityType.API.name())
+        .addSelection(buildSelectionExpression(entityQueryServiceConfig.getApiIdColumnName()))
+        .setFilter(
+            Filter.newBuilder()
+                .setOperator(Operator.AND)
+                .addChildFilter(serviceNameFilter)
+                .addChildFilter(environmentFilter)
+                .addChildFilter(apiTypeFilter));
   }
 
   private EntityQueryRequest.Builder getInitializedLearntApiQueryRequestBuilder(

@@ -56,7 +56,7 @@ public class ApiIdResolverConfigSupplierTest {
                 ImmutableMap.of("serviceName", "test-service", "apiType", "API_TYPE_HTTP"))
             .build();
 
-    when(apiMappingProvider.getLearntHttpApiDetails(eq(requestContext), eq("test-service"), any()))
+    when(apiMappingProvider.getAllHttpApiDetails(eq(requestContext), eq("test-service"), any()))
         .thenReturn(Stream.empty());
 
     // Act
@@ -81,7 +81,7 @@ public class ApiIdResolverConfigSupplierTest {
     StreamingApiMappingProvider.HttpApiDetails httpApiDetails =
         new StreamingApiMappingProvider.HttpApiDetails(
             "api-123", "GET", Collections.singletonList("/users"));
-    when(apiMappingProvider.getLearntHttpApiDetails(eq(requestContext), eq("test-service"), any()))
+    when(apiMappingProvider.getAllHttpApiDetails(eq(requestContext), eq("test-service"), any()))
         .thenReturn(Stream.of(httpApiDetails));
 
     // Act
@@ -114,7 +114,7 @@ public class ApiIdResolverConfigSupplierTest {
     StreamingApiMappingProvider.HttpApiDetails httpApiDetails =
         new StreamingApiMappingProvider.HttpApiDetails(
             "api-456", "GET", Collections.singletonList("/users/\\d+"));
-    when(apiMappingProvider.getLearntHttpApiDetails(eq(requestContext), eq("test-service"), any()))
+    when(apiMappingProvider.getAllHttpApiDetails(eq(requestContext), eq("test-service"), any()))
         .thenReturn(Stream.of(httpApiDetails));
 
     // Act
@@ -152,7 +152,7 @@ public class ApiIdResolverConfigSupplierTest {
     StreamingApiMappingProvider.HttpApiDetails httpApiDetails =
         new StreamingApiMappingProvider.HttpApiDetails(
             "api-789", "GET", Collections.singletonList(uuidPattern));
-    when(apiMappingProvider.getLearntHttpApiDetails(eq(requestContext), eq("test-service"), any()))
+    when(apiMappingProvider.getAllHttpApiDetails(eq(requestContext), eq("test-service"), any()))
         .thenReturn(Stream.of(httpApiDetails));
 
     // Act
@@ -192,7 +192,7 @@ public class ApiIdResolverConfigSupplierTest {
         new StreamingApiMappingProvider.HttpApiDetails(
             "api-3", "GET", Collections.singletonList("/orders/\\d+"));
 
-    when(apiMappingProvider.getLearntHttpApiDetails(eq(requestContext), eq("test-service"), any()))
+    when(apiMappingProvider.getAllHttpApiDetails(eq(requestContext), eq("test-service"), any()))
         .thenReturn(Stream.of(api1, api2, api3));
 
     // Act
@@ -242,7 +242,7 @@ public class ApiIdResolverConfigSupplierTest {
     StreamingApiMappingProvider.HttpApiDetails httpApiDetails =
         new StreamingApiMappingProvider.HttpApiDetails(
             "root-api", "GET", Collections.singletonList("/"));
-    when(apiMappingProvider.getLearntHttpApiDetails(eq(requestContext), eq("test-service"), any()))
+    when(apiMappingProvider.getAllHttpApiDetails(eq(requestContext), eq("test-service"), any()))
         .thenReturn(Stream.of(httpApiDetails));
 
     // Act
@@ -276,7 +276,7 @@ public class ApiIdResolverConfigSupplierTest {
     StreamingApiMappingProvider.HttpApiDetails httpApiDetails =
         new StreamingApiMappingProvider.HttpApiDetails(
             "empty-api", "GET", Collections.singletonList(""));
-    when(apiMappingProvider.getLearntHttpApiDetails(eq(requestContext), eq("test-service"), any()))
+    when(apiMappingProvider.getAllHttpApiDetails(eq(requestContext), eq("test-service"), any()))
         .thenReturn(Stream.of(httpApiDetails));
 
     // Should not throw exception
@@ -320,7 +320,7 @@ public class ApiIdResolverConfigSupplierTest {
           "literal", "GET", Collections.singletonList("/path/{id}"))
     };
 
-    when(apiMappingProvider.getLearntHttpApiDetails(eq(requestContext), eq("test-service"), any()))
+    when(apiMappingProvider.getAllHttpApiDetails(eq(requestContext), eq("test-service"), any()))
         .thenReturn(Stream.of(patterns));
 
     ConfigResponseElement response =
@@ -364,7 +364,7 @@ public class ApiIdResolverConfigSupplierTest {
     StreamingApiMappingProvider.HttpApiDetails httpApiDetails =
         new StreamingApiMappingProvider.HttpApiDetails(
             "api-test", "GET", Collections.singletonList("/users/\\d+/profile"));
-    when(apiMappingProvider.getLearntHttpApiDetails(eq(requestContext), eq("test-service"), any()))
+    when(apiMappingProvider.getAllHttpApiDetails(eq(requestContext), eq("test-service"), any()))
         .thenReturn(Stream.of(httpApiDetails));
 
     // Act
@@ -392,7 +392,7 @@ public class ApiIdResolverConfigSupplierTest {
                 ImmutableMap.of("serviceName", "test-service", "apiType", "API_TYPE_HTTP"))
             .build();
 
-    when(apiMappingProvider.getLearntHttpApiDetails(eq(requestContext), eq("test-service"), any()))
+    when(apiMappingProvider.getAllHttpApiDetails(eq(requestContext), eq("test-service"), any()))
         .thenReturn(Stream.empty());
 
     // Act
@@ -417,7 +417,7 @@ public class ApiIdResolverConfigSupplierTest {
     StreamingApiMappingProvider.HttpApiDetails httpApiDetails =
         new StreamingApiMappingProvider.HttpApiDetails(
             "deep-api", "GET", Collections.singletonList("/api/v1/users/\\d+/orders/.*"));
-    when(apiMappingProvider.getLearntHttpApiDetails(eq(requestContext), eq("test-service"), any()))
+    when(apiMappingProvider.getAllHttpApiDetails(eq(requestContext), eq("test-service"), any()))
         .thenReturn(Stream.of(httpApiDetails));
 
     // Act
@@ -477,7 +477,7 @@ public class ApiIdResolverConfigSupplierTest {
         new StreamingApiMappingProvider.HttpApiDetails(
             "api-2", "GET", Collections.singletonList("/users/\\d+")); // Same pattern, different ID
 
-    when(apiMappingProvider.getLearntHttpApiDetails(eq(requestContext), eq("test-service"), any()))
+    when(apiMappingProvider.getAllHttpApiDetails(eq(requestContext), eq("test-service"), any()))
         .thenReturn(Stream.of(api1, api2));
 
     // Act
