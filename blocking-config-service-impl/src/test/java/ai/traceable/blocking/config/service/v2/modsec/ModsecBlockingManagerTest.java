@@ -1,6 +1,7 @@
 package ai.traceable.blocking.config.service.v2.modsec;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
@@ -56,6 +57,78 @@ class ModsecBlockingManagerTest {
             requestContext,
             ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS_DETECTION_ONLY_MODE,
             environmentId);
+  }
+
+  @Test
+  void filterRequestElements_edsEnabled_singleAgent() {
+    List<BlockingConfigResponseElement> responseElements =
+        manager.generateBlockingElements(
+            List.of(
+                BlockingConfigRequestElement.newBuilder()
+                    .setPreviousHash("random")
+                    .addSupportedAgentCapabilities(
+                        AgentCapabilities.newBuilder()
+                            .addComponents(
+                                Component.newBuilder()
+                                    .setLibtraceableVersion("0.1.98-rc.138")
+                                    .setTraceablePlatformAgentVersion("1.31.0")
+                                    .setEdsEnabled(true)))
+                    .setCrsBlockingRulesRequest(CrsBlockingRulesRequest.getDefaultInstance())
+                    .build()),
+            new BlockingRulesSupplierImpl(
+                blockingRulesSupplierContext, requestContext, environmentId));
+    assertEquals(1, responseElements.size());
+    assertEquals(1, responseElements.get(0).getAgentCapabilitiesCount());
+    assertEquals(uuidGenerator.getEmptyValueUuid(), responseElements.get(0).getHash());
+  }
+
+  @Test
+  void filterRequestElements_edsEnabled_multipleAgents() {
+    List<BlockingConfigResponseElement> responseElements =
+        manager.generateBlockingElements(
+            List.of(
+                BlockingConfigRequestElement.newBuilder()
+                    .setPreviousHash("random")
+                    .addSupportedAgentCapabilities(
+                        AgentCapabilities.newBuilder()
+                            .addComponents(
+                                Component.newBuilder()
+                                    .setLibtraceableVersion("0.1.98-rc.138")
+                                    .setTraceablePlatformAgentVersion("1.31.0")
+                                    .setEdsEnabled(true)))
+                    .addSupportedAgentCapabilities(
+                        AgentCapabilities.newBuilder()
+                            .addComponents(
+                                Component.newBuilder()
+                                    .setLibtraceableVersion("0.1.98-rc.138")
+                                    .setTraceablePlatformAgentVersion("1.31.0")))
+                    .addSupportedAgentCapabilities(
+                        AgentCapabilities.newBuilder()
+                            .addComponents(
+                                Component.newBuilder()
+                                    .setLibtraceableVersion("0.1.97-rc.138")
+                                    .setTraceablePlatformAgentVersion("1.30.0")
+                                    .setEdsEnabled(true)))
+                    .addSupportedAgentCapabilities(
+                        AgentCapabilities.newBuilder()
+                            .addComponents(
+                                Component.newBuilder()
+                                    .setLibtraceableVersion("0.1.97-rc.138")
+                                    .setTraceablePlatformAgentVersion("1.30.0")))
+                    .setCrsBlockingRulesRequest(CrsBlockingRulesRequest.getDefaultInstance())
+                    .build()),
+            new BlockingRulesSupplierImpl(
+                blockingRulesSupplierContext, requestContext, environmentId));
+    assertEquals(2, responseElements.size());
+    assertEquals(2, responseElements.get(0).getAgentCapabilitiesCount());
+    assertEquals(2, responseElements.get(1).getAgentCapabilitiesCount());
+    assertEquals(uuidGenerator.getEmptyValueUuid(), responseElements.get(0).getHash());
+    assertTrue(
+        responseElements.get(0).getAgentCapabilitiesList().stream()
+            .allMatch(
+                agentCapabilities ->
+                    agentCapabilities.getComponentsList().stream()
+                        .anyMatch(Component::getEdsEnabled)));
   }
 
   @Test

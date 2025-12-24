@@ -35,4 +35,8 @@ public class UuidGenerator {
         .map(this::generateId)
         .orElse(emptyValueUuid);
   }
+
+  public String getEmptyValueUuid() {
+    return emptyValueUuid;
+  }
 }

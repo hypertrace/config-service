@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ModsecBlockingManager implements BlockingConfigManagerBase {
 
@@ -47,15 +48,28 @@ public class ModsecBlockingManager implements BlockingConfigManagerBase {
   public List<BlockingConfigResponseElement> generateBlockingElements(
       List<BlockingConfigRequestElement> requestElements,
       BlockingRulesSupplier blockingRulesSupplier) {
+    List<AgentCapabilities> agentCapabilitiesWithEdsEnabled =
+        getAgentCapabilitiesWithEdsEnabled(requestElements);
     List<BlockingConfigRequestElement> modsecRequestElements =
-        requestElements.stream()
-            .filter(BlockingConfigRequestElement::hasCrsBlockingRulesRequest)
-            .collect(Collectors.toUnmodifiableList());
-    if (modsecRequestElements.isEmpty()) {
+        filterRequestElements(requestElements);
+    if (modsecRequestElements.isEmpty() && agentCapabilitiesWithEdsEnabled.isEmpty()) {
       return Collections.emptyList();
     }
-
     List<BlockingConfigResponseElement> responseElements = new ArrayList<>();
+    if (!agentCapabilitiesWithEdsEnabled.isEmpty()) {
+      // adding response element with empty blob hash for agents with eds enabled - this is to
+      // ensure that agents with eds enabled don't evaluate modsec rules - instead eds will
+      // evaluate the modsec rules
+      responseElements.add(
+          BlockingConfigResponseElement.newBuilder()
+              .setHash(uuidGenerator.getEmptyValueUuid())
+              .addAllAgentCapabilities(agentCapabilitiesWithEdsEnabled)
+              .setCrsBlockingRules(CrsBlockingRules.getDefaultInstance())
+              .build());
+    }
+    if (modsecRequestElements.isEmpty()) {
+      return responseElements;
+    }
     buildResponseElement(
             modsecRequestElements, ModsecRuleVersion.MODSEC_RULE_VERSION_V3, blockingRulesSupplier)
         .ifPresent(responseElements::add);
@@ -65,6 +79,45 @@ public class ModsecBlockingManager implements BlockingConfigManagerBase {
             blockingRulesSupplier)
         .ifPresent(responseElements::add);
     return responseElements;
+  }
+
+  private List<AgentCapabilities> getAgentCapabilitiesWithEdsEnabled(
+      List<BlockingConfigRequestElement> requestElements) {
+    return requestElements.stream()
+        .filter(BlockingConfigRequestElement::hasCrsBlockingRulesRequest)
+        .flatMap(requestElement -> requestElement.getSupportedAgentCapabilitiesList().stream())
+        .filter(
+            agentCapabilities ->
+                agentCapabilities.getComponentsList().stream().anyMatch(Component::getEdsEnabled))
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  private List<BlockingConfigRequestElement> filterRequestElements(
+      List<BlockingConfigRequestElement> requestElements) {
+    // 1. filter out requests which are not for crs blocking rules
+    // 2. modify request elements to remove agent capabilities which have eds enabled
+    // 3. filter out requests which have no agent capabilities left
+    return requestElements.stream()
+        .filter(BlockingConfigRequestElement::hasCrsBlockingRulesRequest)
+        .flatMap(
+            requestElement -> {
+              List<AgentCapabilities> agentCapabilitiesWithEdsDisabled =
+                  requestElement.getSupportedAgentCapabilitiesList().stream()
+                      .filter(
+                          agentCapabilities ->
+                              agentCapabilities.getComponentsList().stream()
+                                  .noneMatch(Component::getEdsEnabled))
+                      .collect(Collectors.toUnmodifiableList());
+              if (agentCapabilitiesWithEdsDisabled.isEmpty()) {
+                return Stream.empty();
+              }
+              return Stream.of(
+                  requestElement.toBuilder()
+                      .clearSupportedAgentCapabilities()
+                      .addAllSupportedAgentCapabilities(agentCapabilitiesWithEdsDisabled)
+                      .build());
+            })
+        .collect(Collectors.toUnmodifiableList());
   }
 
   private Optional<BlockingConfigResponseElement> buildResponseElement(
