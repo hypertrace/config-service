@@ -77,7 +77,8 @@ public class ApiIdResolverConfigSupplier implements TraceableEdgeConfigSupplier 
     }
 
     String serviceName = additionalFields.get(SERVICE_NAME);
-    ApiType apiType = ApiType.valueOf(additionalFields.get(API_TYPE));
+    String apiTypeStr = additionalFields.get(API_TYPE);
+    ApiType apiType = apiTypeStr != null ? ApiType.valueOf(apiTypeStr) : ApiType.API_TYPE_HTTP;
     ConfigPayloads configPayloads =
         buildConfigPayloads(requestContext, apiType, serviceName, environment);
     return ConfigResponseElement.newBuilder()

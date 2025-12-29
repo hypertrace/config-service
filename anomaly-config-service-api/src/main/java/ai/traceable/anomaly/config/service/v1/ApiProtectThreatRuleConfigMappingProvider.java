@@ -735,7 +735,9 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
         List.of(
             minPercentSeenConfigMetadata,
             disabledForUnknownRolesConfigMetadata,
-            requireUserDefinedSchemeConfigMetadata));
+            requireUserDefinedSchemeConfigMetadata,
+            roleRegexConfigMetadata,
+            scopeRegexConfigMetadata));
 
     // csta_csrf mapping
     threatRuleIdToConfigMetadataMapping.put(
