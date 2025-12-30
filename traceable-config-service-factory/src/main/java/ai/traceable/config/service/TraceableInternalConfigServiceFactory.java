@@ -8,6 +8,7 @@ import ai.traceable.anomalyscoring.config.service.AnomalyScoringConfigServiceFac
 import ai.traceable.api.attribute.override.service.ApiAttributeOverridesServiceFactory;
 import ai.traceable.api.gateway.config.service.ApiGatewayConfigServiceFactory;
 import ai.traceable.api.spec.config.service.ApiSpecConfigServiceFactory;
+import ai.traceable.application.grouping.config.service.ApplicationGroupingConfigServiceFactory;
 import ai.traceable.ast.config.service.AstConfigServiceFactory;
 import ai.traceable.ast.hooks.config.service.AstHooksConfigServiceFactory;
 import ai.traceable.ast.scan.profile.config.service.AstScanProfileConfigServiceFactory;
@@ -384,7 +385,12 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                     providers.getLocalChannel(), providers.getFeatureCachingClient())),
             wrap(
                 AgentActionConfigServiceFactory.build(
-                    providers.getLocalChannel(), providers.getChangeEventGenerator())))
+                    providers.getLocalChannel(), providers.getChangeEventGenerator())),
+            wrap(
+                ApplicationGroupingConfigServiceFactory.build(
+                    providers.getLocalChannel(),
+                    providers.getChangeEventGenerator(),
+                    providers.getConfig())))
         .flatMap(stream -> stream)
         .collect(Collectors.toUnmodifiableList());
   }
