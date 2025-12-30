@@ -4,11 +4,13 @@ import ai.traceable.cloud.edge.deployment.config.service.v1.Action;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentConfigActionRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentConfigWithActions;
+import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentInputConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentOutputConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigAccessType;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CreateCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DeleteCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DeploymentStatus;
+import ai.traceable.cloud.edge.deployment.config.service.v1.DeploymentType;
 import ai.traceable.cloud.edge.deployment.config.service.v1.GetCloudEdgeDeploymentConfigsFilter;
 import ai.traceable.cloud.edge.deployment.config.service.v1.GetCloudEdgeDeploymentConfigsResponse;
 import ai.traceable.cloud.edge.deployment.config.service.v1.SharedConfigMetadata;
@@ -75,10 +77,15 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
 
     // Generate a unique ID
     String id = uuidGenerator.generateRandomId();
+
+    // Apply deployment type defaulting
+    CloudEdgeDeploymentInputConfig processedInputConfig =
+        applyDefaultDeploymentType(request.getCloudEdgeDeploymentInputConfig());
+
     CloudEdgeDeploymentConfig config =
         CloudEdgeDeploymentConfig.newBuilder()
             .setId(id)
-            .setCloudEdgeDeploymentInputConfig(request.getCloudEdgeDeploymentInputConfig())
+            .setCloudEdgeDeploymentInputConfig(processedInputConfig)
             .setCloudEdgeDeployedOutputConfig(
                 CloudEdgeDeploymentOutputConfig.newBuilder().setStatus(updatedStatus).build())
             .build();
@@ -88,7 +95,7 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
               ctx.getTenantId().orElseThrow(),
               id,
               updatedStatus.name(),
-              request.getCloudEdgeDeploymentInputConfig().getClusterConfig().getClusterName())
+              processedInputConfig.getClusterConfig().getClusterName())
           .record(
               () ->
                   store.upsertCloudEdgeDeploymentConfig(
@@ -153,14 +160,16 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
     CloudEdgeDeploymentConfig.Builder updatedConfigBuilder = existingConfig.toBuilder();
 
     if (request.hasCloudEdgeDeploymentInputConfig()) {
+      CloudEdgeDeploymentInputConfig processedInputConfig =
+          applyDefaultDeploymentType(request.getCloudEdgeDeploymentInputConfig());
+
       Action action = Action.ACTION_EDIT;
       updatedStatus =
           validator
               .validateActionAndGetNextStates(
                   currentStatus, request.getConfigPermission().getWrite(), action)
               .get(0);
-      updatedConfigBuilder.setCloudEdgeDeploymentInputConfig(
-          request.getCloudEdgeDeploymentInputConfig());
+      updatedConfigBuilder.setCloudEdgeDeploymentInputConfig(processedInputConfig);
       updatedConfigBuilder.getCloudEdgeDeployedOutputConfigBuilder().setStatus(updatedStatus);
     } else if (request.hasCloudEdgeDeployedOutputConfig()) {
       Action action = Action.ACTION_UPDATE_STATUS;
@@ -295,5 +304,19 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
           .asRuntimeException();
     }
     return existingConfig;
+  }
+
+  private CloudEdgeDeploymentInputConfig applyDefaultDeploymentType(
+      CloudEdgeDeploymentInputConfig inputConfig) {
+    if (inputConfig.getClusterConfig().getDeploymentType()
+        == DeploymentType.DEPLOYMENT_TYPE_UNSPECIFIED) {
+      return inputConfig.toBuilder()
+          .setClusterConfig(
+              inputConfig.getClusterConfig().toBuilder()
+                  .setDeploymentType(DeploymentType.DEPLOYMENT_TYPE_HOSTED)
+                  .build())
+          .build();
+    }
+    return inputConfig;
   }
 }

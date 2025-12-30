@@ -6,6 +6,12 @@ import "google/protobuf/struct.proto";
 
 option java_multiple_files = true;
 
+enum DeploymentType {
+  DEPLOYMENT_TYPE_UNSPECIFIED = 0;
+  DEPLOYMENT_TYPE_HOSTED = 1;
+  DEPLOYMENT_TYPE_MANAGED = 2;
+}
+
 message ClusterConfig {
   string cluster_name = 1;
   string environment_name = 2;
@@ -13,6 +19,7 @@ message ClusterConfig {
   repeated RegionConfig secondary_regions = 4;
   ClusterAdvancedConfig advanced_config = 5;
   bool protection_disabled = 6 [deprecated = true];
+  DeploymentType deployment_type = 7;
 }
 
 message ClusterAdvancedConfig {

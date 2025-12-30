@@ -21,8 +21,10 @@ import ai.traceable.cloud.edge.deployment.config.service.v1.ClusterConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigAccessType;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigPermission;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigValueDescriptor;
+import ai.traceable.cloud.edge.deployment.config.service.v1.CreateCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DeleteCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DeploymentStatus;
+import ai.traceable.cloud.edge.deployment.config.service.v1.DeploymentType;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DomainConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.GetCloudEdgeDeploymentConfigsFilter;
 import ai.traceable.cloud.edge.deployment.config.service.v1.GetCloudEdgeDeploymentConfigsResponse;
@@ -72,6 +74,7 @@ class CloudEdgeDeploymentConfigManagerImplTest {
             uuidGenerator,
             stateTransitionsRegistry,
             edgeDeploymentUsageValidator);
+    requestContext = RequestContext.forTenantId("tenant-id");
   }
 
   @Test
@@ -654,5 +657,171 @@ class CloudEdgeDeploymentConfigManagerImplTest {
 
     // Verify that store was called with the correct updated config
     verify(store).upsertCloudEdgeDeploymentConfig(requestContext, expectedHeldConfig);
+  }
+
+  @Test
+  void testCreateCloudEdgeDeploymentConfigWithDeploymentType() {
+    // Setup
+    String generatedId = "generated-id";
+    when(uuidGenerator.generateRandomId()).thenReturn(generatedId);
+
+    // Test case 1: Create with UNSPECIFIED deployment type - should default to HOSTED
+    CloudEdgeDeploymentInputConfig inputConfigUnspecified =
+        CloudEdgeDeploymentInputConfig.newBuilder()
+            .setClusterConfig(
+                ClusterConfig.newBuilder()
+                    .setClusterName("test-cluster")
+                    .setEnvironmentName("test-env")
+                    .setDeploymentType(DeploymentType.DEPLOYMENT_TYPE_UNSPECIFIED)
+                    .build())
+            .addServiceConfigs(ServiceConfig.newBuilder().setServiceName("test-service").build())
+            .build();
+
+    CreateCloudEdgeDeploymentConfigRequest requestUnspecified =
+        CreateCloudEdgeDeploymentConfigRequest.newBuilder()
+            .setCloudEdgeDeploymentInputConfig(inputConfigUnspecified)
+            .setConfigPermission(
+                ConfigPermission.newBuilder()
+                    .setRead(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+                    .setWrite(ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE)
+                    .build())
+            .build();
+
+    when(validator.validate(requestUnspecified)).thenReturn(Status.OK);
+    when(validator.validateActionAndGetNextStates(
+            null, ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE, Action.ACTION_CREATE))
+        .thenReturn(List.of(DeploymentStatus.DEPLOYMENT_STATUS_REQUESTED));
+
+    CloudEdgeDeploymentConfig expectedConfigWithHosted =
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setId(generatedId)
+            .setCloudEdgeDeploymentInputConfig(
+                inputConfigUnspecified.toBuilder()
+                    .setClusterConfig(
+                        inputConfigUnspecified.getClusterConfig().toBuilder()
+                            .setDeploymentType(DeploymentType.DEPLOYMENT_TYPE_HOSTED)
+                            .build())
+                    .build())
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_REQUESTED)
+                    .build())
+            .build();
+
+    when(store.upsertCloudEdgeDeploymentConfig(
+            eq(requestContext),
+            any(CloudEdgeDeploymentConfig.class),
+            eq(requestUnspecified.getConfigPermission())))
+        .thenReturn(expectedConfigWithHosted);
+
+    CloudEdgeDeploymentConfig resultUnspecified =
+        manager.createCloudEdgeDeploymentConfig(requestContext, requestUnspecified);
+
+    assertNotNull(resultUnspecified);
+    assertEquals(generatedId, resultUnspecified.getId());
+    assertEquals(
+        DeploymentType.DEPLOYMENT_TYPE_HOSTED,
+        resultUnspecified
+            .getCloudEdgeDeploymentInputConfig()
+            .getClusterConfig()
+            .getDeploymentType());
+
+    // Test case 2: Create with explicit MANAGED deployment type - should preserve MANAGED
+    CloudEdgeDeploymentInputConfig inputConfigManaged =
+        CloudEdgeDeploymentInputConfig.newBuilder()
+            .setClusterConfig(
+                ClusterConfig.newBuilder()
+                    .setClusterName("managed-cluster")
+                    .setEnvironmentName("managed-env")
+                    .setDeploymentType(DeploymentType.DEPLOYMENT_TYPE_MANAGED)
+                    .build())
+            .addServiceConfigs(ServiceConfig.newBuilder().setServiceName("managed-service").build())
+            .build();
+
+    CreateCloudEdgeDeploymentConfigRequest requestManaged =
+        CreateCloudEdgeDeploymentConfigRequest.newBuilder()
+            .setCloudEdgeDeploymentInputConfig(inputConfigManaged)
+            .setConfigPermission(
+                ConfigPermission.newBuilder()
+                    .setRead(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+                    .setWrite(ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE)
+                    .build())
+            .build();
+
+    when(validator.validate(requestManaged)).thenReturn(Status.OK);
+
+    CloudEdgeDeploymentConfig expectedConfigManaged =
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setId(generatedId)
+            .setCloudEdgeDeploymentInputConfig(inputConfigManaged)
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_REQUESTED)
+                    .build())
+            .build();
+
+    when(store.upsertCloudEdgeDeploymentConfig(
+            eq(requestContext),
+            any(CloudEdgeDeploymentConfig.class),
+            eq(requestManaged.getConfigPermission())))
+        .thenReturn(expectedConfigManaged);
+
+    CloudEdgeDeploymentConfig resultManaged =
+        manager.createCloudEdgeDeploymentConfig(requestContext, requestManaged);
+
+    assertNotNull(resultManaged);
+    assertEquals(generatedId, resultManaged.getId());
+    assertEquals(
+        DeploymentType.DEPLOYMENT_TYPE_MANAGED,
+        resultManaged.getCloudEdgeDeploymentInputConfig().getClusterConfig().getDeploymentType());
+
+    // Test case 3: Create with explicit HOSTED deployment type - should preserve HOSTED
+    CloudEdgeDeploymentInputConfig inputConfigHosted =
+        CloudEdgeDeploymentInputConfig.newBuilder()
+            .setClusterConfig(
+                ClusterConfig.newBuilder()
+                    .setClusterName("hosted-cluster")
+                    .setEnvironmentName("hosted-env")
+                    .setDeploymentType(DeploymentType.DEPLOYMENT_TYPE_HOSTED)
+                    .build())
+            .addServiceConfigs(ServiceConfig.newBuilder().setServiceName("hosted-service").build())
+            .build();
+
+    CreateCloudEdgeDeploymentConfigRequest requestHosted =
+        CreateCloudEdgeDeploymentConfigRequest.newBuilder()
+            .setCloudEdgeDeploymentInputConfig(inputConfigHosted)
+            .setConfigPermission(
+                ConfigPermission.newBuilder()
+                    .setRead(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+                    .setWrite(ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE)
+                    .build())
+            .build();
+
+    when(validator.validate(requestHosted)).thenReturn(Status.OK);
+
+    CloudEdgeDeploymentConfig expectedConfigHosted =
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setId(generatedId)
+            .setCloudEdgeDeploymentInputConfig(inputConfigHosted)
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_REQUESTED)
+                    .build())
+            .build();
+
+    when(store.upsertCloudEdgeDeploymentConfig(
+            eq(requestContext),
+            any(CloudEdgeDeploymentConfig.class),
+            eq(requestHosted.getConfigPermission())))
+        .thenReturn(expectedConfigHosted);
+
+    CloudEdgeDeploymentConfig resultHosted =
+        manager.createCloudEdgeDeploymentConfig(requestContext, requestHosted);
+
+    assertNotNull(resultHosted);
+    assertEquals(generatedId, resultHosted.getId());
+    assertEquals(
+        DeploymentType.DEPLOYMENT_TYPE_HOSTED,
+        resultHosted.getCloudEdgeDeploymentInputConfig().getClusterConfig().getDeploymentType());
   }
 }
