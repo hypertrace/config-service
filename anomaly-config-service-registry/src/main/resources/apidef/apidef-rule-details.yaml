@@ -650,7 +650,7 @@
 
     - ruleId: gqla_iq
       ruleName: Introspection Query
-      severityLevel: ANOMALY_SEVERITY_LEVEL_MEDIUM
+      severityLevel: ANOMALY_SEVERITY_LEVEL_LOW
       eventLabels:
         CWE: 200
         OWASP_API_2023: API9
