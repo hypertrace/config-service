@@ -1,8 +1,8 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.4.4195=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.featureflag:feature-flag-service-api:0.7.61=runtimeClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.4227=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.featureflag:feature-flag-service-api:0.7.62=runtimeClasspath,testRuntimeClasspath
 ai.traceable.license.metering.service:license-metering-service-api:0.1.81=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:api-utils:0.8.125=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:cache-provider:0.8.125=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
@@ -13,10 +13,10 @@ ai.traceable.platform-gateway:event-stream:0.8.125=runtimeClasspath,testRuntimeC
 ai.traceable.platform-gateway:traceable-raw-span-constants:0.8.125=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:training-evaluation-framework:0.8.125=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:xml-utils:0.8.125=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform:api-naming-model:6.0.137=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.platform:enriched-span-constants:5.0.34=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform:trace-enricher-api:5.0.34=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform:trace-enricher-constants:5.0.34=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform:api-naming-model:6.0.138=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.platform:enriched-span-constants:5.0.68=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform:trace-enricher-api:5.0.68=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform:trace-enricher-constants:5.0.68=runtimeClasspath,testRuntimeClasspath
 aopalliance:aopalliance:1.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 at.yawk.lz4:lz4-java:1.8.1=runtimeClasspath,testRuntimeClasspath
 ch.qos.reload4j:reload4j:1.2.22=runtimeClasspath,testRuntimeClasspath
@@ -199,7 +199,7 @@ org.glassfish.jersey:jersey-bom:2.41=compileClasspath,runtimeClasspath,testCompi
 org.hdrhistogram:HdrHistogram:2.2.2=runtimeClasspath,testRuntimeClasspath
 org.hypertrace.bom:hypertrace-bom:0.3.67=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.datamodel:data-model:0.1.34=runtimeClasspath,testRuntimeClasspath
-org.hypertrace.core.eventstore:event-store:0.1.5=runtimeClasspath,testRuntimeClasspath
+org.hypertrace.core.eventstore:event-store:0.1.6=runtimeClasspath,testRuntimeClasspath
 org.hypertrace.core.grpcutils:grpc-client-utils:0.13.18=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.grpcutils:grpc-context-utils:0.13.18=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.kafkastreams.framework:kafka-bom:0.6.4=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
