@@ -46,6 +46,7 @@ message FilterCriteria {
     LogicalFilterCondition logical_filter = 1;
     RelationalFilterCondition relational_filter = 2;
     ArrayFilterCondition array_filter = 3;
+    FilterCriteria negated_filter = 4;
   }
 }
 

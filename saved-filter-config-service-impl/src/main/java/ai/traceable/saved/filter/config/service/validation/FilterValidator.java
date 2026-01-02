@@ -3,6 +3,7 @@ package ai.traceable.saved.filter.config.service.validation;
 import static ai.traceable.saved.filter.config.service.v1.FilterCriteria.FilterConditionCase.ARRAY_FILTER;
 import static ai.traceable.saved.filter.config.service.v1.FilterCriteria.FilterConditionCase.FILTERCONDITION_NOT_SET;
 import static ai.traceable.saved.filter.config.service.v1.FilterCriteria.FilterConditionCase.LOGICAL_FILTER;
+import static ai.traceable.saved.filter.config.service.v1.FilterCriteria.FilterConditionCase.NEGATED_FILTER;
 import static ai.traceable.saved.filter.config.service.v1.FilterCriteria.FilterConditionCase.RELATIONAL_FILTER;
 
 import ai.traceable.saved.filter.config.service.v1.ArrayFilterCondition;
@@ -46,6 +47,7 @@ public class FilterValidator implements SavedFilterValidator<FilterCriteria> {
         .addCase(LOGICAL_FILTER, this::validateLogicalFilter)
         .addCase(RELATIONAL_FILTER, this::validateRelationalFilter)
         .addCase(ARRAY_FILTER, this::validateArrayFilter)
+        .addCase(NEGATED_FILTER, this::validateNegatedFilter)
         .addExclusion(FILTERCONDITION_NOT_SET)
         .exceptionSupplier(
             (expression, context, caseEnum) ->
@@ -69,5 +71,11 @@ public class FilterValidator implements SavedFilterValidator<FilterCriteria> {
   private void validateArrayFilter(
       final FilterCriteria filterCriteria, final ValidationContext validationContext) {
     arrayFilterConditionValidator.validate(filterCriteria.getArrayFilter(), validationContext);
+  }
+
+  private void validateNegatedFilter(
+      final FilterCriteria filterCriteria, final ValidationContext validationContext) {
+    // Recursively validate the negated filter criteria
+    validate(filterCriteria.getNegatedFilter(), validationContext);
   }
 }
