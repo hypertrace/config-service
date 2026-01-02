@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.4.4227=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.4229=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.config.service:api-attribute-override-service-api:0.37.1124=runtimeClasspath,testRuntimeClasspath
 ai.traceable.config.service:data-classification-config-service-api:0.37.1124=runtimeClasspath,testRuntimeClasspath
 ai.traceable.config.service:iprange-config-service-api:0.37.1124=runtimeClasspath,testRuntimeClasspath
@@ -24,17 +24,17 @@ ai.traceable.platform-gateway:training-evaluation-framework:0.8.125=compileClass
 ai.traceable.platform-gateway:xml-utils:0.8.125=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:actor-service-api:0.2.182=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform:anomaly-decision-engine-api:5.0.4=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform:api-inspection-api:3.0.198=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform:api-inspection-api:3.0.199=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:api-naming-constants:6.0.138=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform:conditions-matcher:3.0.198=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform:config-providers:3.0.198=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.platform:conditions-matcher:3.0.199=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform:config-providers:3.0.199=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform:coraza-waf-service-api:0.3.42=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:coraza-waf-service-client:0.3.42=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:enriched-span-constants:5.0.68=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:jni-modsecurity-v2:0.1.140=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:jni-modsecurity:0.1.140=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform:session-constants:1.0.86=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform:trace-data-parser:3.0.198=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform:trace-data-parser:3.0.199=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:trace-enricher-api:5.0.68=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:trace-enricher-constants:5.0.68=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform:view-generation-api:1.0.135=runtimeClasspath,testRuntimeClasspath
@@ -282,9 +282,9 @@ org.hypertrace.core.serviceframework:service-framework-spi:0.1.91=runtimeClasspa
 org.hypertrace.core.spannormalizer:raw-span-constants:3.0.10=runtimeClasspath,testRuntimeClasspath
 org.hypertrace.core.spannormalizer:semantic-convention-utils:3.0.10=runtimeClasspath,testRuntimeClasspath
 org.hypertrace.core.spannormalizer:span-normalizer-constants:3.0.10=runtimeClasspath,testRuntimeClasspath
-org.hypertrace.entity.service:entity-service-api:0.8.319=runtimeClasspath,testRuntimeClasspath
-org.hypertrace.entity.service:entity-service-change-event-api:0.8.319=runtimeClasspath,testRuntimeClasspath
-org.hypertrace.entity.service:entity-service-client:0.8.319=runtimeClasspath,testRuntimeClasspath
+org.hypertrace.entity.service:entity-service-api:0.8.320=runtimeClasspath,testRuntimeClasspath
+org.hypertrace.entity.service:entity-service-change-event-api:0.8.320=runtimeClasspath,testRuntimeClasspath
+org.hypertrace.entity.service:entity-service-client:0.8.320=runtimeClasspath,testRuntimeClasspath
 org.jetbrains.kotlin:kotlin-reflect:1.9.22=runtimeClasspath,testRuntimeClasspath
 org.jetbrains.kotlin:kotlin-stdlib-common:1.9.21=runtimeClasspath,testRuntimeClasspath
 org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.10=runtimeClasspath,testRuntimeClasspath
