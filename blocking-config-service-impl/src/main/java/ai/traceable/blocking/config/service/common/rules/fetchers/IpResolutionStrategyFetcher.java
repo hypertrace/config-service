@@ -58,34 +58,62 @@ public class IpResolutionStrategyFetcher implements RulesFetcher {
     return result;
   }
 
+  // Preferred precedence to find best strategy:
+  // 1.) Env + Service match exactly
+  // 2.) Service match only
+  // 3.) Environment match only
+  // 4.) Global(if a user configures a strategy without env or service)
   private Optional<IpResolutionStrategy> selectBestStrategyForService(
       GetIpResolutionStrategyConfigsResponse response,
       Optional<String> environmentId,
       String serviceName) {
-    return response.getConfigsList().stream()
-        .filter(
-            cfg ->
-                cfg.getData()
-                    .getScope()
-                    .getServiceScope()
-                    .getServiceNamesList()
-                    .contains(serviceName))
-        .filter(
-            cfg ->
-                environmentId
-                    .map(
-                        id ->
-                            cfg.getData()
-                                .getScope()
-                                .getEnvironmentScope()
-                                .getEnvironmentNamesList()
-                                .contains(id))
-                    .orElse(false))
-        .map(IpResolutionStrategyConfig::getData)
-        .map(IpResolutionStrategyConfigData::getStrategy)
-        .map(IpResolutionStrategyFetcher::convert)
-        .filter(strategy -> !strategy.equals(IpResolutionStrategy.getDefaultInstance()))
-        .findFirst();
+    IpResolutionStrategyConfigData best = null;
+    int bestRank = -1;
+
+    for (IpResolutionStrategyConfig cfg : response.getConfigsList()) {
+      IpResolutionStrategyConfigData data = cfg.getData();
+      int rank = rankForServiceAndEnv(data, environmentId, serviceName);
+      if (rank > bestRank) {
+        bestRank = rank;
+        best = data;
+      }
+    }
+
+    if (best == null) {
+      return Optional.empty();
+    }
+
+    IpResolutionStrategy converted = convert(best.getStrategy());
+    if (converted.equals(IpResolutionStrategy.getDefaultInstance())) {
+      return Optional.empty();
+    }
+    return Optional.of(converted);
+  }
+
+  private static int rankForServiceAndEnv(
+      IpResolutionStrategyConfigData data, Optional<String> environmentId, String serviceName) {
+    var serviceList = data.getScope().getServiceScope().getServiceNamesList();
+    boolean serviceSpecific = serviceList.contains(serviceName);
+    boolean serviceGlobal = serviceList.isEmpty();
+    if (!serviceSpecific && !serviceGlobal) {
+      return -1;
+    }
+
+    if (environmentId.isEmpty()) {
+      return serviceSpecific ? 1 : 0;
+    }
+
+    var envList = data.getScope().getEnvironmentScope().getEnvironmentNamesList();
+    String env = environmentId.get();
+    boolean envSpecific = envList.contains(env);
+    boolean envGlobal = envList.isEmpty();
+    if (!envSpecific && !envGlobal) {
+      return -1;
+    }
+
+    int servicePart = serviceSpecific ? 2 : 0;
+    int envPart = envSpecific ? 1 : 0;
+    return servicePart + envPart;
   }
 
   private static IpResolutionStrategy convert(

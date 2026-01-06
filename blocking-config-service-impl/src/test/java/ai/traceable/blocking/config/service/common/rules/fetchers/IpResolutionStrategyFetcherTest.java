@@ -68,8 +68,8 @@ class IpResolutionStrategyFetcherTest {
   }
 
   @Test
-  @DisplayName("returns only service-scoped strategies; no env-wide fallback")
-  void selectionServiceScopedOnly() {
+  @DisplayName("prefers service+env > service-only > env-only > global (fallback)")
+  void selectionWithFallbackPrecedence() {
     IpResolutionStrategyFetcher fetcher =
         new IpResolutionStrategyFetcher(stub, new ClientConfig(Duration.ofSeconds(2)));
 
@@ -77,14 +77,62 @@ class IpResolutionStrategyFetcherTest {
         fetcher.fetchStrategies(
             RequestContext.forTenantId("tenant"), Optional.of("prod"), Set.of("svc1", "svc2"));
 
-    // Only service-specific entries are returned
-    assertEquals(1, result.size());
-    // svc1 should pick service-specific
+    // svc1 should pick service-specific (service+env)
     IpResolutionStrategy svc1Strategy = result.get("svc1");
     assertNotNull(svc1Strategy);
     assertEquals("svc1-src", svc1Strategy.getSources(0).getSourceAttributeName());
-    // svc2 has no service-scoped config; no env-wide fallback expected
-    assertFalse(result.containsKey("svc2"));
+    assertTrue(result.containsKey("svc2"));
+    IpResolutionStrategy svc2Strategy = result.get("svc2");
+    assertNotNull(svc2Strategy);
+    assertEquals("env-src", svc2Strategy.getSources(0).getSourceAttributeName());
+  }
+
+  @Test
+  @DisplayName("prefers service-only over env-only when service+env does not exist")
+  void selectionPrefersServiceOnlyOverEnvOnly() {
+    IpResolutionStrategyFetcher fetcher =
+        new IpResolutionStrategyFetcher(stub, new ClientConfig(Duration.ofSeconds(2)));
+
+    Map<String, IpResolutionStrategy> result =
+        fetcher.fetchStrategies(
+            RequestContext.forTenantId("tenant"), Optional.of("prod"), Set.of("svc3"));
+
+    assertTrue(result.containsKey("svc3"));
+    IpResolutionStrategy svc3Strategy = result.get("svc3");
+    assertNotNull(svc3Strategy);
+    assertEquals("svc3-src", svc3Strategy.getSources(0).getSourceAttributeName());
+  }
+
+  @Test
+  @DisplayName("ignores env constraints when environment is not provided")
+  void selectionWithoutEnvironmentIgnoresEnvConstraints() {
+    IpResolutionStrategyFetcher fetcher =
+        new IpResolutionStrategyFetcher(stub, new ClientConfig(Duration.ofSeconds(2)));
+
+    Map<String, IpResolutionStrategy> result =
+        fetcher.fetchStrategies(
+            RequestContext.forTenantId("tenant"), Optional.empty(), Set.of("svc1"));
+
+    assertTrue(result.containsKey("svc1"));
+    IpResolutionStrategy svc1Strategy = result.get("svc1");
+    assertNotNull(svc1Strategy);
+    assertEquals("svc1-src", svc1Strategy.getSources(0).getSourceAttributeName());
+  }
+
+  @Test
+  @DisplayName("falls back to global when neither service nor env has a strategy")
+  void selectionFallsBackToGlobal() {
+    IpResolutionStrategyFetcher fetcher =
+        new IpResolutionStrategyFetcher(stub, new ClientConfig(Duration.ofSeconds(2)));
+
+    Map<String, IpResolutionStrategy> result =
+        fetcher.fetchStrategies(
+            RequestContext.forTenantId("tenant"), Optional.of("stage"), Set.of("svc4"));
+
+    assertTrue(result.containsKey("svc4"));
+    IpResolutionStrategy svc4Strategy = result.get("svc4");
+    assertNotNull(svc4Strategy);
+    assertEquals("global-src", svc4Strategy.getSources(0).getSourceAttributeName());
   }
 
   private static class FakeService extends IpResolutionStrategyConfigServiceImplBase {
@@ -117,6 +165,18 @@ class IpResolutionStrategyFetcherTest {
                           .setSourceAttributeName("env-src"))
                   .build());
 
+      IpResolutionStrategyConfig svcOnly =
+          buildCfg(
+              "id-svc-only",
+              false,
+              List.of(),
+              List.of("svc3"),
+              ai.traceable.ipresolutionstrategy.config.service.v1.IpResolutionStrategy.newBuilder()
+                  .addSources(
+                      ai.traceable.ipresolutionstrategy.config.service.v1.IpSource.newBuilder()
+                          .setSourceAttributeName("svc3-src"))
+                  .build());
+
       IpResolutionStrategyConfig global =
           buildCfg(
               "id-global",
@@ -142,6 +202,7 @@ class IpResolutionStrategyFetcherTest {
           GetIpResolutionStrategyConfigsResponse.newBuilder()
               .addConfigs(svcSpecific)
               .addConfigs(envWide)
+              .addConfigs(svcOnly)
               .addConfigs(global)
               .addConfigs(defaultStrategyCfg)
               .build();
