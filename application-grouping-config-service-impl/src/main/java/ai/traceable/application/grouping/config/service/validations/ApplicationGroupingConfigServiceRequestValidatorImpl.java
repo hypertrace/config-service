@@ -92,8 +92,6 @@ public class ApplicationGroupingConfigServiceRequestValidatorImpl
     validateStringField(context, configInfo.getRuleName(), "Rule name", MAX_RULE_NAME_LENGTH);
     validateRuleNameStartsAndEndsWithAlphanumeric(context, configInfo.getRuleName());
 
-    validateNonDefaultPresenceOrThrow(
-        configInfo, ApplicationGroupingRuleConfigInfo.GROUP_NAME_FIELD_NUMBER);
     if (!configInfo.getGroupName().hasStatic()) {
       throw Status.INVALID_ARGUMENT
           .withDescription("Group name must have a static value")
@@ -116,14 +114,12 @@ public class ApplicationGroupingConfigServiceRequestValidatorImpl
   }
 
   private void validateAssetSelector(RequestContext context, AssetSelector selector) {
-    validateNonDefaultPresenceOrThrow(selector, AssetSelector.ASSET_TYPE_FIELD_NUMBER);
     if (!selector.getAssetType().hasWellKnownAssetType()) {
       throw Status.INVALID_ARGUMENT
           .withDescription("Asset type must have a well-known asset type")
           .asRuntimeException(context.buildTrailers());
     }
 
-    validateNonDefaultPresenceOrThrow(selector, AssetSelector.FILTER_FIELD_NUMBER);
     if (!selector.getFilter().hasSavedFilter()) {
       throw Status.INVALID_ARGUMENT
           .withDescription("Filter must have a saved filter reference")
