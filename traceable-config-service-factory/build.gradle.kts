@@ -91,6 +91,7 @@ dependencies {
   implementation(projects.aiAppProtectionConfigServiceImpl)
   implementation(projects.agentActionConfigServiceImpl)
   implementation(projects.applicationGroupingConfigServiceImpl)
+  implementation(projects.dataObfuscationConfigServiceImpl)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

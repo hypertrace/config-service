@@ -83,6 +83,7 @@ ip-resolution-strategy-config-service-impl @shashank11p @tim-mwangi @prodion23
 local-processing-config-service-api @shashank11p @tim-mwangi @varkey98
 local-processing-config-service-impl @shashank11p @tim-mwangi @varkey98
 data-obfuscation-config-service-api @shashank11p @tim-mwangi @varkey98
+data-obfuscation-config-service-impl @shashank11p @tim-mwangi @varkey98
 
 # No owners for lock changes
 **/gradle.lockfile

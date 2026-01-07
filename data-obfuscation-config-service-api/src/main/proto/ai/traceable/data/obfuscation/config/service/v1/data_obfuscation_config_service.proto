@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package ai.traceable.agent.action.config.service.v1;
+package ai.traceable.data.obfuscation.config.service.v1;
 
 import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
 import "ai/traceable/graphql/autogen/schema/annotations/method/v1/graphql_method_options.proto";
