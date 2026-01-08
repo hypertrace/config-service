@@ -26,6 +26,7 @@ protobuf {
 
 dependencies {
   api(commonLibs.bundles.grpc.api)
+  api(projects.configServiceCommons)
   api(projects.traceableEdgeDecisionConfigServiceApi)
   api(projects.anomalyConfigServiceApi)
 }

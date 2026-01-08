@@ -7,6 +7,7 @@ import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionRuleRespon
 import ai.traceable.edge.decision.config.service.v1.DeleteEdgeDecisionRuleRequest;
 import ai.traceable.edge.decision.config.service.v1.DeleteEdgeDecisionRuleResponse;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRule;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleRecord;
 import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionRulesRequest;
 import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionRulesResponse;
 import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionRuleRequest;
@@ -16,6 +17,7 @@ import ai.traceable.edge.decision.config.service.v1.UpdateEdgeDecisionRuleRespon
 import io.grpc.Status;
 import jakarta.inject.Inject;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -71,9 +73,14 @@ public class EdgeDecisionRuleStoreManager {
 
   public GetAllEdgeDecisionRulesResponse getAll(
       RequestContext requestContext, GetAllEdgeDecisionRulesRequest request) {
+    List<EdgeDecisionRuleRecord> ruleRecords =
+        edgeDecisionRuleStore.getRuleRecords(requestContext, request.getFilter());
     List<EdgeDecisionRule> rules =
-        edgeDecisionRuleStore.getRules(requestContext, request.getFilter());
-    return GetAllEdgeDecisionRulesResponse.newBuilder().addAllEdgeDecisionRules(rules).build();
+        ruleRecords.stream().map(EdgeDecisionRuleRecord::getRule).collect(Collectors.toList());
+    return GetAllEdgeDecisionRulesResponse.newBuilder()
+        .addAllEdgeDecisionRules(rules)
+        .addAllEdgeDecisionRuleRecords(ruleRecords)
+        .build();
   }
 
   public DeleteEdgeDecisionRuleResponse delete(

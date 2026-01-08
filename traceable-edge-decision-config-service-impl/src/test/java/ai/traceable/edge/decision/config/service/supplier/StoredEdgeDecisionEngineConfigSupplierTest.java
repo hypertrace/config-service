@@ -14,6 +14,7 @@ import ai.traceable.edge.decision.config.service.store.EdgeDecisionRuleStoreMana
 import ai.traceable.edge.decision.config.service.store.EdgeDecisionSpecStoreManager;
 import ai.traceable.edge.decision.config.service.v1.ConfigTtl;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRule;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleRecord;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleStatus;
 import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionRulesResponse;
 import com.google.protobuf.Timestamp;
@@ -93,8 +94,12 @@ public class StoredEdgeDecisionEngineConfigSupplierTest {
     when(ruleStoreManager.getAll(eq(requestContext), any()))
         .thenReturn(
             GetAllEdgeDecisionRulesResponse.newBuilder()
-                .addAllEdgeDecisionRules(
-                    Arrays.asList(activeRule, disabledRule, futureExpiryRule, expiredRule))
+                .addAllEdgeDecisionRuleRecords(
+                    Arrays.asList(
+                        EdgeDecisionRuleRecord.newBuilder().setRule(activeRule).build(),
+                        EdgeDecisionRuleRecord.newBuilder().setRule(disabledRule).build(),
+                        EdgeDecisionRuleRecord.newBuilder().setRule(futureExpiryRule).build(),
+                        EdgeDecisionRuleRecord.newBuilder().setRule(expiredRule).build()))
                 .build());
 
     List<EdgeDecisionRule> storedRules = configSupplier.getStoredRules(requestContext);

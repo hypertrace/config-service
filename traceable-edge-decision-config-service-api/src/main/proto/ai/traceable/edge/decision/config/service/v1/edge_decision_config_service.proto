@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package ai.traceable.edge.decision.config.service.v1;
 
+import "ai/traceable/config/commons/v1/audit.proto";
 import "ai/traceable/datamodel/data/transformation/config/v1/transformation.proto";
 import "ai/traceable/edge/decision/config/service/v1/edge_attribution_rule.proto";
 import "ai/traceable/edge/decision/config/service/v1/edge_custom_response.proto";
@@ -145,6 +146,7 @@ message Filter {
     EdgeDecisionRuleCategoryFilter edge_decision_rule_category_filter = 5;
     bool include_disabled = 6;
     EdgeDecisionRuleScopeFilter scope_filter = 7;
+    ai.traceable.config.commons.v1.AuditFilter audit_filter = 8;
   }
 }
 
@@ -189,7 +191,14 @@ message TimeRangeFilter {
 }
 
 message GetAllEdgeDecisionRulesResponse {
-  repeated EdgeDecisionRule edge_decision_rules = 1;
+  repeated EdgeDecisionRule edge_decision_rules = 1 [deprecated = true];
+  repeated EdgeDecisionRuleRecord edge_decision_rule_records = 2;
+}
+
+// Wraps an EdgeDecisionRule with its audit details
+message EdgeDecisionRuleRecord {
+  EdgeDecisionRule rule = 1;
+  ai.traceable.config.commons.v1.AuditDetails audit_details = 2;
 }
 
 message DeleteEdgeDecisionRuleRequest {

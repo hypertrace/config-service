@@ -1,5 +1,6 @@
 package ai.traceable.customsignature.config.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -19,6 +20,7 @@ import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleR
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleResponse;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureInlineRule;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
+import ai.traceable.customsignature.config.service.v1.CustomSignatureRuleRecord;
 import ai.traceable.customsignature.config.service.v1.DeleteCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.DeleteCustomSignatureRuleResponse;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureEdgeDecisionRulesRequest;
@@ -39,9 +41,11 @@ import io.grpc.stub.StreamObserver;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 class CustomSignatureConfigServiceImplTest {
   private static final String TENANT_ID = "default tenant";
@@ -117,15 +121,26 @@ class CustomSignatureConfigServiceImplTest {
     StreamObserver<GetCustomSignatureRulesResponse> responseObserver = mock(StreamObserver.class);
 
     // Case 1: Test with no filter (should return all rules)
-    when(rulesManager.getCustomSignatureRules(any(), any())).thenReturn(allRules);
+    when(rulesManager.getCustomSignatureRuleRecords(any(), any()))
+        .thenReturn(
+            allRules.stream()
+                .map(rule -> CustomSignatureRuleRecord.newBuilder().setRule(rule).build())
+                .collect(Collectors.toList()));
     Runnable noFilterRunnable =
         () ->
             configService.getCustomSignatureRules(
                 GetCustomSignatureRulesRequest.getDefaultInstance(), responseObserver);
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, noFilterRunnable);
-    verify(responseObserver, times(1))
-        .onNext(GetCustomSignatureRulesResponse.newBuilder().addAllRules(allRules).build());
+    ArgumentCaptor<GetCustomSignatureRulesResponse> responseCaptor =
+        ArgumentCaptor.forClass(GetCustomSignatureRulesResponse.class);
+    verify(responseObserver, times(1)).onNext(responseCaptor.capture());
     verify(responseObserver, times(1)).onCompleted();
+    assertEquals(allRules, responseCaptor.getValue().getRulesList());
+    assertEquals(
+        allRules,
+        responseCaptor.getValue().getRuleRecordsList().stream()
+            .map(CustomSignatureRuleRecord::getRule)
+            .collect(Collectors.toList()));
 
     // Case 2: Test with PLATFORM filter
     reset(responseObserver);
@@ -133,7 +148,11 @@ class CustomSignatureConfigServiceImplTest {
         GetRulesFilter.newBuilder()
             .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
             .build();
-    when(rulesManager.getCustomSignatureRules(any(), eq(platformFilter))).thenReturn(platformRules);
+    when(rulesManager.getCustomSignatureRuleRecords(any(), eq(platformFilter)))
+        .thenReturn(
+            platformRules.stream()
+                .map(rule -> CustomSignatureRuleRecord.newBuilder().setRule(rule).build())
+                .collect(Collectors.toList()));
 
     Runnable platformFilterRunnable =
         () ->
@@ -147,9 +166,14 @@ class CustomSignatureConfigServiceImplTest {
                 responseObserver);
 
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, platformFilterRunnable);
-    verify(responseObserver, times(1))
-        .onNext(GetCustomSignatureRulesResponse.newBuilder().addAllRules(platformRules).build());
+    verify(responseObserver, times(1)).onNext(responseCaptor.capture());
     verify(responseObserver, times(1)).onCompleted();
+    assertEquals(platformRules, responseCaptor.getValue().getRulesList());
+    assertEquals(
+        platformRules,
+        responseCaptor.getValue().getRuleRecordsList().stream()
+            .map(CustomSignatureRuleRecord::getRule)
+            .collect(Collectors.toList()));
 
     // Case 3: Test with AGENT filter
     reset(responseObserver);
@@ -157,7 +181,11 @@ class CustomSignatureConfigServiceImplTest {
         GetRulesFilter.newBuilder()
             .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT)
             .build();
-    when(rulesManager.getCustomSignatureRules(any(), eq(agentFilter))).thenReturn(agentRules);
+    when(rulesManager.getCustomSignatureRuleRecords(any(), eq(agentFilter)))
+        .thenReturn(
+            agentRules.stream()
+                .map(rule -> CustomSignatureRuleRecord.newBuilder().setRule(rule).build())
+                .collect(Collectors.toList()));
 
     Runnable agentFilterRunnable =
         () ->
@@ -166,9 +194,14 @@ class CustomSignatureConfigServiceImplTest {
                 responseObserver);
 
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, agentFilterRunnable);
-    verify(responseObserver, times(1))
-        .onNext(GetCustomSignatureRulesResponse.newBuilder().addAllRules(agentRules).build());
+    verify(responseObserver, times(1)).onNext(responseCaptor.capture());
     verify(responseObserver, times(1)).onCompleted();
+    assertEquals(agentRules, responseCaptor.getValue().getRulesList());
+    assertEquals(
+        agentRules,
+        responseCaptor.getValue().getRuleRecordsList().stream()
+            .map(CustomSignatureRuleRecord::getRule)
+            .collect(Collectors.toList()));
 
     // Case 4: Test with EDGE filter
     reset(responseObserver);
@@ -176,7 +209,11 @@ class CustomSignatureConfigServiceImplTest {
         GetRulesFilter.newBuilder()
             .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
             .build();
-    when(rulesManager.getCustomSignatureRules(any(), eq(edgeFilter))).thenReturn(edgeRules);
+    when(rulesManager.getCustomSignatureRuleRecords(any(), eq(edgeFilter)))
+        .thenReturn(
+            edgeRules.stream()
+                .map(rule -> CustomSignatureRuleRecord.newBuilder().setRule(rule).build())
+                .collect(Collectors.toList()));
 
     Runnable edgeFilterRunnable =
         () ->
@@ -185,9 +222,14 @@ class CustomSignatureConfigServiceImplTest {
                 responseObserver);
 
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, edgeFilterRunnable);
-    verify(responseObserver, times(1))
-        .onNext(GetCustomSignatureRulesResponse.newBuilder().addAllRules(edgeRules).build());
+    verify(responseObserver, times(1)).onNext(responseCaptor.capture());
     verify(responseObserver, times(1)).onCompleted();
+    assertEquals(edgeRules, responseCaptor.getValue().getRulesList());
+    assertEquals(
+        edgeRules,
+        responseCaptor.getValue().getRuleRecordsList().stream()
+            .map(CustomSignatureRuleRecord::getRule)
+            .collect(Collectors.toList()));
 
     // Case 5: Test with multiple evaluation points filter
     reset(responseObserver);
@@ -198,8 +240,11 @@ class CustomSignatureConfigServiceImplTest {
                     RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM,
                     RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE))
             .build();
-    when(rulesManager.getCustomSignatureRules(any(), eq(multiEvalPointsFilter)))
-        .thenReturn(multiEvalPointsRules);
+    when(rulesManager.getCustomSignatureRuleRecords(any(), eq(multiEvalPointsFilter)))
+        .thenReturn(
+            multiEvalPointsRules.stream()
+                .map(rule -> CustomSignatureRuleRecord.newBuilder().setRule(rule).build())
+                .collect(Collectors.toList()));
 
     Runnable multiPointFilterRunnable =
         () ->
@@ -210,10 +255,14 @@ class CustomSignatureConfigServiceImplTest {
                 responseObserver);
 
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, multiPointFilterRunnable);
-    verify(responseObserver, times(1))
-        .onNext(
-            GetCustomSignatureRulesResponse.newBuilder().addAllRules(multiEvalPointsRules).build());
+    verify(responseObserver, times(1)).onNext(responseCaptor.capture());
     verify(responseObserver, times(1)).onCompleted();
+    assertEquals(multiEvalPointsRules, responseCaptor.getValue().getRulesList());
+    assertEquals(
+        multiEvalPointsRules,
+        responseCaptor.getValue().getRuleRecordsList().stream()
+            .map(CustomSignatureRuleRecord::getRule)
+            .collect(Collectors.toList()));
 
     // Case 6: Test validation failure - exception comes from the validator
     reset(responseObserver);
@@ -238,7 +287,7 @@ class CustomSignatureConfigServiceImplTest {
     reset(responseObserver);
     reset(rulesValidator);
     when(rulesValidator.validate(any(GetCustomSignatureRulesRequest.class))).thenReturn(Status.OK);
-    when(rulesManager.getCustomSignatureRules(any(), any()))
+    when(rulesManager.getCustomSignatureRuleRecords(any(), any()))
         .thenThrow(new RuntimeException("Test exception"));
 
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, noFilterRunnable);

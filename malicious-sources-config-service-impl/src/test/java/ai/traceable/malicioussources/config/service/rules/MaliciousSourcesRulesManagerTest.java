@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.malicioussources.config.service.v1.CreateMaliciousSourcesRuleRequest;
 import ai.traceable.malicioussources.config.service.v1.EmailDomainCondition;
@@ -45,7 +46,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-public class MaliciousSourcesRulesManagerTest {
+class MaliciousSourcesRulesManagerTest {
   private static final MaliciousSourcesRuleScope ruleScope =
       MaliciousSourcesRuleScope.newBuilder()
           .setEnvironmentScope(
@@ -70,7 +71,9 @@ public class MaliciousSourcesRulesManagerTest {
 
     maliciousSourcesRulesStore =
         new MaliciousSourcesRulesStore(
-            configServiceBlockingStub, mock(ConfigChangeEventGenerator.class));
+            configServiceBlockingStub,
+            mock(ConfigChangeEventGenerator.class),
+            new TimestampConverter());
     this.rulesManager =
         new MaliciousSourcesRulesManager(maliciousSourcesRulesStore, uuidGenerator, clock);
     requestContext = RequestContext.forTenantId("default tenant");
@@ -356,15 +359,11 @@ public class MaliciousSourcesRulesManagerTest {
               .setRuleScope(ruleScope)
               .setRuleInfo(updatedRuleDetails)
               .build();
-
+      UpdateMaliciousSourcesRuleRequest sourcesRuleRequest =
+          UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
       assertThrows(
           StatusRuntimeException.class,
-          () ->
-              rulesManager.updateMaliciousSourcesRule(
-                  requestContext,
-                  UpdateMaliciousSourcesRuleRequest.newBuilder()
-                      .setRule(maliciousSourcesRule)
-                      .build()));
+          () -> rulesManager.updateMaliciousSourcesRule(requestContext, sourcesRuleRequest));
     }
 
     @Test

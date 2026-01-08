@@ -6,6 +6,7 @@ import ai.traceable.region.config.service.v1.GetRegionRulesFilter;
 import ai.traceable.region.config.service.v1.RegionRule;
 import ai.traceable.region.config.service.v1.RegionRule.Builder;
 import ai.traceable.region.config.service.v1.RegionRule.ExpirationDetails;
+import ai.traceable.region.config.service.v1.RegionRuleRecord;
 import ai.traceable.region.config.service.v1.UpdateRegionRuleRequest;
 import com.google.inject.Inject;
 import io.grpc.Status;
@@ -38,6 +39,12 @@ class RegionRulesManager implements RulesManager {
       return regionRulesStore.getAllConfigData(requestContext);
     }
     return regionRulesStore.getAllConfigData(requestContext, filter);
+  }
+
+  @Override
+  public List<RegionRuleRecord> getRegionRuleRecords(
+      RequestContext requestContext, GetRegionRulesFilter filter) {
+    return regionRulesStore.getRuleRecords(requestContext, filter);
   }
 
   @Override

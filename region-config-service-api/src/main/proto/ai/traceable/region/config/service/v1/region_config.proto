@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package ai.traceable.region.config.service.v1;
 
+import "ai/traceable/config/commons/v1/audit.proto";
+
 option java_multiple_files = true;
 
 message GetRegionsRequest {
@@ -77,6 +79,7 @@ message GetRegionRulesFilter {
   optional bool disabled = 8;
   optional bool internal = 9;
   optional bool hidden = 10;
+  ai.traceable.config.commons.v1.AuditFilter audit_filter = 11;
 }
 
 message GetAllRegionRulesRequest {
@@ -84,7 +87,13 @@ message GetAllRegionRulesRequest {
 }
 
 message GetAllRegionRulesResponse {
-  repeated RegionRule rule = 1;
+  repeated RegionRule rule = 1 [deprecated = true];
+  repeated RegionRuleRecord rule_records = 2;
+}
+
+message RegionRuleRecord {
+  RegionRule rule = 1;
+  ai.traceable.config.commons.v1.AuditDetails audit_details = 2;
 }
 
 message CreateRegionRuleRequest {

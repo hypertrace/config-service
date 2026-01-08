@@ -13,6 +13,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceConfig;
 import ai.traceable.customsignature.config.service.v1.AttributeKeyValueExpression;
 import ai.traceable.customsignature.config.service.v1.Category;
@@ -36,6 +37,7 @@ import ai.traceable.customsignature.config.service.v1.StringCondition;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Struct;
+import com.google.protobuf.Timestamp;
 import com.google.protobuf.Value;
 import java.time.Duration;
 import java.util.List;
@@ -87,6 +89,7 @@ class CustomSignatureRulesManagerTest {
     mockConfigService.start();
     configServiceBlockingStub = ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
     ruleConverter = spy(CustomSignatureRuleConverter.class);
+    TimestampConverter timestampConverter = mock(TimestampConverter.class);
     CustomSignatureConfigServiceConfig config = mock(CustomSignatureConfigServiceConfig.class);
     when(config.getDefaultCustomSignatureRules())
         .thenReturn(List.of(DEFAULT_CUSTOM_SIGNATURE_RULE));
@@ -95,9 +98,12 @@ class CustomSignatureRulesManagerTest {
             configServiceBlockingStub,
             ruleConverter,
             mock(ConfigChangeEventGenerator.class),
-            config);
+            config,
+            timestampConverter);
     this.rulesManager = spy(new CustomSignatureRulesManager(rulesStore, config));
     requestContext = RequestContext.forTenantId("default tenant");
+    when(timestampConverter.convert(any()))
+        .thenReturn(Timestamp.newBuilder().setSeconds(100).build());
   }
 
   @AfterEach

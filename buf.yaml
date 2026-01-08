@@ -21,6 +21,7 @@ modules:
   - path: blocking-config-service-api/src/main/proto
   - path: certificate-management-config-service-api/src/main/proto
   - path: custom-signature-config-service-api/src/main/proto
+  - path: config-service-commons/src/main/proto
   - path: dashboard-config-service-api/src/main/proto
   - path: data-classification-config-service-api/src/main/proto
   - path: data-classification-config-service-impl/src/main/proto

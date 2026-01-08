@@ -10,6 +10,7 @@ import ai.traceable.edge.decision.config.service.store.EdgeDecisionSpecStoreMana
 import ai.traceable.edge.decision.config.service.v1.EdgeAttributionRule;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRule;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleRecord;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleStatus;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionSpec;
 import ai.traceable.edge.decision.config.service.v1.GetAllEdgeAttributionRulesRequest;
@@ -86,7 +87,8 @@ public class StoredEdgeDecisionEngineConfigSupplier implements EdgeDecisionEngin
             () ->
                 ruleStoreManager.getAll(
                     requestContext, GetAllEdgeDecisionRulesRequest.getDefaultInstance()));
-    return response.getEdgeDecisionRulesList().stream()
+    return response.getEdgeDecisionRuleRecordsList().stream()
+        .map(EdgeDecisionRuleRecord::getRule)
         .filter(
             r -> {
               if (r.hasRuleStatus()) {

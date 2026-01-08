@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.config.service.TraceableConfigServiceIntegrationTestBase;
+import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.ratelimiting.config.service.v2.Action;
 import ai.traceable.ratelimiting.config.service.v2.Category;
 import ai.traceable.ratelimiting.config.service.v2.CompositeCondition;
@@ -125,7 +126,10 @@ public class RateLimitingMigrationConfigServiceIntegrationTest
 
     rateLimitingRulesStore =
         new RateLimitingRulesStore(
-            configServiceBlockingStub, configChangeEventGenerator, rateLimitingConfigServiceConfig);
+            configServiceBlockingStub,
+            configChangeEventGenerator,
+            rateLimitingConfigServiceConfig,
+            new TimestampConverter());
   }
 
   @Test

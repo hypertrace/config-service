@@ -15,6 +15,7 @@ import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesRequest;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesResponse;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingConfigServiceGrpc.RateLimitingConfigServiceImplBase;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
+import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleRecord;
 import ai.traceable.ratelimiting.config.service.v2.UpdateRateLimitingRuleRequest;
 import ai.traceable.ratelimiting.config.service.v2.UpdateRateLimitingRuleResponse;
 import ai.traceable.ratelimiting.service.v2.rules.RulesManager;
@@ -25,6 +26,7 @@ import ai.traceable.ratelimiting.service.v2.rules.shared.RateLimitingRulesEdgeDe
 import com.google.inject.Inject;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -71,17 +73,23 @@ public class RateLimitingConfigServiceImpl extends RateLimitingConfigServiceImpl
       }
 
       GetRateLimitingRulesFilter rulesFilter = request.getRulesFilter();
-      List<RateLimitingRule> rateLimitingRules =
-          rulesManager.getRateLimitingRules(context, rulesFilter);
+      List<RateLimitingRuleRecord> ruleRecords =
+          rulesManager.getRateLimitingRuleRecords(context, rulesFilter);
 
       if (rulesFilter.hasFilterEdgeDecisionRules() && rulesFilter.getFilterEdgeDecisionRules()) {
-        rateLimitingRules =
-            RateLimitingRulesEdgeDecisionFilter.getFilteredRules(
-                rateLimitingRules, featureCachingClient.isEdgeDecisionEnabledForTenant(context));
+        ruleRecords =
+            RateLimitingRulesEdgeDecisionFilter.getFilteredRuleRecords(
+                ruleRecords, featureCachingClient.isEdgeDecisionEnabledForTenant(context));
       }
 
+      List<RateLimitingRule> rateLimitingRules =
+          ruleRecords.stream().map(RateLimitingRuleRecord::getRule).collect(Collectors.toList());
+
       GetRateLimitingRulesResponse response =
-          GetRateLimitingRulesResponse.newBuilder().addAllRules(rateLimitingRules).build();
+          GetRateLimitingRulesResponse.newBuilder()
+              .addAllRules(rateLimitingRules)
+              .addAllRuleRecords(ruleRecords)
+              .build();
 
       responseObserver.onNext(response);
       responseObserver.onCompleted();

@@ -32,6 +32,7 @@ import ai.traceable.region.config.service.v1.Region;
 import ai.traceable.region.config.service.v1.RegionIdentifier;
 import ai.traceable.region.config.service.v1.RegionRule;
 import ai.traceable.region.config.service.v1.RegionRuleActionType;
+import ai.traceable.region.config.service.v1.RegionRuleRecord;
 import ai.traceable.region.config.service.v1.RegionsFilter;
 import ai.traceable.region.config.service.v1.UpdateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.UpdateRegionRuleResponse;
@@ -202,8 +203,10 @@ class RegionConfigServiceImplTest {
           RegionRule.newBuilder().setId("id-1").addRegionId("region-id-1").build();
       RegionRule regionRule2 =
           RegionRule.newBuilder().setId("id-2").addRegionId("region-id-2").build();
-      when(rulesManager.getRegionRules(eq(requestContext), any()))
-          .thenReturn(List.of(regionRule1, regionRule2));
+      RegionRuleRecord record1 = RegionRuleRecord.newBuilder().setRule(regionRule1).build();
+      RegionRuleRecord record2 = RegionRuleRecord.newBuilder().setRule(regionRule2).build();
+      when(rulesManager.getRegionRuleRecords(eq(requestContext), any()))
+          .thenReturn(List.of(record1, record2));
       when(neustarRegionStore.getCountries(any(), any()))
           .thenReturn(
               List.of(
@@ -241,10 +244,14 @@ class RegionConfigServiceImplTest {
                   "region-id-2", Country.newBuilder().setName("region-2").setIsoCode("R2").build())
               .build();
 
+      RegionRuleRecord enrichedRecord1 = RegionRuleRecord.newBuilder().setRule(regionRule1).build();
+      RegionRuleRecord enrichedRecord2 = RegionRuleRecord.newBuilder().setRule(regionRule2).build();
+
       verify(responseObserver, times(1))
           .onNext(
               GetAllRegionRulesResponse.newBuilder()
                   .addAllRule(List.of(regionRule1, regionRule2))
+                  .addAllRuleRecords(List.of(enrichedRecord1, enrichedRecord2))
                   .build());
       verify(responseObserver, times(1)).onCompleted();
     }

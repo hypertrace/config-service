@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.region.config.service.v1.AgentModification;
 import ai.traceable.region.config.service.v1.AgentRuleEffect;
@@ -61,7 +62,9 @@ class RegionRulesManagerTest {
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
-    regionRulesStore = new RegionRulesStore(configServiceBlockingStub, configChangeEventGenerator);
+    regionRulesStore =
+        new RegionRulesStore(
+            configServiceBlockingStub, configChangeEventGenerator, new TimestampConverter());
     this.rulesManager = new RegionRulesManager(clock, regionRulesStore, uuidGenerator);
   }
 
@@ -74,11 +77,6 @@ class RegionRulesManagerTest {
   class GetAllRegionRules {
     @Test
     void shouldGetAllRegionRules() {
-      RuleScope ruleScope =
-          RuleScope.newBuilder()
-              .setEnvironmentScope(
-                  EnvironmentScope.newBuilder().addEnvironmentIds("env1").addEnvironmentIds("env2"))
-              .build();
       RegionRule mockRegionRule1 =
           RegionRule.newBuilder()
               .setRuleScope(ruleScope)

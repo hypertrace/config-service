@@ -29,6 +29,7 @@ import ai.traceable.bot.categorized.policy.service.v1.store.CategorizedBotConfig
 import ai.traceable.bot.categorized.policy.service.v1.store.CategorizedBotConfigPolicyStoreManager;
 import ai.traceable.bot.categorized.policy.service.v1.store.DefaultPolicyConfig;
 import ai.traceable.bot.categorized.policy.service.v1.translator.CategorizedBotConfigPolicyToEdgeDecisionTranslator;
+import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig;
 import ai.traceable.datamodel.data.transformation.config.v1.DerivationRule;
@@ -165,9 +166,12 @@ class EdgeDecisionConfigServiceTest {
     EdgeDecisionConfigStoreManager storeManager =
         new EdgeDecisionConfigStoreManager(
             new EdgeDecisionConfigStore(genericStub, eventGenerator));
+    TimestampConverter timestampConverter = new TimestampConverter();
+    FilterEvaluator filterEvaluator = new FilterEvaluator(timestampConverter);
     EdgeDecisionRuleStoreManager ruleStoreManager =
         new EdgeDecisionRuleStoreManager(
-            new EdgeDecisionRuleStore(genericStub, eventGenerator, new FilterEvaluator()));
+            new EdgeDecisionRuleStore(
+                genericStub, eventGenerator, filterEvaluator, timestampConverter));
     EdgeDecisionSpecStoreManager specStoreManager =
         new EdgeDecisionSpecStoreManager(new EdgeDecisionSpecStore(genericStub, eventGenerator));
     EdgeAttributionRuleStoreManager attributionRuleStoreManager =

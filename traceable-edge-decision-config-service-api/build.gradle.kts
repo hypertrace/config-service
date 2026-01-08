@@ -28,6 +28,7 @@ protobuf {
 dependencies {
   api(commonLibs.bundles.grpc.api)
   api(projects.traceableDatamodelConfigServiceApi)
+  api(projects.configServiceCommons)
 
   testImplementation(commonLibs.junit.jupiter)
   testImplementation(commonLibs.mockito.junit)

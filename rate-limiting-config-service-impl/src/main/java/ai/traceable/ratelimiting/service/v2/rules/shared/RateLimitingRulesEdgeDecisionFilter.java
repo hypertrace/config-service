@@ -4,6 +4,7 @@ import ai.traceable.ratelimiting.config.service.v2.Action;
 import ai.traceable.ratelimiting.config.service.v2.Category;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
+import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleRecord;
 import ai.traceable.ratelimiting.config.service.v2.ThresholdActionConfig;
 import java.util.List;
 import java.util.Optional;
@@ -22,14 +23,20 @@ public class RateLimitingRulesEdgeDecisionFilter {
         .findAny();
   }
 
-  // filter out rules that will be evaluated by edge decision service
-  // this call will return rules that should be evaluated by the platform
-  public static List<RateLimitingRule> getFilteredRules(
-      List<RateLimitingRule> rules, boolean removeAllEdgeCompatibleBlockRules) {
-    return rules.stream()
-        .map(rule -> getFilteredRule(rule, removeAllEdgeCompatibleBlockRules))
+  // filter out rule records that will be evaluated by edge decision service
+  // this call will return rule records that should be evaluated by the platform
+  public static List<RateLimitingRuleRecord> getFilteredRuleRecords(
+      List<RateLimitingRuleRecord> ruleRecords, boolean removeAllEdgeCompatibleBlockRules) {
+    return ruleRecords.stream()
+        .map(ruleRecord -> getFilteredRuleRecord(ruleRecord, removeAllEdgeCompatibleBlockRules))
         .flatMap(Optional::stream)
         .collect(Collectors.toUnmodifiableList());
+  }
+
+  private static Optional<RateLimitingRuleRecord> getFilteredRuleRecord(
+      RateLimitingRuleRecord ruleRecord, boolean removeAllEdgeCompatibleBlockRules) {
+    return getFilteredRule(ruleRecord.getRule(), removeAllEdgeCompatibleBlockRules)
+        .map(filteredRule -> ruleRecord.toBuilder().setRule(filteredRule).build());
   }
 
   // Rules that can be converted to edge decision rules

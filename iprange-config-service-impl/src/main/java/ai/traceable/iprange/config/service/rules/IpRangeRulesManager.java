@@ -3,7 +3,12 @@ package ai.traceable.iprange.config.service.rules;
 import static ai.traceable.platform.utils.ip.IpAddressParsingUtils.parseRawIpRange;
 
 import ai.traceable.iprange.config.service.utils.UuidGenerator;
-import ai.traceable.iprange.config.service.v1.*;
+import ai.traceable.iprange.config.service.v1.CreateIpRangeRuleRequest;
+import ai.traceable.iprange.config.service.v1.GetRulesFilter;
+import ai.traceable.iprange.config.service.v1.IpRangeRule;
+import ai.traceable.iprange.config.service.v1.IpRangeRuleDetails;
+import ai.traceable.iprange.config.service.v1.IpRangeRuleRecord;
+import ai.traceable.iprange.config.service.v1.UpdateIpRangeRuleRequest;
 import ai.traceable.platform.utils.ip.IpAddressParsingUtils.IpParsingResults;
 import com.google.inject.Inject;
 import io.grpc.Status;
@@ -32,11 +37,16 @@ class IpRangeRulesManager implements RulesManager {
 
   @Override
   public List<IpRangeRule> getIpRangeRules(RequestContext requestContext, GetRulesFilter filter) {
-
     if (filter.equals(GetRulesFilter.getDefaultInstance())) {
       return ipRangeRulesStore.getAllConfigData(requestContext);
     }
     return ipRangeRulesStore.getAllConfigData(requestContext, filter);
+  }
+
+  @Override
+  public List<IpRangeRuleRecord> getIpRangeRuleRecords(
+      RequestContext requestContext, GetRulesFilter filter) {
+    return ipRangeRulesStore.getRuleRecords(requestContext, filter);
   }
 
   @Override

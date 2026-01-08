@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package ai.traceable.iprange.config.service.v1;
 
+import "ai/traceable/config/commons/v1/audit.proto";
+
 option java_multiple_files = true;
 
 message CreateIpRangeRuleRequest {
@@ -37,7 +39,13 @@ message GetIpRangeRulesRequest {
 }
 
 message GetIpRangeRulesResponse {
-  repeated IpRangeRule rules = 1;
+  repeated IpRangeRule rules = 1 [deprecated = true];
+  repeated IpRangeRuleRecord rule_records = 2;
+}
+
+message IpRangeRuleRecord {
+  IpRangeRule rule = 1;
+  ai.traceable.config.commons.v1.AuditDetails audit_details = 2;
 }
 
 message GetRulesFilter {
@@ -48,6 +56,7 @@ message GetRulesFilter {
   RuleScope rule_scope = 5;
   repeated RuleAction rule_actions = 6;
   optional bool hidden = 7;
+  ai.traceable.config.commons.v1.AuditFilter audit_filter = 8;
 }
 
 message IpRangeRule {

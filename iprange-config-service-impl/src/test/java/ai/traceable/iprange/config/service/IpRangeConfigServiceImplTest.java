@@ -46,6 +46,8 @@ class IpRangeConfigServiceImplTest {
     void shouldGetAllIpRangeRules() {
       IpRangeRule ipRangeRule1 = IpRangeRule.newBuilder().setId("Tester-1").build();
       IpRangeRule ipRangeRule2 = IpRangeRule.newBuilder().setId("Tester-2").build();
+      IpRangeRuleRecord record1 = IpRangeRuleRecord.newBuilder().setRule(ipRangeRule1).build();
+      IpRangeRuleRecord record2 = IpRangeRuleRecord.newBuilder().setRule(ipRangeRule2).build();
 
       StreamObserver<GetIpRangeRulesResponse> responseStreamObserver = mock(StreamObserver.class);
 
@@ -59,14 +61,14 @@ class IpRangeConfigServiceImplTest {
       verify(responseStreamObserver, times(1)).onCompleted();
 
       reset(responseStreamObserver);
-      when(rulesManager.getIpRangeRules(any(), any()))
-          .thenReturn(List.of(ipRangeRule1, ipRangeRule2));
+      when(rulesManager.getIpRangeRuleRecords(any(), any())).thenReturn(List.of(record1, record2));
 
       GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
       verify(responseStreamObserver, times(1))
           .onNext(
               GetIpRangeRulesResponse.newBuilder()
                   .addAllRules(List.of(ipRangeRule1, ipRangeRule2))
+                  .addAllRuleRecords(List.of(record1, record2))
                   .build());
       verify(responseStreamObserver, times(1)).onCompleted();
     }
@@ -75,7 +77,7 @@ class IpRangeConfigServiceImplTest {
     @DisplayName("should throw a runtime exception from getIpRange if gets one")
     void propagateRuntimeException_inGetIpRange() {
       StreamObserver<GetIpRangeRulesResponse> responseStreamObserver = mock(StreamObserver.class);
-      when(rulesManager.getIpRangeRules(any(), any())).thenThrow(RuntimeException.class);
+      when(rulesManager.getIpRangeRuleRecords(any(), any())).thenThrow(RuntimeException.class);
       Runnable runnable =
           () ->
               ipRangeConfigService.getIpRangeRules(

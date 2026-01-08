@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.iprange.config.service.utils.UuidGenerator;
 import ai.traceable.iprange.config.service.v1.AgentModification;
 import ai.traceable.iprange.config.service.v1.AgentRuleEffect;
@@ -64,7 +65,10 @@ class IpRangeRulesManagerTest {
     uuidGenerator = mock(UuidGenerator.class);
     mockClock = mock(Clock.class);
     ipRangeRulesStore =
-        new IpRangeRulesStore(configServiceBlockingStub, mock(ConfigChangeEventGenerator.class));
+        new IpRangeRulesStore(
+            configServiceBlockingStub,
+            mock(ConfigChangeEventGenerator.class),
+            new TimestampConverter());
     this.rulesManager = new IpRangeRulesManager(ipRangeRulesStore, uuidGenerator, mockClock);
     requestContext = RequestContext.forTenantId("default tenant");
   }
@@ -296,18 +300,16 @@ class IpRangeRulesManagerTest {
               .setExpirationDetails(
                   ExpirationDetails.newBuilder().setExpirationDuration("PT1H2M34S").build())
               .build();
-
+      UpdateIpRangeRuleRequest rangeRuleRequest =
+          UpdateIpRangeRuleRequest.newBuilder()
+              .setId("First-test")
+              .setRuleDetails(updatedRuleDetails)
+              .setDisabled(true)
+              .setRuleScope(ruleScope)
+              .build();
       assertThrows(
           NoSuchElementException.class,
-          () ->
-              rulesManager.updateIpRangeRule(
-                  requestContext,
-                  UpdateIpRangeRuleRequest.newBuilder()
-                      .setId("First-test")
-                      .setRuleDetails(updatedRuleDetails)
-                      .setDisabled(true)
-                      .setRuleScope(ruleScope)
-                      .build()));
+          () -> rulesManager.updateIpRangeRule(requestContext, rangeRuleRequest));
     }
 
     @Test

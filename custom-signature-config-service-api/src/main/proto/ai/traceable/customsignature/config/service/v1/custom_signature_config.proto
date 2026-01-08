@@ -3,6 +3,7 @@ syntax = "proto3";
 package ai.traceable.customsignature.config.service.v1;
 
 import "ai/traceable/anomaly/config/service/v1/modsec/anomaly_modsec_config.proto";
+import "ai/traceable/config/commons/v1/audit.proto";
 import "ai/traceable/edge/decision/config/service/v1/edge_decision_config.proto";
 import "google/protobuf/struct.proto";
 
@@ -44,7 +45,8 @@ message GetCustomSignatureRulesRequest {
 }
 
 message GetCustomSignatureRulesResponse {
-  repeated CustomSignatureRule rules = 1;
+  repeated CustomSignatureRule rules = 1 [deprecated = true];
+  repeated CustomSignatureRuleRecord rule_records = 2;
 }
 
 message GetCustomSignatureModsecRulesRequest {
@@ -91,6 +93,7 @@ message GetRulesFilter {
   repeated RuleEvaluationPoint rule_evaluation_points = 10;
   repeated Category categories = 11;
   map<string, string> labels = 12;
+  ai.traceable.config.commons.v1.AuditFilter audit_filter = 13;
 }
 
 message CustomSignatureRule {
@@ -106,6 +109,11 @@ message CustomSignatureRule {
   RuleSource rule_source = 10;
   bool hidden = 11;
   Category category = 12;
+}
+
+message CustomSignatureRuleRecord {
+  CustomSignatureRule rule = 1;
+  ai.traceable.config.commons.v1.AuditDetails audit_details = 2;
 }
 
 message CustomSignatureRuleDetails {

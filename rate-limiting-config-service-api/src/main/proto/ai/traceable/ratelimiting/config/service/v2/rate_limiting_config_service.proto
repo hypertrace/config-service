@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package ai.traceable.ratelimiting.config.service.v2;
 
+import "ai/traceable/config/commons/v1/audit.proto";
 import "ai/traceable/edge/decision/config/service/v1/edge_decision_config.proto";
 import "ai/traceable/ratelimiting/config/service/v2/rate_limiting_rule.proto";
 
@@ -28,6 +29,7 @@ message GetRateLimitingRulesFilter {
   optional bool filter_edge_decision_rules = 4 [deprecated = true];
   repeated RuleEvaluationPoint rule_evaluation_points = 5;
   map<string, string> labels = 6;
+  ai.traceable.config.commons.v1.AuditFilter audit_filter = 7;
 }
 
 message GetRateLimitingModsecRulesFilter {
@@ -47,7 +49,13 @@ message GetRulesByCategoryFilter {
 }
 
 message GetRateLimitingRulesResponse {
-  repeated RateLimitingRule rules = 1;
+  repeated RateLimitingRule rules = 1 [deprecated = true];
+  repeated RateLimitingRuleRecord rule_records = 2;
+}
+
+message RateLimitingRuleRecord {
+  RateLimitingRule rule = 1;
+  ai.traceable.config.commons.v1.AuditDetails audit_details = 2;
 }
 
 message UpdateRateLimitingRuleRequest {

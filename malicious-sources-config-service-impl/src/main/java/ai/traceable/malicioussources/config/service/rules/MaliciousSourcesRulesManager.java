@@ -6,6 +6,7 @@ import ai.traceable.malicioussources.config.service.v1.ExpirationDetails;
 import ai.traceable.malicioussources.config.service.v1.GetRulesFilter;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleInfo;
+import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleRecord;
 import ai.traceable.malicioussources.config.service.v1.UpdateMaliciousSourcesRuleRequest;
 import com.google.protobuf.util.Timestamps;
 import io.grpc.Status;
@@ -37,11 +38,16 @@ public class MaliciousSourcesRulesManager implements RulesManager {
   @Override
   public List<MaliciousSourcesRule> getMaliciousSourcesRules(
       RequestContext requestContext, GetRulesFilter filter) {
-
     if (filter.equals(GetRulesFilter.getDefaultInstance())) {
       return maliciousSourcesRulesStore.getAllConfigData(requestContext);
     }
     return maliciousSourcesRulesStore.getAllConfigData(requestContext, filter);
+  }
+
+  @Override
+  public List<MaliciousSourcesRuleRecord> getMaliciousSourcesRuleRecords(
+      RequestContext requestContext, GetRulesFilter filter) {
+    return maliciousSourcesRulesStore.getRuleRecords(requestContext, filter);
   }
 
   @Override

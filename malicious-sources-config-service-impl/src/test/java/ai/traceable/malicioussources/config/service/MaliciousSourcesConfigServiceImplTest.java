@@ -24,6 +24,7 @@ import ai.traceable.malicioussources.config.service.v1.GetMaliciousSourcesRulesR
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleAction;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleInfo;
+import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleRecord;
 import ai.traceable.malicioussources.config.service.v1.RuleActionType;
 import ai.traceable.malicioussources.config.service.v1.UpdateMaliciousSourcesRuleRequest;
 import ai.traceable.malicioussources.config.service.v1.UpdateMaliciousSourcesRuleResponse;
@@ -59,6 +60,10 @@ public class MaliciousSourcesConfigServiceImplTest {
           MaliciousSourcesRule.newBuilder().setId("Tester-1").build();
       MaliciousSourcesRule maliciousSourcesRule2 =
           MaliciousSourcesRule.newBuilder().setId("Tester-2").build();
+      MaliciousSourcesRuleRecord record1 =
+          MaliciousSourcesRuleRecord.newBuilder().setRule(maliciousSourcesRule1).build();
+      MaliciousSourcesRuleRecord record2 =
+          MaliciousSourcesRuleRecord.newBuilder().setRule(maliciousSourcesRule2).build();
 
       StreamObserver<GetMaliciousSourcesRulesResponse> responseStreamObserver =
           mock(StreamObserver.class);
@@ -74,14 +79,15 @@ public class MaliciousSourcesConfigServiceImplTest {
       verify(responseStreamObserver, times(1)).onCompleted();
 
       reset(responseStreamObserver);
-      when(rulesManager.getMaliciousSourcesRules(any(), any()))
-          .thenReturn(List.of(maliciousSourcesRule1, maliciousSourcesRule2));
+      when(rulesManager.getMaliciousSourcesRuleRecords(any(), any()))
+          .thenReturn(List.of(record1, record2));
       RequestContext.forTenantId(TENANT_ID).run(runnable);
 
       verify(responseStreamObserver, times(1))
           .onNext(
               GetMaliciousSourcesRulesResponse.newBuilder()
                   .addAllRules(List.of(maliciousSourcesRule1, maliciousSourcesRule2))
+                  .addAllRuleRecords(List.of(record1, record2))
                   .build());
       verify(responseStreamObserver, times(1)).onCompleted();
     }
@@ -91,7 +97,8 @@ public class MaliciousSourcesConfigServiceImplTest {
     void propagateRuntimeException_inGetMaliciousSourcesRange() {
       StreamObserver<GetMaliciousSourcesRulesResponse> responseStreamObserver =
           mock(StreamObserver.class);
-      when(rulesManager.getMaliciousSourcesRules(any(), any())).thenThrow(RuntimeException.class);
+      when(rulesManager.getMaliciousSourcesRuleRecords(any(), any()))
+          .thenThrow(RuntimeException.class);
       Runnable runnable =
           () ->
               maliciousSourcesConfigService.getMaliciousSourcesRules(

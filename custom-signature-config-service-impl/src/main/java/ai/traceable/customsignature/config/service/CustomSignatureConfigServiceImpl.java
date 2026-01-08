@@ -10,6 +10,7 @@ import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleR
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleResponse;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
+import ai.traceable.customsignature.config.service.v1.CustomSignatureRuleRecord;
 import ai.traceable.customsignature.config.service.v1.DeleteCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.DeleteCustomSignatureRuleResponse;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureEdgeDecisionRulesRequest;
@@ -26,6 +27,7 @@ import io.grpc.stub.StreamObserver;
 import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -63,9 +65,16 @@ public class CustomSignatureConfigServiceImpl
 
       ruleMigrationManager.migrateCustomSignatureRules(context);
 
+      List<CustomSignatureRuleRecord> ruleRecords =
+          rulesManager.getCustomSignatureRuleRecords(context, request.getFilter());
+
       responseObserver.onNext(
           GetCustomSignatureRulesResponse.newBuilder()
-              .addAllRules(rulesManager.getCustomSignatureRules(context, request.getFilter()))
+              .addAllRules(
+                  ruleRecords.stream()
+                      .map(CustomSignatureRuleRecord::getRule)
+                      .collect(Collectors.toList()))
+              .addAllRuleRecords(ruleRecords)
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {

@@ -2,13 +2,21 @@ package ai.traceable.customsignature.config.service.rules;
 
 import static ai.traceable.customsignature.config.service.CustomSignatureConstants.CUSTOM_SIGNATURE_RULE_CONFIG_NAMESPACE;
 import static ai.traceable.customsignature.config.service.CustomSignatureConstants.CUSTOM_SIGNATURE_RULE_CONFIG_RESOURCE_NAME;
+import static java.util.Objects.nonNull;
 
+import ai.traceable.config.commons.v1.AuditDetails;
+import ai.traceable.config.commons.v1.AuditFilter;
+import ai.traceable.config.commons.v1.CreationDetails;
+import ai.traceable.config.commons.v1.LastUpdateDetails;
+import ai.traceable.config.commons.v1.TimestampRange;
+import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceConfig;
 import ai.traceable.customsignature.config.service.v1.AttributeKeyValueExpression;
 import ai.traceable.customsignature.config.service.v1.Category;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
+import ai.traceable.customsignature.config.service.v1.CustomSignatureRuleRecord;
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import ai.traceable.customsignature.config.service.v1.MatchOperator;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
@@ -19,20 +27,22 @@ import ai.traceable.customsignature.config.service.v1.StringCondition;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.hypertrace.config.objectstore.ConfigObject;
+import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.config.objectstore.IdentifiedObjectStoreWithFilter;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
@@ -44,7 +54,8 @@ public class CustomSignatureRulesStore
     extends IdentifiedObjectStoreWithFilter<CustomSignatureRule, GetRulesFilter> {
 
   private final CustomSignatureRuleConverter customSignatureRuleConverter;
-  private final List<CustomSignatureRule> defaultCustomSignatureRules;
+  private final List<CustomSignatureRuleRecord> defaultCustomSignatureRules;
+  private final TimestampConverter timestampConverter;
 
   private static final Set<ContextualKey<Void>> PROCESSED_RULE_TENANT_IDS = new HashSet<>();
 
@@ -53,7 +64,8 @@ public class CustomSignatureRulesStore
       ConfigServiceBlockingStub configServiceBlockingStub,
       CustomSignatureRuleConverter customSignatureRuleConverter,
       ConfigChangeEventGenerator configChangeEventGenerator,
-      CustomSignatureConfigServiceConfig customSignatureConfigServiceConfig) {
+      CustomSignatureConfigServiceConfig customSignatureConfigServiceConfig,
+      TimestampConverter timestampConverter) {
     super(
         configServiceBlockingStub,
         CUSTOM_SIGNATURE_RULE_CONFIG_NAMESPACE,
@@ -61,26 +73,51 @@ public class CustomSignatureRulesStore
         configChangeEventGenerator);
     this.customSignatureRuleConverter = customSignatureRuleConverter;
     this.defaultCustomSignatureRules =
-        customSignatureConfigServiceConfig.getDefaultCustomSignatureRules();
+        customSignatureConfigServiceConfig.getDefaultCustomSignatureRules().stream()
+            .map(rule -> CustomSignatureRuleRecord.newBuilder().setRule(rule).build())
+            .collect(Collectors.toUnmodifiableList());
+    this.timestampConverter = timestampConverter;
   }
 
   @Override
   public List<CustomSignatureRule> getAllConfigData(RequestContext requestContext) {
-    return mergeCustomSignatureRules(
-        getCustomSignatureRules(requestContext, super.getAllConfigData(requestContext)),
-        defaultCustomSignatureRules);
+    return getAllRuleRecords(requestContext).stream()
+        .map(CustomSignatureRuleRecord::getRule)
+        .collect(Collectors.toUnmodifiableList());
   }
 
   @Override
   public List<CustomSignatureRule> getAllConfigData(
       RequestContext requestContext, GetRulesFilter filter) {
-    List<CustomSignatureRule> filteredDefaultCustomSignatureRules =
+    return getAllRuleRecords(requestContext, filter).stream()
+        .map(CustomSignatureRuleRecord::getRule)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  @Override
+  public List<ContextualConfigObject<CustomSignatureRule>> getAllObjects(
+      RequestContext context, GetRulesFilter filter) {
+    return super.getAllObjects(context, filter).stream()
+        .filter(configObject -> matchesAuditFilters(configObject, filter))
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  public List<CustomSignatureRuleRecord> getAllRuleRecords(RequestContext context) {
+    List<CustomSignatureRuleRecord> backwardCompatibleExistingRules =
+        getBackwardCompatibleExistingRuleRecords(context, null);
+    return mergeCustomSignatureRules(backwardCompatibleExistingRules, defaultCustomSignatureRules);
+  }
+
+  public List<CustomSignatureRuleRecord> getAllRuleRecords(
+      RequestContext context, GetRulesFilter filter) {
+    List<CustomSignatureRuleRecord> backwardCompatibleExistingRules =
+        getBackwardCompatibleExistingRuleRecords(context, filter);
+    List<CustomSignatureRuleRecord> filteredDefaultCustomSignatureRules =
         defaultCustomSignatureRules.stream()
-            .filter(rule -> filterConfigData(rule, filter).isPresent())
-            .collect(Collectors.toUnmodifiableList());
+            .filter(ruleRecord -> filterConfigData(ruleRecord.getRule(), filter).isPresent())
+            .collect(Collectors.toList());
     return mergeCustomSignatureRules(
-        getCustomSignatureRules(requestContext, super.getAllConfigData(requestContext, filter)),
-        filteredDefaultCustomSignatureRules);
+        backwardCompatibleExistingRules, filteredDefaultCustomSignatureRules);
   }
 
   @Override
@@ -104,21 +141,23 @@ public class CustomSignatureRulesStore
     return data.getId();
   }
 
-  private List<CustomSignatureRule> mergeCustomSignatureRules(
-      List<CustomSignatureRule> customSignatureRules,
-      List<CustomSignatureRule> defaultCustomSignatureRules) {
+  private List<CustomSignatureRuleRecord> mergeCustomSignatureRules(
+      List<CustomSignatureRuleRecord> customSignatureRules,
+      List<CustomSignatureRuleRecord> defaultCustomSignatureRules) {
 
-    Map<String, CustomSignatureRule> customSignatureRuleMap = new HashMap<>();
+    Map<String, CustomSignatureRuleRecord> customSignatureRuleMap = new HashMap<>();
     customSignatureRuleMap.putAll(this.getRuleIdToRuleMap(defaultCustomSignatureRules));
     customSignatureRuleMap.putAll(this.getRuleIdToRuleMap(customSignatureRules));
 
     return customSignatureRuleMap.values().stream().collect(Collectors.toUnmodifiableList());
   }
 
-  private Map<String, CustomSignatureRule> getRuleIdToRuleMap(
-      List<CustomSignatureRule> customSignatureRules) {
+  private Map<String, CustomSignatureRuleRecord> getRuleIdToRuleMap(
+      List<CustomSignatureRuleRecord> customSignatureRules) {
     return customSignatureRules.stream()
-        .collect(Collectors.toUnmodifiableMap(CustomSignatureRule::getId, Function.identity()));
+        .collect(
+            Collectors.toUnmodifiableMap(
+                ruleRecord -> ruleRecord.getRule().getId(), Function.identity()));
   }
 
   @Override
@@ -217,6 +256,91 @@ public class CustomSignatureRulesStore
         || (!hasCustomSecRule && !filter.getContainsSecRuleClause());
   }
 
+  private List<CustomSignatureRuleRecord> getBackwardCompatibleExistingRuleRecords(
+      RequestContext context, @Nullable GetRulesFilter filter) {
+    List<CustomSignatureRuleRecord> existingRecords = fetchExistingRecords(context, filter);
+
+    List<CustomSignatureRule> existingRules = extractRules(existingRecords);
+    List<CustomSignatureRule> backwardCompatibleRules =
+        getCustomSignatureRules(context, existingRules);
+
+    Map<String, CustomSignatureRule> backwardCompatibleRulesById =
+        indexRulesById(backwardCompatibleRules);
+
+    return updateRecordsWithBackwardCompatibleRules(existingRecords, backwardCompatibleRulesById);
+  }
+
+  private List<CustomSignatureRuleRecord> fetchExistingRecords(
+      RequestContext context, @Nullable GetRulesFilter filter) {
+    return (nonNull(filter) ? getAllObjects(context, filter) : getAllObjects(context))
+        .stream().map(this::toRuleRecord).collect(Collectors.toList());
+  }
+
+  private List<CustomSignatureRule> extractRules(List<CustomSignatureRuleRecord> records) {
+    return records.stream().map(CustomSignatureRuleRecord::getRule).collect(Collectors.toList());
+  }
+
+  private Map<String, CustomSignatureRule> indexRulesById(List<CustomSignatureRule> rules) {
+    return rules.stream()
+        .collect(Collectors.toMap(CustomSignatureRule::getId, Function.identity()));
+  }
+
+  private List<CustomSignatureRuleRecord> updateRecordsWithBackwardCompatibleRules(
+      List<CustomSignatureRuleRecord> records,
+      Map<String, CustomSignatureRule> backwardCompatibleRulesById) {
+    return records.stream()
+        .map(
+            ruleRecord -> {
+              String ruleId = ruleRecord.getRule().getId();
+              CustomSignatureRule backwardCompatibleRule = backwardCompatibleRulesById.get(ruleId);
+              return backwardCompatibleRule != null
+                  ? rebuildRecordWithRule(ruleRecord, backwardCompatibleRule)
+                  : null;
+            })
+        .filter(java.util.Objects::nonNull)
+        .collect(Collectors.toList());
+  }
+
+  private CustomSignatureRuleRecord rebuildRecordWithRule(
+      CustomSignatureRuleRecord originalRecord, CustomSignatureRule updatedRule) {
+    return CustomSignatureRuleRecord.newBuilder()
+        .setRule(updatedRule)
+        .setAuditDetails(originalRecord.getAuditDetails())
+        .build();
+  }
+
+  private CustomSignatureRuleRecord toRuleRecord(
+      ContextualConfigObject<CustomSignatureRule> contextual) {
+    return CustomSignatureRuleRecord.newBuilder()
+        .setRule(contextual.getData())
+        .setAuditDetails(buildAuditDetails(contextual))
+        .build();
+  }
+
+  private AuditDetails buildAuditDetails(ContextualConfigObject<?> contextual) {
+    AuditDetails.Builder builder = AuditDetails.newBuilder();
+
+    Instant creationTimestamp = contextual.getCreationTimestamp();
+    if (creationTimestamp != null && creationTimestamp.getEpochSecond() > 0) {
+      builder.setCreationDetails(
+          CreationDetails.newBuilder()
+              .setCreatedBy(contextual.getCreatedByEmail())
+              .setCreatedAt(timestampConverter.convert(creationTimestamp))
+              .build());
+    }
+
+    Instant lastUserUpdateTimestamp = contextual.getLastUserUpdateTimestamp();
+    if (lastUserUpdateTimestamp != null && lastUserUpdateTimestamp.getEpochSecond() > 0) {
+      builder.setLastUserUpdateDetails(
+          LastUpdateDetails.newBuilder()
+              .setUpdatedBy(contextual.getLastUserUpdateEmail())
+              .setUpdatedAt(timestampConverter.convert(lastUserUpdateTimestamp))
+              .build());
+    }
+
+    return builder.build();
+  }
+
   // processing existing custom signature rule, when attribute key value expression does not have
   // key condition.
   private List<CustomSignatureRule> getCustomSignatureRules(
@@ -274,7 +398,7 @@ public class CustomSignatureRulesStore
             getStringCondition(
                 attributeKeyValueExpressionBuilder.getMatchKey(),
                 attributeKeyValueExpressionBuilder.getKeyMatchOperator()));
-    if (Objects.nonNull(attributeKeyValueExpressionBuilder.getMatchValue())
+    if (nonNull(attributeKeyValueExpressionBuilder.getMatchValue())
         && !attributeKeyValueExpressionBuilder.getMatchValue().isBlank()
         && !attributeKeyValueExpressionBuilder
             .getValueMatchOperator()
@@ -303,5 +427,85 @@ public class CustomSignatureRulesStore
 
   private StringCondition getStringCondition(String value, MatchOperator operator) {
     return StringCondition.newBuilder().setValue(value).setOperator(operator).build();
+  }
+
+  private boolean matchesAuditFilters(
+      ContextualConfigObject<CustomSignatureRule> configObject, GetRulesFilter filter) {
+    if (!filter.hasAuditFilter()) {
+      return true;
+    }
+    AuditFilter auditFilter = filter.getAuditFilter();
+    return matchesCreatedRange(configObject, auditFilter)
+        && matchesUpdatedRange(configObject, auditFilter)
+        && matchesCreatedByContains(configObject, auditFilter)
+        && matchesLastUpdatedByContains(configObject, auditFilter);
+  }
+
+  private boolean matchesCreatedRange(
+      ContextualConfigObject<CustomSignatureRule> configObject, AuditFilter auditFilter) {
+    if (!auditFilter.hasCreatedRange()) {
+      return true;
+    }
+    Instant creationTime = configObject.getCreationTimestamp();
+    if (creationTime == null || creationTime.getEpochSecond() == 0) {
+      return false;
+    }
+    return isTimestampInRange(creationTime, auditFilter.getCreatedRange());
+  }
+
+  private boolean matchesUpdatedRange(
+      ContextualConfigObject<CustomSignatureRule> configObject, AuditFilter auditFilter) {
+    if (!auditFilter.hasUpdatedRange()) {
+      return true;
+    }
+    Instant lastUpdateTime = configObject.getLastUserUpdateTimestamp();
+    if (lastUpdateTime == null || lastUpdateTime.getEpochSecond() == 0) {
+      return false;
+    }
+    return isTimestampInRange(lastUpdateTime, auditFilter.getUpdatedRange());
+  }
+
+  private boolean matchesCreatedByContains(
+      ContextualConfigObject<CustomSignatureRule> configObject, AuditFilter auditFilter) {
+    String createdByContains = auditFilter.getCreatedByContains();
+    if (createdByContains.isEmpty()) {
+      return true;
+    }
+    String createdBy = configObject.getCreatedByEmail();
+    if (createdBy == null || createdBy.isEmpty()) {
+      return false;
+    }
+    return containsIgnoreCase(createdBy, createdByContains);
+  }
+
+  private boolean matchesLastUpdatedByContains(
+      ContextualConfigObject<CustomSignatureRule> configObject, AuditFilter auditFilter) {
+    String lastUpdatedByContains = auditFilter.getLastUpdatedByUserContains();
+    if (lastUpdatedByContains.isEmpty()) {
+      return true;
+    }
+    String lastModifiedBy = configObject.getLastUserUpdateEmail();
+    if (lastModifiedBy == null || lastModifiedBy.isEmpty()) {
+      return false;
+    }
+    return containsIgnoreCase(lastModifiedBy, lastUpdatedByContains);
+  }
+
+  private boolean isTimestampInRange(Instant timestamp, TimestampRange range) {
+    if (range.hasStart()) {
+      Instant startTime = timestampConverter.convertToInstant(range.getStart());
+      if (timestamp.isBefore(startTime)) {
+        return false;
+      }
+    }
+    if (range.hasEnd()) {
+      Instant endTime = timestampConverter.convertToInstant(range.getEnd());
+      return !timestamp.isAfter(endTime);
+    }
+    return true;
+  }
+
+  private boolean containsIgnoreCase(String source, String searchTerm) {
+    return source.toLowerCase().contains(searchTerm.toLowerCase());
   }
 }

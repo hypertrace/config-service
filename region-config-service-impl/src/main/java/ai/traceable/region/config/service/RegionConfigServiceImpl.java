@@ -25,6 +25,7 @@ import ai.traceable.region.config.service.v1.GetRegionsResponse;
 import ai.traceable.region.config.service.v1.Region;
 import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc.RegionConfigServiceImplBase;
 import ai.traceable.region.config.service.v1.RegionRule;
+import ai.traceable.region.config.service.v1.RegionRuleRecord;
 import ai.traceable.region.config.service.v1.RegionsFilter;
 import ai.traceable.region.config.service.v1.UpdateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.UpdateRegionRuleResponse;
@@ -148,10 +149,16 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
       GetAllRegionRulesRequest request,
       StreamObserver<GetAllRegionRulesResponse> responseObserver) {
     RequestContext requestContext = RequestContext.CURRENT.get();
-    List<RegionRule> regionRules = rulesManager.getRegionRules(requestContext, request.getFilter());
-    regionRules = populateRegionMapping(regionRules, requestContext);
-
-    responseObserver.onNext(GetAllRegionRulesResponse.newBuilder().addAllRule(regionRules).build());
+    List<RegionRuleRecord> ruleRecords =
+        rulesManager.getRegionRuleRecords(requestContext, request.getFilter());
+    ruleRecords = populateRegionMapping(ruleRecords, requestContext);
+    List<RegionRule> regionRules =
+        ruleRecords.stream().map(RegionRuleRecord::getRule).collect(Collectors.toList());
+    responseObserver.onNext(
+        GetAllRegionRulesResponse.newBuilder()
+            .addAllRule(regionRules)
+            .addAllRuleRecords(ruleRecords)
+            .build());
     responseObserver.onCompleted();
   }
 
@@ -239,10 +246,11 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
     return neustarRegionStore;
   }
 
-  private List<RegionRule> populateRegionMapping(
-      List<RegionRule> regionRules, RequestContext requestContext) {
+  private List<RegionRuleRecord> populateRegionMapping(
+      List<RegionRuleRecord> ruleRecords, RequestContext requestContext) {
     Set<String> regionIds =
-        regionRules.stream()
+        ruleRecords.stream()
+            .map(RegionRuleRecord::getRule)
             .flatMap(regionRule -> regionRule.getRegionIdList().stream())
             .collect(Collectors.toUnmodifiableSet());
     RegionStore regionStore = getRegionStore(requestContext);
@@ -251,9 +259,15 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
             .collect(
                 Collectors.toUnmodifiableMap(Region::getId, Region::getCountry, (v1, v2) -> v1));
 
-    return regionRules.stream()
-        .map(regionRule -> populateRegionMapping(regionRule, regionMapping))
+    return ruleRecords.stream()
+        .map(ruleRecord -> populateRegionMapping(ruleRecord, regionMapping))
         .collect(Collectors.toUnmodifiableList());
+  }
+
+  private RegionRuleRecord populateRegionMapping(
+      RegionRuleRecord ruleRecord, Map<String, Country> regionMapping) {
+    RegionRule enrichedRegionRule = populateRegionMapping(ruleRecord.getRule(), regionMapping);
+    return ruleRecord.toBuilder().setRule(enrichedRegionRule).build();
   }
 
   private RegionRule populateRegionMapping(

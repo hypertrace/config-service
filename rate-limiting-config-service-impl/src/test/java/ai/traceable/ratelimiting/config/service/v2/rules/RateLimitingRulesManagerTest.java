@@ -9,6 +9,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.ratelimiting.config.service.v2.Action;
 import ai.traceable.ratelimiting.config.service.v2.Action.Allow;
@@ -83,7 +84,8 @@ public class RateLimitingRulesManagerTest {
         new RateLimitingRulesStore(
             configServiceBlockingStub,
             mockConfigChangeEventGenerator,
-            rateLimitingConfigServiceConfig);
+            rateLimitingConfigServiceConfig,
+            new TimestampConverter());
     uuidGenerator = mock(UuidGenerator.class);
     Clock clock = mock(Clock.class);
     doReturn(1000000L).when(clock).millis();

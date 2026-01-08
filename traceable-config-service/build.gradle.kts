@@ -144,6 +144,7 @@ tasks.integrationTest {
 
 dependencies {
   implementation(projects.traceableConfigServiceFactory)
+  implementation(projects.configUtils)
   implementation(commonLibs.hypertrace.framework.grpc.jakarta)
   implementation(commonLibs.hypertrace.framework.http.jakarta)
   implementation(commonLibs.hypertrace.framework.documentstore.metrics)

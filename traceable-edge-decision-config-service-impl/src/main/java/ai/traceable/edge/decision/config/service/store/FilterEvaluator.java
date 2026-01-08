@@ -1,5 +1,8 @@
 package ai.traceable.edge.decision.config.service.store;
 
+import ai.traceable.config.commons.v1.AuditFilter;
+import ai.traceable.config.commons.v1.TimestampRange;
+import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRule;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleCategoryFilter;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleScope;
@@ -12,10 +15,19 @@ import ai.traceable.edge.decision.config.service.v1.TimeRangeFilter;
 import com.google.protobuf.Value;
 import com.google.protobuf.util.Timestamps;
 import io.grpc.Status;
+import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.Optional;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 
 public class FilterEvaluator {
+
+  private final TimestampConverter timestampConverter;
+
+  @Inject
+  public FilterEvaluator(TimestampConverter timestampConverter) {
+    this.timestampConverter = timestampConverter;
+  }
 
   public boolean evaluate(Filter filter, ContextualConfigObject<EdgeDecisionRule> ruleWithContext) {
     switch (filter.getFilterCase()) {
@@ -38,6 +50,8 @@ public class FilterEvaluator {
         return evaluate(filter.getIncludeDisabled(), ruleWithContext.getData());
       case SCOPE_FILTER:
         return evaluate(filter.getScopeFilter(), ruleWithContext.getData().getRuleScope());
+      case AUDIT_FILTER:
+        return evaluate(filter.getAuditFilter(), ruleWithContext);
       case FILTER_NOT_SET:
         return true;
       default:
@@ -121,5 +135,77 @@ public class FilterEvaluator {
             .withDescription("Unrecognized scope filter type: " + scopeFilter.getScopeCase())
             .asRuntimeException();
     }
+  }
+
+  private boolean evaluate(
+      AuditFilter auditFilter, ContextualConfigObject<EdgeDecisionRule> ruleWithContext) {
+    return matchesCreatedRange(ruleWithContext, auditFilter)
+        && matchesUpdatedRange(ruleWithContext, auditFilter)
+        && matchesCreatedByContains(ruleWithContext, auditFilter)
+        && matchesLastUpdatedByContains(ruleWithContext, auditFilter);
+  }
+
+  private boolean matchesCreatedRange(
+      ContextualConfigObject<EdgeDecisionRule> configObject, AuditFilter filter) {
+    if (!filter.hasCreatedRange()) {
+      return true;
+    }
+    Instant creationTimestamp = configObject.getCreationTimestamp();
+    if (creationTimestamp == null) {
+      return false;
+    }
+    return isTimestampInRange(creationTimestamp, filter.getCreatedRange());
+  }
+
+  private boolean matchesUpdatedRange(
+      ContextualConfigObject<EdgeDecisionRule> configObject, AuditFilter filter) {
+    if (!filter.hasUpdatedRange()) {
+      return true;
+    }
+    Instant lastUserUpdateTimestamp = configObject.getLastUserUpdateTimestamp();
+    if (lastUserUpdateTimestamp == null) {
+      return false;
+    }
+    return isTimestampInRange(lastUserUpdateTimestamp, filter.getUpdatedRange());
+  }
+
+  private boolean matchesCreatedByContains(
+      ContextualConfigObject<EdgeDecisionRule> configObject, AuditFilter filter) {
+    if (filter.getCreatedByContains().isEmpty()) {
+      return true;
+    }
+    String createdByEmail = configObject.getCreatedByEmail();
+    if (createdByEmail == null || createdByEmail.isEmpty()) {
+      return false;
+    }
+    return createdByEmail.toLowerCase().contains(filter.getCreatedByContains().toLowerCase());
+  }
+
+  private boolean matchesLastUpdatedByContains(
+      ContextualConfigObject<EdgeDecisionRule> configObject, AuditFilter filter) {
+    if (filter.getLastUpdatedByUserContains().isEmpty()) {
+      return true;
+    }
+    String lastUserUpdateEmail = configObject.getLastUserUpdateEmail();
+    if (lastUserUpdateEmail == null || lastUserUpdateEmail.isEmpty()) {
+      return false;
+    }
+    return lastUserUpdateEmail
+        .toLowerCase()
+        .contains(filter.getLastUpdatedByUserContains().toLowerCase());
+  }
+
+  private boolean isTimestampInRange(Instant timestamp, TimestampRange range) {
+    if (range.hasStart()) {
+      Instant startTime = timestampConverter.convertToInstant(range.getStart());
+      if (timestamp.isBefore(startTime)) {
+        return false;
+      }
+    }
+    if (range.hasEnd()) {
+      Instant endTime = timestampConverter.convertToInstant(range.getEnd());
+      return !timestamp.isAfter(endTime);
+    }
+    return true;
   }
 }

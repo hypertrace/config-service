@@ -12,12 +12,14 @@ import ai.traceable.malicioussources.config.service.v1.GetMaliciousSourcesRulesR
 import ai.traceable.malicioussources.config.service.v1.GetRulesFilter;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesConfigServiceGrpc.MaliciousSourcesConfigServiceImplBase;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
+import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleRecord;
 import ai.traceable.malicioussources.config.service.v1.UpdateMaliciousSourcesRuleRequest;
 import ai.traceable.malicioussources.config.service.v1.UpdateMaliciousSourcesRuleResponse;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import jakarta.inject.Inject;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -44,11 +46,18 @@ public class MaliciousSourcesConfigServiceImpl extends MaliciousSourcesConfigSer
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       migrationManager.migrateFromChangeLog1IfApplicable(requestContext);
-      List<MaliciousSourcesRule> maliciousSourcesRules =
-          rulesManager.getMaliciousSourcesRules(requestContext, request.getFilter());
+      List<MaliciousSourcesRuleRecord> ruleRecords =
+          rulesManager.getMaliciousSourcesRuleRecords(requestContext, request.getFilter());
+      List<MaliciousSourcesRule> rules =
+          ruleRecords.stream()
+              .map(MaliciousSourcesRuleRecord::getRule)
+              .collect(Collectors.toList());
 
       responseObserver.onNext(
-          GetMaliciousSourcesRulesResponse.newBuilder().addAllRules(maliciousSourcesRules).build());
+          GetMaliciousSourcesRulesResponse.newBuilder()
+              .addAllRules(rules)
+              .addAllRuleRecords(ruleRecords)
+              .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Unable to fetch malicious sources rules", e);

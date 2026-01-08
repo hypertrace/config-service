@@ -3,9 +3,19 @@ package ai.traceable.iprange.config.service;
 import ai.traceable.iprange.config.service.rules.RulesManager;
 import ai.traceable.iprange.config.service.rules.RulesValidator;
 import ai.traceable.iprange.config.service.rules.migration.IpRangeRulesMigrationManager;
-import ai.traceable.iprange.config.service.v1.*;
+import ai.traceable.iprange.config.service.v1.CreateIpRangeRuleRequest;
+import ai.traceable.iprange.config.service.v1.CreateIpRangeRuleResponse;
+import ai.traceable.iprange.config.service.v1.DeleteIpRangeRuleRequest;
+import ai.traceable.iprange.config.service.v1.DeleteIpRangeRuleResponse;
+import ai.traceable.iprange.config.service.v1.GetIpRangeRulesRequest;
+import ai.traceable.iprange.config.service.v1.GetIpRangeRulesResponse;
+import ai.traceable.iprange.config.service.v1.GetRulesFilter;
 import ai.traceable.iprange.config.service.v1.IpRangeConfigServiceGrpc.IpRangeConfigServiceImplBase;
 import ai.traceable.iprange.config.service.v1.IpRangeRule;
+import ai.traceable.iprange.config.service.v1.IpRangeRuleRecord;
+import ai.traceable.iprange.config.service.v1.RuleAction;
+import ai.traceable.iprange.config.service.v1.UpdateIpRangeRuleRequest;
+import ai.traceable.iprange.config.service.v1.UpdateIpRangeRuleResponse;
 import com.google.inject.Inject;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -37,11 +47,18 @@ class IpRangeConfigServiceImpl extends IpRangeConfigServiceImplBase {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.migrationManager.migrateFromChangeLog1IfApplicable(requestContext);
 
-      List<IpRangeRule> ipRangeRules =
-          rulesManager.getIpRangeRules(requestContext, request.getFilter());
+      List<IpRangeRuleRecord> ruleRecords =
+          rulesManager.getIpRangeRuleRecords(requestContext, request.getFilter());
+      List<IpRangeRule> rules =
+          ruleRecords.stream()
+              .map(IpRangeRuleRecord::getRule)
+              .collect(java.util.stream.Collectors.toList());
 
       responseObserver.onNext(
-          GetIpRangeRulesResponse.newBuilder().addAllRules(ipRangeRules).build());
+          GetIpRangeRulesResponse.newBuilder()
+              .addAllRules(rules)
+              .addAllRuleRecords(ruleRecords)
+              .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Unable to fetch ip range rules", e);

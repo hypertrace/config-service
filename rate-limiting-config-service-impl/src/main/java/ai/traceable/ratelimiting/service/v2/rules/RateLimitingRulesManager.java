@@ -12,6 +12,7 @@ import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter;
 import ai.traceable.ratelimiting.config.service.v2.IpAddressCondition;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
+import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleRecord;
 import ai.traceable.ratelimiting.config.service.v2.RuleStatus;
 import ai.traceable.ratelimiting.config.service.v2.TransactionActionConfig;
 import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceConfig;
@@ -54,6 +55,12 @@ public class RateLimitingRulesManager implements RulesManager {
       return rateLimitingRulesStore.getAllConfigData(requestContext);
     }
     return rateLimitingRulesStore.getAllConfigData(requestContext, filter);
+  }
+
+  @Override
+  public List<RateLimitingRuleRecord> getRateLimitingRuleRecords(
+      RequestContext requestContext, GetRateLimitingRulesFilter filter) {
+    return rateLimitingRulesStore.getRuleRecords(requestContext, filter);
   }
 
   @Override

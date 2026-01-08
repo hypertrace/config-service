@@ -22,11 +22,12 @@ import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class RateLimitingConfigServiceImplTest {
+class RateLimitingConfigServiceImplTest {
   private static final String TENANT_ID = "default tenant";
 
   private RulesValidator rulesValidator;
@@ -132,11 +133,15 @@ public class RateLimitingConfigServiceImplTest {
 
     // Case 2: Test with all rules returned
     reset(responseObserver);
-    when(rulesManager.getRateLimitingRules(any(), any())).thenReturn(allRules);
+    when(rulesManager.getRateLimitingRuleRecords(any(), any())).thenReturn(toRecords(allRules));
 
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, noFilterRunnable);
     verify(responseObserver, times(1))
-        .onNext(GetRateLimitingRulesResponse.newBuilder().addAllRules(allRules).build());
+        .onNext(
+            GetRateLimitingRulesResponse.newBuilder()
+                .addAllRules(allRules)
+                .addAllRuleRecords(toRecords(allRules))
+                .build());
     verify(responseObserver, times(1)).onCompleted();
 
     // Case 3: Test with PLATFORM evaluation point filter
@@ -145,7 +150,8 @@ public class RateLimitingConfigServiceImplTest {
         GetRateLimitingRulesFilter.newBuilder()
             .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
             .build();
-    when(rulesManager.getRateLimitingRules(any(), eq(platformFilter))).thenReturn(platformRules);
+    when(rulesManager.getRateLimitingRuleRecords(any(), eq(platformFilter)))
+        .thenReturn(toRecords(platformRules));
     Runnable platformFilterRunnable =
         () ->
             configService.getRateLimitingRules(
@@ -153,7 +159,11 @@ public class RateLimitingConfigServiceImplTest {
                 responseObserver);
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, platformFilterRunnable);
     verify(responseObserver, times(1))
-        .onNext(GetRateLimitingRulesResponse.newBuilder().addAllRules(platformRules).build());
+        .onNext(
+            GetRateLimitingRulesResponse.newBuilder()
+                .addAllRules(platformRules)
+                .addAllRuleRecords(toRecords(platformRules))
+                .build());
     verify(responseObserver, times(1)).onCompleted();
 
     // Case 4: Test with AGENT evaluation point filter
@@ -162,7 +172,8 @@ public class RateLimitingConfigServiceImplTest {
         GetRateLimitingRulesFilter.newBuilder()
             .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT)
             .build();
-    when(rulesManager.getRateLimitingRules(any(), eq(agentFilter))).thenReturn(agentRules);
+    when(rulesManager.getRateLimitingRuleRecords(any(), eq(agentFilter)))
+        .thenReturn(toRecords(agentRules));
     Runnable agentFilterRunnable =
         () ->
             configService.getRateLimitingRules(
@@ -170,7 +181,11 @@ public class RateLimitingConfigServiceImplTest {
                 responseObserver);
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, agentFilterRunnable);
     verify(responseObserver, times(1))
-        .onNext(GetRateLimitingRulesResponse.newBuilder().addAllRules(agentRules).build());
+        .onNext(
+            GetRateLimitingRulesResponse.newBuilder()
+                .addAllRules(agentRules)
+                .addAllRuleRecords(toRecords(agentRules))
+                .build());
     verify(responseObserver, times(1)).onCompleted();
 
     // Case 5: Test with EDGE evaluation point filter
@@ -179,7 +194,8 @@ public class RateLimitingConfigServiceImplTest {
         GetRateLimitingRulesFilter.newBuilder()
             .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
             .build();
-    when(rulesManager.getRateLimitingRules(any(), eq(edgeFilter))).thenReturn(edgeRules);
+    when(rulesManager.getRateLimitingRuleRecords(any(), eq(edgeFilter)))
+        .thenReturn(toRecords(edgeRules));
     Runnable edgeFilterRunnable =
         () ->
             configService.getRateLimitingRules(
@@ -187,7 +203,11 @@ public class RateLimitingConfigServiceImplTest {
                 responseObserver);
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, edgeFilterRunnable);
     verify(responseObserver, times(1))
-        .onNext(GetRateLimitingRulesResponse.newBuilder().addAllRules(edgeRules).build());
+        .onNext(
+            GetRateLimitingRulesResponse.newBuilder()
+                .addAllRules(edgeRules)
+                .addAllRuleRecords(toRecords(edgeRules))
+                .build());
     verify(responseObserver, times(1)).onCompleted();
 
     // Case 6: Test with multiple evaluation points filter (PLATFORM and EDGE)
@@ -198,8 +218,8 @@ public class RateLimitingConfigServiceImplTest {
             .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
             .build();
     List<RateLimitingRule> platformEdgeRules = List.of(platformRule, edgeRule);
-    when(rulesManager.getRateLimitingRules(any(), eq(multiPointFilter)))
-        .thenReturn(platformEdgeRules);
+    when(rulesManager.getRateLimitingRuleRecords(any(), eq(multiPointFilter)))
+        .thenReturn(toRecords(platformEdgeRules));
     Runnable multiPointFilterRunnable =
         () ->
             configService.getRateLimitingRules(
@@ -207,7 +227,11 @@ public class RateLimitingConfigServiceImplTest {
                 responseObserver);
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, multiPointFilterRunnable);
     verify(responseObserver, times(1))
-        .onNext(GetRateLimitingRulesResponse.newBuilder().addAllRules(platformEdgeRules).build());
+        .onNext(
+            GetRateLimitingRulesResponse.newBuilder()
+                .addAllRules(platformEdgeRules)
+                .addAllRuleRecords(toRecords(platformEdgeRules))
+                .build());
     verify(responseObserver, times(1)).onCompleted();
 
     // Case 7: Test with combined filters (category + evaluation point)
@@ -218,7 +242,8 @@ public class RateLimitingConfigServiceImplTest {
             .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
             .build();
     List<RateLimitingRule> filteredRules = List.of(platformRule, multipleEvaluationPointsRule);
-    when(rulesManager.getRateLimitingRules(any(), eq(combinedFilter))).thenReturn(filteredRules);
+    when(rulesManager.getRateLimitingRuleRecords(any(), eq(combinedFilter)))
+        .thenReturn(toRecords(filteredRules));
     Runnable combinedFilterRunnable =
         () ->
             configService.getRateLimitingRules(
@@ -226,7 +251,11 @@ public class RateLimitingConfigServiceImplTest {
                 responseObserver);
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, combinedFilterRunnable);
     verify(responseObserver, times(1))
-        .onNext(GetRateLimitingRulesResponse.newBuilder().addAllRules(filteredRules).build());
+        .onNext(
+            GetRateLimitingRulesResponse.newBuilder()
+                .addAllRules(filteredRules)
+                .addAllRuleRecords(toRecords(filteredRules))
+                .build());
     verify(responseObserver, times(1)).onCompleted();
 
     // Case 8: Test validation failure
@@ -361,7 +390,8 @@ public class RateLimitingConfigServiceImplTest {
             .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
             .build();
     List<RateLimitingRule> edgeRules = List.of(edgeRule, multiEvalPointRule);
-    when(rulesManager.getRateLimitingRules(any(), eq(edgeFilter))).thenReturn(edgeRules);
+    when(rulesManager.getRateLimitingRuleRecords(any(), eq(edgeFilter)))
+        .thenReturn(toRecords(edgeRules));
     Runnable edgeFilterRunnable =
         () ->
             configService.getRateLimitingRules(
@@ -369,13 +399,18 @@ public class RateLimitingConfigServiceImplTest {
                 responseObserver);
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, edgeFilterRunnable);
     verify(responseObserver, times(1))
-        .onNext(GetRateLimitingRulesResponse.newBuilder().addAllRules(edgeRules).build());
+        .onNext(
+            GetRateLimitingRulesResponse.newBuilder()
+                .addAllRules(edgeRules)
+                .addAllRuleRecords(toRecords(edgeRules))
+                .build());
     verify(responseObserver, times(1)).onCompleted();
 
     // Case 2: Test with empty filter (should return all rules)
     reset(responseObserver);
     GetRateLimitingRulesFilter emptyFilter = GetRateLimitingRulesFilter.newBuilder().build();
-    when(rulesManager.getRateLimitingRules(any(), eq(emptyFilter))).thenReturn(allRules);
+    when(rulesManager.getRateLimitingRuleRecords(any(), eq(emptyFilter)))
+        .thenReturn(toRecords(allRules));
     Runnable emptyFilterRunnable =
         () ->
             configService.getRateLimitingRules(
@@ -383,7 +418,11 @@ public class RateLimitingConfigServiceImplTest {
                 responseObserver);
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, emptyFilterRunnable);
     verify(responseObserver, times(1))
-        .onNext(GetRateLimitingRulesResponse.newBuilder().addAllRules(allRules).build());
+        .onNext(
+            GetRateLimitingRulesResponse.newBuilder()
+                .addAllRules(allRules)
+                .addAllRuleRecords(toRecords(allRules))
+                .build());
     verify(responseObserver, times(1)).onCompleted();
 
     // Case 3: Test with PLATFORM evaluation point filter
@@ -393,7 +432,8 @@ public class RateLimitingConfigServiceImplTest {
             .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
             .build();
     List<RateLimitingRule> platformRules = List.of(platformRule, multiEvalPointRule);
-    when(rulesManager.getRateLimitingRules(any(), eq(platformFilter))).thenReturn(platformRules);
+    when(rulesManager.getRateLimitingRuleRecords(any(), eq(platformFilter)))
+        .thenReturn(toRecords(platformRules));
     Runnable platformFilterRunnable =
         () ->
             configService.getRateLimitingRules(
@@ -401,7 +441,11 @@ public class RateLimitingConfigServiceImplTest {
                 responseObserver);
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, platformFilterRunnable);
     verify(responseObserver, times(1))
-        .onNext(GetRateLimitingRulesResponse.newBuilder().addAllRules(platformRules).build());
+        .onNext(
+            GetRateLimitingRulesResponse.newBuilder()
+                .addAllRules(platformRules)
+                .addAllRuleRecords(toRecords(platformRules))
+                .build());
     verify(responseObserver, times(1)).onCompleted();
 
     // Case 4: Test with AGENT evaluation point filter
@@ -411,7 +455,8 @@ public class RateLimitingConfigServiceImplTest {
             .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT)
             .build();
     List<RateLimitingRule> agentRules = List.of(agentRule);
-    when(rulesManager.getRateLimitingRules(any(), eq(agentFilter))).thenReturn(agentRules);
+    when(rulesManager.getRateLimitingRuleRecords(any(), eq(agentFilter)))
+        .thenReturn(toRecords(agentRules));
     Runnable agentFilterRunnable =
         () ->
             configService.getRateLimitingRules(
@@ -419,7 +464,11 @@ public class RateLimitingConfigServiceImplTest {
                 responseObserver);
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, agentFilterRunnable);
     verify(responseObserver, times(1))
-        .onNext(GetRateLimitingRulesResponse.newBuilder().addAllRules(agentRules).build());
+        .onNext(
+            GetRateLimitingRulesResponse.newBuilder()
+                .addAllRules(agentRules)
+                .addAllRuleRecords(toRecords(agentRules))
+                .build());
     verify(responseObserver, times(1)).onCompleted();
 
     // Case 5: Test with multiple evaluation points filter (PLATFORM, EDGE)
@@ -430,8 +479,8 @@ public class RateLimitingConfigServiceImplTest {
             .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
             .build();
     List<RateLimitingRule> multiPointRules = List.of(platformRule, edgeRule, multiEvalPointRule);
-    when(rulesManager.getRateLimitingRules(any(), eq(multiPointFilter)))
-        .thenReturn(multiPointRules);
+    when(rulesManager.getRateLimitingRuleRecords(any(), eq(multiPointFilter)))
+        .thenReturn(toRecords(multiPointRules));
     Runnable multiPointRunnable =
         () ->
             configService.getRateLimitingRules(
@@ -439,7 +488,11 @@ public class RateLimitingConfigServiceImplTest {
                 responseObserver);
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, multiPointRunnable);
     verify(responseObserver, times(1))
-        .onNext(GetRateLimitingRulesResponse.newBuilder().addAllRules(multiPointRules).build());
+        .onNext(
+            GetRateLimitingRulesResponse.newBuilder()
+                .addAllRules(multiPointRules)
+                .addAllRuleRecords(toRecords(multiPointRules))
+                .build());
     verify(responseObserver, times(1)).onCompleted();
 
     // Case 6: Test with combined filter (evaluation point + category)
@@ -450,8 +503,8 @@ public class RateLimitingConfigServiceImplTest {
             .addCategories(Category.CATEGORY_RATE_LIMITING)
             .build();
     List<RateLimitingRule> combinedFilterRules = List.of(multiEvalPointRule);
-    when(rulesManager.getRateLimitingRules(any(), eq(combinedFilter)))
-        .thenReturn(combinedFilterRules);
+    when(rulesManager.getRateLimitingRuleRecords(any(), eq(combinedFilter)))
+        .thenReturn(toRecords(combinedFilterRules));
     Runnable combinedFilterRunnable =
         () ->
             configService.getRateLimitingRules(
@@ -459,7 +512,11 @@ public class RateLimitingConfigServiceImplTest {
                 responseObserver);
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, combinedFilterRunnable);
     verify(responseObserver, times(1))
-        .onNext(GetRateLimitingRulesResponse.newBuilder().addAllRules(combinedFilterRules).build());
+        .onNext(
+            GetRateLimitingRulesResponse.newBuilder()
+                .addAllRules(combinedFilterRules)
+                .addAllRuleRecords(toRecords(combinedFilterRules))
+                .build());
     verify(responseObserver, times(1)).onCompleted();
 
     // Case 7: Test with edge decision filter set to True
@@ -470,8 +527,8 @@ public class RateLimitingConfigServiceImplTest {
             .setFilterEdgeDecisionRules(true)
             .build();
     List<RateLimitingRule> edgeDecisionRules = List.of(edgeRule, multiEvalPointRule);
-    when(rulesManager.getRateLimitingRules(any(), eq(edgeDecisionFilter)))
-        .thenReturn(edgeDecisionRules);
+    when(rulesManager.getRateLimitingRuleRecords(any(), eq(edgeDecisionFilter)))
+        .thenReturn(toRecords(edgeDecisionRules));
     doNothing()
         .when(rateLimitingMigrationManager)
         .migrateForRuleEvaluationPointsIfApplicable(any());
@@ -482,7 +539,11 @@ public class RateLimitingConfigServiceImplTest {
                 responseObserver);
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, edgeDecisionFilterRunnable);
     verify(responseObserver, times(1))
-        .onNext(GetRateLimitingRulesResponse.newBuilder().addAllRules(edgeDecisionRules).build());
+        .onNext(
+            GetRateLimitingRulesResponse.newBuilder()
+                .addAllRules(edgeDecisionRules)
+                .addAllRuleRecords(toRecords(edgeDecisionRules))
+                .build());
     verify(responseObserver, times(1)).onCompleted();
 
     // Case 8: Test error handling
@@ -491,7 +552,7 @@ public class RateLimitingConfigServiceImplTest {
     reset(rulesValidator);
     doThrow(new RuntimeException("Test exception"))
         .when(rulesManager)
-        .getRateLimitingRules(any(), any());
+        .getRateLimitingRuleRecords(any(), any());
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, edgeFilterRunnable);
     verify(responseObserver, times(1)).onError(any(RuntimeException.class));
   }
@@ -663,5 +724,11 @@ public class RateLimitingConfigServiceImplTest {
                 .setName(name)
                 .addAllRuleEvaluationPoints(ruleEvaluationPoints))
         .build();
+  }
+
+  private List<RateLimitingRuleRecord> toRecords(List<RateLimitingRule> rules) {
+    return rules.stream()
+        .map(rule -> RateLimitingRuleRecord.newBuilder().setRule(rule).build())
+        .collect(Collectors.toList());
   }
 }
