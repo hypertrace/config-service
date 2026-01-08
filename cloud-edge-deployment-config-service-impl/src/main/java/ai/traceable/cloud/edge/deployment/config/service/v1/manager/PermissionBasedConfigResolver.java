@@ -183,13 +183,18 @@ public class PermissionBasedConfigResolver {
         existing.getAdvancedConfig().getGenericConfig().toBuilder()
             .mergeFrom(incoming.getAdvancedConfig().getGenericConfig())
             .build();
-    return ServiceConfig.newBuilder()
-        .setServiceName(incoming.getServiceName())
-        .addAllDomainConfigs(incoming.getDomainConfigsList())
-        .addAllOriginConfigs(incoming.getOriginConfigsList())
-        .setAdvancedConfig(
-            ServiceAdvancedConfig.newBuilder().setGenericConfig(mergedGenericConfig).build())
-        .setHealthCheckDetails(incoming.getHealthCheckDetails())
-        .build();
+    ServiceConfig.Builder builder =
+        ServiceConfig.newBuilder()
+            .setServiceName(incoming.getServiceName())
+            .addAllDomainConfigs(incoming.getDomainConfigsList())
+            .addAllOriginConfigs(incoming.getOriginConfigsList())
+            .setAdvancedConfig(
+                ServiceAdvancedConfig.newBuilder().setGenericConfig(mergedGenericConfig).build());
+
+    if (incoming.hasHealthCheckDetails()) {
+      builder.setHealthCheckDetails(incoming.getHealthCheckDetails());
+    }
+
+    return builder.build();
   }
 }
