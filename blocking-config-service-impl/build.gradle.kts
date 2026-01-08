@@ -14,6 +14,7 @@ dependencies {
   api(projects.rateLimitingConfigServiceApi)
   api(projects.maliciousSourcesConfigServiceApi)
   api(projects.detectionExclusionConfigServiceApi)
+  api(projects.featureCachingClient)
 
   implementation(commonLibs.traceable.opadistributor.api)
   implementation(commonLibs.traceable.actorservice.api)

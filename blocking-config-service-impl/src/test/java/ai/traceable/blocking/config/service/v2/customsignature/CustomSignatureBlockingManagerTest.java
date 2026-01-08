@@ -19,6 +19,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -26,6 +27,7 @@ class CustomSignatureBlockingManagerTest {
   private static final String V3_blob = "Tester rule blob v3";
   private static final String V3_seg_arg_blob = "Tester rule blob v3 seg arg limit";
   private static final UuidGenerator uuidGenerator = new UuidGenerator();
+  private static final RequestContext requestContext = RequestContext.forTenantId("test-tenant");
   private static final String V3_HASH = uuidGenerator.generateId(V3_blob);
   private static final String V3_SEG_ARG_HASH = uuidGenerator.generateId(V3_seg_arg_blob);
 
@@ -63,6 +65,7 @@ class CustomSignatureBlockingManagerTest {
     assertEquals(
         List.of(getV3Response(List.of(getLibtraceableAgentCapabilities("0.0.2.3")), true)),
         manager.generateBlockingElements(
+            requestContext,
             List.of(
                 getRequestElement(
                     "hg", List.of(getLibtraceableAgentCapabilities("0.0.2.3")), true)),
@@ -75,6 +78,7 @@ class CustomSignatureBlockingManagerTest {
                 List.of(getServiceLibtraceableAgentCapabilities("serviceName", "0.1.98-rc.110")),
                 true)),
         manager.generateBlockingElements(
+            requestContext,
             List.of(
                 getRequestElement(
                     "random",
@@ -87,6 +91,7 @@ class CustomSignatureBlockingManagerTest {
     assertEquals(
         List.of(getV3Response(List.of(getLibtraceableAgentCapabilities("0.1.98-rc.138")), false)),
         manager.generateBlockingElements(
+            requestContext,
             List.of(
                 getRequestElement(V3_HASH, List.of(), true),
                 getRequestElement(
@@ -103,6 +108,7 @@ class CustomSignatureBlockingManagerTest {
                     getLibtraceableAgentCapabilities("0.1.98-rc.138")),
                 true)),
         manager.generateBlockingElements(
+            requestContext,
             List.of(
                 getRequestElement(
                     "random",
@@ -127,6 +133,7 @@ class CustomSignatureBlockingManagerTest {
                 true),
             getV3Response(List.of(getLibtraceableAgentCapabilities("0.1.98-rc.138")), true)),
         manager.generateBlockingElements(
+            requestContext,
             List.of(
                 getRequestElement(
                     "random",
@@ -147,6 +154,7 @@ class CustomSignatureBlockingManagerTest {
                 false),
             getV3Response(List.of(getLibtraceableAgentCapabilities("0.1.98-rc.138")), false)),
         manager.generateBlockingElements(
+            requestContext,
             List.of(
                 getRequestElement(
                     V3_SEG_ARG_HASH,
@@ -164,6 +172,7 @@ class CustomSignatureBlockingManagerTest {
     assertEquals(
         List.of(),
         manager.generateBlockingElements(
+            requestContext,
             List.of(
                 getRequestElement(
                     V3_HASH,
@@ -187,6 +196,7 @@ class CustomSignatureBlockingManagerTest {
                 true),
             getV3Response(List.of(getLibtraceableAgentCapabilities("0.1.98-rc.138")), false)),
         manager.generateBlockingElements(
+            requestContext,
             List.of(
                 getRequestElement(
                     V3_SEG_ARG_HASH,

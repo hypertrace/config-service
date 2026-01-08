@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.blocking.config.service.v1.BlockingConfigServiceModuleV1;
 import ai.traceable.blocking.config.service.v2.BlockingConfigServiceModuleV2;
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import com.google.inject.Guice;
 import com.google.inject.Stage;
 import com.typesafe.config.Config;
@@ -23,6 +24,7 @@ class BlockingConfigServiceFactoryTest {
     Channel mockChannel = mock(Channel.class);
     Config mockConfig = mock(Config.class);
     GrpcChannelRegistry mockGrpcChannelRegistry = mock(GrpcChannelRegistry.class);
+    FeatureCachingClient mockFeatureCachingClient = mock(FeatureCachingClient.class);
     doReturn(mock(ManagedChannel.class))
         .when(mockGrpcChannelRegistry)
         .forPlaintextAddress("localhost", 50888);
@@ -54,7 +56,7 @@ class BlockingConfigServiceFactoryTest {
                     new BlockingConfigServiceModuleV1(),
                     new BlockingConfigServiceModuleV2(),
                     new BlockingConfigServiceModule(
-                        mockChannel, mockConfig, mockGrpcChannelRegistry))
+                        mockChannel, mockConfig, mockGrpcChannelRegistry, mockFeatureCachingClient))
                 .getAllBindings());
   }
 }

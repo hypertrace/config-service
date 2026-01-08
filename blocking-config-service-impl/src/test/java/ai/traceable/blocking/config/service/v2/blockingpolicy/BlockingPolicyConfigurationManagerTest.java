@@ -105,6 +105,7 @@ class BlockingPolicyConfigurationManagerTest {
                         .addComponents(Component.newBuilder().setServiceName("service-2")))
                 .build()),
         manager.generateBlockingElements(
+            requestContext,
             List.of(
                 buildRequestElement("random", "1.2.3-rc.4", "service-1"),
                 buildRequestElement("mock-hash", "1.2.3-rc.5", "service-2")),
@@ -126,6 +127,7 @@ class BlockingPolicyConfigurationManagerTest {
                         .addComponents(Component.newBuilder().setServiceName("service-2")))
                 .build()),
         manager.generateBlockingElements(
+            requestContext,
             List.of(
                 buildRequestElement("mock-hash", "1.2.3-rc.4", "service-1").toBuilder()
                     .addSupportedAgentCapabilities(
@@ -140,6 +142,7 @@ class BlockingPolicyConfigurationManagerTest {
     assertEquals(
         List.of(),
         manager.generateBlockingElements(
+            requestContext,
             List.of(
                 BlockingConfigRequestElement.newBuilder().setPreviousHash("random-hash").build()),
             mockBlockingRulesSupplier));
@@ -225,6 +228,7 @@ class BlockingPolicyConfigurationManagerTest {
                         .addComponents(Component.newBuilder().setServiceName("service-2")))
                 .build()),
         manager.generateBlockingElements(
+            requestContext,
             List.of(
                 buildRequestElement("random", "1.2.3-rc.4", "service-1").toBuilder()
                     .addSupportedAgentCapabilities(
@@ -285,6 +289,7 @@ class BlockingPolicyConfigurationManagerTest {
             mockUuidGenerator);
     List<BlockingConfigResponseElement> responseElements =
         blockingPolicyConfigurationManager.generateBlockingElements(
+            requestContext,
             Collections.singletonList(buildRequestElement("previousHash", "1.0.0", "s1")),
             mockBlockingRulesSupplier);
 
@@ -353,6 +358,7 @@ class BlockingPolicyConfigurationManagerTest {
 
     List<BlockingConfigResponseElement> responseElements =
         blockingPolicyConfigurationManager.generateBlockingElements(
+            requestContext,
             Collections.singletonList(
                 buildRequestElement("previousHash", "2.0.0", "s1").toBuilder()
                     .addSupportedAgentCapabilities(
@@ -438,6 +444,7 @@ class BlockingPolicyConfigurationManagerTest {
 
     List<BlockingConfigResponseElement> responseElements =
         blockingPolicyConfigurationManager.generateBlockingElements(
+            requestContext,
             Collections.singletonList(
                 buildRequestElement("previousHash", "1.0.0", "s1").toBuilder()
                     .addSupportedAgentCapabilities(

@@ -7,6 +7,7 @@ import ai.traceable.anomaly.config.service.v1.global.AnomalyGlobalConfigServiceG
 import ai.traceable.anomaly.config.service.v1.modsec.AnomalyModsecConfigServiceGrpc;
 import ai.traceable.anomaly.config.service.v1.modsec.AnomalyModsecConfigServiceGrpc.AnomalyModsecConfigServiceBlockingStub;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.actor.config.ActorServiceConfig;
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.refresh.FileRefreshConfig;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
@@ -39,12 +40,17 @@ public class BlockingConfigServiceModule extends AbstractModule {
   private final Channel channel;
   private final Config config;
   private final GrpcChannelRegistry grpcChannelRegistry;
+  private final FeatureCachingClient featureCachingClient;
 
   public BlockingConfigServiceModule(
-      Channel channel, Config config, GrpcChannelRegistry grpcChannelRegistry) {
+      Channel channel,
+      Config config,
+      GrpcChannelRegistry grpcChannelRegistry,
+      FeatureCachingClient featureCachingClient) {
     this.channel = channel;
     this.config = config;
     this.grpcChannelRegistry = grpcChannelRegistry;
+    this.featureCachingClient = featureCachingClient;
   }
 
   @Override
@@ -52,6 +58,7 @@ public class BlockingConfigServiceModule extends AbstractModule {
     bind(Channel.class).toInstance(channel);
     bind(Config.class).toInstance(config.getConfig(BLOCKING_CONFIG_SERVICE_CONFIG_NAME));
     bind(GrpcChannelRegistry.class).toInstance(grpcChannelRegistry);
+    bind(FeatureCachingClient.class).toInstance(featureCachingClient);
   }
 
   @Provides

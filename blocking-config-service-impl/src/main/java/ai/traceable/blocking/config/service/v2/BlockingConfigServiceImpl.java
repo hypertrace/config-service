@@ -66,7 +66,9 @@ class BlockingConfigServiceImpl extends BlockingConfigServiceImplBase {
                   blockingConfigManagerBase ->
                       blockingConfigManagerBase
                           .generateBlockingElements(
-                              request.getRequestElementsList(), blockingRulesSupplier)
+                              requestContext,
+                              request.getRequestElementsList(),
+                              blockingRulesSupplier)
                           .stream())
               .collect(Collectors.toUnmodifiableList());
 

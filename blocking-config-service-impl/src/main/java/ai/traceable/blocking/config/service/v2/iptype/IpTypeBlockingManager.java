@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class IpTypeBlockingManager implements BlockingConfigManagerBase {
   private final IpTypeRuleConverter ipTypeRuleConverter;
@@ -33,6 +34,7 @@ public class IpTypeBlockingManager implements BlockingConfigManagerBase {
 
   @Override
   public List<BlockingConfigResponseElement> generateBlockingElements(
+      RequestContext requestContext,
       List<BlockingConfigRequestElement> requestElements,
       BlockingRulesSupplier blockingRulesSupplier) {
     List<BlockingConfigRequestElement> ipTypeRequestElements =

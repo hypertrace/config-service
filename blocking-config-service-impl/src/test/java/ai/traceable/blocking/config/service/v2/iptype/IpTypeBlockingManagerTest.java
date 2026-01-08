@@ -20,10 +20,12 @@ import ai.traceable.config.utils.UuidGenerator;
 import java.util.Collections;
 import java.util.List;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 class IpTypeBlockingManagerTest {
+  private static final RequestContext requestContext = RequestContext.forTenantId("test-tenant");
 
   @Test
   void getEnabledBlockingRules() {
@@ -74,6 +76,7 @@ class IpTypeBlockingManagerTest {
                 .addAgentCapabilities(agentCapabilities2)
                 .build()),
         manager.generateBlockingElements(
+            requestContext,
             List.of(
                 BlockingConfigRequestElement.newBuilder()
                     .setPreviousHash("random")
@@ -97,6 +100,7 @@ class IpTypeBlockingManagerTest {
                 .addAgentCapabilities(agentCapabilities2)
                 .build()),
         manager.generateBlockingElements(
+            requestContext,
             List.of(
                 BlockingConfigRequestElement.newBuilder()
                     .setPreviousHash("mock-hash")
@@ -130,6 +134,7 @@ class IpTypeBlockingManagerTest {
                 .addAgentCapabilities(agentCapabilities3)
                 .build()),
         manager.generateBlockingElements(
+            requestContext,
             List.of(
                 BlockingConfigRequestElement.newBuilder()
                     .setPreviousHash("mock-hash")
@@ -173,6 +178,7 @@ class IpTypeBlockingManagerTest {
                 .addAgentCapabilities(agentCapabilities3)
                 .build()),
         manager.generateBlockingElements(
+            requestContext,
             List.of(
                 BlockingConfigRequestElement.newBuilder()
                     .setPreviousHash("mock-hash")
@@ -213,6 +219,7 @@ class IpTypeBlockingManagerTest {
                 .addAgentCapabilities(agentCapabilities3)
                 .build()),
         manager.generateBlockingElements(
+            requestContext,
             List.of(
                 BlockingConfigRequestElement.newBuilder()
                     .setPreviousHash("random-hash")
@@ -235,6 +242,7 @@ class IpTypeBlockingManagerTest {
     assertEquals(
         List.of(),
         manager.generateBlockingElements(
+            requestContext,
             List.of(
                 BlockingConfigRequestElement.newBuilder().setPreviousHash("random-hash").build()),
             blockingRulesSupplier));

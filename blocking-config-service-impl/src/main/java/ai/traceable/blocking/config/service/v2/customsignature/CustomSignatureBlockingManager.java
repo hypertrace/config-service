@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 public class CustomSignatureBlockingManager implements BlockingConfigManagerBase {
@@ -48,6 +49,7 @@ public class CustomSignatureBlockingManager implements BlockingConfigManagerBase
 
   @Override
   public List<BlockingConfigResponseElement> generateBlockingElements(
+      RequestContext requestContext,
       List<BlockingConfigRequestElement> requestElements,
       BlockingRulesSupplier blockingRulesSupplier) {
 

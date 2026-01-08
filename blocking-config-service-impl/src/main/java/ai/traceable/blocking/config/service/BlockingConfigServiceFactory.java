@@ -2,6 +2,7 @@ package ai.traceable.blocking.config.service;
 
 import ai.traceable.blocking.config.service.v1.BlockingConfigServiceModuleV1;
 import ai.traceable.blocking.config.service.v2.BlockingConfigServiceModuleV2;
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
@@ -16,13 +17,17 @@ import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 
 public class BlockingConfigServiceFactory {
   public static Set<BindableService> build(
-      Channel channel, Config config, GrpcChannelRegistry grpcChannelRegistry) {
+      Channel channel,
+      Config config,
+      GrpcChannelRegistry grpcChannelRegistry,
+      FeatureCachingClient featureCachingClient) {
     Injector injector =
         Guice.createInjector(
             Stage.PRODUCTION,
             new BlockingConfigServiceModuleV1(),
             new BlockingConfigServiceModuleV2(),
-            new BlockingConfigServiceModule(channel, config, grpcChannelRegistry));
+            new BlockingConfigServiceModule(
+                channel, config, grpcChannelRegistry, featureCachingClient));
     return Collections.unmodifiableSet(
         injector.getInstance(Key.get(new TypeLiteral<Set<BindableService>>() {})));
   }

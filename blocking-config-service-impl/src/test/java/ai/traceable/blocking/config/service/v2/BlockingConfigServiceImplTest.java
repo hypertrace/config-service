@@ -72,6 +72,7 @@ class BlockingConfigServiceImplTest {
     doReturn(sampleResponseElements)
         .when(blockingManager1)
         .generateBlockingElements(
+            eq(REQUEST_CONTEXT),
             eq(blockingConfigRequestElements),
             argThat(
                 blockingRulesSupplier ->
@@ -81,6 +82,7 @@ class BlockingConfigServiceImplTest {
     doReturn(sampleResponseElements)
         .when(blockingManager2)
         .generateBlockingElements(
+            eq(REQUEST_CONTEXT),
             eq(blockingConfigRequestElements),
             argThat(
                 blockingRulesSupplier ->
@@ -166,7 +168,7 @@ class BlockingConfigServiceImplTest {
   void testResponseOnException() {
     doThrow(RuntimeException.class)
         .when(blockingManager1)
-        .generateBlockingElements(eq(blockingConfigRequestElements), any());
+        .generateBlockingElements(eq(REQUEST_CONTEXT), eq(blockingConfigRequestElements), any());
 
     StreamObserver<GetBlockingRulesResponse> responseObserver = mock(StreamObserver.class);
     Runnable runnable =

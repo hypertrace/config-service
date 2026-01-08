@@ -2,6 +2,7 @@ package ai.traceable.blocking.config.service.v2.modsec;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
@@ -16,6 +17,7 @@ import ai.traceable.blocking.config.service.v2.BlockingConfigResponseElement;
 import ai.traceable.blocking.config.service.v2.Component;
 import ai.traceable.blocking.config.service.v2.CrsBlockingRules;
 import ai.traceable.blocking.config.service.v2.CrsBlockingRulesRequest;
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.SemanticVersioningComparator;
 import ai.traceable.config.utils.UuidGenerator;
 import java.util.Collections;
@@ -35,6 +37,7 @@ class ModsecBlockingManagerTest {
   private static final String V3_SEG_ARG_HASH = uuidGenerator.generateId(V3_seg_arg_blob);
 
   private static BlockingConfigManagerBase manager;
+  private static FeatureCachingClient mockFeatureCachingClient;
 
   private final BlockingRulesSupplierContext blockingRulesSupplierContext =
       new BlockingRulesSupplierContext(Collections.emptyMap(), null);
@@ -43,9 +46,13 @@ class ModsecBlockingManagerTest {
   static void setup() {
     BlockingModsecBlobFetcher mockBlockingModsecBlobFetcher = mock(BlockingModsecBlobFetcher.class);
     SemanticVersioningComparator semanticVersioningComparator = new SemanticVersioningComparator();
+    mockFeatureCachingClient = mock(FeatureCachingClient.class);
     manager =
         new ModsecBlockingManager(
-            mockBlockingModsecBlobFetcher, uuidGenerator, semanticVersioningComparator);
+            mockBlockingModsecBlobFetcher,
+            uuidGenerator,
+            semanticVersioningComparator,
+            mockFeatureCachingClient);
 
     doReturn(V3_blob)
         .when(mockBlockingModsecBlobFetcher)
@@ -57,12 +64,16 @@ class ModsecBlockingManagerTest {
             requestContext,
             ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS_DETECTION_ONLY_MODE,
             environmentId);
+    doReturn(true)
+        .when(mockFeatureCachingClient)
+        .isProtectionEngineWebAppProtectionEnabledForTenant(any(RequestContext.class));
   }
 
   @Test
   void filterRequestElements_edsEnabled_singleAgent() {
     List<BlockingConfigResponseElement> responseElements =
         manager.generateBlockingElements(
+            requestContext,
             List.of(
                 BlockingConfigRequestElement.newBuilder()
                     .setPreviousHash("random")
@@ -86,6 +97,7 @@ class ModsecBlockingManagerTest {
   void filterRequestElements_edsEnabled_multipleAgents() {
     List<BlockingConfigResponseElement> responseElements =
         manager.generateBlockingElements(
+            requestContext,
             List.of(
                 BlockingConfigRequestElement.newBuilder()
                     .setPreviousHash("random")
@@ -147,6 +159,7 @@ class ModsecBlockingManagerTest {
                 .setCrsBlockingRules(CrsBlockingRules.newBuilder().setCrsRulesBlob(V3_blob))
                 .build()),
         manager.generateBlockingElements(
+            requestContext,
             List.of(
                 BlockingConfigRequestElement.newBuilder()
                     .setPreviousHash("random")
@@ -176,6 +189,7 @@ class ModsecBlockingManagerTest {
                 .setCrsBlockingRules(CrsBlockingRules.getDefaultInstance())
                 .build()),
         manager.generateBlockingElements(
+            requestContext,
             List.of(
                 BlockingConfigRequestElement.newBuilder()
                     .setPreviousHash(V3_HASH)
@@ -207,6 +221,7 @@ class ModsecBlockingManagerTest {
                 .setCrsBlockingRules(CrsBlockingRules.newBuilder().setCrsRulesBlob(V3_blob))
                 .build()),
         manager.generateBlockingElements(
+            requestContext,
             List.of(
                 BlockingConfigRequestElement.newBuilder()
                     .setPreviousHash("random")
@@ -255,6 +270,7 @@ class ModsecBlockingManagerTest {
                             Component.newBuilder().setLibtraceableVersion("0.1.98-rc.170"))
                         .build()))),
         manager.generateBlockingElements(
+            requestContext,
             List.of(
                 BlockingConfigRequestElement.newBuilder()
                     .setPreviousHash("random")
@@ -304,6 +320,7 @@ class ModsecBlockingManagerTest {
                 .setCrsBlockingRules(CrsBlockingRules.getDefaultInstance())
                 .build()),
         manager.generateBlockingElements(
+            requestContext,
             List.of(
                 BlockingConfigRequestElement.newBuilder()
                     .setPreviousHash(V3_SEG_ARG_HASH)
@@ -336,6 +353,7 @@ class ModsecBlockingManagerTest {
     assertEquals(
         List.of(),
         manager.generateBlockingElements(
+            requestContext,
             List.of(
                 BlockingConfigRequestElement.newBuilder()
                     .setPreviousHash(V3_HASH)

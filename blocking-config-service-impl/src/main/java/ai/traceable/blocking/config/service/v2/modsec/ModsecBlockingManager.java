@@ -9,6 +9,7 @@ import ai.traceable.blocking.config.service.v2.BlockingConfigRequestElement;
 import ai.traceable.blocking.config.service.v2.BlockingConfigResponseElement;
 import ai.traceable.blocking.config.service.v2.Component;
 import ai.traceable.blocking.config.service.v2.CrsBlockingRules;
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.SemanticVersioningComparator;
 import ai.traceable.config.utils.UuidGenerator;
 import com.google.inject.Inject;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class ModsecBlockingManager implements BlockingConfigManagerBase {
 
@@ -33,25 +35,29 @@ public class ModsecBlockingManager implements BlockingConfigManagerBase {
   private final BlockingModsecBlobFetcher blockingModsecBlobFetcher;
   private final UuidGenerator uuidGenerator;
   private final SemanticVersioningComparator semanticVersioningComparator;
+  private final FeatureCachingClient featureCachingClient;
 
   @Inject
   public ModsecBlockingManager(
       BlockingModsecBlobFetcher blockingModsecBlobFetcher,
       UuidGenerator uuidGenerator,
-      SemanticVersioningComparator semanticVersioningComparator) {
+      SemanticVersioningComparator semanticVersioningComparator,
+      FeatureCachingClient featureCachingClient) {
     this.blockingModsecBlobFetcher = blockingModsecBlobFetcher;
     this.uuidGenerator = uuidGenerator;
     this.semanticVersioningComparator = semanticVersioningComparator;
+    this.featureCachingClient = featureCachingClient;
   }
 
   @Override
   public List<BlockingConfigResponseElement> generateBlockingElements(
+      RequestContext requestContext,
       List<BlockingConfigRequestElement> requestElements,
       BlockingRulesSupplier blockingRulesSupplier) {
     List<AgentCapabilities> agentCapabilitiesWithEdsEnabled =
-        getAgentCapabilitiesWithEdsEnabled(requestElements);
+        getAgentCapabilitiesWithEdsEnabled(requestElements, requestContext);
     List<BlockingConfigRequestElement> modsecRequestElements =
-        filterRequestElements(requestElements);
+        filterRequestElements(requestElements, requestContext);
     if (modsecRequestElements.isEmpty() && agentCapabilitiesWithEdsEnabled.isEmpty()) {
       return Collections.emptyList();
     }
@@ -82,18 +88,20 @@ public class ModsecBlockingManager implements BlockingConfigManagerBase {
   }
 
   private List<AgentCapabilities> getAgentCapabilitiesWithEdsEnabled(
-      List<BlockingConfigRequestElement> requestElements) {
+      List<BlockingConfigRequestElement> requestElements, RequestContext requestContext) {
     return requestElements.stream()
         .filter(BlockingConfigRequestElement::hasCrsBlockingRulesRequest)
         .flatMap(requestElement -> requestElement.getSupportedAgentCapabilitiesList().stream())
         .filter(
             agentCapabilities ->
-                agentCapabilities.getComponentsList().stream().anyMatch(Component::getEdsEnabled))
+                agentCapabilities.getComponentsList().stream().anyMatch(Component::getEdsEnabled)
+                    && featureCachingClient.isProtectionEngineWebAppProtectionEnabledForTenant(
+                        requestContext))
         .collect(Collectors.toUnmodifiableList());
   }
 
   private List<BlockingConfigRequestElement> filterRequestElements(
-      List<BlockingConfigRequestElement> requestElements) {
+      List<BlockingConfigRequestElement> requestElements, RequestContext requestContext) {
     // 1. filter out requests which are not for crs blocking rules
     // 2. modify request elements to remove agent capabilities which have eds enabled
     // 3. filter out requests which have no agent capabilities left
@@ -106,7 +114,10 @@ public class ModsecBlockingManager implements BlockingConfigManagerBase {
                       .filter(
                           agentCapabilities ->
                               agentCapabilities.getComponentsList().stream()
-                                  .noneMatch(Component::getEdsEnabled))
+                                      .noneMatch(Component::getEdsEnabled)
+                                  || !featureCachingClient
+                                      .isProtectionEngineWebAppProtectionEnabledForTenant(
+                                          requestContext))
                       .collect(Collectors.toUnmodifiableList());
               if (agentCapabilitiesWithEdsDisabled.isEmpty()) {
                 return Stream.empty();

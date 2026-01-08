@@ -18,10 +18,13 @@ import ai.traceable.blocking.config.service.v2.RegionIpBlockingRule;
 import ai.traceable.config.utils.UuidGenerator;
 import java.util.Collections;
 import java.util.List;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 class RegionBlockingManagerTest {
+  private static final RequestContext requestContext = RequestContext.forTenantId("test-tenant");
+
   @Test
   void getEnabledBlockingRules() {
     UuidGenerator mockUuidGenerator = mock(UuidGenerator.class);
@@ -71,6 +74,7 @@ class RegionBlockingManagerTest {
                 .addAgentCapabilities(agentCapabilities2)
                 .build()),
         manager.generateBlockingElements(
+            requestContext,
             List.of(
                 BlockingConfigRequestElement.newBuilder()
                     .setPreviousHash("random")
@@ -94,6 +98,7 @@ class RegionBlockingManagerTest {
                 .addAgentCapabilities(agentCapabilities2)
                 .build()),
         manager.generateBlockingElements(
+            requestContext,
             List.of(
                 BlockingConfigRequestElement.newBuilder()
                     .setPreviousHash("mock-hash")
@@ -121,6 +126,7 @@ class RegionBlockingManagerTest {
                 .addAgentCapabilities(agentCapabilities3)
                 .build()),
         manager.generateBlockingElements(
+            requestContext,
             List.of(
                 BlockingConfigRequestElement.newBuilder()
                     .setPreviousHash("mock-hash")
@@ -159,6 +165,7 @@ class RegionBlockingManagerTest {
                 .addAgentCapabilities(agentCapabilities3)
                 .build()),
         manager.generateBlockingElements(
+            requestContext,
             List.of(
                 BlockingConfigRequestElement.newBuilder()
                     .setPreviousHash("mock-hash")
@@ -198,6 +205,7 @@ class RegionBlockingManagerTest {
                 .addAgentCapabilities(agentCapabilities3)
                 .build()),
         manager.generateBlockingElements(
+            requestContext,
             List.of(
                 BlockingConfigRequestElement.newBuilder()
                     .setPreviousHash("random-hash")
@@ -221,6 +229,7 @@ class RegionBlockingManagerTest {
     assertEquals(
         List.of(),
         manager.generateBlockingElements(
+            requestContext,
             List.of(
                 BlockingConfigRequestElement.newBuilder()
                     .setPreviousHash("random-hash")

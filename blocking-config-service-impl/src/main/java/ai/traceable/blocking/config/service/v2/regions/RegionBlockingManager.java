@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class RegionBlockingManager implements BlockingConfigManagerBase {
   private final RegionIpRulesConverter regionIpRulesConverter;
@@ -32,6 +33,7 @@ public class RegionBlockingManager implements BlockingConfigManagerBase {
 
   @Override
   public List<BlockingConfigResponseElement> generateBlockingElements(
+      RequestContext requestContext,
       List<BlockingConfigRequestElement> requestElements,
       BlockingRulesSupplier blockingRulesSupplier) {
     List<BlockingConfigRequestElement> regionRequestElements =

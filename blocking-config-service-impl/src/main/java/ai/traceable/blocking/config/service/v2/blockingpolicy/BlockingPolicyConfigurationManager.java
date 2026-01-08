@@ -27,6 +27,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class BlockingPolicyConfigurationManager implements BlockingConfigManagerBase {
   private final GenericBlockingDetailsAggregator<BlockingDetails> blockingDetailsAggregator;
@@ -48,6 +49,7 @@ public class BlockingPolicyConfigurationManager implements BlockingConfigManager
 
   @Override
   public List<BlockingConfigResponseElement> generateBlockingElements(
+      RequestContext requestContext,
       List<BlockingConfigRequestElement> requestElements,
       BlockingRulesSupplier blockingRulesSupplier) {
 
