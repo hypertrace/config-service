@@ -1,5 +1,9 @@
 package ai.traceable.detection.exclusion.config.service.v1.rules.migration;
 
+import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_ALLOW;
+import static ai.traceable.detection.exclusion.config.service.v1.RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT;
+import static ai.traceable.detection.exclusion.config.service.v1.RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM;
+
 import ai.traceable.anomaly.config.service.exclusion.handlers.AnomalyExclusionRuleConfigStore;
 import ai.traceable.anomaly.config.service.v1.exclusion.AnomalyExclusionRuleConfig;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
@@ -52,6 +56,8 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
   private final Set<ContextualKey<Void>> ruleEvaluationPointsMigrationCompletedTenantsSet =
       new HashSet<>();
   private final Set<ContextualKey<Void>> apiProtectionExclusionRulesMigrationCompletedTenantsSet =
+      new HashSet<>();
+  private final Set<ContextualKey<Void>> allowOnlyPlatformRemovalMigrationCompletedTenantsSet =
       new HashSet<>();
 
   @Inject
@@ -221,23 +227,20 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
 
   @Override
   public CreateDetectionExclusionRuleRequest migrateCreateDetectionExclusionRuleRequest(
-      CreateDetectionExclusionRuleRequest createDetectionExclusionRuleRequest) {
-    return ruleEvaluationPointsMigrator.migrateCreateDetectionExclusionRuleRequest(
-        createDetectionExclusionRuleRequest);
+      CreateDetectionExclusionRuleRequest request) {
+    return ruleEvaluationPointsMigrator.migrateCreateDetectionExclusionRuleRequest(request);
   }
 
   @Override
   public UpdateDetectionExclusionRuleRequest migrateUpdateDetectionExclusionRuleRequest(
-      UpdateDetectionExclusionRuleRequest updateDetectionExclusionRuleRequest) {
-    return ruleEvaluationPointsMigrator.migrateUpdateDetectionExclusionRuleRequest(
-        updateDetectionExclusionRuleRequest);
+      UpdateDetectionExclusionRuleRequest request) {
+    return ruleEvaluationPointsMigrator.migrateUpdateDetectionExclusionRuleRequest(request);
   }
 
   @Override
   public BulkUpsertDetectionExclusionRulesRequest migrateBulkUpsertDetectionExclusionRulesRequest(
-      BulkUpsertDetectionExclusionRulesRequest bulkUpsertDetectionExclusionRulesRequest) {
-    return ruleEvaluationPointsMigrator.migrateBulkUpsertDetectionExclusionRulesRequest(
-        bulkUpsertDetectionExclusionRulesRequest);
+      BulkUpsertDetectionExclusionRulesRequest request) {
+    return ruleEvaluationPointsMigrator.migrateBulkUpsertDetectionExclusionRulesRequest(request);
   }
 
   @Override
@@ -304,6 +307,27 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
     if (!isFeatureFlagEnabled && isMigrationCompleted) {
       updateDetectionExclusionRulesForApiProtection(
           requestContext, detectionExclusionMigrationConfig, false);
+    }
+  }
+
+  @Override
+  public void migrateForAllowOnlyPlatformRemovalIfApplicable(RequestContext requestContext) {
+    if (config.isAllowOnlyPlatformRemovalMigrationDisabled()) {
+      return;
+    }
+    ContextualKey<Void> contextualKey = requestContext.buildInternalContextualKey();
+    if (allowOnlyPlatformRemovalMigrationCompletedTenantsSet.contains(contextualKey)) {
+      return;
+    }
+    DetectionExclusionMigrationConfig detectionExclusionMigrationConfig =
+        migrationStore
+            .getData(requestContext)
+            .orElse(DetectionExclusionMigrationConfig.getDefaultInstance());
+    if (detectionExclusionMigrationConfig.getAllowOnlyPlatformRemovalMigrationCompleted()) {
+      allowOnlyPlatformRemovalMigrationCompletedTenantsSet.add(contextualKey);
+    } else {
+      updateDetectionExclusionRulesWithAllowOnlyAndPlatform(
+          requestContext, detectionExclusionMigrationConfig);
     }
   }
 
@@ -449,5 +473,58 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
 
   private boolean updateConditionForSSTIifAny(DetectionExclusionRuleInfo.Builder ruleInfoBuilder) {
     return DetectionExclusionRuleIdMigrationManager.updateRuleConditions(ruleInfoBuilder);
+  }
+
+  private void updateDetectionExclusionRulesWithAllowOnlyAndPlatform(
+      RequestContext requestContext,
+      DetectionExclusionMigrationConfig detectionExclusionMigrationConfig) {
+    List<DetectionExclusionRule> updatedRules =
+        newRulesStore.getAllConfigData(requestContext).stream()
+            .map(
+                rule -> {
+                  DetectionExclusionRuleInfo migratedRuleInfo = migrateRuleInfo(rule.getRuleInfo());
+                  // Only include rules that were actually migrated
+                  if (migratedRuleInfo == rule.getRuleInfo()) {
+                    return null;
+                  }
+                  return rule.toBuilder().setRuleInfo(migratedRuleInfo).build();
+                })
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
+
+    if (!updatedRules.isEmpty()) {
+      newRulesStore.upsertObjects(requestContext, updatedRules);
+    }
+
+    migrationStore.upsertObject(
+        requestContext,
+        detectionExclusionMigrationConfig.toBuilder()
+            .setAllowOnlyPlatformRemovalMigrationCompleted(true)
+            .build());
+    allowOnlyPlatformRemovalMigrationCompletedTenantsSet.add(
+        requestContext.buildInternalContextualKey());
+  }
+
+  public DetectionExclusionRuleInfo migrateRuleInfo(DetectionExclusionRuleInfo ruleInfo) {
+    if (shouldNotMigrate(ruleInfo)) {
+      return ruleInfo;
+    }
+    DetectionExclusionRuleInfo.Builder ruleInfoBuilder = ruleInfo.toBuilder();
+    ruleInfoBuilder.clearRuleEvaluationPoints();
+    ruleInfo.getRuleEvaluationPointsList().stream()
+        .filter(ruleEvaluationPoint -> ruleEvaluationPoint != RULE_EVALUATION_POINT_PLATFORM)
+        .forEach(ruleInfoBuilder::addRuleEvaluationPoints);
+    if (ruleInfoBuilder.getRuleEvaluationPointsList().isEmpty()) {
+      ruleInfoBuilder.addRuleEvaluationPoints(RULE_EVALUATION_POINT_INLINE_TRACING_AGENT);
+    }
+    return ruleInfoBuilder.build();
+  }
+
+  private boolean shouldNotMigrate(DetectionExclusionRuleInfo ruleInfo) {
+    if (ruleInfo.getExclusionTargetsList().size() != 1
+        || ruleInfo.getExclusionTargets(0) != EXCLUSION_TARGET_ALLOW) {
+      return true;
+    }
+    return !ruleInfo.getRuleEvaluationPointsList().contains(RULE_EVALUATION_POINT_PLATFORM);
   }
 }

@@ -46,7 +46,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-public class RateLimitingMigrationConfigServiceIntegrationTest
+public class RateLimitingRuleEvaluationPointsMigrationConfigServiceIntegrationTest
     extends TraceableConfigServiceIntegrationTestBase {
   private static RateLimitingConfigServiceGrpc.RateLimitingConfigServiceBlockingStub
       rateLimitingConfigServiceBlockingStub;
@@ -120,7 +120,7 @@ public class RateLimitingMigrationConfigServiceIntegrationTest
         new RateLimitingConfigServiceConfig(
             ConfigFactory.parseURL(
                 Objects.requireNonNull(
-                    RateLimitingMigrationConfigServiceIntegrationTest.class
+                    RateLimitingRuleEvaluationPointsMigrationConfigServiceIntegrationTest.class
                         .getClassLoader()
                         .getResource(APPLICATION_CONFIG))));
 

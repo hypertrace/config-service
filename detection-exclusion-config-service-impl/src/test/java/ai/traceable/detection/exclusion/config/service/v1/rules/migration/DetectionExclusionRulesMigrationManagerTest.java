@@ -35,6 +35,7 @@ import ai.traceable.detection.exclusion.config.service.v1.EntityType;
 import ai.traceable.detection.exclusion.config.service.v1.EnvironmentScope;
 import ai.traceable.detection.exclusion.config.service.v1.EventCondition;
 import ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget;
+import ai.traceable.detection.exclusion.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.detection.exclusion.config.service.v1.RuleSource;
 import ai.traceable.detection.exclusion.config.service.v1.ScopeCondition;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
@@ -945,6 +946,24 @@ class DetectionExclusionRulesMigrationManagerTest {
       boolean changeLog3MigrationCompleted,
       boolean changeLog4MigrationCompleted,
       boolean apiProtectionExclusionRulesMigrationCompleted) {
+    return mockMigrationStore(
+        migrationCompleted,
+        changeLog2MigrationCompleted,
+        changeLog3MigrationCompleted,
+        changeLog4MigrationCompleted,
+        apiProtectionExclusionRulesMigrationCompleted,
+        false,
+        false);
+  }
+
+  private DetectionExclusionMigrationConfig mockMigrationStore(
+      boolean migrationCompleted,
+      boolean changeLog2MigrationCompleted,
+      boolean changeLog3MigrationCompleted,
+      boolean changeLog4MigrationCompleted,
+      boolean apiProtectionExclusionRulesMigrationCompleted,
+      boolean ruleEvaluationPointsMigrationCompleted,
+      boolean allowOnlyPlatformRemovalMigrationCompleted) {
     DetectionExclusionMigrationConfig migrationConfig =
         DetectionExclusionMigrationConfig.newBuilder()
             .setMigrationCompleted(migrationCompleted)
@@ -953,6 +972,9 @@ class DetectionExclusionRulesMigrationManagerTest {
             .setChangeLog4MigrationCompleted(changeLog4MigrationCompleted)
             .setApiProtectionExclusionRulesMigrationCompleted(
                 apiProtectionExclusionRulesMigrationCompleted)
+            .setRuleEvaluationPointsMigrationCompleted(ruleEvaluationPointsMigrationCompleted)
+            .setAllowOnlyPlatformRemovalMigrationCompleted(
+                allowOnlyPlatformRemovalMigrationCompleted)
             .build();
     when(migrationStore.getData(any())).thenReturn(Optional.of(migrationConfig));
     return migrationConfig;
@@ -1041,5 +1063,276 @@ class DetectionExclusionRulesMigrationManagerTest {
     public String getContext() {
       return context;
     }
+  }
+
+  @Test
+  void testMigration1_ruleEvaluationPoints() {
+    when(newRulesStore.getAllConfigData(any()))
+        .thenReturn(
+            List.of(
+                sampleNewRule,
+                getSampleRuleWithoutRuleEvaluationPoints(),
+                getSampleRuleWithRuleEvaluationPoints()));
+    DetectionExclusionMigrationConfig completedMigrationConfig =
+        mockMigrationStore(true, true, true, true, false, false, false).toBuilder()
+            .setRuleEvaluationPointsMigrationCompleted(true)
+            .build();
+
+    migrationManager.migrateForRuleEvaluationPointsIfApplicable(requestContext);
+    verify(migrationStore, times(1)).getData(requestContext);
+    verify(migrationStore, times(1)).upsertObject(requestContext, completedMigrationConfig);
+    verify(newRulesStore, times(1)).getAllConfigData(requestContext);
+    verify(newRulesStore, times(1)).upsertObjects(eq(requestContext), any());
+    verify(newRulesStore, times(1))
+        .upsertObjects(
+            eq(requestContext),
+            argThat(
+                list ->
+                    list.size() == 2
+                        && list.stream()
+                            .noneMatch(
+                                rule ->
+                                    rule.getRuleInfo().getRuleEvaluationPointsList().isEmpty())));
+
+    resetStores();
+    migrationManager.migrateForRuleEvaluationPointsIfApplicable(requestContext);
+    verifyZeroInteractionWithRulesStore(true);
+  }
+
+  @Test
+  void testMigrationCompleted2_ruleEvaluationPoints() {
+    when(newRulesStore.getAllConfigData(any()))
+        .thenReturn(
+            List.of(
+                sampleNewRule,
+                getSampleRuleWithoutRuleEvaluationPoints(),
+                getSampleRuleWithRuleEvaluationPoints()));
+    mockMigrationStore(false, false, false, false, false, true, false);
+
+    migrationManager.migrateForRuleEvaluationPointsIfApplicable(requestContext);
+    verify(migrationStore, times(1)).getData(requestContext);
+    verify(migrationStore, times(0)).upsertObject(eq(requestContext), any());
+    verify(newRulesStore, times(0)).getAllConfigData(requestContext);
+
+    resetStores();
+    migrationManager.migrateForRuleEvaluationPointsIfApplicable(requestContext);
+    verifyZeroInteractionWithRulesStore(true);
+  }
+
+  @Test
+  void testMigration1_allowOnlyPlatformRemoval() {
+    when(newRulesStore.getAllConfigData(any()))
+        .thenReturn(
+            List.of(
+                sampleNewRule,
+                getSampleAllowOnlyWithPlatform(),
+                getSampleAllowOnlyWithPlatformAndEdge(),
+                getSampleAllowOnlyWithoutPlatform("id7c"),
+                getSampleBlockWithPlatform()));
+    DetectionExclusionMigrationConfig completedMigrationConfig =
+        mockMigrationStore(true, true, true, true, false, true, false).toBuilder()
+            .setAllowOnlyPlatformRemovalMigrationCompleted(true)
+            .build();
+
+    migrationManager.migrateForAllowOnlyPlatformRemovalIfApplicable(requestContext);
+    verify(migrationStore, times(1)).getData(requestContext);
+    verify(migrationStore, times(1)).upsertObject(requestContext, completedMigrationConfig);
+    verify(newRulesStore, times(1)).getAllConfigData(requestContext);
+    verify(newRulesStore, times(1)).upsertObjects(eq(requestContext), any());
+    verify(newRulesStore, times(1))
+        .upsertObjects(
+            eq(requestContext),
+            argThat(
+                list -> {
+                  if (list.size() != 2) {
+                    return false;
+                  }
+                  long fallbackCount =
+                      list.stream()
+                          .filter(
+                              rule -> {
+                                List<RuleEvaluationPoint> reps =
+                                    rule.getRuleInfo().getRuleEvaluationPointsList();
+                                return reps.size() == 1
+                                    && reps.contains(
+                                        RuleEvaluationPoint
+                                            .RULE_EVALUATION_POINT_INLINE_TRACING_AGENT);
+                              })
+                          .count();
+                  long edgeOnlyCount =
+                      list.stream()
+                          .filter(
+                              rule -> {
+                                List<RuleEvaluationPoint> reps =
+                                    rule.getRuleInfo().getRuleEvaluationPointsList();
+                                return reps.contains(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+                                    && !reps.contains(
+                                        RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM);
+                              })
+                          .count();
+                  return fallbackCount == 1 && edgeOnlyCount == 1;
+                }));
+
+    resetStores();
+    migrationManager.migrateForAllowOnlyPlatformRemovalIfApplicable(requestContext);
+    verifyZeroInteractionWithRulesStore(true);
+  }
+
+  @Test
+  void testMigrationCompleted2_allowOnlyPlatformRemoval() {
+    when(newRulesStore.getAllConfigData(any()))
+        .thenReturn(
+            List.of(
+                sampleNewRule,
+                getSampleAllowOnlyWithPlatform(),
+                getSampleAllowOnlyWithoutPlatform("id7b")));
+    mockMigrationStore(false, false, false, false, false, false, true);
+
+    migrationManager.migrateForAllowOnlyPlatformRemovalIfApplicable(requestContext);
+    verify(migrationStore, times(1)).getData(requestContext);
+    verify(migrationStore, times(0)).upsertObject(eq(requestContext), any());
+    verify(newRulesStore, times(0)).getAllConfigData(requestContext);
+
+    resetStores();
+    migrationManager.migrateForAllowOnlyPlatformRemovalIfApplicable(requestContext);
+    verifyZeroInteractionWithRulesStore(true);
+  }
+
+  private DetectionExclusionRule getSampleRuleWithoutRuleEvaluationPoints() {
+    return DetectionExclusionRule.newBuilder()
+        .setId("rule-id")
+        .setRuleScope(
+            DetectionExclusionRuleScope.newBuilder()
+                .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("env")))
+        .setRuleInfo(
+            DetectionExclusionRuleInfo.newBuilder()
+                .setName("rule-name")
+                .setDescription("rule-description")
+                .addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_ALERT)
+                .addConditions(
+                    DetectionExclusionCondition.newBuilder()
+                        .setScopeCondition(
+                            ScopeCondition.newBuilder()
+                                .setEntityScope(
+                                    EntityScope.newBuilder()
+                                        .setEntityType(EntityType.ENTITY_TYPE_SERVICE)
+                                        .addEntityIds("service")))))
+        .build();
+  }
+
+  private DetectionExclusionRule getSampleRuleWithRuleEvaluationPoints() {
+    return DetectionExclusionRule.newBuilder()
+        .setId("rule-id")
+        .setRuleScope(
+            DetectionExclusionRuleScope.newBuilder()
+                .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("env")))
+        .setRuleInfo(
+            DetectionExclusionRuleInfo.newBuilder()
+                .setName("rule-name")
+                .setDescription("rule-description")
+                .addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_ALERT)
+                .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+                .addConditions(
+                    DetectionExclusionCondition.newBuilder()
+                        .setScopeCondition(
+                            ScopeCondition.newBuilder()
+                                .setEntityScope(
+                                    EntityScope.newBuilder()
+                                        .setEntityType(EntityType.ENTITY_TYPE_SERVICE)
+                                        .addEntityIds("service")))))
+        .build();
+  }
+
+  private DetectionExclusionRule getSampleAllowOnlyWithPlatform() {
+    return DetectionExclusionRule.newBuilder()
+        .setId("rule-id")
+        .setRuleScope(
+            DetectionExclusionRuleScope.newBuilder()
+                .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("env")))
+        .setRuleInfo(
+            DetectionExclusionRuleInfo.newBuilder()
+                .setName("rule-name")
+                .setDescription("rule-description")
+                .addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_ALLOW)
+                .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+                .addConditions(
+                    DetectionExclusionCondition.newBuilder()
+                        .setScopeCondition(
+                            ScopeCondition.newBuilder()
+                                .setEntityScope(
+                                    EntityScope.newBuilder()
+                                        .setEntityType(EntityType.ENTITY_TYPE_SERVICE)
+                                        .addEntityIds("service")))))
+        .build();
+  }
+
+  private DetectionExclusionRule getSampleAllowOnlyWithPlatformAndEdge() {
+    return DetectionExclusionRule.newBuilder()
+        .setId("rule-id")
+        .setRuleScope(
+            DetectionExclusionRuleScope.newBuilder()
+                .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("env")))
+        .setRuleInfo(
+            DetectionExclusionRuleInfo.newBuilder()
+                .setName("rule-name")
+                .setDescription("rule-description")
+                .addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_ALLOW)
+                .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+                .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+                .addConditions(
+                    DetectionExclusionCondition.newBuilder()
+                        .setScopeCondition(
+                            ScopeCondition.newBuilder()
+                                .setEntityScope(
+                                    EntityScope.newBuilder()
+                                        .setEntityType(EntityType.ENTITY_TYPE_SERVICE)
+                                        .addEntityIds("service")))))
+        .build();
+  }
+
+  private DetectionExclusionRule getSampleAllowOnlyWithoutPlatform(String id) {
+    return DetectionExclusionRule.newBuilder()
+        .setId(id)
+        .setRuleScope(
+            DetectionExclusionRuleScope.newBuilder()
+                .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("env")))
+        .setRuleInfo(
+            DetectionExclusionRuleInfo.newBuilder()
+                .setName("name7c")
+                .setDescription("desc7c")
+                .addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_ALLOW)
+                .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+                .addConditions(
+                    DetectionExclusionCondition.newBuilder()
+                        .setScopeCondition(
+                            ScopeCondition.newBuilder()
+                                .setEntityScope(
+                                    EntityScope.newBuilder()
+                                        .setEntityType(EntityType.ENTITY_TYPE_SERVICE)
+                                        .addEntityIds("service")))))
+        .build();
+  }
+
+  private DetectionExclusionRule getSampleBlockWithPlatform() {
+    return DetectionExclusionRule.newBuilder()
+        .setId("rule-id")
+        .setRuleScope(
+            DetectionExclusionRuleScope.newBuilder()
+                .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("env")))
+        .setRuleInfo(
+            DetectionExclusionRuleInfo.newBuilder()
+                .setName("rule-name")
+                .setDescription("rule-description")
+                .addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_BLOCK)
+                .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+                .addConditions(
+                    DetectionExclusionCondition.newBuilder()
+                        .setScopeCondition(
+                            ScopeCondition.newBuilder()
+                                .setEntityScope(
+                                    EntityScope.newBuilder()
+                                        .setEntityType(EntityType.ENTITY_TYPE_SERVICE)
+                                        .addEntityIds("service")))))
+        .build();
   }
 }

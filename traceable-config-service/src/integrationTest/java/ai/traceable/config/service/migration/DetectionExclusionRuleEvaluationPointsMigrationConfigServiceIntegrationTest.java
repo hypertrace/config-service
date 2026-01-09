@@ -1,6 +1,5 @@
 package ai.traceable.config.service.migration;
 
-import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_ALLOW;
 import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_BLOCK;
 import static ai.traceable.detection.exclusion.config.service.v1.RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT;
 import static ai.traceable.detection.exclusion.config.service.v1.RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM;
@@ -43,7 +42,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-public class DetectionExclusionMigrationConfigServiceIntegrationTest
+public class DetectionExclusionRuleEvaluationPointsMigrationConfigServiceIntegrationTest
     extends TraceableConfigServiceIntegrationTestBase {
   private static DetectionExclusionConfigServiceGrpc.DetectionExclusionConfigServiceBlockingStub
       detectionExclusionConfigServiceBlockingStub;
@@ -116,7 +115,8 @@ public class DetectionExclusionMigrationConfigServiceIntegrationTest
         new DetectionExclusionConfigServiceConfig(
             ConfigFactory.parseURL(
                 Objects.requireNonNull(
-                    DetectionExclusionMigrationConfigServiceIntegrationTest.class
+                    DetectionExclusionRuleEvaluationPointsMigrationConfigServiceIntegrationTest
+                        .class
                         .getClassLoader()
                         .getResource(APPLICATION_CONFIG))));
 
@@ -151,7 +151,7 @@ public class DetectionExclusionMigrationConfigServiceIntegrationTest
     DetectionExclusionRuleInfo edgeRuleInfoWithoutEvaluationPoints =
         DetectionExclusionRuleInfo.newBuilder()
             .setName("detection-exclusion-rule-without-RuleEvaluationPoints")
-            .addExclusionTargets(EXCLUSION_TARGET_ALLOW)
+            .addExclusionTargets(EXCLUSION_TARGET_BLOCK)
             .addConditions(
                 DetectionExclusionCondition.newBuilder()
                     .setEventCondition(
@@ -242,7 +242,7 @@ public class DetectionExclusionMigrationConfigServiceIntegrationTest
                 DetectionExclusionRuleInfo.newBuilder()
                     .setName("updated-rule-name")
                     .setDescription("updated-rule-description")
-                    .addExclusionTargets(EXCLUSION_TARGET_ALLOW)
+                    .addExclusionTargets(EXCLUSION_TARGET_BLOCK)
                     .addConditions(
                         DetectionExclusionCondition.newBuilder()
                             .setRegionCondition(

@@ -18,6 +18,8 @@ public interface RulesMigrationManager {
 
   void migrateForApiProtectionExclusionRulesIfApplicable(RequestContext requestContext);
 
+  void migrateForAllowOnlyPlatformRemovalIfApplicable(RequestContext requestContext);
+
   CreateDetectionExclusionRuleRequest migrateCreateDetectionExclusionRuleRequest(
       CreateDetectionExclusionRuleRequest createDetectionExclusionRuleRequest);
 

@@ -30,6 +30,8 @@ public class DetectionExclusionConfigServiceConfig {
       "changeLog4." + MIGRATION_DISABLED_KEY;
   private static final String RULE_EVALUATION_POINTS_MIGRATION_DISABLED_KEY =
       "ruleEvaluationPoints." + MIGRATION_DISABLED_KEY;
+  private static final String ALLOW_ONLY_PLATFORM_REMOVAL_MIGRATION_DISABLED_KEY =
+      "allowOnlyPlatformRemoval." + MIGRATION_DISABLED_KEY;
 
   private final Config config;
   @Getter private final boolean migrationDisabled;
@@ -37,6 +39,7 @@ public class DetectionExclusionConfigServiceConfig {
   @Getter private final boolean changeLog3MigrationDisabled;
   @Getter private final boolean changeLog4MigrationDisabled;
   @Getter private final boolean ruleEvaluationPointsMigrationDisabled;
+  @Getter private final boolean allowOnlyPlatformRemovalMigrationDisabled;
 
   @Getter private final List<DetectionExclusionRule> defaultDetectionExclusionRules;
   @Getter private final List<DetectionExclusionRule> defaultNewDetectionExclusionRules;
@@ -63,6 +66,9 @@ public class DetectionExclusionConfigServiceConfig {
     this.ruleEvaluationPointsMigrationDisabled =
         this.config.hasPath(RULE_EVALUATION_POINTS_MIGRATION_DISABLED_KEY)
             && this.config.getBoolean(RULE_EVALUATION_POINTS_MIGRATION_DISABLED_KEY);
+    this.allowOnlyPlatformRemovalMigrationDisabled =
+        this.config.hasPath(ALLOW_ONLY_PLATFORM_REMOVAL_MIGRATION_DISABLED_KEY)
+            && this.config.getBoolean(ALLOW_ONLY_PLATFORM_REMOVAL_MIGRATION_DISABLED_KEY);
   }
 
   private List<DetectionExclusionRule> loadDefaultDetectionExclusionRules(boolean loadNewRules) {

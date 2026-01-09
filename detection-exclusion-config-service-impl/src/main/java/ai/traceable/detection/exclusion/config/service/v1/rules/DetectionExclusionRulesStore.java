@@ -12,6 +12,7 @@ import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
 import com.google.inject.Inject;
 import com.google.protobuf.Value;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,12 +22,16 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import lombok.Builder;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.config.objectstore.IdentifiedObjectStoreWithFilter;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
+import org.hypertrace.config.service.v1.UpsertAllConfigsRequest;
+import org.hypertrace.config.service.v1.UpsertAllConfigsRequest.ConfigToUpsert;
 import org.hypertrace.core.grpcutils.context.ContextualKey;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.slf4j.Logger;
@@ -40,6 +45,7 @@ public class DetectionExclusionRulesStore
   private static final String SSRF_EVENT_TYPE_ID = "ssrf";
   private static final Set<ContextualKey<Void>> SSRF_FIXED_TENANTS = new HashSet<>();
 
+  private final ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub;
   private final List<DetectionExclusionRule> defaultDetectionExclusionRules;
   private final List<DetectionExclusionRule> defaultNewDetectionExclusionRules;
   private final FeatureCachingClient featureFlagServiceClient;
@@ -55,6 +61,7 @@ public class DetectionExclusionRulesStore
         DETECTION_EXCLUSION_RULE_CONFIG_RESOURCE_NAMESPACE,
         DETECTION_EXCLUSION_RULE_CONFIG_RESOURCE_NAME,
         configChangeEventGenerator);
+    this.configServiceBlockingStub = configServiceBlockingStub;
     this.defaultDetectionExclusionRules = config.getDefaultDetectionExclusionRules();
     this.defaultNewDetectionExclusionRules = config.getDefaultNewDetectionExclusionRules();
     this.featureFlagServiceClient = featureFlagServiceClient;
@@ -146,6 +153,67 @@ public class DetectionExclusionRulesStore
     return filterConfig(detectionExclusionRule, filter);
   }
 
+  @Override
+  public List<ContextualConfigObject<DetectionExclusionRule>> upsertObjects(
+      RequestContext context, List<DetectionExclusionRule> data) {
+    List<ConfigToUpsert> configs =
+        data.stream()
+            .map(
+                singleData ->
+                    ConfigToUpsert.newBuilder()
+                        .setResourceName(DETECTION_EXCLUSION_RULE_CONFIG_RESOURCE_NAME)
+                        .setResourceNamespace(DETECTION_EXCLUSION_RULE_CONFIG_RESOURCE_NAMESPACE)
+                        .setContext(this.getContextFromData(singleData))
+                        .setConfig(this.buildValueFromData(singleData))
+                        .build())
+            .collect(Collectors.toUnmodifiableList());
+
+    return context
+        .call(
+            () ->
+                this.configServiceBlockingStub
+                    .withDeadline(getDeadline())
+                    .upsertAllConfigs(
+                        UpsertAllConfigsRequest.newBuilder().addAllConfigs(configs).build()))
+        .getUpsertedConfigsList()
+        .stream()
+        .map(
+            upsertedConfig ->
+                this.tryBuild(
+                    upsertedConfig.getContext(),
+                    upsertedConfig.getConfig(),
+                    upsertedConfig.getCreationTimestamp(),
+                    upsertedConfig.getUpdateTimestamp()))
+        .flatMap(Optional::stream)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  private Optional<ContextualConfigObject<DetectionExclusionRule>> tryBuild(
+      String context, Value config, long creationTimestamp, long updateTimestamp) {
+    return this.buildDataFromValue(config)
+        .map(
+            data ->
+                DetectionExclusionContextualConfig.<DetectionExclusionRule>builder()
+                    .context(context)
+                    .data(data)
+                    .creationTimestamp(Instant.ofEpochMilli(creationTimestamp))
+                    .lastUpdatedTimestamp(Instant.ofEpochMilli(updateTimestamp))
+                    .build());
+  }
+
+  @lombok.Value
+  @Builder
+  static class DetectionExclusionContextualConfig<T> implements ContextualConfigObject<T> {
+    String context;
+    T data;
+    Instant creationTimestamp;
+    Instant lastUpdatedTimestamp;
+    String createdByEmail;
+    Instant lastUserUpdateTimestamp;
+    String lastUserUpdateEmail;
+    String lastUpdateEmail;
+  }
+
   private List<DetectionExclusionRule> mergeDetectionExclusionRules(
       RequestContext context,
       List<DetectionExclusionRule> detectionExclusionRules,
@@ -226,7 +294,7 @@ public class DetectionExclusionRulesStore
                 })
             .collect(Collectors.toMap(DetectionExclusionRule::getId, Function.identity()));
 
-    // This is going to be the majority of the case..
+    // This is going to be the majority of the cases
     if (ssrfFixedRules.isEmpty()) {
       return detectionExclusionRules;
     }

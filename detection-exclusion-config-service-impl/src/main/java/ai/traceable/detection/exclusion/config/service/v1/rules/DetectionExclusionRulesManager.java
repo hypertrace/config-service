@@ -64,6 +64,8 @@ public class DetectionExclusionRulesManager implements RulesManager {
     rulesMigrationManager.migrateFromChangeLog4IfApplicable(requestContext);
     rulesMigrationManager.migrateForRuleEvaluationPointsIfApplicable(requestContext);
     rulesMigrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
+    rulesMigrationManager.migrateForAllowOnlyPlatformRemovalIfApplicable(requestContext);
+
     List<DetectionExclusionRule> rules = new ArrayList<>();
     if (filter.equals(GetRulesFilter.getDefaultInstance())) {
       rules.addAll(rulesStore.getAllConfigData(requestContext));
