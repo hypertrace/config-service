@@ -1,7 +1,14 @@
 package ai.traceable.certificate.management.config.service.v1.store;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import ai.traceable.certificate.management.config.service.v1.AwsStorageDetails;
 import ai.traceable.certificate.management.config.service.v1.Certificate;
@@ -9,14 +16,27 @@ import ai.traceable.certificate.management.config.service.v1.CertificateFilter;
 import ai.traceable.certificate.management.config.service.v1.CertificateMetadata;
 import ai.traceable.certificate.management.config.service.v1.CertificateStorageDetails;
 import ai.traceable.certificate.management.config.service.v1.CertificateType;
+import com.google.protobuf.Value;
+import io.grpc.StatusRuntimeException;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
+import org.hypertrace.config.service.v1.UpsertConfigRequest;
+import org.hypertrace.config.service.v1.UpsertConfigResponse;
+import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 class CertificateConfigStoreTest {
   @Mock private ConfigServiceBlockingStub configServiceBlockingStub;
   @Mock private ConfigChangeEventGenerator configChangeEventGenerator;
+  @Mock private RequestContext requestContext;
+
+  @BeforeEach
+  void setUp() {
+    MockitoAnnotations.openMocks(this);
+  }
 
   @Test
   void testWildcardDomainFiltering() {
@@ -182,5 +202,68 @@ class CertificateConfigStoreTest {
     assertTrue(store.matchesFilter(hostedCertificate, unspecifiedFilter));
     assertTrue(store.matchesFilter(managedCertificate, unspecifiedFilter));
     assertTrue(store.matchesFilter(unspecifiedCertificate, unspecifiedFilter));
+  }
+
+  @Test
+  void testUpdateCertificateSilently_Success() {
+    CertificateConfigStore store =
+        spy(new CertificateConfigStore(configServiceBlockingStub, configChangeEventGenerator));
+    Certificate certificate = createTestCertificate("cert-123");
+
+    doAnswer(invocation -> invocation.getArgument(0, java.util.concurrent.Callable.class).call())
+        .when(requestContext)
+        .call(any());
+    when(configServiceBlockingStub.withDeadline(any())).thenReturn(configServiceBlockingStub);
+    when(configServiceBlockingStub.upsertConfig(any(UpsertConfigRequest.class)))
+        .thenAnswer(
+            invocation -> {
+              UpsertConfigRequest request = invocation.getArgument(0);
+              return UpsertConfigResponse.newBuilder().setConfig(request.getConfig()).build();
+            });
+
+    Certificate result = store.updateCertificateSilently(requestContext, certificate);
+
+    assertNotNull(result);
+    verify(configServiceBlockingStub).upsertConfig(any(UpsertConfigRequest.class));
+  }
+
+  @Test
+  void testUpdateCertificateSilently_ThrowsExceptionOnEmptyResponse() {
+    CertificateConfigStore store =
+        spy(new CertificateConfigStore(configServiceBlockingStub, configChangeEventGenerator));
+    Certificate certificate = createTestCertificate("cert-123");
+    Value emptyValue = Value.newBuilder().build();
+    UpsertConfigResponse response = UpsertConfigResponse.newBuilder().setConfig(emptyValue).build();
+
+    doAnswer(invocation -> invocation.getArgument(0, java.util.concurrent.Callable.class).call())
+        .when(requestContext)
+        .call(any());
+    when(configServiceBlockingStub.withDeadline(any())).thenReturn(configServiceBlockingStub);
+    when(configServiceBlockingStub.upsertConfig(any(UpsertConfigRequest.class)))
+        .thenReturn(response);
+
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> store.updateCertificateSilently(requestContext, certificate));
+  }
+
+  private Certificate createTestCertificate(String id) {
+    return Certificate.newBuilder()
+        .setId(id)
+        .setName("Test Certificate")
+        .setMetadata(
+            CertificateMetadata.newBuilder()
+                .addDomainNames("example.com")
+                .setKeyAlgorithm("RSA-2048")
+                .build())
+        .addStorage(
+            CertificateStorageDetails.newBuilder()
+                .setAws(
+                    AwsStorageDetails.newBuilder()
+                        .setArn("arn:aws:acm:us-east-1:123456789012:certificate/test")
+                        .setRegion("us-east-1")
+                        .build())
+                .build())
+        .build();
   }
 }

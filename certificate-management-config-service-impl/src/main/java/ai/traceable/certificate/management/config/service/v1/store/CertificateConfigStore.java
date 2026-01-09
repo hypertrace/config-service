@@ -5,6 +5,7 @@ import ai.traceable.certificate.management.config.service.v1.CertificateFilter;
 import ai.traceable.certificate.management.config.service.v1.CertificateStorageDetails;
 import ai.traceable.certificate.management.config.service.v1.CertificateType;
 import com.google.protobuf.Value;
+import io.grpc.Status;
 import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Optional;
@@ -16,6 +17,8 @@ import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
+import org.hypertrace.config.service.v1.UpsertConfigRequest;
+import org.hypertrace.config.service.v1.UpsertConfigResponse;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
@@ -23,6 +26,8 @@ public class CertificateConfigStore extends IdentifiedObjectStore<Certificate> {
 
   private static final String CERTIFICATE_CONFIG_NAMESPACE = "certificateManagementConfig";
   private static final String CERTIFICATE_CONFIG_RESOURCE_NAME = "certificate-management";
+
+  private final ConfigServiceBlockingStub configServiceBlockingStub;
 
   @Inject
   public CertificateConfigStore(
@@ -33,6 +38,7 @@ public class CertificateConfigStore extends IdentifiedObjectStore<Certificate> {
         CERTIFICATE_CONFIG_NAMESPACE,
         CERTIFICATE_CONFIG_RESOURCE_NAME,
         configChangeEventGenerator);
+    this.configServiceBlockingStub = configServiceBlockingStub;
   }
 
   @SneakyThrows
@@ -75,6 +81,23 @@ public class CertificateConfigStore extends IdentifiedObjectStore<Certificate> {
 
   public Certificate updateCertificate(RequestContext ctx, Certificate certificate) {
     return upsertObject(ctx, certificate).getData();
+  }
+
+  public Certificate updateCertificateSilently(RequestContext ctx, Certificate certificate) {
+    UpsertConfigRequest request =
+        UpsertConfigRequest.newBuilder()
+            .setResourceName(CERTIFICATE_CONFIG_RESOURCE_NAME)
+            .setResourceNamespace(CERTIFICATE_CONFIG_NAMESPACE)
+            .setContext(getContextFromData(certificate))
+            .setConfig(buildValueFromData(certificate))
+            .build();
+
+    UpsertConfigResponse response =
+        ctx.call(() -> configServiceBlockingStub.withDeadline(getDeadline()).upsertConfig(request));
+
+    // Process without config change events
+    return buildDataFromValue(response.getConfig())
+        .orElseThrow(Status.INTERNAL::asRuntimeException);
   }
 
   public void deleteCertificate(RequestContext ctx, String id) {

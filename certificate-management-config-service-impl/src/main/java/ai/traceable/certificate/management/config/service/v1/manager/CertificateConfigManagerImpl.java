@@ -4,7 +4,6 @@ import ai.traceable.certificate.management.config.service.v1.*;
 import ai.traceable.certificate.management.config.service.v1.store.CertificateConfigStore;
 import ai.traceable.certificate.management.config.service.v1.validator.CertificateUsageValidator;
 import ai.traceable.config.utils.UuidGenerator;
-import com.google.protobuf.Timestamp;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import jakarta.inject.Inject;
@@ -52,7 +51,7 @@ public class CertificateConfigManagerImpl implements CertificateConfigManager {
     List<Certificate> certificates = store.getCertificates(ctx, filter);
 
     return certificates.stream()
-        .map(cert -> updateCertificateStatusBasedOnExpiration(ctx, cert))
+        .map(cert -> updateCertificateStatusAndType(ctx, cert))
         .collect(Collectors.toList());
   }
 
@@ -163,36 +162,40 @@ public class CertificateConfigManagerImpl implements CertificateConfigManager {
     }
   }
 
-  private Certificate updateCertificateStatusBasedOnExpiration(
-      RequestContext ctx, Certificate certificate) {
-    if (!certificate.hasStatusDetails()
-        || !certificate.getStatusDetails().hasExpirationTimestamp()) {
-      return certificate;
-    }
+  private Certificate updateCertificateStatusAndType(RequestContext ctx, Certificate certificate) {
+    boolean isExpired =
+        certificate.hasStatusDetails()
+            && certificate.getStatusDetails().hasExpirationTimestamp()
+            && certificate.getStatusDetails().getStatus()
+                != CertificateStatus.CERTIFICATE_STATUS_EXPIRED
+            && certificate.getStatusDetails().getStatus()
+                != CertificateStatus.CERTIFICATE_STATUS_REVOKED
+            && certificate.getStatusDetails().getStatus()
+                != CertificateStatus.CERTIFICATE_STATUS_FAILED
+            && Instant.now()
+                .isAfter(
+                    Instant.ofEpochSecond(
+                        certificate.getStatusDetails().getExpirationTimestamp().getSeconds(),
+                        certificate.getStatusDetails().getExpirationTimestamp().getNanos()));
 
-    CertificateStatus currentStatus = certificate.getStatusDetails().getStatus();
+    boolean isTypeUnspecified =
+        certificate.getCertificateType() == CertificateType.CERTIFICATE_TYPE_UNSPECIFIED;
 
-    if (currentStatus == CertificateStatus.CERTIFICATE_STATUS_EXPIRED
-        || currentStatus == CertificateStatus.CERTIFICATE_STATUS_REVOKED
-        || currentStatus == CertificateStatus.CERTIFICATE_STATUS_FAILED) {
-      return certificate;
-    }
+    if (isExpired || isTypeUnspecified) {
+      Certificate.Builder builder = certificate.toBuilder();
 
-    Timestamp expirationTimestamp = certificate.getStatusDetails().getExpirationTimestamp();
-    Instant expirationInstant =
-        Instant.ofEpochSecond(expirationTimestamp.getSeconds(), expirationTimestamp.getNanos());
-    Instant now = Instant.now();
+      if (isExpired) {
+        builder.setStatusDetails(
+            certificate.getStatusDetails().toBuilder()
+                .setStatus(CertificateStatus.CERTIFICATE_STATUS_EXPIRED)
+                .build());
+      }
 
-    if (now.isAfter(expirationInstant)) {
-      Certificate updatedCertificate =
-          certificate.toBuilder()
-              .setStatusDetails(
-                  certificate.getStatusDetails().toBuilder()
-                      .setStatus(CertificateStatus.CERTIFICATE_STATUS_EXPIRED)
-                      .build())
-              .build();
+      if (isTypeUnspecified) {
+        builder.setCertificateType(CertificateType.CERTIFICATE_TYPE_HOSTED);
+      }
 
-      return store.updateCertificate(ctx, updatedCertificate);
+      return store.updateCertificateSilently(ctx, builder.build());
     }
 
     return certificate;

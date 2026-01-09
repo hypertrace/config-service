@@ -58,6 +58,10 @@ class CertificateConfigManagerImplTest {
     manager =
         new CertificateConfigManagerImpl(
             store, validator, uuidGenerator, certificateUsageValidator);
+
+    // Mock updateCertificateSilently to return the same certificate passed to it
+    when(store.updateCertificateSilently(any(RequestContext.class), any(Certificate.class)))
+        .thenAnswer(invocation -> invocation.getArgument(1));
   }
 
   @Test
@@ -227,6 +231,9 @@ class CertificateConfigManagerImplTest {
             .setName("Expired Certificate")
             .setMetadata(createValidMetadata())
             .addStorage(createValidStorageDetails())
+            .setCertificateType(
+                ai.traceable.certificate.management.config.service.v1.CertificateType
+                    .CERTIFICATE_TYPE_HOSTED)
             .setStatusDetails(
                 CertificateStatusDetails.newBuilder()
                     .setStatus(CertificateStatus.CERTIFICATE_STATUS_ACTIVE)
@@ -242,6 +249,9 @@ class CertificateConfigManagerImplTest {
             .setName("Valid Certificate")
             .setMetadata(createValidMetadata())
             .addStorage(createValidStorageDetails())
+            .setCertificateType(
+                ai.traceable.certificate.management.config.service.v1.CertificateType
+                    .CERTIFICATE_TYPE_HOSTED)
             .setStatusDetails(
                 CertificateStatusDetails.newBuilder()
                     .setStatus(CertificateStatus.CERTIFICATE_STATUS_ACTIVE)
@@ -279,7 +289,7 @@ class CertificateConfigManagerImplTest {
         CertificateStatus.CERTIFICATE_STATUS_ACTIVE, result.get(1).getStatusDetails().getStatus());
 
     verify(store).getCertificates(requestContext, filter);
-    verify(store).updateCertificate(eq(requestContext), any(Certificate.class));
+    verify(store).updateCertificateSilently(eq(requestContext), any(Certificate.class));
   }
 
   @Test
