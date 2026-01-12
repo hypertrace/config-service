@@ -65,4 +65,9 @@ public interface BlockingRulesSupplier {
   default Map<String, IpResolutionStrategy> getIpResolutionStrategies(Set<String> serviceNames) {
     return java.util.Collections.emptyMap();
   }
+
+  default Map<String, List<IpResolutionStrategy>> getIpResolutionStrategyLists(
+      Set<String> serviceNames) {
+    return java.util.Collections.emptyMap();
+  }
 }

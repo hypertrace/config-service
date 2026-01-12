@@ -20,6 +20,7 @@ import ai.traceable.blocking.config.service.v2.BlockingPolicyConfiguration;
 import ai.traceable.blocking.config.service.v2.BlockingPolicyConfigurationRequest;
 import ai.traceable.blocking.config.service.v2.Component;
 import ai.traceable.blocking.config.service.v2.ExclusionRule;
+import ai.traceable.blocking.config.service.v2.IpResolutionStrategy;
 import ai.traceable.blocking.config.service.v2.blockingpolicy.exclusion.ExclusionRuleConverter;
 import ai.traceable.config.utils.SemanticVersioningComparator;
 import ai.traceable.config.utils.UuidGenerator;
@@ -239,6 +240,52 @@ class BlockingPolicyConfigurationManagerTest {
                     .build(),
                 buildRequestElement("mock-hash", "1.2.3-rc.5", "service-2")),
             mockBlockingRulesSupplier));
+  }
+
+  @Test
+  void testIpResolutionStrategyListsIncludedInResponse() {
+    BlockingConfigManagerBase manager =
+        new BlockingPolicyConfigurationManager(
+            mockBlockingDetailsAggregator,
+            mockExclusionRuleConverter,
+            new SemanticVersioningComparator(),
+            mockUuidGenerator);
+
+    BlockingDetails blockingDetails1 = Mockito.mock(BlockingDetails.class);
+    List<BlockingDetails> mockBlockingDetailsList = List.of(blockingDetails1);
+
+    doReturn(Map.of()).when(mockBlockingRulesSupplier).getExclusionRules(any());
+    doReturn(new BlockingPolicyAggregate<>(mockBlockingDetailsList))
+        .when(mockBlockingDetailsAggregator)
+        .getBlockingDetails(any(), any(), any());
+
+    IpResolutionStrategy strategy1 =
+        IpResolutionStrategy.newBuilder().setEvaluateAllIpsForBlocking(true).build();
+    IpResolutionStrategy strategy2 =
+        IpResolutionStrategy.newBuilder().setEvaluateAllIpsForBlocking(false).build();
+    doReturn(Map.of("service-1", List.of(strategy1, strategy2)))
+        .when(mockBlockingRulesSupplier)
+        .getIpResolutionStrategyLists(any());
+
+    doReturn("hash-with-ip-strategy-list")
+        .when(mockUuidGenerator)
+        .generateId(
+            BlockingPolicyConfiguration.newBuilder()
+                .addAllBlockingDetailsList(mockBlockingDetailsList)
+                .addAllIpResolutionStrategyList(List.of(strategy1, strategy2))
+                .build());
+
+    List<BlockingConfigResponseElement> result =
+        manager.generateBlockingElements(
+            requestContext,
+            List.of(buildRequestElement("random", "1.2.3-rc.4", "service-1")),
+            mockBlockingRulesSupplier);
+
+    assertEquals(1, result.size());
+    assertEquals("hash-with-ip-strategy-list", result.get(0).getHash());
+    assertEquals(
+        List.of(strategy1, strategy2),
+        result.get(0).getBlockingPolicyConfiguration().getIpResolutionStrategyListList());
   }
 
   @Test

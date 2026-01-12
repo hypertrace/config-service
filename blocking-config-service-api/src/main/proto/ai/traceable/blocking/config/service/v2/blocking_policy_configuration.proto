@@ -14,7 +14,8 @@ message BlockingPolicyConfiguration {
   // in the precedence-order of evaluation
   repeated BlockingDetails blocking_details_list = 1;
   repeated ExclusionRule exclusion_rules = 2;
-  IpResolutionStrategy ip_resolution_strategy = 3;
+  IpResolutionStrategy ip_resolution_strategy = 3 [deprecated = true];
+  repeated IpResolutionStrategy ip_resolution_strategy_list = 4;
 }
 
 message BlockingDetails {

@@ -755,4 +755,25 @@ public class BlockingRulesSupplierImpl implements BlockingRulesSupplier {
       return Collections.emptyMap();
     }
   }
+
+  @Override
+  public Map<String, List<IpResolutionStrategy>> getIpResolutionStrategyLists(
+      Set<String> serviceNames) {
+    if (serviceNames == null || serviceNames.isEmpty()) {
+      return Collections.emptyMap();
+    }
+    try {
+      IpResolutionStrategyFetcher fetcher =
+          (IpResolutionStrategyFetcher)
+              blockingRulesSupplierContext.getRulesFetcher(RulesFetcherType.IP_RESOLUTION_STRATEGY);
+      return fetcher.fetchStrategyLists(requestContext, environmentId, serviceNames);
+    } catch (Exception e) {
+      log.error(
+          "Error fetching IP resolution strategy lists for request context: {} and environment: {}",
+          requestContext,
+          environmentId,
+          e);
+      return Collections.emptyMap();
+    }
+  }
 }

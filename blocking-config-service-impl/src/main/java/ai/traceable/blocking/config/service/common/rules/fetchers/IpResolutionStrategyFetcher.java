@@ -8,7 +8,9 @@ import ai.traceable.ipresolutionstrategy.config.service.v1.IpResolutionStrategyC
 import ai.traceable.ipresolutionstrategy.config.service.v1.IpResolutionStrategyConfigServiceGrpc.IpResolutionStrategyConfigServiceBlockingStub;
 import ai.traceable.ipresolutionstrategy.config.service.v1.IpResolutionStrategyFilter;
 import jakarta.inject.Inject;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -58,6 +60,37 @@ public class IpResolutionStrategyFetcher implements RulesFetcher {
     return result;
   }
 
+  public Map<String, List<IpResolutionStrategy>> fetchStrategyLists(
+      RequestContext context, Optional<String> environmentId, Set<String> serviceNames) {
+    if (serviceNames == null || serviceNames.isEmpty()) {
+      return Map.of();
+    }
+
+    IpResolutionStrategyFilter.Builder filter = IpResolutionStrategyFilter.newBuilder();
+    filter.setDisabled(false);
+    environmentId.ifPresent(filter::addEnvironmentNames);
+    filter.addAllServiceNames(serviceNames);
+
+    GetIpResolutionStrategyConfigsRequest request =
+        GetIpResolutionStrategyConfigsRequest.newBuilder().setFilter(filter.build()).build();
+
+    GetIpResolutionStrategyConfigsResponse response =
+        context.call(
+            () ->
+                stub.withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+                    .getIpResolutionStrategyConfigs(request));
+
+    Map<String, List<IpResolutionStrategy>> result = new HashMap<>();
+    for (String serviceName : serviceNames) {
+      List<IpResolutionStrategy> list =
+          selectStrategyListForService(response, environmentId, serviceName);
+      if (!list.isEmpty()) {
+        result.put(serviceName, list);
+      }
+    }
+    return result;
+  }
+
   // Preferred precedence to find best strategy:
   // 1.) Env + Service match exactly
   // 2.) Service match only
@@ -88,6 +121,75 @@ public class IpResolutionStrategyFetcher implements RulesFetcher {
       return Optional.empty();
     }
     return Optional.of(converted);
+  }
+
+  private List<IpResolutionStrategy> selectStrategyListForService(
+      GetIpResolutionStrategyConfigsResponse response,
+      Optional<String> environmentId,
+      String serviceName) {
+    @SuppressWarnings("unchecked")
+    List<IpResolutionStrategyConfigData>[] buckets = new List[4];
+    for (int i = 0; i < buckets.length; i++) {
+      buckets[i] = new ArrayList<>();
+    }
+
+    for (IpResolutionStrategyConfig cfg : response.getConfigsList()) {
+      IpResolutionStrategyConfigData data = cfg.getData();
+      int bucket = bucketForServiceAndEnv(data, environmentId, serviceName);
+      if (bucket >= 0) {
+        buckets[bucket].add(data);
+      }
+    }
+
+    List<IpResolutionStrategy> out = new ArrayList<>();
+    for (List<IpResolutionStrategyConfigData> bucket : buckets) {
+      for (IpResolutionStrategyConfigData data : bucket) {
+        IpResolutionStrategy converted = convert(data.getStrategy());
+        if (!converted.equals(IpResolutionStrategy.getDefaultInstance())) {
+          out.add(converted);
+        }
+      }
+    }
+    return out;
+  }
+
+  private static int bucketForServiceAndEnv(
+      IpResolutionStrategyConfigData data, Optional<String> environmentId, String serviceName) {
+    var serviceList = data.getScope().getServiceScope().getServiceNamesList();
+    boolean serviceSpecific = serviceList.contains(serviceName);
+    boolean serviceGlobal = serviceList.isEmpty();
+    if (!serviceSpecific && !serviceGlobal) {
+      return -1;
+    }
+
+    if (environmentId.isEmpty()) {
+      if (serviceSpecific) {
+        return 0;
+      }
+
+      var envList = data.getScope().getEnvironmentScope().getEnvironmentNamesList();
+      boolean envGlobal = envList.isEmpty();
+      return envGlobal ? 3 : 2;
+    }
+
+    var envList = data.getScope().getEnvironmentScope().getEnvironmentNamesList();
+    String env = environmentId.get();
+    boolean envSpecific = envList.contains(env);
+    boolean envGlobal = envList.isEmpty();
+    if (!envSpecific && !envGlobal) {
+      return -1;
+    }
+
+    if (serviceSpecific && envSpecific) {
+      return 0;
+    }
+    if (serviceSpecific && envGlobal) {
+      return 1;
+    }
+    if (serviceGlobal && envSpecific) {
+      return 2;
+    }
+    return 3;
   }
 
   private static int rankForServiceAndEnv(

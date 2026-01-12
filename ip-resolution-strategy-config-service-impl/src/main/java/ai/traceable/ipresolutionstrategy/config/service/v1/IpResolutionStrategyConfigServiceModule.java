@@ -29,6 +29,11 @@ class IpResolutionStrategyConfigServiceModule extends AbstractModule {
   }
 
   @Provides
+  IpResolutionStrategyConfigServiceConfig provideServiceConfig() {
+    return new IpResolutionStrategyConfigServiceConfig(config);
+  }
+
+  @Provides
   ConfigServiceBlockingStub provideConfigStub() {
     return ConfigServiceGrpc.newBlockingStub(this.channel)
         .withCallCredentials(

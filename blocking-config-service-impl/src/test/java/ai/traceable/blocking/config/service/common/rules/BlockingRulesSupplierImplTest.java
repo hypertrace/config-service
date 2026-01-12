@@ -7,6 +7,7 @@ import static org.mockito.Mockito.*;
 import ai.traceable.blocking.config.service.common.rules.fetchers.IpResolutionStrategyFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.RulesFetcher.RulesFetcherType;
 import ai.traceable.blocking.config.service.v2.IpResolutionStrategy;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -63,5 +64,43 @@ class BlockingRulesSupplierImplTest {
 
     Map<String, IpResolutionStrategy> result = supplier.getIpResolutionStrategies(Set.of("svc1"));
     assertTrue(result.isEmpty());
+  }
+
+  @Test
+  @DisplayName("getIpResolutionStrategyLists delegates to fetcher and returns result")
+  void getIpResolutionStrategyLists_success() {
+    BlockingRulesSupplierContext ctx = mock(BlockingRulesSupplierContext.class);
+    IpResolutionStrategyFetcher fetcher = mock(IpResolutionStrategyFetcher.class);
+    when(ctx.getRulesFetcher(RulesFetcherType.IP_RESOLUTION_STRATEGY)).thenReturn(fetcher);
+
+    IpResolutionStrategy strategy =
+        IpResolutionStrategy.newBuilder().setEvaluateAllIpsForBlocking(true).build();
+    when(fetcher.fetchStrategyLists(any(), any(), any()))
+        .thenReturn(Map.of("svc1", List.of(strategy)));
+
+    BlockingRulesSupplierImpl supplier =
+        new BlockingRulesSupplierImpl(ctx, RequestContext.forTenantId("t"), Optional.of("prod"));
+
+    Map<String, List<IpResolutionStrategy>> result =
+        supplier.getIpResolutionStrategyLists(Set.of("svc1"));
+    assertEquals(1, result.size());
+    assertEquals(List.of(strategy), result.get("svc1"));
+  }
+
+  @Test
+  @DisplayName(
+      "getIpResolutionStrategyLists returns empty on empty input and does not call fetcher")
+  void getIpResolutionStrategyLists_emptyInput() {
+    BlockingRulesSupplierContext ctx = mock(BlockingRulesSupplierContext.class);
+    IpResolutionStrategyFetcher fetcher = mock(IpResolutionStrategyFetcher.class);
+    when(ctx.getRulesFetcher(RulesFetcherType.IP_RESOLUTION_STRATEGY)).thenReturn(fetcher);
+
+    BlockingRulesSupplierImpl supplier =
+        new BlockingRulesSupplierImpl(ctx, RequestContext.forTenantId("t"), Optional.empty());
+
+    Map<String, List<IpResolutionStrategy>> result =
+        supplier.getIpResolutionStrategyLists(Set.of());
+    assertTrue(result.isEmpty());
+    verify(fetcher, never()).fetchStrategyLists(any(), any(), any());
   }
 }

@@ -2,11 +2,13 @@ package ai.traceable.ipresolutionstrategy.config.service.v1.store;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import ai.traceable.ipresolutionstrategy.config.service.v1.EnvironmentScope;
 import ai.traceable.ipresolutionstrategy.config.service.v1.IpResolutionStrategy;
 import ai.traceable.ipresolutionstrategy.config.service.v1.IpResolutionStrategyConfig;
 import ai.traceable.ipresolutionstrategy.config.service.v1.IpResolutionStrategyConfigData;
+import ai.traceable.ipresolutionstrategy.config.service.v1.IpResolutionStrategyConfigServiceConfig;
 import ai.traceable.ipresolutionstrategy.config.service.v1.IpResolutionStrategyFilter;
 import ai.traceable.ipresolutionstrategy.config.service.v1.Scope;
 import ai.traceable.ipresolutionstrategy.config.service.v1.ServiceScope;
@@ -24,10 +26,15 @@ class IpResolutionStrategyStoreTest {
 
   @BeforeEach
   void setup() {
+    IpResolutionStrategyConfigServiceConfig config =
+        mock(IpResolutionStrategyConfigServiceConfig.class);
+    when(config.getDefaultIpResolutionStrategyConfigs()).thenReturn(List.of());
+
     store =
         new IpResolutionStrategyStore(
             mock(ConfigServiceGrpc.ConfigServiceBlockingStub.class),
-            mock(ConfigChangeEventGenerator.class));
+            mock(ConfigChangeEventGenerator.class),
+            config);
   }
 
   @Test

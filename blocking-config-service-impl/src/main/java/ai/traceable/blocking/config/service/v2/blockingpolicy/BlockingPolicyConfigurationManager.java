@@ -93,8 +93,11 @@ public class BlockingPolicyConfigurationManager implements BlockingConfigManager
         blockingDetailsAggregator.getBlockingDetails(
             blockingRulesSupplier.getRequestContext(), filter, blockingRulesSupplier);
 
-    Map<String, IpResolutionStrategy> serviceScopedIpResolutionStrategies =
-        blockingRulesSupplier.getIpResolutionStrategies(new LinkedHashSet<>(serviceNames));
+    Map<String, List<IpResolutionStrategy>> serviceScopedIpResolutionStrategyLists =
+        blockingRulesSupplier.getIpResolutionStrategyLists(new LinkedHashSet<>(serviceNames));
+    if (serviceScopedIpResolutionStrategyLists == null) {
+      serviceScopedIpResolutionStrategyLists = Collections.emptyMap();
+    }
 
     Map<String, List<ExclusionRule>> serviceScopedExclusionRules =
         blockingRulesSupplier
@@ -111,13 +114,13 @@ public class BlockingPolicyConfigurationManager implements BlockingConfigManager
 
     if (aggregate.getBlockingPolicyList() != null
         && serviceScopedExclusionRules.isEmpty()
-        && serviceScopedIpResolutionStrategies.isEmpty()) {
+        && serviceScopedIpResolutionStrategyLists.isEmpty()) {
       return Collections.singletonList(
           checkHashAndBuildResponse(
               requestElements.stream()
                   .map(BlockingConfigRequestElement::getPreviousHash)
                   .collect(Collectors.toUnmodifiableList()),
-              new ServiceScopedInfo(aggregate.getBlockingPolicyList(), List.of(), null),
+              new ServiceScopedInfo(aggregate.getBlockingPolicyList(), List.of(), List.of()),
               requestElements.stream()
                   .map(BlockingConfigRequestElement::getSupportedAgentCapabilitiesList)
                   .flatMap(List::stream)
@@ -139,7 +142,7 @@ public class BlockingPolicyConfigurationManager implements BlockingConfigManager
         mergeServiceScopedMaps(
             serviceScopedExclusionRules,
             serviceScopedBlockingPolicyMap,
-            serviceScopedIpResolutionStrategies);
+            serviceScopedIpResolutionStrategyLists);
 
     return requestElements.stream()
         .map(
@@ -183,8 +186,9 @@ public class BlockingPolicyConfigurationManager implements BlockingConfigManager
         BlockingPolicyConfiguration.newBuilder()
             .addAllBlockingDetailsList(serviceScopedInfo.getBlockingDetails())
             .addAllExclusionRules(serviceScopedInfo.getExclusionRules());
-    if (serviceScopedInfo.getIpResolutionStrategy() != null) {
-      configBuilder.setIpResolutionStrategy(serviceScopedInfo.getIpResolutionStrategy());
+    if (serviceScopedInfo.getIpResolutionStrategyList() != null
+        && !serviceScopedInfo.getIpResolutionStrategyList().isEmpty()) {
+      configBuilder.addAllIpResolutionStrategyList(serviceScopedInfo.getIpResolutionStrategyList());
     }
     BlockingPolicyConfiguration blockingPolicyConfiguration = configBuilder.build();
     String responseHash = uuidGenerator.generateId(blockingPolicyConfiguration);
@@ -205,11 +209,11 @@ public class BlockingPolicyConfigurationManager implements BlockingConfigManager
   private static Map<String, ServiceScopedInfo> mergeServiceScopedMaps(
       Map<String, List<ExclusionRule>> serviceScopedExclusionRules,
       Map<String, List<BlockingDetails>> serviceScopedBlockingPolicyMap,
-      Map<String, IpResolutionStrategy> serviceScopedIpResolutionStrategies) {
+      Map<String, List<IpResolutionStrategy>> serviceScopedIpResolutionStrategyLists) {
     return Stream.of(
             serviceScopedExclusionRules.keySet(),
             serviceScopedBlockingPolicyMap.keySet(),
-            serviceScopedIpResolutionStrategies.keySet())
+            serviceScopedIpResolutionStrategyLists.keySet())
         .flatMap(java.util.Set::stream)
         .distinct()
         .collect(
@@ -221,8 +225,8 @@ public class BlockingPolicyConfigurationManager implements BlockingConfigManager
                             .orElse(Collections.emptyList()),
                         Optional.ofNullable(serviceScopedExclusionRules.get(serviceName))
                             .orElse(Collections.emptyList()),
-                        Optional.ofNullable(serviceScopedIpResolutionStrategies.get(serviceName))
-                            .orElse(null))));
+                        Optional.ofNullable(serviceScopedIpResolutionStrategyLists.get(serviceName))
+                            .orElse(Collections.emptyList()))));
   }
 
   private String getServiceName(AgentCapabilities agentCapabilities) {

@@ -65,42 +65,40 @@ class IpResolutionStrategyFetcherTest {
     Map<String, IpResolutionStrategy> res2 =
         fetcher.fetchStrategies(RequestContext.forTenantId("t"), Optional.of("prod"), null);
     assertTrue(res2.isEmpty());
+
+    Map<String, List<IpResolutionStrategy>> res3 =
+        fetcher.fetchStrategyLists(RequestContext.forTenantId("t"), Optional.of("prod"), Set.of());
+    assertTrue(res3.isEmpty());
+    Map<String, List<IpResolutionStrategy>> res4 =
+        fetcher.fetchStrategyLists(RequestContext.forTenantId("t"), Optional.of("prod"), null);
+    assertTrue(res4.isEmpty());
   }
 
   @Test
-  @DisplayName("prefers service+env > service-only > env-only > global (fallback)")
-  void selectionWithFallbackPrecedence() {
+  @DisplayName(
+      "returns all matches in precedence order: service+env, service-only, env-only, global")
+  void selectionReturnsOrderedListOfMatches() {
     IpResolutionStrategyFetcher fetcher =
         new IpResolutionStrategyFetcher(stub, new ClientConfig(Duration.ofSeconds(2)));
 
-    Map<String, IpResolutionStrategy> result =
-        fetcher.fetchStrategies(
+    Map<String, List<IpResolutionStrategy>> result =
+        fetcher.fetchStrategyLists(
             RequestContext.forTenantId("tenant"), Optional.of("prod"), Set.of("svc1", "svc2"));
 
-    // svc1 should pick service-specific (service+env)
-    IpResolutionStrategy svc1Strategy = result.get("svc1");
-    assertNotNull(svc1Strategy);
-    assertEquals("svc1-src", svc1Strategy.getSources(0).getSourceAttributeName());
+    assertTrue(result.containsKey("svc1"));
+    List<IpResolutionStrategy> svc1List = result.get("svc1");
+    assertNotNull(svc1List);
+    assertEquals(3, svc1List.size());
+    assertEquals("svc1-src", svc1List.get(0).getSources(0).getSourceAttributeName());
+    assertEquals("env-src", svc1List.get(1).getSources(0).getSourceAttributeName());
+    assertEquals("global-src", svc1List.get(2).getSources(0).getSourceAttributeName());
+
     assertTrue(result.containsKey("svc2"));
-    IpResolutionStrategy svc2Strategy = result.get("svc2");
-    assertNotNull(svc2Strategy);
-    assertEquals("env-src", svc2Strategy.getSources(0).getSourceAttributeName());
-  }
-
-  @Test
-  @DisplayName("prefers service-only over env-only when service+env does not exist")
-  void selectionPrefersServiceOnlyOverEnvOnly() {
-    IpResolutionStrategyFetcher fetcher =
-        new IpResolutionStrategyFetcher(stub, new ClientConfig(Duration.ofSeconds(2)));
-
-    Map<String, IpResolutionStrategy> result =
-        fetcher.fetchStrategies(
-            RequestContext.forTenantId("tenant"), Optional.of("prod"), Set.of("svc3"));
-
-    assertTrue(result.containsKey("svc3"));
-    IpResolutionStrategy svc3Strategy = result.get("svc3");
-    assertNotNull(svc3Strategy);
-    assertEquals("svc3-src", svc3Strategy.getSources(0).getSourceAttributeName());
+    List<IpResolutionStrategy> svc2List = result.get("svc2");
+    assertNotNull(svc2List);
+    assertEquals(2, svc2List.size());
+    assertEquals("env-src", svc2List.get(0).getSources(0).getSourceAttributeName());
+    assertEquals("global-src", svc2List.get(1).getSources(0).getSourceAttributeName());
   }
 
   @Test
@@ -109,30 +107,34 @@ class IpResolutionStrategyFetcherTest {
     IpResolutionStrategyFetcher fetcher =
         new IpResolutionStrategyFetcher(stub, new ClientConfig(Duration.ofSeconds(2)));
 
-    Map<String, IpResolutionStrategy> result =
-        fetcher.fetchStrategies(
+    Map<String, List<IpResolutionStrategy>> result =
+        fetcher.fetchStrategyLists(
             RequestContext.forTenantId("tenant"), Optional.empty(), Set.of("svc1"));
 
     assertTrue(result.containsKey("svc1"));
-    IpResolutionStrategy svc1Strategy = result.get("svc1");
-    assertNotNull(svc1Strategy);
-    assertEquals("svc1-src", svc1Strategy.getSources(0).getSourceAttributeName());
+    List<IpResolutionStrategy> svc1List = result.get("svc1");
+    assertNotNull(svc1List);
+    assertEquals(3, svc1List.size());
+    assertEquals("svc1-src", svc1List.get(0).getSources(0).getSourceAttributeName());
+    assertEquals("env-src", svc1List.get(1).getSources(0).getSourceAttributeName());
+    assertEquals("global-src", svc1List.get(2).getSources(0).getSourceAttributeName());
   }
 
   @Test
-  @DisplayName("falls back to global when neither service nor env has a strategy")
-  void selectionFallsBackToGlobal() {
+  @DisplayName("returns global when neither service nor env has a specific strategy")
+  void selectionReturnsGlobalWhenNoSpecificMatches() {
     IpResolutionStrategyFetcher fetcher =
         new IpResolutionStrategyFetcher(stub, new ClientConfig(Duration.ofSeconds(2)));
 
-    Map<String, IpResolutionStrategy> result =
-        fetcher.fetchStrategies(
+    Map<String, List<IpResolutionStrategy>> result =
+        fetcher.fetchStrategyLists(
             RequestContext.forTenantId("tenant"), Optional.of("stage"), Set.of("svc4"));
 
     assertTrue(result.containsKey("svc4"));
-    IpResolutionStrategy svc4Strategy = result.get("svc4");
-    assertNotNull(svc4Strategy);
-    assertEquals("global-src", svc4Strategy.getSources(0).getSourceAttributeName());
+    List<IpResolutionStrategy> svc4List = result.get("svc4");
+    assertNotNull(svc4List);
+    assertEquals(1, svc4List.size());
+    assertEquals("global-src", svc4List.get(0).getSources(0).getSourceAttributeName());
   }
 
   private static class FakeService extends IpResolutionStrategyConfigServiceImplBase {

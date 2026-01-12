@@ -15,5 +15,5 @@ import lombok.NoArgsConstructor;
 public class ServiceScopedInfo {
   List<BlockingDetails> blockingDetails = Collections.emptyList();
   List<ExclusionRule> exclusionRules = Collections.emptyList();
-  IpResolutionStrategy ipResolutionStrategy;
+  List<IpResolutionStrategy> ipResolutionStrategyList = Collections.emptyList();
 }
