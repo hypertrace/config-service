@@ -15,6 +15,7 @@ dependencies {
   implementation(projects.sessionIdentificationConfigServiceApi)
   implementation(projects.userAttributionConfigServiceApi)
   implementation(projects.dataParsingConfigServiceApi)
+  implementation(projects.dataObfuscationConfigServiceApi)
   implementation(commonLibs.traceable.insights.api)
   implementation(commonLibs.hypertrace.grpcutils.client)
   implementation(commonLibs.hypertrace.grpcutils.context)

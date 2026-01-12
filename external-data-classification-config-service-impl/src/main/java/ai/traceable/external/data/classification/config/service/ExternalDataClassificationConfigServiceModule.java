@@ -3,6 +3,8 @@ package ai.traceable.external.data.classification.config.service;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc;
 import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub;
+import ai.traceable.data.obfuscation.config.service.v1.DataObfuscationConfigServiceGrpc;
+import ai.traceable.data.obfuscation.config.service.v1.DataObfuscationConfigServiceGrpc.DataObfuscationConfigServiceBlockingStub;
 import ai.traceable.data.parsing.config.service.v1.DataParsingConfigServiceGrpc;
 import ai.traceable.data.parsing.config.service.v1.DataParsingConfigServiceGrpc.DataParsingConfigServiceBlockingStub;
 import ai.traceable.platform.insights.api.v1.InsightsServiceGrpc;
@@ -79,6 +81,13 @@ public class ExternalDataClassificationConfigServiceModule extends AbstractModul
   @Provides
   DataParsingConfigServiceBlockingStub provideDataParsingConfigService() {
     return DataParsingConfigServiceGrpc.newBlockingStub(this.channel)
+        .withCallCredentials(
+            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  DataObfuscationConfigServiceBlockingStub provideDataObfuscationConfigService() {
+    return DataObfuscationConfigServiceGrpc.newBlockingStub(this.channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

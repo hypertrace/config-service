@@ -2,11 +2,11 @@ package ai.traceable.external.data.classification.config.service;
 
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.external.data.classification.config.service.obfuscation.DataObfuscationRulesManager;
 import ai.traceable.external.data.classification.config.service.v1.DataParsingRule;
 import ai.traceable.external.data.classification.config.service.v1.DataType;
 import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigRequest;
 import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigResponse;
-import ai.traceable.external.data.classification.config.service.v1.ObfuscationStrategy;
 import jakarta.inject.Inject;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -16,6 +16,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 class ExternalDataClassificationRuleResponseBuilder {
   private final UuidGenerator uuidGenerator;
   private final FeatureCachingClient featureClient;
+  private final DataObfuscationRulesManager dataObfuscationRulesManager;
 
   GetDataClassificationConfigResponse buildDisabledResponse() {
     return GetDataClassificationConfigResponse.newBuilder().setEnabled(false).build();
@@ -32,11 +33,8 @@ class ExternalDataClassificationRuleResponseBuilder {
             .addAllDataTypes(dataTypes)
             .addAllDataParsingRules(dataParsingRules);
     if (this.featureClient.isDataClassificationEnhancedObfuscationEnabled(requestContext)) {
-      // Use the tenant ID as a salt for now. In future can support customization if needed
       responseBuilder.setObfuscationStrategy(
-          ObfuscationStrategy.newBuilder()
-              .setHashFunction(ObfuscationStrategy.HashFunction.HASH_FUNCTION_SHA256)
-              .setSalt(requestContext.getTenantId().orElseThrow()));
+          this.dataObfuscationRulesManager.getObfuscationStrategy(requestContext));
     }
 
     String responseHash = uuidGenerator.generateId(responseBuilder.build());

@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.external.data.classification.config.service.obfuscation.DataObfuscationRulesManager;
 import ai.traceable.external.data.classification.config.service.v1.DataType;
 import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigRequest;
 import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigRequest.OnlyIfChangedFilter;
@@ -25,6 +26,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 public class ExternalDataClassificationRuleResponseBuilderTest {
   @Mock UuidGenerator mockUuidGenerator;
   @Mock FeatureCachingClient mockFeatureClient;
+  @Mock DataObfuscationRulesManager mockDataObfuscationRulesManager;
   DataType mockDataType = DataType.newBuilder().build();
   GetDataClassificationConfigRequest mockRequest =
       GetDataClassificationConfigRequest.newBuilder()
@@ -90,6 +92,12 @@ public class ExternalDataClassificationRuleResponseBuilderTest {
     when(this.mockFeatureClient.isDataClassificationEnhancedObfuscationEnabled(mockRequestContext))
         .thenReturn(true);
 
+    when(this.mockDataObfuscationRulesManager.getObfuscationStrategy(any()))
+        .thenReturn(
+            ObfuscationStrategy.newBuilder()
+                .setHashFunction(ObfuscationStrategy.HashFunction.HASH_FUNCTION_SHA256)
+                .setSalt(mockRequestContext.getTenantId().orElseThrow())
+                .build());
     assertEquals(
         ObfuscationStrategy.newBuilder()
             .setHashFunction(ObfuscationStrategy.HashFunction.HASH_FUNCTION_SHA256)
