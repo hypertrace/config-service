@@ -202,6 +202,8 @@ dependencies {
   integrationTestImplementation(projects.fraudPolicyConfigServiceApi)
   integrationTestImplementation(projects.modsecurityUtils)
   integrationTestImplementation(projects.fraudPolicyConfigServiceImpl)
+  integrationTestImplementation(projects.dataParsingConfigServiceApi)
+  integrationTestImplementation(projects.traceableEdgeConfigServiceApi)
   integrationTestImplementation(commonLibs.traceable.opadistributor.api)
   integrationTestImplementation(localLibs.hypertrace.configservice.partitioner.config.impl)
   integrationTestImplementation(commonLibs.commons.lang)
