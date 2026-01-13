@@ -8,7 +8,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
 import jakarta.inject.Inject;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -70,12 +70,12 @@ public class IpResolutionStrategyStore
 
   private static List<IpResolutionStrategyConfig> mergeConfigs(
       List<IpResolutionStrategyConfig> configs, List<IpResolutionStrategyConfig> defaults) {
-    Map<String, IpResolutionStrategyConfig> merged = new HashMap<>();
-    merged.putAll(
-        defaults.stream()
-            .collect(Collectors.toMap(IpResolutionStrategyConfig::getId, Function.identity())));
+    Map<String, IpResolutionStrategyConfig> merged = new LinkedHashMap<>();
     merged.putAll(
         configs.stream()
+            .collect(Collectors.toMap(IpResolutionStrategyConfig::getId, Function.identity())));
+    merged.putAll(
+        defaults.stream()
             .collect(Collectors.toMap(IpResolutionStrategyConfig::getId, Function.identity())));
     return merged.values().stream().collect(Collectors.toUnmodifiableList());
   }
