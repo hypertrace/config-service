@@ -42,7 +42,20 @@ class StateTransitionsRegistryImplTest {
     assertTrue(actionsMap.containsKey(Action.ACTION_EDIT));
     assertTrue(actionsMap.containsKey(Action.ACTION_HOLD));
     assertTrue(actionsMap.containsKey(Action.ACTION_UPDATE_STATUS));
+    assertTrue(actionsMap.containsKey(Action.ACTION_DOWNLOAD));
     List<DeploymentStatus> nextStates = actionsMap.get(Action.ACTION_EDIT);
+    assertNotNull(nextStates);
+    assertTrue(nextStates.contains(DeploymentStatus.DEPLOYMENT_STATUS_REQUESTED));
+
+    actionsMap =
+        registry.getActionsMap(
+            DeploymentStatus.DEPLOYMENT_STATUS_REQUESTED,
+            ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL);
+    assertTrue(actionsMap.containsKey(Action.ACTION_EDIT));
+    assertTrue(actionsMap.containsKey(Action.ACTION_HOLD));
+    assertFalse(actionsMap.containsKey(Action.ACTION_UPDATE_STATUS));
+    assertFalse(actionsMap.containsKey(Action.ACTION_DOWNLOAD));
+    nextStates = actionsMap.get(Action.ACTION_EDIT);
     assertNotNull(nextStates);
     assertTrue(nextStates.contains(DeploymentStatus.DEPLOYMENT_STATUS_REQUESTED));
   }

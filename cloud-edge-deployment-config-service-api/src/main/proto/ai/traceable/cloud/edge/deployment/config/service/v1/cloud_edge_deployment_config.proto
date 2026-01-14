@@ -61,6 +61,7 @@ enum Action {
   ACTION_CANCEL_REMOVAL_REQUEST = 8;
   ACTION_DEPLOY = 9;
   ACTION_CREATE = 10;
+  ACTION_DOWNLOAD = 11;
 }
 
 enum DeploymentMode {
