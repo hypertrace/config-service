@@ -1,5 +1,6 @@
 package ai.traceable.customsignature.config.service.rules;
 
+import static ai.traceable.config.service.commons.utils.AuditFilterUtils.hasActiveAuditFilter;
 import static ai.traceable.customsignature.config.service.CustomSignatureConstants.CUSTOM_SIGNATURE_RULE_CONFIG_NAMESPACE;
 import static ai.traceable.customsignature.config.service.CustomSignatureConstants.CUSTOM_SIGNATURE_RULE_CONFIG_RESOURCE_NAME;
 import static java.util.Objects.nonNull;
@@ -112,6 +113,12 @@ public class CustomSignatureRulesStore
       RequestContext context, GetRulesFilter filter) {
     List<CustomSignatureRuleRecord> backwardCompatibleExistingRules =
         getBackwardCompatibleExistingRuleRecords(context, filter);
+
+    // When audit filter is active, don't include default rules (they have no audit data)
+    if (hasActiveAuditFilter(filter.getAuditFilter())) {
+      return backwardCompatibleExistingRules;
+    }
+
     List<CustomSignatureRuleRecord> filteredDefaultCustomSignatureRules =
         defaultCustomSignatureRules.stream()
             .filter(ruleRecord -> filterConfigData(ruleRecord.getRule(), filter).isPresent())

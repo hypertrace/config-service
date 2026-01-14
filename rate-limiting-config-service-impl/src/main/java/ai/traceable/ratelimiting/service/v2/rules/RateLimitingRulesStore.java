@@ -1,5 +1,6 @@
 package ai.traceable.ratelimiting.service.v2.rules;
 
+import static ai.traceable.config.service.commons.utils.AuditFilterUtils.hasActiveAuditFilter;
 import static ai.traceable.ratelimiting.service.v2.constants.RateLimitingConfigConstants.RATE_LIMITING_RULE_CONFIG_RESOURCE_NAME;
 import static ai.traceable.ratelimiting.service.v2.constants.RateLimitingConfigConstants.RATE_LIMITING_RULE_CONFIG_RESOURCE_NAMESPACE;
 
@@ -186,6 +187,11 @@ public class RateLimitingRulesStore
             .filter(ruleWithContext -> isDefaultFilter || matchesFilter(ruleWithContext, filter))
             .map(this::toRuleRecord)
             .collect(Collectors.toList());
+
+    // When audit filter is active, don't include default rules (they have no audit data)
+    if (hasActiveAuditFilter(filter.getAuditFilter())) {
+      return storedRecords;
+    }
 
     // Add default rules (without audit details since they're not stored)
     List<RateLimitingRuleRecord> defaultRecords =

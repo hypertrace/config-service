@@ -281,4 +281,163 @@ class RateLimitingRulesStoreAuditFilterTest {
       assertEquals(2, records.size());
     }
   }
+
+  @Nested
+  class DefaultRulesWithAuditFilter {
+
+    private RateLimitingRulesStore createStoreWithDefaultRules(
+        List<RateLimitingRule> defaultRules) {
+      RateLimitingConfigServiceConfig configWithDefaults =
+          mock(RateLimitingConfigServiceConfig.class);
+      when(configWithDefaults.getDefaultRateLimitingRules()).thenReturn(defaultRules);
+      ConfigChangeEventGenerator changeEventGenerator = mock(ConfigChangeEventGenerator.class);
+      ConfigServiceGrpc.ConfigServiceBlockingStub stub =
+          ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
+      return new RateLimitingRulesStore(
+          stub, changeEventGenerator, configWithDefaults, timestampConverter);
+    }
+
+    @Test
+    void testAuditFilterExcludesDefaultRules() {
+      // Setup: configure default rules and create store
+      RateLimitingRule defaultRule =
+          RateLimitingRule.newBuilder()
+              .setId("default-1")
+              .setData(RateLimitingRuleData.newBuilder().setName("Default Rule"))
+              .build();
+      RateLimitingRulesStore storeWithDefaults = createStoreWithDefaultRules(List.of(defaultRule));
+
+      // Create a stored rule
+      RateLimitingRule storedRule =
+          RateLimitingRule.newBuilder()
+              .setId("stored-1")
+              .setData(RateLimitingRuleData.newBuilder().setName("Stored Rule"))
+              .build();
+      storeWithDefaults.upsertObject(requestContext, storedRule);
+
+      // Apply audit filter (created_by_contains) - should exclude default rules
+      GetRateLimitingRulesFilter filter =
+          GetRateLimitingRulesFilter.newBuilder()
+              .setAuditFilter(AuditFilter.newBuilder().setCreatedByContains("test"))
+              .build();
+
+      List<RateLimitingRuleRecord> records =
+          storeWithDefaults.getRuleRecords(requestContext, filter);
+
+      // Assert: default rule is excluded (only stored rules may be returned based on audit match)
+      assertTrue(
+          records.stream().noneMatch(r -> r.getRule().getId().equals("default-1")),
+          "Default rules should be excluded when audit filter is active");
+    }
+
+    @Test
+    void testEmptyAuditFilterStillIncludesDefaultRules() {
+      // Setup: configure default rules and create store
+      RateLimitingRule defaultRule =
+          RateLimitingRule.newBuilder()
+              .setId("default-1")
+              .setData(RateLimitingRuleData.newBuilder().setName("Default Rule"))
+              .build();
+      RateLimitingRulesStore storeWithDefaults = createStoreWithDefaultRules(List.of(defaultRule));
+
+      // Create a stored rule
+      RateLimitingRule storedRule =
+          RateLimitingRule.newBuilder()
+              .setId("stored-1")
+              .setData(RateLimitingRuleData.newBuilder().setName("Stored Rule"))
+              .build();
+      storeWithDefaults.upsertObject(requestContext, storedRule);
+
+      // Apply empty audit filter - should still include default rules
+      GetRateLimitingRulesFilter filter =
+          GetRateLimitingRulesFilter.newBuilder()
+              .setAuditFilter(AuditFilter.newBuilder().build())
+              .build();
+
+      List<RateLimitingRuleRecord> records =
+          storeWithDefaults.getRuleRecords(requestContext, filter);
+
+      // Assert: both stored and default rules are returned
+      assertEquals(2, records.size());
+      assertTrue(
+          records.stream().anyMatch(r -> r.getRule().getId().equals("default-1")),
+          "Default rules should be included when audit filter is empty");
+      assertTrue(
+          records.stream().anyMatch(r -> r.getRule().getId().equals("stored-1")),
+          "Stored rules should be included");
+    }
+
+    @Test
+    void testNoAuditFilterIncludesDefaultRules() {
+      // Setup: configure default rules and create store
+      RateLimitingRule defaultRule =
+          RateLimitingRule.newBuilder()
+              .setId("default-1")
+              .setData(RateLimitingRuleData.newBuilder().setName("Default Rule"))
+              .build();
+      RateLimitingRulesStore storeWithDefaults = createStoreWithDefaultRules(List.of(defaultRule));
+
+      // Create a stored rule
+      RateLimitingRule storedRule =
+          RateLimitingRule.newBuilder()
+              .setId("stored-1")
+              .setData(RateLimitingRuleData.newBuilder().setName("Stored Rule"))
+              .build();
+      storeWithDefaults.upsertObject(requestContext, storedRule);
+
+      // No audit filter - should include default rules
+      GetRateLimitingRulesFilter filter = GetRateLimitingRulesFilter.newBuilder().build();
+
+      List<RateLimitingRuleRecord> records =
+          storeWithDefaults.getRuleRecords(requestContext, filter);
+
+      // Assert: both stored and default rules are returned
+      assertEquals(2, records.size());
+      assertTrue(
+          records.stream().anyMatch(r -> r.getRule().getId().equals("default-1")),
+          "Default rules should be included when no audit filter");
+      assertTrue(
+          records.stream().anyMatch(r -> r.getRule().getId().equals("stored-1")),
+          "Stored rules should be included");
+    }
+
+    @Test
+    void testCreatedRangeAuditFilterExcludesDefaultRules() {
+      // Setup: configure default rules and create store
+      RateLimitingRule defaultRule =
+          RateLimitingRule.newBuilder()
+              .setId("default-1")
+              .setData(RateLimitingRuleData.newBuilder().setName("Default Rule"))
+              .build();
+      RateLimitingRulesStore storeWithDefaults = createStoreWithDefaultRules(List.of(defaultRule));
+
+      // Create a stored rule
+      RateLimitingRule storedRule =
+          RateLimitingRule.newBuilder()
+              .setId("stored-1")
+              .setData(RateLimitingRuleData.newBuilder().setName("Stored Rule"))
+              .build();
+      storeWithDefaults.upsertObject(requestContext, storedRule);
+
+      // Apply created_range audit filter - should exclude default rules
+      Instant now = Instant.now();
+      TimestampRange range =
+          TimestampRange.newBuilder()
+              .setStart(timestampConverter.convert(now.minusSeconds(3600)))
+              .setEnd(timestampConverter.convert(now.plusSeconds(3600)))
+              .build();
+      GetRateLimitingRulesFilter filter =
+          GetRateLimitingRulesFilter.newBuilder()
+              .setAuditFilter(AuditFilter.newBuilder().setCreatedRange(range))
+              .build();
+
+      List<RateLimitingRuleRecord> records =
+          storeWithDefaults.getRuleRecords(requestContext, filter);
+
+      // Assert: default rule is excluded
+      assertTrue(
+          records.stream().noneMatch(r -> r.getRule().getId().equals("default-1")),
+          "Default rules should be excluded when created_range audit filter is active");
+    }
+  }
 }

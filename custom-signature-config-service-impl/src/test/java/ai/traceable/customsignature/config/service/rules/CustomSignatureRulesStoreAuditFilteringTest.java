@@ -599,6 +599,117 @@ class CustomSignatureRulesStoreAuditFilteringTest {
   }
 
   @Test
+  void testAuditFilterExcludesDefaultRules() {
+    // Setup: store with one stored rule and one default rule
+    CustomSignatureRule defaultRule = CustomSignatureRule.newBuilder().setId("default-1").build();
+
+    CustomSignatureRulesStore store =
+        newTestStoreWithDefaults(
+            List.of(
+                contextualRule(
+                    "stored-1",
+                    Instant.ofEpochSecond(100),
+                    "alice@example.com",
+                    Instant.ofEpochSecond(200),
+                    "bob@example.com")),
+            List.of(defaultRule));
+
+    // Apply audit filter (created_by_contains) - should exclude default rules
+    GetRulesFilter filter =
+        GetRulesFilter.newBuilder()
+            .setAuditFilter(AuditFilter.newBuilder().setCreatedByContains("alice"))
+            .build();
+
+    List<CustomSignatureRuleRecord> results = store.getAllRuleRecords(REQUEST_CONTEXT, filter);
+
+    // Assert: only stored rule is returned, default rule is excluded
+    assertEquals(1, results.size());
+    assertEquals("stored-1", results.get(0).getRule().getId());
+  }
+
+  @Test
+  void testEmptyAuditFilterStillIncludesDefaultRules() {
+    // Setup: store with one stored rule and one default rule
+    CustomSignatureRule defaultRule = CustomSignatureRule.newBuilder().setId("default-1").build();
+
+    CustomSignatureRulesStore store =
+        newTestStoreWithDefaults(
+            List.of(
+                contextualRule(
+                    "stored-1",
+                    Instant.ofEpochSecond(100),
+                    "alice@example.com",
+                    Instant.ofEpochSecond(200),
+                    "bob@example.com")),
+            List.of(defaultRule));
+
+    // Apply empty audit filter - should still include default rules
+    GetRulesFilter filter =
+        GetRulesFilter.newBuilder().setAuditFilter(AuditFilter.newBuilder().build()).build();
+
+    List<CustomSignatureRuleRecord> results = store.getAllRuleRecords(REQUEST_CONTEXT, filter);
+
+    // Assert: both stored and default rules are returned
+    assertEquals(2, results.size());
+  }
+
+  @Test
+  void testNoAuditFilterIncludesDefaultRules() {
+    // Setup: store with one stored rule and one default rule
+    CustomSignatureRule defaultRule = CustomSignatureRule.newBuilder().setId("default-1").build();
+
+    CustomSignatureRulesStore store =
+        newTestStoreWithDefaults(
+            List.of(
+                contextualRule(
+                    "stored-1",
+                    Instant.ofEpochSecond(100),
+                    "alice@example.com",
+                    Instant.ofEpochSecond(200),
+                    "bob@example.com")),
+            List.of(defaultRule));
+
+    // No audit filter - should include default rules
+    GetRulesFilter filter = GetRulesFilter.newBuilder().build();
+
+    List<CustomSignatureRuleRecord> results = store.getAllRuleRecords(REQUEST_CONTEXT, filter);
+
+    // Assert: both stored and default rules are returned
+    assertEquals(2, results.size());
+  }
+
+  @Test
+  void testCreatedRangeAuditFilterExcludesDefaultRules() {
+    // Setup: store with one stored rule and one default rule
+    CustomSignatureRule defaultRule = CustomSignatureRule.newBuilder().setId("default-1").build();
+
+    CustomSignatureRulesStore store =
+        newTestStoreWithDefaults(
+            List.of(
+                contextualRule(
+                    "stored-1",
+                    Instant.ofEpochSecond(100),
+                    "alice@example.com",
+                    Instant.ofEpochSecond(200),
+                    "bob@example.com")),
+            List.of(defaultRule));
+
+    // Apply created_range audit filter - should exclude default rules
+    TimestampRange range =
+        TimestampRange.newBuilder().setStart(Timestamp.newBuilder().setSeconds(50).build()).build();
+    GetRulesFilter filter =
+        GetRulesFilter.newBuilder()
+            .setAuditFilter(AuditFilter.newBuilder().setCreatedRange(range))
+            .build();
+
+    List<CustomSignatureRuleRecord> results = store.getAllRuleRecords(REQUEST_CONTEXT, filter);
+
+    // Assert: only stored rule is returned, default rule is excluded
+    assertEquals(1, results.size());
+    assertEquals("stored-1", results.get(0).getRule().getId());
+  }
+
+  @Test
   void testGetAllRuleRecordsBuildsAuditDetails() {
     CustomSignatureRulesStore store =
         newTestStore(
@@ -660,6 +771,15 @@ class CustomSignatureRulesStoreAuditFilteringTest {
       List<ContextualConfigObject<CustomSignatureRule>> objects) {
     CustomSignatureConfigServiceConfig config = mock(CustomSignatureConfigServiceConfig.class);
     when(config.getDefaultCustomSignatureRules()).thenReturn(List.of());
+
+    return new TestCustomSignatureRulesStore(objects, config, new TimestampConverter());
+  }
+
+  private static CustomSignatureRulesStore newTestStoreWithDefaults(
+      List<ContextualConfigObject<CustomSignatureRule>> objects,
+      List<CustomSignatureRule> defaultRules) {
+    CustomSignatureConfigServiceConfig config = mock(CustomSignatureConfigServiceConfig.class);
+    when(config.getDefaultCustomSignatureRules()).thenReturn(defaultRules);
 
     return new TestCustomSignatureRulesStore(objects, config, new TimestampConverter());
   }
