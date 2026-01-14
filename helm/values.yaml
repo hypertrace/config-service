@@ -509,6 +509,19 @@ traceableConfigServiceConfig:
     defaultRequestHeaderRetentionRules: |-
       [
         {
+          "id": "a7f3d9e8-5b2c-4d6f-9e1a-8c7b3f4e6d2a",
+          "data": {
+            "action": {
+              "retain": {}
+            },
+            "predicate": {
+              "anomalous_span_predicate": {
+                "match_value": true
+              }
+            }
+          }
+        },
+        {
           "id": "89ba876c-2678-41b6-9ed9-011d0c0ebc5c",
           "data": {
             "action": {
@@ -669,6 +682,19 @@ traceableConfigServiceConfig:
     defaultResponseHeaderRetentionRules: |-
       [
         {
+          "id": "b8e4f2d9-3a5c-4e6f-8b1a-9c2d4e6f8a1b",
+          "data": {
+            "action": {
+              "retain": {}
+            },
+            "predicate": {
+              "anomalous_span_predicate": {
+                "match_value": true
+              }
+            }
+          }
+        },
+        {
           "id": "f8cf4278-4839-4476-9e47-229ece7f1314",
           "data": {
             "action": {
@@ -810,6 +836,19 @@ traceableConfigServiceConfig:
       ]
     defaultAttributeRetentionRules: |-
       [
+        {
+          "id": "c9f5e3a7-4b8d-4c7e-9f2a-1d5e8a7b9c3f",
+          "data": {
+            "action": {
+              "retain": {}
+            },
+            "predicate": {
+              "anomalous_span_predicate": {
+                "match_value": true
+              }
+            }
+          }
+        },
         {
         "id": "775fa400-2adf-47ba-881e-6bc114ddec42",
         "data": {
