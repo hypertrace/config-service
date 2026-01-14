@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package ai.traceable.detection.exclusion.config.service.v1;
 
+import "ai/traceable/config/commons/v1/audit.proto";
 import "ai/traceable/detection/exclusion/config/service/v1/detection_exclusion_rule.proto";
 import "ai/traceable/edge/decision/config/service/v1/edge_decision_config.proto";
 
@@ -36,6 +37,12 @@ message GetDetectionExclusionRulesRequest {
 
 message GetDetectionExclusionRulesResponse {
   repeated DetectionExclusionRule rules = 1;
+  repeated DetectionExclusionRuleRecord rule_records = 2;
+}
+
+message DetectionExclusionRuleRecord {
+  DetectionExclusionRule rule = 1;
+  ai.traceable.config.commons.v1.AuditDetails audit_details = 2;
 }
 
 message GetDetectionExclusionEdgeDecisionRulesRequest {
@@ -70,6 +77,7 @@ message GetRulesFilter {
   repeated RuleIntent rule_intents = 7;
   repeated ExclusionTarget exclusion_targets = 8;
   repeated RuleEvaluationPoint rule_evaluation_points = 9;
+  ai.traceable.config.commons.v1.AuditFilter audit_filter = 10;
 }
 
 message DetectionExclusionMigrationConfig {

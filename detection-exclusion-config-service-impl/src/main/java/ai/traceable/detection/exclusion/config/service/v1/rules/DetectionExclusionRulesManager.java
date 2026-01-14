@@ -7,6 +7,7 @@ import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleInfo;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleRecord;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleScope;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleStatus;
 import ai.traceable.detection.exclusion.config.service.v1.GetExclusionModsecRulesRequest;
@@ -58,6 +59,32 @@ public class DetectionExclusionRulesManager implements RulesManager {
   @Override
   public List<DetectionExclusionRule> getDetectionExclusionRules(
       RequestContext requestContext, GetRulesFilter filter) {
+    return getDetectionExclusionRuleRecords(requestContext, filter).stream()
+        .map(DetectionExclusionRuleRecord::getRule)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  @Override
+  public List<DetectionExclusionRuleRecord> getDetectionExclusionRuleRecords(
+      RequestContext requestContext, GetRulesFilter filter) {
+    runMigrations(requestContext);
+
+    List<DetectionExclusionRuleRecord> records = new ArrayList<>();
+    if (filter.equals(GetRulesFilter.getDefaultInstance())) {
+      records.addAll(rulesStore.getAllRuleRecords(requestContext));
+      return records;
+    }
+    records.addAll(rulesStore.getAllRuleRecords(requestContext, filter));
+    if (filter
+        .getRuleCreationSourcesList()
+        .contains(RuleSource.RULE_SOURCE_COUNT_THRESHOLD_EXCEEDED)) {
+      records.addAll(
+          thresholdExceededDetectionExclusionRuleStore.getAllRuleRecords(requestContext, filter));
+    }
+    return records;
+  }
+
+  private void runMigrations(RequestContext requestContext) {
     rulesMigrationManager.migrateFromOldStoreIfApplicable(requestContext);
     rulesMigrationManager.migrateFromChangeLog2IfApplicable(requestContext);
     rulesMigrationManager.migrateFromChangeLog3IfApplicable(requestContext);
@@ -65,20 +92,6 @@ public class DetectionExclusionRulesManager implements RulesManager {
     rulesMigrationManager.migrateForRuleEvaluationPointsIfApplicable(requestContext);
     rulesMigrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
     rulesMigrationManager.migrateForAllowOnlyPlatformRemovalIfApplicable(requestContext);
-
-    List<DetectionExclusionRule> rules = new ArrayList<>();
-    if (filter.equals(GetRulesFilter.getDefaultInstance())) {
-      rules.addAll(rulesStore.getAllConfigData(requestContext));
-      return rules;
-    }
-    rules.addAll(rulesStore.getAllConfigData(requestContext, filter));
-    if (filter
-        .getRuleCreationSourcesList()
-        .contains(RuleSource.RULE_SOURCE_COUNT_THRESHOLD_EXCEEDED)) {
-      rules.addAll(
-          thresholdExceededDetectionExclusionRuleStore.getAllConfigData(requestContext, filter));
-    }
-    return rules;
   }
 
   @Override

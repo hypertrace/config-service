@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import ai.traceable.config.service.TraceableConfigServiceIntegrationTestBase;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClientConfig;
+import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.detection.exclusion.config.service.v1.CreateDetectionExclusionRuleRequest;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceConfig;
@@ -27,6 +28,7 @@ import ai.traceable.detection.exclusion.config.service.v1.RuleChangeSource;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEventFamily;
 import ai.traceable.detection.exclusion.config.service.v1.UpdateDetectionExclusionRuleRequest;
+import ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionAuditHelper;
 import ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionRulesStore;
 import com.google.protobuf.Value;
 import com.typesafe.config.ConfigFactory;
@@ -138,7 +140,8 @@ public class DetectionExclusionRuleEvaluationPointsMigrationConfigServiceIntegra
             configServiceBlockingStub,
             configChangeEventGenerator,
             featureCachingClient,
-            detectionExclusionConfigServiceConfig);
+            detectionExclusionConfigServiceConfig,
+            new DetectionExclusionAuditHelper(new TimestampConverter()));
   }
 
   @Test

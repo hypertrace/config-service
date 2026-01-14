@@ -70,18 +70,24 @@ class DetectionExclusionConfigServiceImplTest {
         List.of(platformRule, inlineRule, edgeRule, multipleRuleEvaluationPointsRule);
 
     doNothing().when(mockRulesMigrationManager).migrateForRuleEvaluationPointsIfApplicable(any());
-    when(rulesManager.getDetectionExclusionRules(eq(requestContext), any()))
+    when(rulesManager.getDetectionExclusionRuleRecords(eq(requestContext), any()))
         .thenAnswer(
             invocation -> {
               GetRulesFilter filter = invocation.getArgument(1);
+              List<DetectionExclusionRule> filteredRules;
               if (filter.getRuleEvaluationPointsList().isEmpty()) {
-                return allRules;
+                filteredRules = allRules;
+              } else {
+                filteredRules =
+                    allRules.stream()
+                        .filter(
+                            rule ->
+                                rule.getRuleInfo().getRuleEvaluationPointsList().stream()
+                                    .anyMatch(filter.getRuleEvaluationPointsList()::contains))
+                        .collect(Collectors.toList());
               }
-              return allRules.stream()
-                  .filter(
-                      rule ->
-                          rule.getRuleInfo().getRuleEvaluationPointsList().stream()
-                              .anyMatch(filter.getRuleEvaluationPointsList()::contains))
+              return filteredRules.stream()
+                  .map(rule -> DetectionExclusionRuleRecord.newBuilder().setRule(rule).build())
                   .collect(Collectors.toList());
             });
     doNothing()
@@ -104,10 +110,12 @@ class DetectionExclusionConfigServiceImplTest {
                 platformRequest, platformObserver));
     verify(platformObserver, times(1))
         .onNext(
-            GetDetectionExclusionRulesResponse.newBuilder()
-                .addRules(platformRule)
-                .addRules(multipleRuleEvaluationPointsRule)
-                .build());
+            argThat(
+                response ->
+                    response
+                            .getRulesList()
+                            .containsAll(List.of(platformRule, multipleRuleEvaluationPointsRule))
+                        && response.getRulesCount() == 2));
     verify(platformObserver, times(1)).onCompleted();
 
     // Test 2: Filter for INLINE_TRACING_AGENT rules
@@ -125,7 +133,10 @@ class DetectionExclusionConfigServiceImplTest {
             detectionExclusionConfigService.getDetectionExclusionRules(
                 inlineRequest, inlineObserver));
     verify(inlineObserver, times(1))
-        .onNext(GetDetectionExclusionRulesResponse.newBuilder().addRules(inlineRule).build());
+        .onNext(
+            argThat(
+                response ->
+                    response.getRulesList().contains(inlineRule) && response.getRulesCount() == 1));
     verify(inlineObserver, times(1)).onCompleted();
 
     // Test 3: Filter for EDGE rules
@@ -142,10 +153,12 @@ class DetectionExclusionConfigServiceImplTest {
             detectionExclusionConfigService.getDetectionExclusionRules(edgeRequest, edgeObserver));
     verify(edgeObserver, times(1))
         .onNext(
-            GetDetectionExclusionRulesResponse.newBuilder()
-                .addRules(edgeRule)
-                .addRules(multipleRuleEvaluationPointsRule)
-                .build());
+            argThat(
+                response ->
+                    response
+                            .getRulesList()
+                            .containsAll(List.of(edgeRule, multipleRuleEvaluationPointsRule))
+                        && response.getRulesCount() == 2));
     verify(edgeObserver, times(1)).onCompleted();
 
     // Test 4: Filter for multiple evaluation points
@@ -164,11 +177,13 @@ class DetectionExclusionConfigServiceImplTest {
                 multiRequest, multiObserver));
     verify(multiObserver, times(1))
         .onNext(
-            GetDetectionExclusionRulesResponse.newBuilder()
-                .addRules(platformRule)
-                .addRules(edgeRule)
-                .addRules(multipleRuleEvaluationPointsRule)
-                .build());
+            argThat(
+                response ->
+                    response
+                            .getRulesList()
+                            .containsAll(
+                                List.of(platformRule, edgeRule, multipleRuleEvaluationPointsRule))
+                        && response.getRulesCount() == 3));
     verify(multiObserver, times(1)).onCompleted();
 
     // Test 5: No filter (should return all rules)
@@ -181,12 +196,17 @@ class DetectionExclusionConfigServiceImplTest {
         () -> detectionExclusionConfigService.getDetectionExclusionRules(allRequest, allObserver));
     verify(allObserver, times(1))
         .onNext(
-            GetDetectionExclusionRulesResponse.newBuilder()
-                .addRules(platformRule)
-                .addRules(inlineRule)
-                .addRules(edgeRule)
-                .addRules(multipleRuleEvaluationPointsRule)
-                .build());
+            argThat(
+                response ->
+                    response
+                            .getRulesList()
+                            .containsAll(
+                                List.of(
+                                    platformRule,
+                                    inlineRule,
+                                    edgeRule,
+                                    multipleRuleEvaluationPointsRule))
+                        && response.getRulesCount() == 4));
     verify(allObserver, times(1)).onCompleted();
   }
 

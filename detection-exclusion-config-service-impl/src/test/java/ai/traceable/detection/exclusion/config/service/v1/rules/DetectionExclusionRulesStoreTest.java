@@ -12,6 +12,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
+import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceConfig;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
@@ -92,7 +93,8 @@ class DetectionExclusionRulesStoreTest {
             configServiceBlockingStub,
             mock(ConfigChangeEventGenerator.class),
             featureCachingClient,
-            config);
+            config,
+            new DetectionExclusionAuditHelper(new TimestampConverter()));
   }
 
   @AfterEach

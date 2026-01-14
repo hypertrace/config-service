@@ -8,6 +8,7 @@ import ai.traceable.detection.exclusion.config.service.v1.rules.migration.RulesM
 import io.grpc.stub.StreamObserver;
 import jakarta.inject.Inject;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -42,9 +43,17 @@ public class DetectionExclusionConfigServiceImpl
     try {
       RequestContext context = RequestContext.CURRENT.get();
       rulesValidator.validateOrThrow(context, request);
+
+      List<DetectionExclusionRuleRecord> ruleRecords =
+          rulesManager.getDetectionExclusionRuleRecords(context, request.getFilter());
+
       GetDetectionExclusionRulesResponse response =
           GetDetectionExclusionRulesResponse.newBuilder()
-              .addAllRules(rulesManager.getDetectionExclusionRules(context, request.getFilter()))
+              .addAllRules(
+                  ruleRecords.stream()
+                      .map(DetectionExclusionRuleRecord::getRule)
+                      .collect(Collectors.toList()))
+              .addAllRuleRecords(ruleRecords)
               .build();
       responseObserver.onNext(response);
       responseObserver.onCompleted();

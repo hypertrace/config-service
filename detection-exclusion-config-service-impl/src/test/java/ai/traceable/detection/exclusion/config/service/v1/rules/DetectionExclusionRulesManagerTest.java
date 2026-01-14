@@ -12,6 +12,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
+import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceConfig;
@@ -74,15 +75,19 @@ class DetectionExclusionRulesManagerTest {
     DetectionExclusionConfigServiceConfig config =
         mock(DetectionExclusionConfigServiceConfig.class);
     when(config.getDefaultDetectionExclusionRules()).thenReturn(List.of(DEFAULT_EXCLUSION_RULE));
+    TimestampConverter timestampConverter = new TimestampConverter();
     DetectionExclusionRulesStore rulesStore =
         new DetectionExclusionRulesStore(
             configServiceBlockingStub,
             mockConfigChangeEventGenerator,
             featureCachingClient,
-            config);
+            config,
+            new DetectionExclusionAuditHelper(new TimestampConverter()));
     ThresholdExceededDetectionExclusionRuleStore thresholdExceededDetectionExclusionRuleStore =
         new ThresholdExceededDetectionExclusionRuleStore(
-            configServiceBlockingStub, mockConfigChangeEventGenerator);
+            configServiceBlockingStub,
+            mockConfigChangeEventGenerator,
+            new DetectionExclusionAuditHelper(timestampConverter));
     uuidGenerator = mock(UuidGenerator.class);
     exclusionModsecRulesManager = mock(ExclusionModsecRulesManager.class);
     RulesMigrationManager rulesMigrationManager =

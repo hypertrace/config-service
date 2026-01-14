@@ -5,30 +5,54 @@ import static ai.traceable.detection.exclusion.config.service.v1.rules.Detection
 import static ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionRulesUtils.filterConfig;
 
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleRecord;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
 import com.google.inject.Inject;
 import com.google.protobuf.Value;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.config.objectstore.IdentifiedObjectStoreWithFilter;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 public class ThresholdExceededDetectionExclusionRuleStore
     extends IdentifiedObjectStoreWithFilter<DetectionExclusionRule, GetRulesFilter> {
 
+  private final DetectionExclusionAuditHelper auditHelper;
+
   @Inject
   public ThresholdExceededDetectionExclusionRuleStore(
       ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
-      ConfigChangeEventGenerator configChangeEventGenerator) {
+      ConfigChangeEventGenerator configChangeEventGenerator,
+      DetectionExclusionAuditHelper auditHelper) {
     super(
         configServiceBlockingStub,
         DETECTION_EXCLUSION_RULE_CONFIG_RESOURCE_NAMESPACE,
         THRESHOLD_EXCEEDED_DETECTION_EXCLUSION_RULE_CONFIG_RESOURCE_NAME,
         configChangeEventGenerator);
+    this.auditHelper = auditHelper;
+  }
+
+  @Override
+  public List<ContextualConfigObject<DetectionExclusionRule>> getAllObjects(
+      RequestContext context, GetRulesFilter filter) {
+    return super.getAllObjects(context, filter).stream()
+        .filter(configObject -> auditHelper.matchesAuditFilters(configObject, filter))
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  public List<DetectionExclusionRuleRecord> getAllRuleRecords(
+      RequestContext context, GetRulesFilter filter) {
+    return getAllObjects(context, filter).stream()
+        .map(auditHelper::toRuleRecord)
+        .collect(Collectors.toUnmodifiableList());
   }
 
   @Override
