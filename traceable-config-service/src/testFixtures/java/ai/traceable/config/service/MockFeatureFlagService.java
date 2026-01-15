@@ -48,6 +48,9 @@ public class MockFeatureFlagService extends FeatureFlagServiceImplBase {
             .putValues(
                 "api-protect.policies.migration",
                 FeatureFlagValue.newBuilder().setBoolean(false).build())
+            .putValues(
+                "protection-engine.webapp-protection",
+                FeatureFlagValue.newBuilder().setBoolean(false).build())
             .build());
     responseObserver.onCompleted();
   }

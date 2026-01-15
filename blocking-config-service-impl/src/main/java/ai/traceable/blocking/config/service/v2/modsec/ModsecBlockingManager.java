@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -32,10 +31,6 @@ public class ModsecBlockingManager implements BlockingConfigManagerBase {
    */
   private static final String MINIMUM_LIBTRACEABLE_VERSION_FOR_V3_SECARG_DETECTION_ONLY =
       "0.1.98-rc.162";
-
-  // set of tenant Ids whitelisted to receive modsec rules even if eds is enabled
-  private static final Set<String> TENANTS_WHITELISTED_FOR_MODSEC_RULES =
-      Set.of("1c78463d-09b5-4a25-a46f-54fee0ae4f38");
 
   private final BlockingModsecBlobFetcher blockingModsecBlobFetcher;
   private final UuidGenerator uuidGenerator;
@@ -94,8 +89,8 @@ public class ModsecBlockingManager implements BlockingConfigManagerBase {
 
   private List<AgentCapabilities> getAgentCapabilitiesWithEdsEnabled(
       List<BlockingConfigRequestElement> requestElements, RequestContext requestContext) {
-    if (requestContext.getTenantId().isPresent()
-        && TENANTS_WHITELISTED_FOR_MODSEC_RULES.contains(requestContext.getTenantId().get())) {
+    // we send modsec rules to both libtraceable & edge if dual evaluation is enabled
+    if (featureCachingClient.isProtectionBlockingDualEvaluationEnabledForTenant(requestContext)) {
       return Collections.emptyList();
     }
     return requestElements.stream()
@@ -118,9 +113,9 @@ public class ModsecBlockingManager implements BlockingConfigManagerBase {
         .filter(BlockingConfigRequestElement::hasCrsBlockingRulesRequest)
         .flatMap(
             requestElement -> {
-              if (requestContext.getTenantId().isPresent()
-                  && TENANTS_WHITELISTED_FOR_MODSEC_RULES.contains(
-                      requestContext.getTenantId().get())) {
+              // we send modsec rules to both libtraceable & edge if dual evaluation is enabled
+              if (featureCachingClient.isProtectionBlockingDualEvaluationEnabledForTenant(
+                  requestContext)) {
                 return Stream.of(requestElement);
               }
               List<AgentCapabilities> agentCapabilitiesWithEdsDisabled =
