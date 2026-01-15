@@ -96,23 +96,23 @@ public class CustomModsecRuleConverter {
             : convert(expression.getMatchOperator(), expression.getMatchValue());
 
     Optional<CustomModsecValueMatchClause> valueMatchClause = Optional.empty();
-    Optional<RequestValueMatchMetadata> requestMetadata =
-        this.getRequestValueMatchMetadata(expression.getMatchKey());
-    if (requestMetadata.isPresent()) {
+
+    if (expression.getMatchCategory() == MatchCategory.MATCH_CATEGORY_REQUEST) {
       valueMatchClause =
-          Optional.of(
-              CustomModsecValueMatchClause.newBuilder()
-                  .setRequestValueMetadata(requestMetadata.get())
-                  .setValueMatchExpression(matchExpression)
-                  .build());
-    }
-    if (valueMatchClause.isEmpty()) {
+          this.getRequestValueMatchMetadata(expression.getMatchKey())
+              .map(
+                  requestMetadata ->
+                      CustomModsecValueMatchClause.newBuilder()
+                          .setRequestValueMetadata(requestMetadata)
+                          .setValueMatchExpression(matchExpression)
+                          .build());
+    } else if (expression.getMatchCategory() == MatchCategory.MATCH_CATEGORY_RESPONSE) {
       valueMatchClause =
           this.getResponseValueMatchMetadata(expression.getMatchKey())
               .map(
-                  responseValueMatchMetadata ->
+                  responseMetadata ->
                       CustomModsecValueMatchClause.newBuilder()
-                          .setResponseValueMetadata(responseValueMatchMetadata)
+                          .setResponseValueMetadata(responseMetadata)
                           .setValueMatchExpression(matchExpression)
                           .build());
     }

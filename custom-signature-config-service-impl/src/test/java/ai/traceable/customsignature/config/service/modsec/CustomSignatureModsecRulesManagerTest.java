@@ -318,7 +318,8 @@ class CustomSignatureModsecRulesManagerTest {
               MatchOperator.MATCH_OPERATOR_NOT_EQUAL,
               MatchOperator.MATCH_OPERATOR_CONTAINS,
               MatchOperator.MATCH_OPERATOR_NOT_CONTAIN),
-          EventType.EVENT_TYPE_DETECTION_AND_BLOCKING);
+          EventType.EVENT_TYPE_DETECTION_AND_BLOCKING,
+          MatchCategory.MATCH_CATEGORY_REQUEST);
 
       createRules(
           rules,
@@ -334,7 +335,8 @@ class CustomSignatureModsecRulesManagerTest {
           List.of(
               MatchOperator.MATCH_OPERATOR_MATCHES_REGEX,
               MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX),
-          EventType.EVENT_TYPE_ALLOW);
+          EventType.EVENT_TYPE_ALLOW,
+          MatchCategory.MATCH_CATEGORY_REQUEST);
 
       createRules(
           rules,
@@ -622,7 +624,8 @@ class CustomSignatureModsecRulesManagerTest {
       List<CustomSignatureRule> rules,
       List<MatchCombination> matchCombinations,
       List<MatchOperator> matchOperators,
-      EventType eventType) {
+      EventType eventType,
+      MatchCategory matchCategory) {
     matchCombinations.forEach(
         matchCombination ->
             matchOperators.forEach(
@@ -652,6 +655,7 @@ class CustomSignatureModsecRulesManagerTest {
                                                             .setMatchOperator(matchOperator)
                                                             .setMatchValue(
                                                                 matchCombination.getMatchValue())
+                                                            .setMatchCategory(matchCategory)
                                                             .build())
                                                     .build())
                                             .build())

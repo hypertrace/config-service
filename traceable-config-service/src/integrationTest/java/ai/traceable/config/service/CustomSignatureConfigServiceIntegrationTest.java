@@ -445,6 +445,7 @@ public class CustomSignatureConfigServiceIntegrationTest
                                 .setMatchKey(MatchKey.MATCH_KEY_HOST)
                                 .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
                                 .setMatchValue("127.0.0.1")
+                                .setMatchCategory(MatchCategory.MATCH_CATEGORY_REQUEST)
                                 .build())
                         .build())
                 .addClauses(

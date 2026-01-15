@@ -21,6 +21,7 @@ import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesReq
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import ai.traceable.customsignature.config.service.v1.KeyValueExpression;
 import ai.traceable.customsignature.config.service.v1.KeyValueTag;
+import ai.traceable.customsignature.config.service.v1.MatchCategory;
 import ai.traceable.customsignature.config.service.v1.MatchExpression;
 import ai.traceable.customsignature.config.service.v1.MatchKey;
 import ai.traceable.customsignature.config.service.v1.MatchOperator;
@@ -144,7 +145,8 @@ public class CustomSignatureRuleEvaluationPointsMigrationConfigServiceIntegratio
                                 MatchExpression.newBuilder()
                                     .setMatchKey(MatchKey.MATCH_KEY_HOST)
                                     .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
-                                    .setMatchValue("127.0.0.1")))
+                                    .setMatchValue("127.0.0.1")
+                                    .setMatchCategory(MatchCategory.MATCH_CATEGORY_REQUEST)))
                     .addClauses(
                         Clause.newBuilder()
                             .setKeyValueExpression(
