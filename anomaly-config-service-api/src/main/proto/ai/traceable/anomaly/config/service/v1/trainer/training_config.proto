@@ -769,12 +769,14 @@ message ObjectBolaTrainingConfig {
   StringList suffixes_not_allowed_in_response_param_key = 4;
   optional bool enabled_on_same_api = 5;
   MultiValuedStringParamRulesList multi_valued_string_param_rules = 6;
+  bool sanitize_param_value = 7;
 }
 
 message UserIdBolaTrainingConfig {
   UserIdSource user_id_source = 1 [deprecated = true];
   ThresholdCountConfig required_count_config = 2;
   UserIdDataList user_id_data_list = 3;
+  bool sanitize_param_value = 4;
 }
 
 message PiiSensitiveDataTrainingConfig {}
