@@ -503,12 +503,14 @@ message ObjectBolaAnomalyConfig {
   optional int64 preceding_event_look_ahead_time_window = 6;
   StringList request_param_values_not_allowed = 7;
   MultiValuedStringParamRulesList multi_valued_string_param_rules = 8;
+  bool sanitize_param_value = 9;
 }
 
 message UserIdBolaAnomalyConfig {
   optional double min_correlation_probability = 1;
   UserIdSource user_id_source = 2 [deprecated = true];
   UserIdDataList user_id_data_list = 3;
+  bool sanitize_param_value = 4;
 }
 
 message SequenceAnomalyConfig {
