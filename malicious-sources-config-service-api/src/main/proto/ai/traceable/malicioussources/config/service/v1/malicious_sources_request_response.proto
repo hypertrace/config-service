@@ -30,6 +30,12 @@ message DeleteMaliciousSourcesRuleRequest {
 
 message DeleteMaliciousSourcesRuleResponse {}
 
+message BulkDeleteMaliciousSourcesRulesRequest {
+  repeated string ids = 1;
+}
+
+message BulkDeleteMaliciousSourcesRulesResponse {}
+
 message GetMaliciousSourcesRulesRequest {
   GetRulesFilter filter = 1;
 }

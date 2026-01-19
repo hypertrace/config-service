@@ -40,6 +40,12 @@ message DeleteCustomSignatureRuleRequest {
 
 message DeleteCustomSignatureRuleResponse {}
 
+message BulkDeleteCustomSignatureRulesRequest {
+  repeated string ids = 1;
+}
+
+message BulkDeleteCustomSignatureRulesResponse {}
+
 message GetCustomSignatureRulesRequest {
   GetRulesFilter filter = 1;
 }

@@ -138,6 +138,12 @@ message DeleteRegionRuleRequest {
 
 message DeleteRegionRuleResponse {}
 
+message BulkDeleteRegionRulesRequest {
+  repeated string ids = 1;
+}
+
+message BulkDeleteRegionRulesResponse {}
+
 message ExpirationDetails {
   oneof expiration {
     // Duration represented in ISO 8601 duration format.
