@@ -63,8 +63,7 @@ public class DefaultProtectionSpanRulesManager implements ProtectionSpanRulesMan
   private Optional<ProtectionSpanProcessingRule> convertProtectionSpanRule(
       ProtectionSpanRule protectionSpanRule, String serviceName, Optional<String> environment) {
     // check if the rule is disabled
-    if (!protectionSpanRule.getRuleInfo().hasFilter()
-        || protectionSpanRule.getRuleInfo().getDisabled()) {
+    if (protectionSpanRule.getRuleInfo().getDisabled()) {
       return Optional.empty();
     }
 
@@ -82,17 +81,15 @@ public class DefaultProtectionSpanRulesManager implements ProtectionSpanRulesMan
 
     Optional<SpanFilter> spanFilter =
         filterConverter.convert(protectionSpanRule.getRuleInfo().getFilter());
-    if (spanFilter.isEmpty()) {
-      return Optional.empty();
-    }
+
+    ProtectionSpanProcessingRuleInfo.Builder ruleInfoBuilder =
+        ProtectionSpanProcessingRuleInfo.newBuilder().setId(protectionSpanRule.getId());
+
+    spanFilter.ifPresent(ruleInfoBuilder::setFilter);
 
     return Optional.of(
         ProtectionSpanProcessingRule.newBuilder()
-            .setProtectionSpanProcessingRuleInfo(
-                ProtectionSpanProcessingRuleInfo.newBuilder()
-                    .setId(protectionSpanRule.getId())
-                    .setFilter(spanFilter.get())
-                    .build())
+            .setProtectionSpanProcessingRuleInfo(ruleInfoBuilder.build())
             .build());
   }
 }

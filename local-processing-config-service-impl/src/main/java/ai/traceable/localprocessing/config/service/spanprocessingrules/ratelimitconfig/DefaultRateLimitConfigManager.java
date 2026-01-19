@@ -208,18 +208,17 @@ public class DefaultRateLimitConfigManager implements RateLimitConfigManager {
 
     Optional<ai.traceable.localprocessing.config.service.v1.SpanFilter> filter =
         filterConverter.convert(spanFilter);
-    if (filter.isEmpty()) {
-      return Optional.empty();
-    }
 
-    return Optional.of(
+    RateLimitConfig.Builder builder =
         RateLimitConfig.newBuilder()
             .setApiEndpointCacheDuration(rateLimitConfig.getApiEndpointCacheDuration())
             .setTraceLimitGlobal(convertRateLimit(rateLimitConfig.getTraceLimitGlobal()))
             .setTraceLimitPerEndpoint(convertRateLimit(rateLimitConfig.getTraceLimitPerEndpoint()))
             .setRateLimitStrategy(convertRateLimitStrategy(rateLimitConfig.getRateLimitStrategy()))
-            .setId(samplingConfig.getId())
-            .setFilter(filter.get())
-            .build());
+            .setId(samplingConfig.getId());
+
+    filter.ifPresent(builder::setFilter);
+
+    return Optional.of(builder.build());
   }
 }

@@ -91,10 +91,6 @@ public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
   // tree structure
   private Optional<ExcludeSpanProcessingRule> convertExcludeSpanRule(
       ExcludeSpanRule excludeSpanRule, String serviceName, Optional<String> environment) {
-    if (!isSpanFilterPresent(excludeSpanRule)) {
-      return Optional.empty();
-    }
-
     // check if the rule is disabled
     if (excludeSpanRule.getRuleInfo().getDisabled()) {
       return Optional.empty();
@@ -113,24 +109,27 @@ public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
     }
 
     try {
-      return convertFilter(excludeSpanRule.getRuleInfo().getFilter())
-          .map(
-              spanFilter ->
-                  ExcludeSpanProcessingRule.newBuilder()
-                      .setExcludeSpanProcessingRuleInfo(
-                          ExcludeSpanProcessingRuleInfo.newBuilder()
-                              .setId(excludeSpanRule.getId())
-                              .setFilter(spanFilter))
-                      .build())
-          .filter(this::isAgentSupportedRule);
+      Optional<SpanFilter> spanFilter = convertFilter(excludeSpanRule.getRuleInfo().getFilter());
+
+      ExcludeSpanProcessingRuleInfo.Builder ruleInfoBuilder =
+          ExcludeSpanProcessingRuleInfo.newBuilder().setId(excludeSpanRule.getId());
+
+      spanFilter.ifPresent(ruleInfoBuilder::setFilter);
+
+      ExcludeSpanProcessingRule rule =
+          ExcludeSpanProcessingRule.newBuilder()
+              .setExcludeSpanProcessingRuleInfo(ruleInfoBuilder.build())
+              .build();
+
+      if (!isAgentSupportedRule(rule)) {
+        return Optional.empty();
+      }
+
+      return Optional.of(rule);
     } catch (Exception e) {
       log.error("Exception occurred in processing spanRule: {}", excludeSpanRule, e);
       return Optional.empty();
     }
-  }
-
-  private static boolean isSpanFilterPresent(ExcludeSpanRule excludeSpanRule) {
-    return excludeSpanRule.getRuleInfo().hasFilter();
   }
 
   private boolean isAgentSupportedRule(ExcludeSpanProcessingRule spanProcessingRule) {
@@ -145,6 +144,9 @@ public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
         return isAgentSupportedLogicalFilter(spanFilter.getLogicalFilter());
       case RELATIONAL_FILTER:
         return isAgentSupportedRelationalFilter(spanFilter.getRelationalFilter());
+      case SPANFILTEREXPRESSION_NOT_SET:
+        // No filter set - rule without filter is agent supported
+        return true;
       default:
         return false;
     }
