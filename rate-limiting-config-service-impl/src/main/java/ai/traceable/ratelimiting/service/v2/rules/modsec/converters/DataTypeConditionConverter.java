@@ -9,6 +9,7 @@ import ai.traceable.ratelimiting.config.service.v2.DatatypeCondition.RegexBasedM
 import ai.traceable.ratelimiting.config.service.v2.ModsecRuleIdInfo.MatchCondition;
 import ai.traceable.ratelimiting.service.v2.rules.modsec.datatype.DataClassificationInfoProvider.DataClassificationInfo;
 import ai.traceable.ratelimiting.service.v2.rules.modsec.datatype.DataTypeRuleWrapper;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,10 +30,15 @@ public class DataTypeConditionConverter {
         .distinct()
         .map(
             dataTypeId ->
+                new AbstractMap.SimpleEntry<>(
+                    dataTypeId, dataClassificationInfo.getDataTypeRule(dataTypeId)))
+        .filter(entry -> entry.getValue() != null)
+        .map(
+            entry ->
                 getRuleWrapper(
                     datatypeCondition.getDatatypeMatching().getRegexBasedMatching(),
-                    dataTypeId,
-                    dataClassificationInfo.getDataTypeRule(dataTypeId)))
+                    entry.getKey(),
+                    entry.getValue()))
         .collect(Collectors.toUnmodifiableList());
   }
 

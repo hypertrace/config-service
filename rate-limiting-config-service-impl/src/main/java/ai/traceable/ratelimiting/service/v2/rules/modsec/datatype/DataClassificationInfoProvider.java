@@ -65,10 +65,16 @@ public class DataClassificationInfoProvider {
     ListMultimap<String, String> dataTypeIdsByDataSetId;
 
     public List<String> getDataTypeIdsForDataSet(String datasetId) {
+      if (datasetId == null) {
+        return List.of();
+      }
       return dataTypeIdsByDataSetId.get(datasetId);
     }
 
     public DataTypeRule getDataTypeRule(String dataTypeId) {
+      if (dataTypeId == null) {
+        return null;
+      }
       try {
         return dataTypeRuleMap.get(dataTypeId);
       } catch (Exception e) {
