@@ -20,6 +20,7 @@ public class IpResolutionStrategyConfigServiceImpl
 
   private final IpResolutionStrategyStore store;
   private final UuidGenerator uuidGenerator;
+  private final IpResolutionStrategyRequestValidator requestValidator;
 
   @Override
   public void getIpResolutionStrategyConfigs(
@@ -27,6 +28,7 @@ public class IpResolutionStrategyConfigServiceImpl
       StreamObserver<GetIpResolutionStrategyConfigsResponse> responseObserver) {
     RequestContext context = RequestContext.CURRENT.get();
     try {
+      requestValidator.validateOrThrow(context, request);
       responseObserver.onNext(
           GetIpResolutionStrategyConfigsResponse.newBuilder()
               .addAllConfigs(store.getAllConfigData(context, request.getFilter()))
@@ -44,6 +46,7 @@ public class IpResolutionStrategyConfigServiceImpl
       StreamObserver<CreateIpResolutionStrategyConfigResponse> responseObserver) {
     RequestContext context = RequestContext.CURRENT.get();
     try {
+      requestValidator.validateOrThrow(context, request);
       IpResolutionStrategyConfigData data = request.getData();
       String id = uuidGenerator.generateRandomId();
       IpResolutionStrategyConfig config =
@@ -67,6 +70,7 @@ public class IpResolutionStrategyConfigServiceImpl
       StreamObserver<UpdateIpResolutionStrategyConfigResponse> responseObserver) {
     RequestContext context = RequestContext.CURRENT.get();
     try {
+      requestValidator.validateOrThrow(context, request);
       String id = request.getId();
       Optional<IpResolutionStrategyConfig> existing = store.getData(context, id);
       if (existing.isEmpty()) {
@@ -94,6 +98,7 @@ public class IpResolutionStrategyConfigServiceImpl
       StreamObserver<DeleteIpResolutionStrategyConfigResponse> responseObserver) {
     RequestContext context = RequestContext.CURRENT.get();
     try {
+      requestValidator.validateOrThrow(context, request);
       Optional<DeletedContextualConfigObject<IpResolutionStrategyConfig>> deleted =
           store.deleteObject(context, request.getId());
       if (deleted.isEmpty()) {

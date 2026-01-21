@@ -1,7 +1,10 @@
 package ai.traceable.ipresolutionstrategy.config.service.v1.store;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.ipresolutionstrategy.config.service.v1.EnvironmentScope;
@@ -17,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -115,6 +119,93 @@ class IpResolutionStrategyStoreTest {
             .addIds("cfg1")
             .build();
     assertEquals(enabledScopedCfg, store.filterConfigData(enabledScopedCfg, matchAll).get());
+  }
+
+  @Test
+  void testDefaultRule() {
+    IpResolutionStrategyConfigServiceConfig config =
+        mock(IpResolutionStrategyConfigServiceConfig.class);
+    IpResolutionStrategyConfig defaultStrategy =
+        IpResolutionStrategyConfig.newBuilder()
+            .setId("default-id")
+            .setData(
+                IpResolutionStrategyConfigData.newBuilder()
+                    .setStrategy(
+                        IpResolutionStrategy.newBuilder().setEvaluateAllIpsForBlocking(true)))
+            .build();
+    IpResolutionStrategyConfig randomStrategy =
+        IpResolutionStrategyConfig.newBuilder()
+            .setId("random-id")
+            .setData(
+                IpResolutionStrategyConfigData.newBuilder()
+                    .setStrategy(
+                        IpResolutionStrategy.newBuilder().setEvaluateAllIpsForBlocking(true)))
+            .build();
+
+    when(config.getDefaultIpResolutionStrategyConfigs()).thenReturn(List.of(defaultStrategy));
+    store =
+        spy(
+            new IpResolutionStrategyStore(
+                mock(ConfigServiceGrpc.ConfigServiceBlockingStub.class),
+                mock(ConfigChangeEventGenerator.class),
+                config));
+
+    doReturn(List.of(new MockContextualConfigObject(randomStrategy)))
+        .when(store)
+        .getAllObjects(any(RequestContext.class), any(IpResolutionStrategyFilter.class));
+    RequestContext ctx = RequestContext.forTenantId("test-tenant");
+    assertEquals(
+        List.of(defaultStrategy, randomStrategy),
+        store.getAllConfigData(ctx, IpResolutionStrategyFilter.getDefaultInstance()));
+  }
+
+  @Test
+  void testOverrideOfDefaultRule() {
+    IpResolutionStrategyConfigServiceConfig config =
+        mock(IpResolutionStrategyConfigServiceConfig.class);
+    IpResolutionStrategyConfig defaultStrategy =
+        IpResolutionStrategyConfig.newBuilder()
+            .setId("default-id")
+            .setData(
+                IpResolutionStrategyConfigData.newBuilder()
+                    .setStrategy(
+                        IpResolutionStrategy.newBuilder().setEvaluateAllIpsForBlocking(true)))
+            .build();
+    IpResolutionStrategyConfig overriddenStrategy =
+        IpResolutionStrategyConfig.newBuilder()
+            .setId("default-id")
+            .setData(
+                IpResolutionStrategyConfigData.newBuilder()
+                    .setStrategy(
+                        IpResolutionStrategy.newBuilder().setEvaluateAllIpsForBlocking(false)))
+            .build();
+    IpResolutionStrategyConfig randomStrategy =
+        IpResolutionStrategyConfig.newBuilder()
+            .setId("random-id")
+            .setData(
+                IpResolutionStrategyConfigData.newBuilder()
+                    .setStrategy(
+                        IpResolutionStrategy.newBuilder().setEvaluateAllIpsForBlocking(true)))
+            .build();
+
+    when(config.getDefaultIpResolutionStrategyConfigs()).thenReturn(List.of(defaultStrategy));
+    store =
+        spy(
+            new IpResolutionStrategyStore(
+                mock(ConfigServiceGrpc.ConfigServiceBlockingStub.class),
+                mock(ConfigChangeEventGenerator.class),
+                config));
+
+    doReturn(
+            List.of(
+                new MockContextualConfigObject(randomStrategy),
+                new MockContextualConfigObject(overriddenStrategy)))
+        .when(store)
+        .getAllObjects(any(RequestContext.class), any(IpResolutionStrategyFilter.class));
+    RequestContext ctx = RequestContext.forTenantId("test-tenant");
+    assertEquals(
+        List.of(overriddenStrategy, randomStrategy),
+        store.getAllConfigData(ctx, IpResolutionStrategyFilter.getDefaultInstance()));
   }
 
   private static IpResolutionStrategyConfig buildConfig(

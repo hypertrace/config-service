@@ -29,12 +29,14 @@ class IpResolutionStrategyConfigServiceImplTest {
   private IpResolutionStrategyStore store;
   private IpResolutionStrategyConfigServiceImplBase service;
   private UuidGenerator uuidGenerator;
+  private IpResolutionStrategyRequestValidator validator;
 
   @BeforeEach
   void setup() {
     store = mock(IpResolutionStrategyStore.class);
     uuidGenerator = mock(UuidGenerator.class);
-    service = new IpResolutionStrategyConfigServiceImpl(store, uuidGenerator);
+    validator = mock(IpResolutionStrategyRequestValidator.class);
+    service = new IpResolutionStrategyConfigServiceImpl(store, uuidGenerator, validator);
   }
 
   @Test

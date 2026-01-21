@@ -78,8 +78,8 @@ external-agent-attribute-config-service-api @shashank11p @tim-mwangi
 external-agent-attribute-config-service-impl @shashank11p @tim-mwangi
 external-data-classification-config-service-api @shashank11p @tim-mwangi
 external-data-classification-config-service-impl @shashank11p @tim-mwangi
-ip-resolution-strategy-config-service-api @shashank11p @tim-mwangi @prodion23
-ip-resolution-strategy-config-service-impl @shashank11p @tim-mwangi @prodion23
+ip-resolution-strategy-config-service-api @shashank11p @tim-mwangi @prodion23 @varkey98
+ip-resolution-strategy-config-service-impl @shashank11p @tim-mwangi @prodion23 @varkey98
 local-processing-config-service-api @shashank11p @tim-mwangi @varkey98
 local-processing-config-service-impl @shashank11p @tim-mwangi @varkey98
 data-obfuscation-config-service-api @shashank11p @tim-mwangi @varkey98

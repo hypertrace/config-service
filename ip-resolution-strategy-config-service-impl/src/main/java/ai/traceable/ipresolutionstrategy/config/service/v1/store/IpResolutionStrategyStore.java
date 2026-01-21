@@ -72,10 +72,10 @@ public class IpResolutionStrategyStore
       List<IpResolutionStrategyConfig> configs, List<IpResolutionStrategyConfig> defaults) {
     Map<String, IpResolutionStrategyConfig> merged = new LinkedHashMap<>();
     merged.putAll(
-        configs.stream()
+        defaults.stream()
             .collect(Collectors.toMap(IpResolutionStrategyConfig::getId, Function.identity())));
     merged.putAll(
-        defaults.stream()
+        configs.stream()
             .collect(Collectors.toMap(IpResolutionStrategyConfig::getId, Function.identity())));
     return merged.values().stream().collect(Collectors.toUnmodifiableList());
   }
