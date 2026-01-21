@@ -66,6 +66,7 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
       "disallow_unauthenticated_sessions";
   private static final String PRIMARY_API_MODEL_TYPE = "primary_api_model";
   private static final String SECONDARY_API_MODEL_TYPE = "secondary_api_model";
+  private static final String PARAM_REGEX_TO_IGNORE = "param_regex_to_ignore";
   private static final String USE_LEARNT_MODEL_FOR_PARAM_TYPE_INFO_MISSING =
       "use_learnt_model_for_param_type_info_missing";
   private static final String USE_LEARNT_MODEL_FOR_MISSING_RESPONSE_CODE =
@@ -554,7 +555,7 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
             .setKey(MIN_IP_ABUSE_VELOCITY)
             .setConfigValueMetadata(
                 ConfigValueMetadata.newBuilder()
-                    .setType(ConfigValueType.CONFIG_VALUE_TYPE_NUMBER)
+                    .setType(ConfigValueType.CONFIG_VALUE_TYPE_STRING)
                     .build())
             .build();
 
@@ -610,6 +611,16 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
                     .setType(ConfigValueType.CONFIG_VALUE_TYPE_STRING)
                     .build())
             .build();
+
+    ConfigMetadata paramRegexToIgnoreConfigMetadata =
+        ConfigMetadata.newBuilder()
+            .setKey(PARAM_REGEX_TO_IGNORE)
+            .setConfigValueMetadata(
+                ConfigValueMetadata.newBuilder()
+                    .setType(ConfigValueType.CONFIG_VALUE_TYPE_STRING)
+                    .build())
+            .build();
+
     ConfigMetadata useLearntModelForParamTypeInfoMissingConfigMetadata =
         ConfigMetadata.newBuilder()
             .setKey(USE_LEARNT_MODEL_FOR_PARAM_TYPE_INFO_MISSING)
@@ -806,7 +817,10 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
     // contentAnomaly_reqce mapping
     threatRuleIdToConfigMetadataMapping.put(
         CONTENT_ANOMALY_REQCE_SUB_RULE_ID,
-        List.of(minPercentSeenConfigMetadata, maxDepthDifferenceAllowedConfigMetadata));
+        List.of(
+            minPercentSeenConfigMetadata,
+            maxDepthDifferenceAllowedConfigMetadata,
+            maxDepthConfigMetadata));
 
     // parameterAnomaly_sct mapping
     threatRuleIdToConfigMetadataMapping.put(
@@ -901,7 +915,8 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
             evaluateRequestBodyParamsConfigMetadata,
             thresholdFamiliesExcluded,
             primaryApiModelTypeConfigMetadata,
-            secondaryApiModelTypeConfigMetadata));
+            secondaryApiModelTypeConfigMetadata,
+            paramRegexToIgnoreConfigMetadata));
   }
 
   public static List<ConfigMetadata> getConfigMetadata(String threatRuleId) {
