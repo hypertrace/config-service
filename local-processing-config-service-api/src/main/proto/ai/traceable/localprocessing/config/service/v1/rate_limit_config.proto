@@ -12,9 +12,10 @@ message RateLimitConfig {
   RateLimit trace_limit_per_endpoint = 1;
   RateLimit trace_limit_global = 2;
   google.protobuf.Duration api_endpoint_cache_duration = 3;
-  RateLimitStrategy rate_limit_strategy = 4;
+  RateLimitStrategy rate_limit_strategy = 4 [deprecated = true];
   string id = 5;
   SpanFilter filter = 6;
+  SpanLimitingStrategy limiting_strategy = 7;
 }
 
 message RateLimit {
@@ -32,4 +33,10 @@ enum RateLimitStrategy {
   RATE_LIMIT_STRATEGY_UNSPECIFIED = 0;
   RATE_LIMIT_STRATEGY_DROP = 1;
   RATE_LIMIT_STRATEGY_BARESPAN = 2;
+}
+
+enum SpanLimitingStrategy {
+  SPAN_LIMITING_STRATEGY_UNSPECIFIED = 0;
+  SPAN_LIMITING_STRATEGY_DROP = 1;
+  SPAN_LIMITING_STRATEGY_BARESPAN = 2;
 }
