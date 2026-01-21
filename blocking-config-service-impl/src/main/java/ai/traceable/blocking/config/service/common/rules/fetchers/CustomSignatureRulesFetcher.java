@@ -75,7 +75,7 @@ public class CustomSignatureRulesFetcher implements RulesFetcher {
             .addAllServiceNames(serviceNames)
             .setModsecCrsRulesTarget(ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING)
             .setFilter(
-                GetRulesFilter.newBuilder()
+                DEFAULT_GET_CUSTOM_SIGNATURE_MODSEC_RULES_FILTER.toBuilder()
                     .setRuleScope(
                         environmentId
                             .map(

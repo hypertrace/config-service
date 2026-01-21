@@ -113,8 +113,8 @@ public class CustomSignatureRulesFetcherTest {
             argThat(
                 request ->
                     request.getServiceNamesCount() > 0
-                        && request.getRuleVersion()
-                            == CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS));
+                        && request.getRuleVersion() == CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS
+                        && !request.getFilter().getDisabled()));
   }
 
   @Test
@@ -133,6 +133,34 @@ public class CustomSignatureRulesFetcherTest {
     assertEquals(1, customSignatureModsecRulesResponse.getInlineRulesCount());
     assertEquals(
         "ruleId1-env", customSignatureModsecRulesResponse.getInlineRules(0).getRule().getId());
+  }
+
+  @Test
+  void test_fetchCustomSignatureInlineRules_ensuresDisabledFilterSetToFalse() {
+    CustomSignatureConfigServiceBlockingStub verifyingStub =
+        mock(CustomSignatureConfigServiceBlockingStub.class, Answers.RETURNS_SELF);
+
+    GetCustomSignatureModsecRulesResponse mockResponse =
+        GetCustomSignatureModsecRulesResponse.newBuilder()
+            .setModsecDirectivesBlob("test")
+            .addModsecBlobsData(
+                ModsecBlobData.newBuilder().setModsecBlob("blob").addServiceNames("service1"))
+            .build();
+
+    doReturn(mockResponse)
+        .when(verifyingStub)
+        .getCustomSignatureModsecRules(
+            argThat(
+                request ->
+                    request.hasFilter()
+                        && request.getFilter().hasDisabled()
+                        && !request.getFilter().getDisabled()));
+
+    CustomSignatureRulesFetcher verifyingFetcher =
+        new CustomSignatureRulesFetcher(verifyingStub, ClientConfig.DEFAULT);
+
+    verifyingFetcher.fetchCustomSignatureInlineRules(
+        REQUEST_CONTEXT, ENVIRONMENT_ID, Set.of("service1"));
   }
 
   @Test
