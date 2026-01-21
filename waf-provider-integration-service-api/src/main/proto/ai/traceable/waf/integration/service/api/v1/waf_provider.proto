@@ -93,6 +93,7 @@ enum RuleType {
   RULE_TYPE_CUSTOM_SIGNATURE = 1;
   RULE_TYPE_THREAT_ACTORS = 2;
   RULE_TYPE_IP_RANGE = 3;
+  RULE_TYPE_REGION = 4;
 }
 
 message EnvironmentScope {
