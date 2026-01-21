@@ -21,8 +21,11 @@ message ApplicationGroupingRuleConfigInfo {
 message GroupName {
   oneof source {
     string static = 1;
+    Dynamic dynamic = 2;
   }
 }
+
+message Dynamic {}
 
 message AssetSelector {
   AssetType asset_type = 1;
