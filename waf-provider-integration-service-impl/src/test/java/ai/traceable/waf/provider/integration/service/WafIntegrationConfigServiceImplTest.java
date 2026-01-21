@@ -234,6 +234,8 @@ class WafIntegrationConfigServiceImplTest {
                 .build())
         .addIntegrationTargets(
             WafIntegrationTarget.newBuilder().setRuleTarget(RuleType.RULE_TYPE_IP_RANGE).build())
+        .addIntegrationTargets(
+            WafIntegrationTarget.newBuilder().setRuleTarget(RuleType.RULE_TYPE_REGION).build())
         .setAwsIntegrationParams(
             AwsIntegrationParams.newBuilder()
                 .setAuthCredentials(AuthCredentials.newBuilder().setAccessKeyId("id"))
@@ -365,6 +367,10 @@ class WafIntegrationConfigServiceImplTest {
                     .addIntegrationTargets(
                         WafIntegrationTarget.newBuilder()
                             .setRuleTarget(RuleType.RULE_TYPE_IP_RANGE)
+                            .build())
+                    .addIntegrationTargets(
+                        WafIntegrationTarget.newBuilder()
+                            .setRuleTarget(RuleType.RULE_TYPE_REGION)
                             .build())
                     .setAwsIntegrationParams(
                         AwsIntegrationParams.newBuilder()
@@ -551,6 +557,8 @@ class WafIntegrationConfigServiceImplTest {
                 WafIntegrationTarget.newBuilder()
                     .setRuleTarget(RuleType.RULE_TYPE_IP_RANGE)
                     .build())
+            .addIntegrationTargets(
+                WafIntegrationTarget.newBuilder().setRuleTarget(RuleType.RULE_TYPE_REGION).build())
             .setAwsIntegrationParams(
                 AwsIntegrationParams.newBuilder()
                     .setAccessKeyId(
@@ -594,6 +602,8 @@ class WafIntegrationConfigServiceImplTest {
                 WafIntegrationTarget.newBuilder()
                     .setRuleTarget(RuleType.RULE_TYPE_IP_RANGE)
                     .build())
+            .addIntegrationTargets(
+                WafIntegrationTarget.newBuilder().setRuleTarget(RuleType.RULE_TYPE_REGION).build())
             .setAwsIntegrationParams(
                 AwsIntegrationParams.newBuilder()
                     .setAccessKeyId(
@@ -1750,6 +1760,8 @@ class WafIntegrationConfigServiceImplTest {
                 WafIntegrationTarget.newBuilder()
                     .setRuleTarget(RuleType.RULE_TYPE_IP_RANGE)
                     .build())
+            .addIntegrationTargets(
+                WafIntegrationTarget.newBuilder().setRuleTarget(RuleType.RULE_TYPE_REGION).build())
             .setAwsIntegrationParams(
                 AwsIntegrationParams.newBuilder()
                     .setAuthCredentials(
