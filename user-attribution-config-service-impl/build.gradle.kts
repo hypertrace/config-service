@@ -10,6 +10,7 @@ dependencies {
   implementation(projects.configUtils)
   implementation(projects.externalAgentAttributeConfigServiceApi)
   implementation(projects.featureCachingClient)
+  implementation(projects.traceableEdgeDecisionConfigServiceApi)
   implementation(commonLibs.guice7)
   implementation(commonLibs.guava)
   implementation(commonLibs.re2j)

@@ -13,6 +13,7 @@ import ai.traceable.userattribution.config.service.v2.CreateUserAttributionRuleR
 import ai.traceable.userattribution.config.service.v2.CustomProjection;
 import ai.traceable.userattribution.config.service.v2.DeleteUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v2.EnvironmentScope;
+import ai.traceable.userattribution.config.service.v2.GetUserAttributionEdgeDecisionRulesRequest;
 import ai.traceable.userattribution.config.service.v2.GetUserAttributionRulesRequest;
 import ai.traceable.userattribution.config.service.v2.KeyMatch;
 import ai.traceable.userattribution.config.service.v2.LiteralValue;
@@ -48,6 +49,11 @@ public class UserAttributionV2ConfigRequestValidator {
 
   public void validateOrThrow(
       RequestContext requestContext, GetUserAttributionRulesRequest request) {
+    validateRequestContextOrThrow(requestContext);
+  }
+
+  public void validateOrThrow(
+      RequestContext requestContext, GetUserAttributionEdgeDecisionRulesRequest request) {
     validateRequestContextOrThrow(requestContext);
   }
 

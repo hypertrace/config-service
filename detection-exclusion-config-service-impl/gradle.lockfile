@@ -1,12 +1,12 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.4.4452=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.config.service:api-attribute-override-service-api:0.37.1171=runtimeClasspath,testRuntimeClasspath
-ai.traceable.config.service:data-classification-config-service-api:0.37.1171=runtimeClasspath,testRuntimeClasspath
-ai.traceable.config.service:iprange-config-service-api:0.37.1171=runtimeClasspath,testRuntimeClasspath
-ai.traceable.config.service:malicious-sources-config-service-api:0.37.1171=runtimeClasspath,testRuntimeClasspath
-ai.traceable.config.service:rate-limiting-config-service-api:0.37.1171=runtimeClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.4463=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.config.service:api-attribute-override-service-api:0.37.1173=runtimeClasspath,testRuntimeClasspath
+ai.traceable.config.service:data-classification-config-service-api:0.37.1173=runtimeClasspath,testRuntimeClasspath
+ai.traceable.config.service:iprange-config-service-api:0.37.1173=runtimeClasspath,testRuntimeClasspath
+ai.traceable.config.service:malicious-sources-config-service-api:0.37.1173=runtimeClasspath,testRuntimeClasspath
+ai.traceable.config.service:rate-limiting-config-service-api:0.37.1173=runtimeClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-future-client:0.7.64=runtimeClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.7.64=runtimeClasspath,testRuntimeClasspath
 ai.traceable.license.metering.service:license-metering-service-api:0.1.81=runtimeClasspath,testRuntimeClasspath
@@ -42,11 +42,11 @@ ai.traceable.protection.rules:ai-application-protection-rules:0.1.110=runtimeCla
 ai.traceable.protection.rules:api-protection-rules:0.1.110=runtimeClasspath,testRuntimeClasspath
 ai.traceable.protection.rules:protection-rules-common:0.1.110=runtimeClasspath,testRuntimeClasspath
 ai.traceable.protection.rules:web-application-protection-rules:0.1.110=runtimeClasspath,testRuntimeClasspath
-ai.traceable.protection:api-protection-engine-config:0.1.123=runtimeClasspath,testRuntimeClasspath
-ai.traceable.protection:data-parser:0.1.123=runtimeClasspath,testRuntimeClasspath
-ai.traceable.protection:protection-processing-common:0.1.123=runtimeClasspath,testRuntimeClasspath
-ai.traceable.protection:secrules-processor:0.1.123=runtimeClasspath,testRuntimeClasspath
-ai.traceable.protection:web-application-protection-engine-config:0.1.123=runtimeClasspath,testRuntimeClasspath
+ai.traceable.protection:api-protection-engine-config:0.1.124=runtimeClasspath,testRuntimeClasspath
+ai.traceable.protection:data-parser:0.1.124=runtimeClasspath,testRuntimeClasspath
+ai.traceable.protection:protection-processing-common:0.1.124=runtimeClasspath,testRuntimeClasspath
+ai.traceable.protection:secrules-processor:0.1.124=runtimeClasspath,testRuntimeClasspath
+ai.traceable.protection:web-application-protection-engine-config:0.1.124=runtimeClasspath,testRuntimeClasspath
 aopalliance:aopalliance:1.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 at.yawk.lz4:lz4-java:1.8.1=runtimeClasspath,testRuntimeClasspath
 ch.qos.reload4j:reload4j:1.2.22=runtimeClasspath,testRuntimeClasspath

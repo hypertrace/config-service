@@ -6,7 +6,9 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.ObjectDiffer;
 import ai.traceable.config.utils.RankCalculator;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
 import ai.traceable.userattribution.config.service.v2.UserAttributionConfigServiceGrpc.UserAttributionConfigServiceImplBase;
+import ai.traceable.userattribution.config.service.v2.edge.UserAttributionEdgeDecisionConverter;
 import ai.traceable.userattribution.config.service.v2.migration.LegacyUserAttributionRuleTranslatingDao;
 import ai.traceable.userattribution.config.service.v2.store.UserAttributionV2RuleGenerator;
 import ai.traceable.userattribution.config.service.v2.store.UserAttributionV2RuleStore;
@@ -27,6 +29,7 @@ class UserAttributionV2ConfigServiceImpl extends UserAttributionConfigServiceImp
   private final RankCalculator<UserAttributionRule, String> rankCalculator;
   private final ObjectDiffer objectDiffer;
   private final LegacyUserAttributionRuleTranslatingDao legacyRuleStore;
+  private final UserAttributionEdgeDecisionConverter edgeDecisionConverter;
 
   @Inject
   UserAttributionV2ConfigServiceImpl(
@@ -36,7 +39,8 @@ class UserAttributionV2ConfigServiceImpl extends UserAttributionConfigServiceImp
       UserAttributionV2RuleGenerator ruleGenerator,
       RankCalculator<UserAttributionRule, String> rankCalculator,
       ObjectDiffer objectDiffer,
-      LegacyUserAttributionRuleTranslatingDao legacyRuleStore) {
+      LegacyUserAttributionRuleTranslatingDao legacyRuleStore,
+      UserAttributionEdgeDecisionConverter edgeDecisionConverter) {
     this.featureCachingClient = featureCachingClient;
     this.validator = validator;
     this.ruleStore = ruleStore;
@@ -44,6 +48,7 @@ class UserAttributionV2ConfigServiceImpl extends UserAttributionConfigServiceImp
     this.rankCalculator = rankCalculator;
     this.objectDiffer = objectDiffer;
     this.legacyRuleStore = legacyRuleStore;
+    this.edgeDecisionConverter = edgeDecisionConverter;
   }
 
   @Override
@@ -67,6 +72,43 @@ class UserAttributionV2ConfigServiceImpl extends UserAttributionConfigServiceImp
       responseObserver.onCompleted();
     } catch (Exception exception) {
       log.error("Error retrieving user attribution rules", exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
+  public void getUserAttributionEdgeDecisionRules(
+      GetUserAttributionEdgeDecisionRulesRequest request,
+      StreamObserver<GetUserAttributionEdgeDecisionRulesResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      this.validator.validateOrThrow(requestContext, request);
+
+      GetUserAttributionRulesRequest.GetUserAttributionRulesFilter filter = request.getFilter();
+      List<UserAttributionRule> allRules = this.ruleStore.getAllConfigData(requestContext, filter);
+
+      if (allRules.isEmpty()
+          && !request
+              .getRuleSource()
+              .equals(
+                  GetUserAttributionRulesRequest.UserAttributionRuleSource
+                      .USER_ATTRIBUTION_RULE_SOURCE_V2)) {
+        allRules =
+            this.legacyRuleStore.getUserAttributionRulesFromLegacyStore(requestContext, filter);
+      }
+
+      EdgeDecisionEngineConfig edgeDecisionEngineConfig =
+          featureCachingClient.isEdgeDecisionEnabledForTenant(requestContext)
+              ? edgeDecisionConverter.convert(allRules)
+              : EdgeDecisionEngineConfig.getDefaultInstance();
+
+      responseObserver.onNext(
+          GetUserAttributionEdgeDecisionRulesResponse.newBuilder()
+              .setEdgeDecisionEngineConfig(edgeDecisionEngineConfig)
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.error("Error retrieving user attribution edge decision rules", exception);
       responseObserver.onError(exception);
     }
   }

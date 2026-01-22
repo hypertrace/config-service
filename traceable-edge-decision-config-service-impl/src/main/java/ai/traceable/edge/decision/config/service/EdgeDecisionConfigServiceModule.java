@@ -22,6 +22,7 @@ import ai.traceable.edge.decision.config.service.supplier.customsignature.Custom
 import ai.traceable.edge.decision.config.service.supplier.detectionexclusion.DetectionExclusionEdgeDecisionConfigSupplier;
 import ai.traceable.edge.decision.config.service.supplier.jwt.JwtExtractionEdgeDecisionConfigSupplier;
 import ai.traceable.edge.decision.config.service.supplier.ratelimiting.RateLimitingEdgeDecisionEngineConfigSupplier;
+import ai.traceable.edge.decision.config.service.supplier.userattribution.UserAttributionEdgeDecisionConfigSupplier;
 import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionConfigServiceGrpc;
 import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionConfigServiceGrpc.JwtExtractionConfigServiceBlockingStub;
 import ai.traceable.platform.actor.v1.ActorServiceGrpc;
@@ -79,6 +80,7 @@ public class EdgeDecisionConfigServiceModule extends AbstractModule {
         Multibinder.newSetBinder(binder(), VariableEnricher.class);
     variableEnricherMultibinder.addBinding().to(VariableConstantRuleEnricher.class);
     configBinder.addBinding().to(JwtExtractionEdgeDecisionConfigSupplier.class);
+    configBinder.addBinding().to(UserAttributionEdgeDecisionConfigSupplier.class);
   }
 
   @Provides
