@@ -3,6 +3,8 @@ package ai.traceable.malicioussources.config.service;
 import ai.traceable.malicioussources.config.service.rules.RulesManager;
 import ai.traceable.malicioussources.config.service.rules.RulesValidator;
 import ai.traceable.malicioussources.config.service.rules.migration.MaliciousSourcesMigrationManager;
+import ai.traceable.malicioussources.config.service.v1.BulkDeleteMaliciousSourcesRulesRequest;
+import ai.traceable.malicioussources.config.service.v1.BulkDeleteMaliciousSourcesRulesResponse;
 import ai.traceable.malicioussources.config.service.v1.CreateMaliciousSourcesRuleRequest;
 import ai.traceable.malicioussources.config.service.v1.CreateMaliciousSourcesRuleResponse;
 import ai.traceable.malicioussources.config.service.v1.DeleteMaliciousSourcesRuleRequest;
@@ -137,6 +139,29 @@ public class MaliciousSourcesConfigServiceImpl extends MaliciousSourcesConfigSer
 
     } catch (Exception e) {
       log.error("Unable to delete malicious source rule with id {} :", request.getId(), e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void bulkDeleteMaliciousSourcesRules(
+      BulkDeleteMaliciousSourcesRulesRequest request,
+      StreamObserver<BulkDeleteMaliciousSourcesRulesResponse> responseObserver) {
+    try {
+      Status status = rulesValidator.validate(request);
+      if (!status.isOk()) {
+        log.error(
+            "Bulk Delete Malicious Sources Rules Request is not valid {}", status.getDescription());
+        responseObserver.onError(status.asException());
+        return;
+      }
+      rulesManager.bulkDeleteMaliciousSourcesRules(
+          RequestContext.CURRENT.get(), request.getIdsList());
+      responseObserver.onNext(BulkDeleteMaliciousSourcesRulesResponse.getDefaultInstance());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error(
+          "Unable to bulk delete malicious sources rules with ids {} :", request.getIdsList(), e);
       responseObserver.onError(e);
     }
   }

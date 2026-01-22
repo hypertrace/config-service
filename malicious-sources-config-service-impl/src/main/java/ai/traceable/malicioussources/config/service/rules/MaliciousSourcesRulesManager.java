@@ -91,6 +91,11 @@ public class MaliciousSourcesRulesManager implements RulesManager {
         .orElseThrow(() -> Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers()));
   }
 
+  @Override
+  public void bulkDeleteMaliciousSourcesRules(RequestContext requestContext, List<String> ids) {
+    maliciousSourcesRulesStore.deleteObjects(requestContext, ids);
+  }
+
   private boolean doesMaliciousSourcesRuleExist(RequestContext requestContext, String ruleId) {
     Optional<MaliciousSourcesRule> optionalRule =
         maliciousSourcesRulesStore.getData(requestContext, ruleId);

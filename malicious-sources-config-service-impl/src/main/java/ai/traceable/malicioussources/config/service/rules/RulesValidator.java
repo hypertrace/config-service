@@ -1,5 +1,6 @@
 package ai.traceable.malicioussources.config.service.rules;
 
+import ai.traceable.malicioussources.config.service.v1.BulkDeleteMaliciousSourcesRulesRequest;
 import ai.traceable.malicioussources.config.service.v1.CreateMaliciousSourcesRuleRequest;
 import ai.traceable.malicioussources.config.service.v1.DeleteMaliciousSourcesRuleRequest;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
@@ -13,4 +14,6 @@ public interface RulesValidator {
   Status validate(UpdateMaliciousSourcesRuleRequest request, List<MaliciousSourcesRule> rules);
 
   Status validate(DeleteMaliciousSourcesRuleRequest request);
+
+  Status validate(BulkDeleteMaliciousSourcesRulesRequest request);
 }

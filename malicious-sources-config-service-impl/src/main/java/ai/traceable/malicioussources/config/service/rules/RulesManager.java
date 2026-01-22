@@ -24,4 +24,6 @@ public interface RulesManager {
 
   Optional<MaliciousSourcesRule> deleteMaliciousSourcesRule(
       RequestContext requestContext, String id);
+
+  void bulkDeleteMaliciousSourcesRules(RequestContext requestContext, List<String> ids);
 }

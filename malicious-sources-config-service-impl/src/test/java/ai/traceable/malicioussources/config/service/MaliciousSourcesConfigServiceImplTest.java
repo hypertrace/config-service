@@ -13,6 +13,8 @@ import static org.mockito.Mockito.when;
 import ai.traceable.malicioussources.config.service.rules.RulesManager;
 import ai.traceable.malicioussources.config.service.rules.RulesValidator;
 import ai.traceable.malicioussources.config.service.rules.migration.MaliciousSourcesMigrationManager;
+import ai.traceable.malicioussources.config.service.v1.BulkDeleteMaliciousSourcesRulesRequest;
+import ai.traceable.malicioussources.config.service.v1.BulkDeleteMaliciousSourcesRulesResponse;
 import ai.traceable.malicioussources.config.service.v1.CreateMaliciousSourcesRuleRequest;
 import ai.traceable.malicioussources.config.service.v1.CreateMaliciousSourcesRuleResponse;
 import ai.traceable.malicioussources.config.service.v1.DeleteMaliciousSourcesRuleRequest;
@@ -472,6 +474,76 @@ public class MaliciousSourcesConfigServiceImplTest {
           () ->
               maliciousSourcesConfigService.deleteMaliciousSourcesRule(
                   deleteMaliciousSourcesRuleRequest, responseStreamObserver);
+      RequestContext.forTenantId(TENANT_ID).run(runnable);
+
+      verify(responseStreamObserver, times(1))
+          .onError(argThat(err -> err.getClass() == RuntimeException.class));
+    }
+  }
+
+  @Nested
+  class BulkDeleteMaliciousSourcesRules {
+    @Test
+    @DisplayName("should bulk delete for a valid request")
+    void shouldBulkDeleteMaliciousSourcesRules() {
+      BulkDeleteMaliciousSourcesRulesRequest bulkDeleteRequest =
+          BulkDeleteMaliciousSourcesRulesRequest.newBuilder().addIds("id1").addIds("id2").build();
+
+      when(rulesValidator.validate(bulkDeleteRequest)).thenReturn(Status.OK);
+
+      StreamObserver<BulkDeleteMaliciousSourcesRulesResponse> responseStreamObserver =
+          mock(StreamObserver.class);
+      Runnable runnable =
+          () ->
+              maliciousSourcesConfigService.bulkDeleteMaliciousSourcesRules(
+                  bulkDeleteRequest, responseStreamObserver);
+      RequestContext.forTenantId(TENANT_ID).run(runnable);
+
+      verify(rulesManager, times(1))
+          .bulkDeleteMaliciousSourcesRules(any(), eq(List.of("id1", "id2")));
+      verify(responseStreamObserver, times(1))
+          .onNext(BulkDeleteMaliciousSourcesRulesResponse.getDefaultInstance());
+      verify(responseStreamObserver, times(1)).onCompleted();
+    }
+
+    @Test
+    @DisplayName("should return invalid argument status for invalid request")
+    void should_fail_bulkDeleteMaliciousSourcesRules_invalidRequest() {
+      BulkDeleteMaliciousSourcesRulesRequest bulkDeleteRequest =
+          BulkDeleteMaliciousSourcesRulesRequest.getDefaultInstance();
+
+      when(rulesValidator.validate(bulkDeleteRequest)).thenReturn(Status.INVALID_ARGUMENT);
+
+      StreamObserver<BulkDeleteMaliciousSourcesRulesResponse> responseStreamObserver =
+          mock(StreamObserver.class);
+      Runnable runnable =
+          () ->
+              maliciousSourcesConfigService.bulkDeleteMaliciousSourcesRules(
+                  bulkDeleteRequest, responseStreamObserver);
+      RequestContext.forTenantId(TENANT_ID).run(runnable);
+
+      verify(responseStreamObserver, times(1))
+          .onError(
+              argThat(err -> Status.fromThrowable(err).getCode() == Status.Code.INVALID_ARGUMENT));
+    }
+
+    @Test
+    @DisplayName("should throw a runtime error when it occurs inside manager")
+    void propagateRuntimeException_inBulkDeleteMaliciousSources() {
+      BulkDeleteMaliciousSourcesRulesRequest bulkDeleteRequest =
+          BulkDeleteMaliciousSourcesRulesRequest.newBuilder().addIds("id1").build();
+
+      when(rulesValidator.validate(bulkDeleteRequest)).thenReturn(Status.OK);
+      doThrow(RuntimeException.class)
+          .when(rulesManager)
+          .bulkDeleteMaliciousSourcesRules(any(), eq(List.of("id1")));
+
+      StreamObserver<BulkDeleteMaliciousSourcesRulesResponse> responseStreamObserver =
+          mock(StreamObserver.class);
+      Runnable runnable =
+          () ->
+              maliciousSourcesConfigService.bulkDeleteMaliciousSourcesRules(
+                  bulkDeleteRequest, responseStreamObserver);
       RequestContext.forTenantId(TENANT_ID).run(runnable);
 
       verify(responseStreamObserver, times(1))

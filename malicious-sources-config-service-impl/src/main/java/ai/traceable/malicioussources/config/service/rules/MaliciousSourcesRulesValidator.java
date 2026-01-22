@@ -1,6 +1,7 @@
 package ai.traceable.malicioussources.config.service.rules;
 
 import ai.traceable.malicioussources.config.service.v1.AgentModification;
+import ai.traceable.malicioussources.config.service.v1.BulkDeleteMaliciousSourcesRulesRequest;
 import ai.traceable.malicioussources.config.service.v1.CreateMaliciousSourcesRuleRequest;
 import ai.traceable.malicioussources.config.service.v1.DeleteMaliciousSourcesRuleRequest;
 import ai.traceable.malicioussources.config.service.v1.EmailDomainCondition;
@@ -131,6 +132,19 @@ public class MaliciousSourcesRulesValidator implements RulesValidator {
     if (request.getId().isEmpty()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Delete Malicious Source rule should have a valid id");
+    }
+    return Status.OK;
+  }
+
+  @Override
+  public Status validate(BulkDeleteMaliciousSourcesRulesRequest request) {
+    if (request.getIdsList().isEmpty()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Bulk delete Malicious Sources rules request should have at least one id");
+    }
+    if (request.getIdsList().stream().anyMatch(String::isEmpty)) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Bulk delete Malicious Sources rules request should not have empty ids");
     }
     return Status.OK;
   }
