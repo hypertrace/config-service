@@ -147,4 +147,9 @@ class RegionRulesManager implements RulesManager {
     Optional<RegionRule> regionRuleOptional = regionRulesStore.getData(requestContext, ruleId);
     return regionRuleOptional.isPresent();
   }
+
+  @Override
+  public void bulkDeleteRegionRules(RequestContext requestContext, List<String> ids) {
+    regionRulesStore.deleteObjects(requestContext, ids);
+  }
 }

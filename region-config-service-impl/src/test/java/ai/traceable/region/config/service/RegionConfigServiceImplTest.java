@@ -14,6 +14,8 @@ import ai.traceable.region.config.service.regions.IpqsResolvedWithNeustarRegionS
 import ai.traceable.region.config.service.regions.NeustarRegionStore;
 import ai.traceable.region.config.service.rules.RulesManager;
 import ai.traceable.region.config.service.rules.RulesValidator;
+import ai.traceable.region.config.service.v1.BulkDeleteRegionRulesRequest;
+import ai.traceable.region.config.service.v1.BulkDeleteRegionRulesResponse;
 import ai.traceable.region.config.service.v1.Country;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.CreateRegionRuleResponse;
@@ -438,6 +440,44 @@ class RegionConfigServiceImplTest {
       StreamObserver<DeleteRegionRuleResponse> responseObserver = mock(StreamObserver.class);
       Runnable runnable =
           () -> regionConfigService.deleteRegionRule(deleteRegionRuleRequest, responseObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseObserver, times(1))
+          .onError(argThat(err -> Status.fromThrowable(err).getCode() == Code.INVALID_ARGUMENT));
+    }
+  }
+
+  @Nested
+  class BulkDeleteRegionRules {
+    @Test
+    @DisplayName("should bulk delete for a valid request")
+    void shouldBulkDeleteRegionRules() {
+      BulkDeleteRegionRulesRequest bulkDeleteRequest =
+          BulkDeleteRegionRulesRequest.newBuilder().addIds("id1").addIds("id2").build();
+
+      when(rulesValidator.validate(bulkDeleteRequest)).thenReturn(Status.OK);
+
+      StreamObserver<BulkDeleteRegionRulesResponse> responseObserver = mock(StreamObserver.class);
+
+      requestContext.run(
+          () -> regionConfigService.bulkDeleteRegionRules(bulkDeleteRequest, responseObserver));
+
+      verify(rulesManager, times(1)).bulkDeleteRegionRules(any(), eq(List.of("id1", "id2")));
+      verify(responseObserver, times(1)).onNext(BulkDeleteRegionRulesResponse.getDefaultInstance());
+      verify(responseObserver, times(1)).onCompleted();
+    }
+
+    @Test
+    @DisplayName("should return invalid argument status invalid request")
+    void should_fail_bulkDeleteRegionRules_invalidRequest() {
+      BulkDeleteRegionRulesRequest bulkDeleteRequest =
+          BulkDeleteRegionRulesRequest.getDefaultInstance();
+
+      when(rulesValidator.validate(bulkDeleteRequest)).thenReturn(Status.INVALID_ARGUMENT);
+
+      StreamObserver<BulkDeleteRegionRulesResponse> responseObserver = mock(StreamObserver.class);
+      Runnable runnable =
+          () -> regionConfigService.bulkDeleteRegionRules(bulkDeleteRequest, responseObserver);
       GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
 
       verify(responseObserver, times(1))

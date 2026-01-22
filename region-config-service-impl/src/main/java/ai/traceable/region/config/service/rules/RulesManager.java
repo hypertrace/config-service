@@ -24,4 +24,6 @@ public interface RulesManager {
 
   Optional<RegionRule> deleteRegionRule(RequestContext requestContext, String id)
       throws InvalidProtocolBufferException;
+
+  void bulkDeleteRegionRules(RequestContext requestContext, List<String> ids);
 }

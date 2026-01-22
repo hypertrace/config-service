@@ -7,6 +7,8 @@ import ai.traceable.region.config.service.regions.NeustarRegionStore;
 import ai.traceable.region.config.service.regions.RegionStore;
 import ai.traceable.region.config.service.rules.RulesManager;
 import ai.traceable.region.config.service.rules.RulesValidator;
+import ai.traceable.region.config.service.v1.BulkDeleteRegionRulesRequest;
+import ai.traceable.region.config.service.v1.BulkDeleteRegionRulesResponse;
 import ai.traceable.region.config.service.v1.Country;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.CreateRegionRuleResponse;
@@ -293,5 +295,25 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
         .putAllRegionIdToNameMap(regionIdToNameMap)
         .putAllRegionIdToCountryMap(regionIdToCountryMap)
         .build();
+  }
+
+  @Override
+  public void bulkDeleteRegionRules(
+      BulkDeleteRegionRulesRequest request,
+      StreamObserver<BulkDeleteRegionRulesResponse> responseObserver) {
+    try {
+      Status status = rulesValidator.validate(request);
+      if (!status.isOk()) {
+        log.error("Bulk Delete Region Rules Request is not valid {}", status.getDescription());
+        responseObserver.onError(status.asException());
+        return;
+      }
+      rulesManager.bulkDeleteRegionRules(RequestContext.CURRENT.get(), request.getIdsList());
+      responseObserver.onNext(BulkDeleteRegionRulesResponse.getDefaultInstance());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Unable to bulk delete region rules with ids {} :", request.getIdsList(), e);
+      responseObserver.onError(e);
+    }
   }
 }
