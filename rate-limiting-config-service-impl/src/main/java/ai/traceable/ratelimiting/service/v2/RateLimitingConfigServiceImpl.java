@@ -2,6 +2,8 @@ package ai.traceable.ratelimiting.service.v2;
 
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
+import ai.traceable.ratelimiting.config.service.v2.BulkDeleteRateLimitingRulesRequest;
+import ai.traceable.ratelimiting.config.service.v2.BulkDeleteRateLimitingRulesResponse;
 import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleRequest;
 import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleResponse;
 import ai.traceable.ratelimiting.config.service.v2.DeleteRateLimitingRuleRequest;
@@ -207,6 +209,25 @@ public class RateLimitingConfigServiceImpl extends RateLimitingConfigServiceImpl
       responseObserver.onCompleted();
     } catch (Exception exception) {
       log.error(exception.getMessage(), exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
+  public void bulkDeleteRateLimitingRules(
+      BulkDeleteRateLimitingRulesRequest request,
+      StreamObserver<BulkDeleteRateLimitingRulesResponse> responseObserver) {
+    try {
+      RequestContext context = RequestContext.CURRENT.get();
+      rulesValidator.validateOrThrow(context, request);
+      rulesManager.bulkDeleteRateLimitingRules(context, request.getIdsList());
+      responseObserver.onNext(BulkDeleteRateLimitingRulesResponse.getDefaultInstance());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.error(
+          "Unable to bulk delete rate limiting rules with ids {} :",
+          request.getIdsList(),
+          exception);
       responseObserver.onError(exception);
     }
   }

@@ -26,6 +26,8 @@ public interface RulesManager {
 
   Optional<RateLimitingRule> deleteRateLimitingRule(RequestContext requestContext, String ruleId);
 
+  void bulkDeleteRateLimitingRules(RequestContext requestContext, List<String> ruleIds);
+
   GetRateLimitingRuleModsecRulesResponse getRateLimitingModsecRules(
       RequestContext requestContext, GetRateLimitingModsecRulesFilter filter);
 }

@@ -24,4 +24,6 @@ public interface RulesValidator {
 
   void validateOrThrow(
       RequestContext requestContext, GetRateLimitingRuleModsecRulesRequest request);
+
+  void validateOrThrow(RequestContext requestContext, BulkDeleteRateLimitingRulesRequest request);
 }

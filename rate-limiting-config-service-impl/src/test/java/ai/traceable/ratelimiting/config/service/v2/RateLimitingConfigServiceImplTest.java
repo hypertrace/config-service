@@ -731,4 +731,33 @@ class RateLimitingConfigServiceImplTest {
         .map(rule -> RateLimitingRuleRecord.newBuilder().setRule(rule).build())
         .collect(Collectors.toList());
   }
+
+  @Test
+  void testBulkDeleteRateLimitingRules() {
+    StreamObserver<BulkDeleteRateLimitingRulesResponse> responseObserver =
+        mock(StreamObserver.class);
+    BulkDeleteRateLimitingRulesRequest bulkDeleteRequest =
+        BulkDeleteRateLimitingRulesRequest.newBuilder().addIds("id1").addIds("id2").build();
+
+    Runnable runnable =
+        () -> configService.bulkDeleteRateLimitingRules(bulkDeleteRequest, responseObserver);
+
+    doThrow(Status.INVALID_ARGUMENT.asRuntimeException())
+        .when(rulesValidator)
+        .validateOrThrow(any(), (BulkDeleteRateLimitingRulesRequest) any());
+    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+    verify(responseObserver, times(1))
+        .onError(
+            argThat(err -> Status.fromThrowable(err).getCode() == Status.Code.INVALID_ARGUMENT));
+
+    reset(responseObserver);
+    doNothing()
+        .when(rulesValidator)
+        .validateOrThrow(any(), (BulkDeleteRateLimitingRulesRequest) any());
+    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+    verify(rulesManager, times(1)).bulkDeleteRateLimitingRules(any(), eq(List.of("id1", "id2")));
+    verify(responseObserver, times(1))
+        .onNext(BulkDeleteRateLimitingRulesResponse.getDefaultInstance());
+    verify(responseObserver, times(1)).onCompleted();
+  }
 }

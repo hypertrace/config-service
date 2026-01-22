@@ -198,4 +198,9 @@ public class RateLimitingRulesManager implements RulesManager {
     return modsecRulesManager.getRateLimitingModsecRules(
         requestContext, filter, filter2 -> getRateLimitingRules(requestContext, filter2));
   }
+
+  @Override
+  public void bulkDeleteRateLimitingRules(RequestContext requestContext, List<String> ruleIds) {
+    rateLimitingRulesStore.deleteObjects(requestContext, ruleIds);
+  }
 }
