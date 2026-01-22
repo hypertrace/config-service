@@ -4,6 +4,7 @@ import static ai.traceable.iprange.config.service.v1.RuleAction.RULE_ACTION_BLOC
 import static org.junit.jupiter.api.Assertions.*;
 
 import ai.traceable.iprange.config.service.v1.*;
+import ai.traceable.iprange.config.service.v1.BulkDeleteIpRangeRulesRequest;
 import io.grpc.Status;
 import io.grpc.Status.Code;
 import java.util.Arrays;
@@ -811,5 +812,38 @@ class IpRangeRulesValidatorTest {
 
     Status status = rulesValidator.validate(updateIpRangeRuleRequest, blockAllExceptRulesSupplier);
     assertEquals(Code.ALREADY_EXISTS, status.getCode());
+  }
+
+  @Nested
+  class ValidateBulkDeleteIpRangeRulesRequest {
+    @Test
+    @DisplayName("Should return OK status when a given valid bulk delete IP Range rules request")
+    void validateBulkDeleteIpRangeRulesRequest_correct() {
+      BulkDeleteIpRangeRulesRequest bulkDeleteRequest =
+          BulkDeleteIpRangeRulesRequest.newBuilder().addIds("id1").addIds("id2").build();
+
+      Status status = rulesValidator.validate(bulkDeleteRequest);
+      assertEquals(Status.Code.OK, status.getCode());
+    }
+
+    @Test
+    @DisplayName("Should return invalid argument status when ids list is empty")
+    void validateBulkDeleteIpRangeRulesRequest_emptyIds() {
+      BulkDeleteIpRangeRulesRequest bulkDeleteRequest =
+          BulkDeleteIpRangeRulesRequest.getDefaultInstance();
+
+      Status status = rulesValidator.validate(bulkDeleteRequest);
+      assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
+    }
+
+    @Test
+    @DisplayName("Should return invalid argument status when ids list contains empty id")
+    void validateBulkDeleteIpRangeRulesRequest_containsEmptyId() {
+      BulkDeleteIpRangeRulesRequest bulkDeleteRequest =
+          BulkDeleteIpRangeRulesRequest.newBuilder().addIds("id1").addIds("").build();
+
+      Status status = rulesValidator.validate(bulkDeleteRequest);
+      assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
+    }
   }
 }

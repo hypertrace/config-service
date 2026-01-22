@@ -446,4 +446,73 @@ class IpRangeConfigServiceImplTest {
           .onError(argThat(err -> err.getClass() == RuntimeException.class));
     }
   }
+
+  @Nested
+  class BulkDeleteIpRangeRules {
+    @Test
+    @DisplayName("should bulk delete for a valid request")
+    void shouldBulkDeleteIpRangeRules() {
+      BulkDeleteIpRangeRulesRequest bulkDeleteRequest =
+          BulkDeleteIpRangeRulesRequest.newBuilder().addIds("id1").addIds("id2").build();
+
+      when(rulesValidator.validate(bulkDeleteRequest)).thenReturn(Status.OK);
+
+      StreamObserver<BulkDeleteIpRangeRulesResponse> responseStreamObserver =
+          mock(StreamObserver.class);
+      Runnable runnable =
+          () ->
+              ipRangeConfigService.bulkDeleteIpRangeRules(
+                  bulkDeleteRequest, responseStreamObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(rulesManager, times(1)).bulkDeleteIpRangeRules(any(), eq(List.of("id1", "id2")));
+      verify(responseStreamObserver, times(1))
+          .onNext(BulkDeleteIpRangeRulesResponse.getDefaultInstance());
+      verify(responseStreamObserver, times(1)).onCompleted();
+    }
+
+    @Test
+    @DisplayName("should return invalid argument status for invalid request")
+    void should_fail_bulkDeleteIpRangeRules_invalidRequest() {
+      BulkDeleteIpRangeRulesRequest bulkDeleteRequest =
+          BulkDeleteIpRangeRulesRequest.getDefaultInstance();
+
+      when(rulesValidator.validate(bulkDeleteRequest)).thenReturn(Status.INVALID_ARGUMENT);
+
+      StreamObserver<BulkDeleteIpRangeRulesResponse> responseStreamObserver =
+          mock(StreamObserver.class);
+      Runnable runnable =
+          () ->
+              ipRangeConfigService.bulkDeleteIpRangeRules(
+                  bulkDeleteRequest, responseStreamObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseStreamObserver, times(1))
+          .onError(
+              argThat(err -> Status.fromThrowable(err).getCode() == Status.Code.INVALID_ARGUMENT));
+    }
+
+    @Test
+    @DisplayName("should throw a runtime error when it occurs inside manager")
+    void propagateRuntimeException_inBulkDeleteIpRange() {
+      BulkDeleteIpRangeRulesRequest bulkDeleteRequest =
+          BulkDeleteIpRangeRulesRequest.newBuilder().addIds("id1").build();
+
+      when(rulesValidator.validate(bulkDeleteRequest)).thenReturn(Status.OK);
+      doThrow(RuntimeException.class)
+          .when(rulesManager)
+          .bulkDeleteIpRangeRules(any(), eq(List.of("id1")));
+
+      StreamObserver<BulkDeleteIpRangeRulesResponse> responseStreamObserver =
+          mock(StreamObserver.class);
+      Runnable runnable =
+          () ->
+              ipRangeConfigService.bulkDeleteIpRangeRules(
+                  bulkDeleteRequest, responseStreamObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseStreamObserver, times(1))
+          .onError(argThat(err -> err.getClass() == RuntimeException.class));
+    }
+  }
 }

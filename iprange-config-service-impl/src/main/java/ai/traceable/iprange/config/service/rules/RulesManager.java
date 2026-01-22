@@ -25,4 +25,6 @@ public interface RulesManager {
 
   Optional<IpRangeRule> deleteIpRangeRule(RequestContext requestContext, String id)
       throws InvalidProtocolBufferException;
+
+  void bulkDeleteIpRangeRules(RequestContext requestContext, List<String> ids);
 }

@@ -1,5 +1,6 @@
 package ai.traceable.iprange.config.service.rules;
 
+import ai.traceable.iprange.config.service.v1.BulkDeleteIpRangeRulesRequest;
 import ai.traceable.iprange.config.service.v1.CreateIpRangeRuleRequest;
 import ai.traceable.iprange.config.service.v1.DeleteIpRangeRuleRequest;
 import ai.traceable.iprange.config.service.v1.IpRangeRule;
@@ -16,4 +17,6 @@ public interface RulesValidator {
       UpdateIpRangeRuleRequest request, Supplier<List<IpRangeRule>> ipRangeRuleSupplier);
 
   Status validate(DeleteIpRangeRuleRequest request);
+
+  Status validate(BulkDeleteIpRangeRulesRequest request);
 }

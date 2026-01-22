@@ -3,6 +3,8 @@ package ai.traceable.iprange.config.service;
 import ai.traceable.iprange.config.service.rules.RulesManager;
 import ai.traceable.iprange.config.service.rules.RulesValidator;
 import ai.traceable.iprange.config.service.rules.migration.IpRangeRulesMigrationManager;
+import ai.traceable.iprange.config.service.v1.BulkDeleteIpRangeRulesRequest;
+import ai.traceable.iprange.config.service.v1.BulkDeleteIpRangeRulesResponse;
 import ai.traceable.iprange.config.service.v1.CreateIpRangeRuleRequest;
 import ai.traceable.iprange.config.service.v1.CreateIpRangeRuleResponse;
 import ai.traceable.iprange.config.service.v1.DeleteIpRangeRuleRequest;
@@ -156,6 +158,26 @@ class IpRangeConfigServiceImpl extends IpRangeConfigServiceImplBase {
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Unable to delete ip range rule with id {} :", request.getId(), e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void bulkDeleteIpRangeRules(
+      BulkDeleteIpRangeRulesRequest request,
+      StreamObserver<BulkDeleteIpRangeRulesResponse> responseObserver) {
+    try {
+      Status status = rulesValidator.validate(request);
+      if (!status.isOk()) {
+        log.error("Bulk Delete Ip Range Rules Request is not valid {}", status.getDescription());
+        responseObserver.onError(status.asException());
+        return;
+      }
+      rulesManager.bulkDeleteIpRangeRules(RequestContext.CURRENT.get(), request.getIdsList());
+      responseObserver.onNext(BulkDeleteIpRangeRulesResponse.getDefaultInstance());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Unable to bulk delete ip range rules with ids {} :", request.getIdsList(), e);
       responseObserver.onError(e);
     }
   }

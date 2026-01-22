@@ -103,6 +103,11 @@ class IpRangeRulesManager implements RulesManager {
         .orElseThrow(() -> Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers()));
   }
 
+  @Override
+  public void bulkDeleteIpRangeRules(RequestContext requestContext, List<String> ids) {
+    ipRangeRulesStore.deleteObjects(requestContext, ids);
+  }
+
   private IpRangeRule upsertConfig(RequestContext requestContext, IpRangeRule ipRangeRule) {
     return ipRangeRulesStore.upsertObject(requestContext, ipRangeRule).getData();
   }
