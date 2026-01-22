@@ -12,6 +12,7 @@ import ai.traceable.customsignature.config.service.modsec.ModsecRulesSupportChec
 import ai.traceable.customsignature.config.service.v1.AgentModification;
 import ai.traceable.customsignature.config.service.v1.AgentRuleEffect;
 import ai.traceable.customsignature.config.service.v1.BodyModification;
+import ai.traceable.customsignature.config.service.v1.BulkDeleteCustomSignatureRulesRequest;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.ClauseOperator;
@@ -180,6 +181,21 @@ public class CustomSignatureRulesValidator implements RulesValidator {
           "Delete custom signature rule should have a valid id");
     }
 
+    return Status.OK;
+  }
+
+  @Override
+  public Status validate(BulkDeleteCustomSignatureRulesRequest request) {
+    if (request.getIdsCount() == 0) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Bulk delete custom signature rules should have at least one id");
+    }
+    for (String id : request.getIdsList()) {
+      if (id.isEmpty()) {
+        return Status.INVALID_ARGUMENT.withDescription(
+            "Bulk delete custom signature rules should not contain empty ids");
+      }
+    }
     return Status.OK;
   }
 

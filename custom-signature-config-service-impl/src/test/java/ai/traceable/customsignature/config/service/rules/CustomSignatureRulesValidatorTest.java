@@ -13,6 +13,7 @@ import ai.traceable.customsignature.config.service.modsec.ModsecRulesSupportChec
 import ai.traceable.customsignature.config.service.v1.AgentModification;
 import ai.traceable.customsignature.config.service.v1.AgentRuleEffect;
 import ai.traceable.customsignature.config.service.v1.BodyModification;
+import ai.traceable.customsignature.config.service.v1.BulkDeleteCustomSignatureRulesRequest;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.ClauseOperator;
@@ -1498,6 +1499,47 @@ class CustomSignatureRulesValidatorTest {
     status =
         rulesValidator.validate(DeleteCustomSignatureRuleRequest.newBuilder().setId("id").build());
     assertEquals(Code.OK, status.getCode());
+  }
+
+  @Test
+  public void testValidateBulkDeleteRules() {
+    Status status;
+
+    // Empty ids list should fail
+    status = rulesValidator.validate(BulkDeleteCustomSignatureRulesRequest.getDefaultInstance());
+    assertInvalidArgument(status, "at least one id");
+
+    // Empty string id in list should fail
+    status =
+        rulesValidator.validate(
+            BulkDeleteCustomSignatureRulesRequest.newBuilder().addIds("").build());
+    assertInvalidArgument(status, "empty ids");
+
+    // Valid single id should pass
+    status =
+        rulesValidator.validate(
+            BulkDeleteCustomSignatureRulesRequest.newBuilder().addIds("id1").build());
+    assertEquals(Code.OK, status.getCode());
+
+    // Valid multiple ids should pass
+    status =
+        rulesValidator.validate(
+            BulkDeleteCustomSignatureRulesRequest.newBuilder()
+                .addIds("id1")
+                .addIds("id2")
+                .addIds("id3")
+                .build());
+    assertEquals(Code.OK, status.getCode());
+
+    // Mix of valid and empty ids should fail
+    status =
+        rulesValidator.validate(
+            BulkDeleteCustomSignatureRulesRequest.newBuilder()
+                .addIds("id1")
+                .addIds("")
+                .addIds("id3")
+                .build());
+    assertInvalidArgument(status, "empty ids");
   }
 
   @Test

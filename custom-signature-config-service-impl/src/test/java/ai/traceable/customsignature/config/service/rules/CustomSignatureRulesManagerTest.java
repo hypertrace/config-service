@@ -85,6 +85,7 @@ class CustomSignatureRulesManagerTest {
             .mockGet()
             .mockGetAll()
             .mockDelete()
+            .mockDeleteAll()
             .mockUpsertAll();
     mockConfigService.start();
     configServiceBlockingStub = ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
@@ -562,6 +563,104 @@ class CustomSignatureRulesManagerTest {
             .getCustomSignatureRules(
                 requestContext, GetRulesFilter.newBuilder().addRuleIds(id).build())
             .isEmpty());
+  }
+
+  @Test
+  void testBulkDeleteRules() {
+    String id1 = "bulk-delete-id-1";
+    String id2 = "bulk-delete-id-2";
+    String id3 = "bulk-delete-id-3";
+
+    Value mockRuleConfig1 = mockRuleConfig(id1);
+    Value mockRuleConfig2 = mockRuleConfig(id2);
+    Value mockRuleConfig3 = mockRuleConfig(id3);
+
+    upsertRuleConfigs(
+        ImmutableSortedMap.of(id1, mockRuleConfig1, id2, mockRuleConfig2, id3, mockRuleConfig3));
+
+    // Verify all rules exist before bulk delete
+    assertFalse(
+        rulesManager
+            .getCustomSignatureRules(
+                requestContext, GetRulesFilter.newBuilder().addRuleIds(id1).build())
+            .isEmpty());
+    assertFalse(
+        rulesManager
+            .getCustomSignatureRules(
+                requestContext, GetRulesFilter.newBuilder().addRuleIds(id2).build())
+            .isEmpty());
+    assertFalse(
+        rulesManager
+            .getCustomSignatureRules(
+                requestContext, GetRulesFilter.newBuilder().addRuleIds(id3).build())
+            .isEmpty());
+
+    // Bulk delete all three rules
+    assertDoesNotThrow(
+        () -> rulesManager.bulkDeleteCustomSignatureRules(requestContext, List.of(id1, id2, id3)));
+
+    // Verify all rules are deleted
+    assertTrue(
+        rulesManager
+            .getCustomSignatureRules(
+                requestContext, GetRulesFilter.newBuilder().addRuleIds(id1).build())
+            .isEmpty());
+    assertTrue(
+        rulesManager
+            .getCustomSignatureRules(
+                requestContext, GetRulesFilter.newBuilder().addRuleIds(id2).build())
+            .isEmpty());
+    assertTrue(
+        rulesManager
+            .getCustomSignatureRules(
+                requestContext, GetRulesFilter.newBuilder().addRuleIds(id3).build())
+            .isEmpty());
+  }
+
+  @Test
+  void testBulkDeleteRulesPartial() {
+    String id1 = "partial-delete-id-1";
+    String id2 = "partial-delete-id-2";
+
+    Value mockRuleConfig1 = mockRuleConfig(id1);
+    Value mockRuleConfig2 = mockRuleConfig(id2);
+
+    upsertRuleConfigs(ImmutableSortedMap.of(id1, mockRuleConfig1, id2, mockRuleConfig2));
+
+    // Verify rules exist before bulk delete
+    assertFalse(
+        rulesManager
+            .getCustomSignatureRules(
+                requestContext, GetRulesFilter.newBuilder().addRuleIds(id1).build())
+            .isEmpty());
+    assertFalse(
+        rulesManager
+            .getCustomSignatureRules(
+                requestContext, GetRulesFilter.newBuilder().addRuleIds(id2).build())
+            .isEmpty());
+
+    // Bulk delete only id1
+    assertDoesNotThrow(
+        () -> rulesManager.bulkDeleteCustomSignatureRules(requestContext, List.of(id1)));
+
+    // Verify id1 is deleted but id2 still exists
+    assertTrue(
+        rulesManager
+            .getCustomSignatureRules(
+                requestContext, GetRulesFilter.newBuilder().addRuleIds(id1).build())
+            .isEmpty());
+    assertFalse(
+        rulesManager
+            .getCustomSignatureRules(
+                requestContext, GetRulesFilter.newBuilder().addRuleIds(id2).build())
+            .isEmpty());
+  }
+
+  @Test
+  void testBulkDeleteRulesEmptyList() {
+    // Bulk delete with empty list should not throw
+    assertDoesNotThrow(
+        () -> rulesManager.bulkDeleteCustomSignatureRules(requestContext, List.of()));
   }
 
   @Test

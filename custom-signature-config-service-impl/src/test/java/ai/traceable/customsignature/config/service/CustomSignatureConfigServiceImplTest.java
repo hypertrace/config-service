@@ -16,6 +16,8 @@ import ai.traceable.customsignature.config.service.modsec.ModsecRulesManager;
 import ai.traceable.customsignature.config.service.rules.RulesManager;
 import ai.traceable.customsignature.config.service.rules.RulesValidator;
 import ai.traceable.customsignature.config.service.rules.converter.CustomSignatureEdgeDecisionConverter;
+import ai.traceable.customsignature.config.service.v1.BulkDeleteCustomSignatureRulesRequest;
+import ai.traceable.customsignature.config.service.v1.BulkDeleteCustomSignatureRulesResponse;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleResponse;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureInlineRule;
@@ -393,6 +395,50 @@ class CustomSignatureConfigServiceImplTest {
     verify(responseObserver, times(1))
         .onNext(DeleteCustomSignatureRuleResponse.getDefaultInstance());
     verify(responseObserver, times(1)).onCompleted();
+  }
+
+  @Test
+  void testBulkDeleteRules() throws InvalidProtocolBufferException {
+    BulkDeleteCustomSignatureRulesRequest bulkDeleteRequest =
+        BulkDeleteCustomSignatureRulesRequest.newBuilder()
+            .addIds("id1")
+            .addIds("id2")
+            .addIds("id3")
+            .build();
+    StreamObserver<BulkDeleteCustomSignatureRulesResponse> responseObserver =
+        mock(StreamObserver.class);
+    Runnable runnable =
+        () -> configService.bulkDeleteCustomSignatureRules(bulkDeleteRequest, responseObserver);
+
+    // Test case 1: Validation fails
+    when(rulesValidator.validate((BulkDeleteCustomSignatureRulesRequest) any()))
+        .thenReturn(Status.INVALID_ARGUMENT);
+    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+    verify(responseObserver, times(1))
+        .onError(
+            argThat(err -> Status.fromThrowable(err).getCode() == Status.Code.INVALID_ARGUMENT));
+
+    // Test case 2: Validation passes and bulk delete succeeds
+    reset(responseObserver);
+    when(rulesValidator.validate((BulkDeleteCustomSignatureRulesRequest) any()))
+        .thenReturn(Status.OK);
+    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+    verify(rulesManager, times(1))
+        .bulkDeleteCustomSignatureRules(any(), eq(List.of("id1", "id2", "id3")));
+    verify(responseObserver, times(1))
+        .onNext(BulkDeleteCustomSignatureRulesResponse.getDefaultInstance());
+    verify(responseObserver, times(1)).onCompleted();
+
+    // Test case 3: Exception during bulk delete
+    reset(responseObserver);
+    reset(rulesManager);
+    when(rulesValidator.validate((BulkDeleteCustomSignatureRulesRequest) any()))
+        .thenReturn(Status.OK);
+    org.mockito.Mockito.doThrow(new RuntimeException("Delete failed"))
+        .when(rulesManager)
+        .bulkDeleteCustomSignatureRules(any(), any());
+    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+    verify(responseObserver, times(1)).onError(any());
   }
 
   @Test

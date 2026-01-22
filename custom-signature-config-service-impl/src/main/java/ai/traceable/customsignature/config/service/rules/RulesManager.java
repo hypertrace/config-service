@@ -26,6 +26,9 @@ public interface RulesManager {
   Optional<CustomSignatureRule> deleteCustomSignatureRule(RequestContext requestContext, String id)
       throws InvalidProtocolBufferException;
 
+  void bulkDeleteCustomSignatureRules(RequestContext requestContext, List<String> ids)
+      throws InvalidProtocolBufferException;
+
   default String generateRuleId() {
     return UUID.randomUUID().toString();
   }

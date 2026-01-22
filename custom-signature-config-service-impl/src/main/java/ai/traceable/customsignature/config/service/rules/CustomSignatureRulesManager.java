@@ -105,6 +105,11 @@ public class CustomSignatureRulesManager implements RulesManager {
         .flatMap(DeletedContextualConfigObject::getDeletedData);
   }
 
+  @Override
+  public void bulkDeleteCustomSignatureRules(RequestContext requestContext, List<String> ids) {
+    rulesStore.deleteObjects(requestContext, ids);
+  }
+
   private Optional<CustomSignatureRule> getCustomSignatureRule(
       RequestContext requestContext, String ruleId) {
     try {

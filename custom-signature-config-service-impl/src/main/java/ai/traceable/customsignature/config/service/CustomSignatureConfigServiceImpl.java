@@ -6,6 +6,8 @@ import ai.traceable.customsignature.config.service.rules.CustomSignatureRulesEdg
 import ai.traceable.customsignature.config.service.rules.RulesManager;
 import ai.traceable.customsignature.config.service.rules.RulesValidator;
 import ai.traceable.customsignature.config.service.rules.converter.CustomSignatureEdgeDecisionConverter;
+import ai.traceable.customsignature.config.service.v1.BulkDeleteCustomSignatureRulesRequest;
+import ai.traceable.customsignature.config.service.v1.BulkDeleteCustomSignatureRulesResponse;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleResponse;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc;
@@ -53,6 +55,28 @@ public class CustomSignatureConfigServiceImpl
     this.modsecRulesManager = modsecRulesManager;
     this.edgeDecisionConverter = edgeDecisionConverter;
     this.ruleMigrationManager = ruleMigrationManager;
+  }
+
+  @Override
+  public void bulkDeleteCustomSignatureRules(
+      BulkDeleteCustomSignatureRulesRequest request,
+      StreamObserver<BulkDeleteCustomSignatureRulesResponse> responseObserver) {
+    try {
+      Status status = rulesValidator.validate(request);
+      if (!status.isOk()) {
+        log.error(
+            "Bulk delete custom signature rules request is not valid {}", status.getDescription());
+        responseObserver.onError(status.asException());
+        return;
+      }
+      rulesManager.bulkDeleteCustomSignatureRules(
+          RequestContext.CURRENT.get(), request.getIdsList());
+      responseObserver.onNext(BulkDeleteCustomSignatureRulesResponse.getDefaultInstance());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Unable to bulk delete custom signature rules {}", request.getIdsList(), e);
+      responseObserver.onError(e);
+    }
   }
 
   @Override
