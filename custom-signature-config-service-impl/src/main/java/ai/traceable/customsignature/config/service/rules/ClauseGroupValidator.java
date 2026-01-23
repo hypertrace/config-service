@@ -170,7 +170,7 @@ public class ClauseGroupValidator {
       case CUSTOM_SEC_RULE:
         return validateCustomSecRule(clause.getCustomSecRule());
       case IP_ADDRESS_EXPRESSION:
-        return validateIpAddressExpression(clause.getIpAddressExpression());
+        return validateIpAddressExpression(clause.getIpAddressExpression(), eventType);
       case IP_TYPE_EXPRESSION:
         return validateIpTypeExpression(clause.getIpTypeExpression());
       case IP_REPUTATION_EXPRESSION:
@@ -353,7 +353,8 @@ public class ClauseGroupValidator {
     return Status.OK;
   }
 
-  private Status validateIpAddressExpression(IpAddressExpression ipAddressExpression) {
+  private Status validateIpAddressExpression(
+      IpAddressExpression ipAddressExpression, EventType eventType) {
     List<String> cidrIpRanges = ipAddressExpression.getCidrIpRangesList();
     List<String> ipAddresses = ipAddressExpression.getIpAddressesList();
     List<String> rawInputIpData = ipAddressExpression.getRawInputIpDataList();
@@ -366,6 +367,15 @@ public class ClauseGroupValidator {
                 "RawInputIpData, cidrIpRanges and ipAddresses should be empty for ip address expression type : %s ",
                 ipAddressExpression.getIpAddressExpressionType()));
       }
+
+      if (eventType == EventType.EVENT_TYPE_ALLOW
+          || eventType == EventType.EVENT_TYPE_DETECTION_AND_BLOCKING) {
+        return Status.INVALID_ARGUMENT.withDescription(
+            String.format(
+                "Allow/Blocking action is unsupported for ip address expression type: %s",
+                ipAddressExpression.getIpAddressExpressionType()));
+      }
+
       return Status.OK;
     }
     return validateIpAddressesAndRanges(

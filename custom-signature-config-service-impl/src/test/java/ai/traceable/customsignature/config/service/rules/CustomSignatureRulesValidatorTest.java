@@ -27,6 +27,7 @@ import ai.traceable.customsignature.config.service.v1.ExpiryDetails;
 import ai.traceable.customsignature.config.service.v1.FieldValue;
 import ai.traceable.customsignature.config.service.v1.HeaderInjection;
 import ai.traceable.customsignature.config.service.v1.IpAddressExpression;
+import ai.traceable.customsignature.config.service.v1.IpAddressExpressionType;
 import ai.traceable.customsignature.config.service.v1.IpType;
 import ai.traceable.customsignature.config.service.v1.IpTypeExpression;
 import ai.traceable.customsignature.config.service.v1.KeyValueExpression;
@@ -2091,6 +2092,117 @@ class CustomSignatureRulesValidatorTest {
         .setMatchCategory(MatchCategory.MATCH_CATEGORY_REQUEST)
         .setValue(Value.newBuilder().setStringValue(strValue))
         .build();
+  }
+
+  @Test
+  void testValidateIpAddressExpressionTypeWithBlockingEventType() {
+    Status status;
+
+    // ALL_EXTERNAL with DETECTION_AND_BLOCKING should fail
+    CreateCustomSignatureRuleRequest request =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("test-rule")
+            .setEffect(
+                RuleEffect.newBuilder()
+                    .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
+                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
+                    .addRuleEvaluationPoints(
+                        RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT))
+            .setDefinition(
+                RuleDefinition.newBuilder()
+                    .setClauseGroup(
+                        ClauseGroup.newBuilder()
+                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setIpAddressExpression(
+                                        IpAddressExpression.newBuilder()
+                                            .setIpAddressExpressionType(
+                                                IpAddressExpressionType
+                                                    .IP_ADDRESS_EXPRESSION_TYPE_ALL_EXTERNAL)))))
+            .build();
+    status = rulesValidator.validate(request);
+    assertInvalidArgument(
+        status, "Allow/Blocking action is unsupported for ip address expression type");
+
+    // ALL_INTERNAL with DETECTION_AND_BLOCKING should fail
+    request =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("test-rule")
+            .setEffect(
+                RuleEffect.newBuilder()
+                    .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
+                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
+                    .addRuleEvaluationPoints(
+                        RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT))
+            .setDefinition(
+                RuleDefinition.newBuilder()
+                    .setClauseGroup(
+                        ClauseGroup.newBuilder()
+                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setIpAddressExpression(
+                                        IpAddressExpression.newBuilder()
+                                            .setIpAddressExpressionType(
+                                                IpAddressExpressionType
+                                                    .IP_ADDRESS_EXPRESSION_TYPE_ALL_INTERNAL)))))
+            .build();
+    status = rulesValidator.validate(request);
+    assertInvalidArgument(
+        status, "Allow/Blocking action is unsupported for ip address expression type");
+
+    // ALL_EXTERNAL with EVENT_TYPE_ALLOW should fail
+    request =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("test-rule")
+            .setEffect(
+                RuleEffect.newBuilder()
+                    .setEventType(EventType.EVENT_TYPE_ALLOW)
+                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
+                    .addRuleEvaluationPoints(
+                        RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT))
+            .setDefinition(
+                RuleDefinition.newBuilder()
+                    .setClauseGroup(
+                        ClauseGroup.newBuilder()
+                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setIpAddressExpression(
+                                        IpAddressExpression.newBuilder()
+                                            .setIpAddressExpressionType(
+                                                IpAddressExpressionType
+                                                    .IP_ADDRESS_EXPRESSION_TYPE_ALL_EXTERNAL)))))
+            .build();
+    status = rulesValidator.validate(request);
+    assertInvalidArgument(
+        status, "Allow/Blocking action is unsupported for ip address expression type");
+
+    // ALL_EXTERNAL with NORMAL_DETECTION should pass
+    request =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("test-rule")
+            .setEffect(
+                RuleEffect.newBuilder()
+                    .setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION)
+                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM))
+            .setDefinition(
+                RuleDefinition.newBuilder()
+                    .setClauseGroup(
+                        ClauseGroup.newBuilder()
+                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setIpAddressExpression(
+                                        IpAddressExpression.newBuilder()
+                                            .setIpAddressExpressionType(
+                                                IpAddressExpressionType
+                                                    .IP_ADDRESS_EXPRESSION_TYPE_ALL_EXTERNAL)))))
+            .build();
+    status = rulesValidator.validate(request);
+    assertEquals(Code.OK, status.getCode());
   }
 
   private void assertInvalidArgument(Status status, String expectedDescription) {
