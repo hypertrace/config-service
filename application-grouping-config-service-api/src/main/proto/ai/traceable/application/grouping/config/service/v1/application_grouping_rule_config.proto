@@ -25,7 +25,9 @@ message GroupName {
   }
 }
 
-message Dynamic {}
+message Dynamic {
+  string api_regex = 1;
+}
 
 message AssetSelector {
   AssetType asset_type = 1;
