@@ -207,6 +207,7 @@ apiNamingConfigs:
 traceableConfigServiceConfig:
   name: traceable-config-service-config
   publishChangeEvents: false
+  customerVisibleExcludedEmailPatterns: ["^agent\\+[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}@traceable\\.ai$"]
 
   attributeServiceConfig:
     host: attribute-service
