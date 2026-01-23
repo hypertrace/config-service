@@ -66,7 +66,7 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
       "disallow_unauthenticated_sessions";
   private static final String PRIMARY_API_MODEL_TYPE = "primary_api_model";
   private static final String SECONDARY_API_MODEL_TYPE = "secondary_api_model";
-  private static final String PARAM_REGEX_TO_IGNORE = "param_regex_to_ignore";
+  private static final String PARAM_REGEXES_TO_IGNORE = "param_regexes_to_ignore";
   private static final String USE_LEARNT_MODEL_FOR_PARAM_TYPE_INFO_MISSING =
       "use_learnt_model_for_param_type_info_missing";
   private static final String USE_LEARNT_MODEL_FOR_MISSING_RESPONSE_CODE =
@@ -614,10 +614,10 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
 
     ConfigMetadata paramRegexToIgnoreConfigMetadata =
         ConfigMetadata.newBuilder()
-            .setKey(PARAM_REGEX_TO_IGNORE)
+            .setKey(PARAM_REGEXES_TO_IGNORE)
             .setConfigValueMetadata(
                 ConfigValueMetadata.newBuilder()
-                    .setType(ConfigValueType.CONFIG_VALUE_TYPE_STRING)
+                    .setType(ConfigValueType.CONFIG_VALUE_TYPE_ARRAY)
                     .build())
             .build();
 
