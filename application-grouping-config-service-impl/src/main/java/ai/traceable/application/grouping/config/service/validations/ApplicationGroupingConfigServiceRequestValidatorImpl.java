@@ -92,11 +92,6 @@ public class ApplicationGroupingConfigServiceRequestValidatorImpl
     validateStringField(context, configInfo.getRuleName(), "Rule name", MAX_RULE_NAME_LENGTH);
     validateRuleNameStartsAndEndsWithAlphanumeric(context, configInfo.getRuleName());
 
-    if (!configInfo.getGroupName().hasStatic()) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription("Group name must have a static value")
-          .asRuntimeException(context.buildTrailers());
-    }
     validateStringField(
         context, configInfo.getGroupName().getStatic(), "Group name", MAX_GROUP_NAME_LENGTH);
 

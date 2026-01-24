@@ -8,6 +8,7 @@ import static ai.traceable.saved.filter.config.service.v1.RelationalOperator.REL
 import static ai.traceable.saved.filter.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_LESS_THAN_OR_EQUAL_TO;
 import static ai.traceable.saved.filter.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_NEQ;
 import static ai.traceable.saved.filter.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_NOT_IN;
+import static ai.traceable.saved.filter.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_REGEX_MATCHES;
 import static java.util.Collections.emptySet;
 import static java.util.Map.entry;
 import static org.hypertrace.core.attribute.service.v1.AttributeKind.TYPE_BOOL;
@@ -65,7 +66,8 @@ public class AttributeKindAndOperatorValidatorImpl implements AttributeKindAndOp
                           RELATIONAL_OPERATOR_LESS_THAN_OR_EQUAL_TO,
                           RELATIONAL_OPERATOR_GREATER_THAN_OR_EQUAL_TO,
                           RELATIONAL_OPERATOR_IN,
-                          RELATIONAL_OPERATOR_NOT_IN)),
+                          RELATIONAL_OPERATOR_NOT_IN,
+                          RELATIONAL_OPERATOR_REGEX_MATCHES)),
                   entry(TYPE_STRING_ARRAY, Set.of(RELATIONAL_OPERATOR_EQ, RELATIONAL_OPERATOR_NEQ)),
                   entry(TYPE_INT64_ARRAY, Set.of(RELATIONAL_OPERATOR_EQ, RELATIONAL_OPERATOR_NEQ)),
                   entry(TYPE_DOUBLE_ARRAY, Set.of(RELATIONAL_OPERATOR_EQ, RELATIONAL_OPERATOR_NEQ)),

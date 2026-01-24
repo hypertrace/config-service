@@ -84,6 +84,13 @@ local-processing-config-service-api @shashank11p @tim-mwangi @varkey98
 local-processing-config-service-impl @shashank11p @tim-mwangi @varkey98
 data-obfuscation-config-service-api @shashank11p @tim-mwangi @varkey98
 data-obfuscation-config-service-impl @shashank11p @tim-mwangi @varkey98
+application-grouping-config-service-api @suresh-prakash @singh-viikram @ohiduz
+application-grouping-config-service-impl @suresh-prakash @singh-viikram @ohiduz
+saved-filter-config-service-api @suresh-prakash @singh-viikram
+saved-filter-config-service-impl @suresh-prakash @singh-viikram
+saved-filter-config-service-caching-client @suresh-prakash @singh-viikram
+vulnerability-config-service-api @suresh-prakash @singh-viikram
+vulnerability-config-service-impl @suresh-prakash @singh-viikram
 
 # No owners for lock changes
 **/gradle.lockfile
