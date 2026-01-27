@@ -7,6 +7,9 @@ option java_multiple_files = true;
 message ActorSeverityStateChangeEventCondition {
   repeated ActorSeverity actor_severity_types = 1;
   repeated IpReputationLevel actor_ip_reputation_levels = 2;
+  // Filter notifications based on severity transition type.
+  // UNSPECIFIED or ANY means notify on both increase and decrease.
+  ActorSeverityTransitionType actor_severity_transition_type = 3;
 }
 
 enum ActorSeverity {
@@ -23,4 +26,11 @@ enum IpReputationLevel {
   IP_REPUTATION_LEVEL_MEDIUM = 2;
   IP_REPUTATION_LEVEL_HIGH = 3;
   IP_REPUTATION_LEVEL_CRITICAL = 4;
+}
+
+// Type of actor severity transition to filter notifications
+enum ActorSeverityTransitionType {
+  ACTOR_SEVERITY_TRANSITION_TYPE_UNSPECIFIED = 0; // Notify on any change (default)
+  ACTOR_SEVERITY_TRANSITION_TYPE_INCREASE = 1; // Notify only when severity increases
+  ACTOR_SEVERITY_TRANSITION_TYPE_DECREASE = 2; // Notify only when severity decreases
 }
