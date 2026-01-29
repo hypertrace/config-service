@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.4.4548=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.4561=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.7.64=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:cache-provider:0.8.127=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:data-model:0.8.127=runtimeClasspath,testRuntimeClasspath
@@ -11,7 +11,7 @@ ai.traceable.platform-gateway:traceable-raw-span-constants:0.8.127=compileClassp
 ai.traceable.platform:coraza-waf-service-api:0.3.44=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:coraza-waf-service-client:0.3.44=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:enriched-span-constants:5.0.79=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform:jni-modsecurity:0.1.140=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.platform:jni-modsecurity:0.1.144=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform:trace-enricher-constants:5.0.79=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 aopalliance:aopalliance:1.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 at.yawk.lz4:lz4-java:1.8.1=runtimeClasspath,testRuntimeClasspath
