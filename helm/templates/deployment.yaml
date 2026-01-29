@@ -172,6 +172,11 @@ spec:
             - name: service-config
               mountPath: /app/resources/configs/{{ .Chart.Name }}/anomaly.conf
               subPath: anomaly.conf
+            {{- if and (hasKey .Values "apiProtectThreatRuleConfigsConf") .Values.apiProtectThreatRuleConfigsConf }}
+            - name: service-config
+              mountPath: /app/resources/configs/{{ .Chart.Name }}/api-protect-threat-rule-configs.conf
+              subPath: api-protect-threat-rule-configs.conf
+            {{- end }}
             - name: service-config
               mountPath: /app/resources/configs/{{ .Chart.Name }}/risk.conf
               subPath: risk.conf

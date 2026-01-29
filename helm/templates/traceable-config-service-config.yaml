@@ -478,6 +478,12 @@ data:
       {{- if .Values.defaultModsecDetectionConfigs }}
       modsecDetectionConfigs = {{- .Values.defaultModsecDetectionConfigs | indent 6 }}
       {{- end }}
+      {{- if and (hasKey .Values "anomalyConfigServiceConfig") (hasKey .Values.anomalyConfigServiceConfig "detectorConfigService") (hasKey .Values.anomalyConfigServiceConfig.detectorConfigService "apiProtectTaggedCategoryRuleIds") }}
+      apiProtectTaggedCategoryRuleIds = {{- .Values.anomalyConfigServiceConfig.detectorConfigService.apiProtectTaggedCategoryRuleIds | toJson | indent 6 }}
+      {{- end }}
+      {{- if and (hasKey .Values "apiProtectThreatRuleConfigsConf") .Values.apiProtectThreatRuleConfigsConf }}
+      include "api-protect-threat-rule-configs.conf"
+      {{- end }}
     }
 
   risk.conf: |-
@@ -502,3 +508,8 @@ data:
     default.variables.user-attribution = {{- .Values.defaultTraceableEdgeUserAttributionVariables | indent 4 }}
     {{- end }}
     get.configs.thread.pool.size = {{ .Values.traceableEdgeConfigService.getConfigsThreadPoolSize }}
+
+  {{- if and (hasKey .Values "apiProtectThreatRuleConfigsConf") .Values.apiProtectThreatRuleConfigsConf }}
+  api-protect-threat-rule-configs.conf: |-
+    {{- .Values.apiProtectThreatRuleConfigsConf | nindent 4 }}
+  {{- end }}

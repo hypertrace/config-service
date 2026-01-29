@@ -1,8 +1,5 @@
 package ai.traceable.anomaly.config.service.detector.anomalydetection;
 
-import static ai.traceable.anomaly.config.service.v1.ApiProtectThreatRuleConfigMappingProvider.PARAMETER_ANOMALY_UUAD_SUB_RULE_ID;
-import static ai.traceable.anomaly.config.service.v1.ApiProtectThreatRuleConfigMappingProvider.SCHEMA_VALIDATION_URESC_SUB_RULE_ID;
-
 import ai.traceable.anomaly.config.service.detector.DetectorConfigServiceConfig;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.ApiProtectionConfigHandler;
 import ai.traceable.anomaly.config.service.global.ruleinfo.RuleInfoManager;
@@ -32,8 +29,7 @@ public class ApiProtectionConfigResolver {
   private final RuleInfoManager ruleInfoManager;
   private final List<AnomalyDetectionConfig> defaultApiProtectionConfigs;
   private final ApiProtectionConfigHandler apiProtectionConfigHandler;
-  private static final List<String> TAGGED_CATEGORY_RULE_IDS =
-      List.of(PARAMETER_ANOMALY_UUAD_SUB_RULE_ID, SCHEMA_VALIDATION_URESC_SUB_RULE_ID);
+  private final List<String> taggedCategoryRuleIds;
 
   @Inject
   public ApiProtectionConfigResolver(
@@ -42,6 +38,7 @@ public class ApiProtectionConfigResolver {
       ApiProtectionConfigHandler apiProtectionConfigHandler) {
     this.ruleInfoManager = ruleInfoManager;
     this.defaultApiProtectionConfigs = config.getDefaultApiProtectDetectionConfigs();
+    this.taggedCategoryRuleIds = config.getApiProtectTaggedCategoryRuleIds();
     this.apiProtectionConfigHandler = apiProtectionConfigHandler;
   }
 
@@ -104,7 +101,7 @@ public class ApiProtectionConfigResolver {
 
   private AnomalyEventCategory getEventCategory(
       List<AnomalySubRuleType> subRuleTypes, String subRuleId) {
-    if (TAGGED_CATEGORY_RULE_IDS.contains(subRuleId)) {
+    if (taggedCategoryRuleIds.contains(subRuleId)) {
       return AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_TAGGED;
     }
     if (subRuleTypes.contains(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK)

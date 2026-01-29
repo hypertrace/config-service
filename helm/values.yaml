@@ -3357,11 +3357,18 @@ anomalyConfigServiceConfig:
       maxSize: 400
       refreshAfterWriteDuration: 1h
       threadPoolSize: 4
+  detectorConfigService:
+    apiProtectTaggedCategoryRuleIds:
+      - "parameterAnomaly_uuad"
+      - "schemaValidation_uresc"
 traceableEdgeConfigService:
   getConfigsThreadPoolSize: 10
 fraudDataModelDerivationConfigService:
   defaultFraudDataModelDerivations: |-
     []
+
+apiProtectThreatRuleConfigsConf: ""
+
 defaultModsecDetectionConfigs: |-
   [
     {

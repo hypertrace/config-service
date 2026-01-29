@@ -23,6 +23,8 @@ public class DetectorConfigServiceConfig {
       "api-protect-threat-rule-configs.conf";
   private static final String API_PROTECT_DETECTION_CONFIGS_PATH =
       "apiProtectThreatRuleIdToConfigMap";
+  private static final String API_PROTECT_TAGGED_CATEGORY_RULE_IDS_PATH =
+      "apiProtectTaggedCategoryRuleIds";
   private static final String API_DEFINITION_DETECTION_CONFIGS_PATH =
       "apiDefinitionDetectionConfigs";
   private static final String SESSION_DEFINITION_DETECTION_CONFIGS_PATH =
@@ -39,6 +41,7 @@ public class DetectorConfigServiceConfig {
   private final List<AnomalyDetectionConfig> apiProtectDetectionConfigs;
   private final List<AnomalyDetectionConfig> deprecatedApiProtectionDetectionConfigs;
   private final List<AnomalyDetectionConfig> genAiDetectionConfigs;
+  private final List<String> apiProtectTaggedCategoryRuleIds;
 
   private final ConfigConverter configConverter = new ConfigConverter();
 
@@ -50,7 +53,8 @@ public class DetectorConfigServiceConfig {
       CredentialStuffingRulesRegistry credentialStuffingRulesRegistry,
       AccountTakeoverRulesRegistry accountTakeoverRulesRegistry,
       GenAiRulesRegistry genAiRulesRegistry) {
-    this.apiProtectDetectionConfigs = loadApiProtectDetectionConfigs();
+    this.apiProtectTaggedCategoryRuleIds = loadApiProtectTaggedCategoryRuleIds(config);
+    this.apiProtectDetectionConfigs = loadApiProtectDetectionConfigs(config);
     this.wafDetectionConfigs =
         configConverter.convertToAnomalyDetectionConfigs(
             config.getConfigList(MODSEC_DETECTION_CONFIGS_PATH));
@@ -126,12 +130,23 @@ public class DetectorConfigServiceConfig {
     this.deprecatedApiProtectionDetectionConfigs = deprecatedApiProtectionDetectionConfigs;
   }
 
+  private List<String> loadApiProtectTaggedCategoryRuleIds(Config config) {
+    if (config == null || !config.hasPath(API_PROTECT_TAGGED_CATEGORY_RULE_IDS_PATH)) {
+      return new ArrayList<>();
+    }
+    return config.getStringList(API_PROTECT_TAGGED_CATEGORY_RULE_IDS_PATH);
+  }
+
   public List<AnomalyDetectionConfig> getDefaultWafDetectionConfigs() {
     return wafDetectionConfigs;
   }
 
   public List<AnomalyDetectionConfig> getDefaultApiProtectDetectionConfigs() {
     return apiProtectDetectionConfigs;
+  }
+
+  public List<String> getApiProtectTaggedCategoryRuleIds() {
+    return apiProtectTaggedCategoryRuleIds;
   }
 
   public List<AnomalyDetectionConfig> getDefaultGenAiDetectionConfigs() {
@@ -142,8 +157,13 @@ public class DetectorConfigServiceConfig {
     return deprecatedApiProtectionDetectionConfigs;
   }
 
-  private List<AnomalyDetectionConfig> loadApiProtectDetectionConfigs() {
+  private List<AnomalyDetectionConfig> loadApiProtectDetectionConfigs(Config config) {
     try {
+      if (config != null && config.hasPath(API_PROTECT_DETECTION_CONFIGS_PATH)) {
+        return configConverter.convertToAnomalyDetectionConfigs(
+            config.getConfigList(API_PROTECT_DETECTION_CONFIGS_PATH));
+      }
+
       Config apiProtectConfig =
           ConfigFactory.parseResources(API_PROTECT_DETECTION_DEFAULT_CONFIGS_PATH);
       return configConverter.convertToAnomalyDetectionConfigs(
