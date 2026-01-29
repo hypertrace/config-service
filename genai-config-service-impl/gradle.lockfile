@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.4.4529=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.4548=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 aopalliance:aopalliance:1.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 at.yawk.lz4:lz4-java:1.8.1=runtimeClasspath,testRuntimeClasspath
 com.auth0:java-jwt:4.4.0=runtimeClasspath,testRuntimeClasspath
@@ -56,7 +56,7 @@ org.apache.kafka:kafka-clients:7.7.0-ccs=compileClasspath,runtimeClasspath,testC
 org.apiguardian:apiguardian-api:1.1.2=testCompileClasspath
 org.checkerframework:checker-qual:3.43.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.codehaus.mojo:animal-sniffer-annotations:1.24=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-org.eclipse.jetty:jetty-bom:11.0.24=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.eclipse.jetty:jetty-bom:11.0.26=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.glassfish.jersey:jersey-bom:2.41=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.bom:hypertrace-bom:0.3.69=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.eventstore:event-store:0.1.6=runtimeClasspath,testRuntimeClasspath

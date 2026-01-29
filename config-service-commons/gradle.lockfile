@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.4.4529=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.4548=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.fasterxml.jackson:jackson-bom:2.16.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.google.api.grpc:proto-google-common-protos:2.59.2=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.google.code.findbugs:jsr305:3.0.2=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
@@ -43,13 +43,13 @@ org.apiguardian:apiguardian-api:1.1.2=testCompileClasspath
 org.checkerframework:checker-qual:3.43.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.codehaus.mojo:animal-sniffer-annotations:1.24=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.eclipse.jetty.toolchain:jetty-jakarta-servlet-api:5.0.2=runtimeClasspath,testRuntimeClasspath
-org.eclipse.jetty:jetty-bom:11.0.24=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-org.eclipse.jetty:jetty-http:11.0.24=runtimeClasspath,testRuntimeClasspath
-org.eclipse.jetty:jetty-io:11.0.24=runtimeClasspath,testRuntimeClasspath
-org.eclipse.jetty:jetty-security:11.0.24=runtimeClasspath,testRuntimeClasspath
-org.eclipse.jetty:jetty-server:11.0.24=runtimeClasspath,testRuntimeClasspath
-org.eclipse.jetty:jetty-servlet:11.0.24=runtimeClasspath,testRuntimeClasspath
-org.eclipse.jetty:jetty-util:11.0.24=runtimeClasspath,testRuntimeClasspath
+org.eclipse.jetty:jetty-bom:11.0.26=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.eclipse.jetty:jetty-http:11.0.26=runtimeClasspath,testRuntimeClasspath
+org.eclipse.jetty:jetty-io:11.0.26=runtimeClasspath,testRuntimeClasspath
+org.eclipse.jetty:jetty-security:11.0.26=runtimeClasspath,testRuntimeClasspath
+org.eclipse.jetty:jetty-server:11.0.26=runtimeClasspath,testRuntimeClasspath
+org.eclipse.jetty:jetty-servlet:11.0.26=runtimeClasspath,testRuntimeClasspath
+org.eclipse.jetty:jetty-util:11.0.26=runtimeClasspath,testRuntimeClasspath
 org.glassfish.jersey:jersey-bom:2.41=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hdrhistogram:HdrHistogram:2.2.2=runtimeClasspath,testRuntimeClasspath
 org.hypertrace.bom:hypertrace-bom:0.3.69=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
@@ -68,6 +68,6 @@ org.mockito:mockito-junit-jupiter:5.12.0=testCompileClasspath,testRuntimeClasspa
 org.objenesis:objenesis:3.3=testRuntimeClasspath
 org.opentest4j:opentest4j:1.3.0=testCompileClasspath,testRuntimeClasspath
 org.projectlombok:lombok:1.18.30=annotationProcessor,compileClasspath
+org.slf4j:slf4j-api:2.0.13=runtimeClasspath,testRuntimeClasspath
 org.slf4j:slf4j-api:2.0.7=compileClasspath,testCompileClasspath
-org.slf4j:slf4j-api:2.0.9=runtimeClasspath,testRuntimeClasspath
 empty=
