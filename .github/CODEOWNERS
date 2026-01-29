@@ -11,12 +11,12 @@ anomaly-config-service-api/src @GurtejSohi @aaron-steinfeld @skjindal93 @singhal
 anomaly-config-service-impl/src @GurtejSohi @aaron-steinfeld @skjindal93 @singhalprerana @avinashkolluru @saxenakshitiz @SrikarMannepalli @RishabhB99 @sidharth-jain23 @bhubam
 api-spec-config-service-api/src @sanket-mundra @rutvij-menavlikar @aman-bansal @suresh-prakash @skjindal93
 api-spec-config-service-impl/src @sanket-mundra @rutvij-menavlikar @aman-bansal @suresh-prakash @skjindal93
-detection-exclusion-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99 @bhubam
-rate-limiting-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99 @saxenakshitiz
-custom-signature-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99 @bhubam
-malicious-sources-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99 @bhubam
-iprange-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99 @bhubam
-region-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99 @bhubam
+detection-exclusion-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99 @bhubam @Gg-harness
+rate-limiting-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99 @saxenakshitiz @Gg-harness
+custom-signature-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99 @bhubam @Gg-harness
+malicious-sources-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99 @bhubam @Gg-harness
+iprange-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99 @bhubam @Gg-harness
+region-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99 @bhubam @Gg-harness
 fraud-datamodel-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @vinaysrini @abhishek-yadav-tracable @varsha-abhinandan
 fraud-datamodel-derivation-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @vinaysrini @abhishek-yadav-tracable @varsha-abhinandan
 fraud-policy-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @vinaysrini @abhishek-yadav-tracable @varsha-abhinandan
@@ -27,12 +27,12 @@ traceable-policy-config-service-api/src @sunilgattupalle @surajpuvvada @avinashk
 traceable-policy-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini
 traceable-datamodel-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini
 traceable-datamodel-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini
-traceable-edge-bot-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @abhishek-yadav-tracable
-traceable-edge-bot-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @abhishek-yadav-tracable
-traceable-edge-decision-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @PrajwalKrishna @saxenakshitiz @RishabhB99 @abhishek-yadav-tracable
-traceable-edge-decision-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @PrajwalKrishna @saxenakshitiz @RishabhB99 @abhishek-yadav-tracable
-traceable-edge-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @PrajwalKrishna @saxenakshitiz @RishabhB99 @abhishek-yadav-tracable
-traceable-edge-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @PrajwalKrishna @saxenakshitiz @RishabhB99 @abhishek-yadav-tracable
+traceable-edge-bot-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @abhishek-yadav-tracable @Gg-harness
+traceable-edge-bot-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @abhishek-yadav-tracable @Gg-harness
+traceable-edge-decision-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @PrajwalKrishna @saxenakshitiz @RishabhB99 @abhishek-yadav-tracable @Gg-harness
+traceable-edge-decision-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @PrajwalKrishna @saxenakshitiz @RishabhB99 @abhishek-yadav-tracable @Gg-harness
+traceable-edge-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @PrajwalKrishna @saxenakshitiz @RishabhB99 @abhishek-yadav-tracable @Gg-harness
+traceable-edge-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @PrajwalKrishna @saxenakshitiz @RishabhB99 @abhishek-yadav-tracable @Gg-harness
 traceable-config-service-rest/src @sunilgattupalle @surajpuvvada @avinashkolluru @aaron-steinfeld @vinaysrini
 threat-scoring-config-service-impl/src/main/resources @piyushroshan @soujanyanmbri @singhalprerana @avinashkolluru
 user-attribution-config-service-api/src @sanket-mundra @rutvij-menavlikar @saxenakshitiz @aaron-steinfeld
