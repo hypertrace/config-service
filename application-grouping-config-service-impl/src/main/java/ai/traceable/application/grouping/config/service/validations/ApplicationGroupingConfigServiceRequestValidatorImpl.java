@@ -92,9 +92,6 @@ public class ApplicationGroupingConfigServiceRequestValidatorImpl
     validateStringField(context, configInfo.getRuleName(), "Rule name", MAX_RULE_NAME_LENGTH);
     validateRuleNameStartsAndEndsWithAlphanumeric(context, configInfo.getRuleName());
 
-    validateStringField(
-        context, configInfo.getGroupName().getStatic(), "Group name", MAX_GROUP_NAME_LENGTH);
-
     validateNonDefaultPresenceOrThrow(
         configInfo, ApplicationGroupingRuleConfigInfo.SELECTOR_FIELD_NUMBER);
     if (configInfo.getSelectorList().isEmpty()) {
