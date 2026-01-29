@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package ai.traceable.fraud.policy.config.service.v1;
 
+import "ai/traceable/fraud/policy/config/service/v1/abuse_policy.proto";
 import "ai/traceable/fraud/policy/config/service/v1/api_access_config.proto";
 import "ai/traceable/fraud/policy/config/service/v1/fraud_policy.proto";
 import "google/protobuf/field_mask.proto";
@@ -20,6 +21,11 @@ service FraudPolicyConfigService {
   rpc CreateApiAccessAnomalyConfig(CreateApiAccessAnomalyConfigRequest) returns (CreateApiAccessAnomalyConfigResponse) {}
   rpc UpdateApiAccessAnomalyConfig(UpdateApiAccessAnomalyConfigRequest) returns (UpdateApiAccessAnomalyConfigResponse) {}
   rpc DeleteApiAccessAnomalyConfig(DeleteApiAccessAnomalyConfigRequest) returns (DeleteApiAccessAnomalyConfigResponse) {}
+  rpc CreateAbusePolicy(CreateAbusePolicyRequest) returns (CreateAbusePolicyResponse) {}
+  rpc UpdateAbusePolicy(UpdateAbusePolicyRequest) returns (UpdateAbusePolicyResponse) {}
+  rpc DeleteAbusePolicy(DeleteAbusePolicyRequest) returns (DeleteAbusePolicyResponse) {}
+  rpc GetAbusePolicies(GetAbusePoliciesRequest) returns (GetAbusePoliciesResponse) {}
+  rpc GetAbusePolicy(GetAbusePolicyRequest) returns (GetAbusePolicyResponse) {}
 }
 
 message CreateFraudPolicyRequest {
@@ -111,3 +117,66 @@ message DeleteApiAccessAnomalyConfigRequest {
 }
 
 message DeleteApiAccessAnomalyConfigResponse {}
+
+message CreateAbusePolicyRequest {
+  // Policy configuration data (server will generate ID)
+  AbusePolicyData data = 1;
+}
+
+message CreateAbusePolicyResponse {
+  AbusePolicy policy = 1;
+}
+
+message UpdateAbusePolicyRequest {
+  string policy_id = 1;
+  AbusePolicyData data = 2;
+}
+
+message UpdateAbusePolicyResponse {
+  AbusePolicy policy = 1;
+}
+
+message GetAbusePoliciesRequest {
+  // Optional: Filter criteria for policies
+  AbusePolicyFilter filter = 1;
+}
+
+message GetAbusePoliciesResponse {
+  repeated AbusePolicy policies = 1;
+}
+
+message AbusePolicyFilter {
+  // Filter by specific policy IDs
+  repeated string policy_ids = 1;
+
+  // Filter by enabled/disabled status
+  optional bool enabled = 2;
+
+  // Filter by environment IDs
+  repeated string environment_ids = 3;
+
+  // Filter by severity levels
+  repeated AbuseRiskSeverity severities = 4;
+
+  // Filter by API IDs
+  repeated string api_ids = 5;
+
+  // Filter by action type
+  repeated AbuseActionType action_types = 6;
+}
+
+message GetAbusePolicyRequest {
+  string policy_id = 1;
+}
+
+message GetAbusePolicyResponse {
+  AbusePolicy policy = 1;
+}
+
+message DeleteAbusePolicyRequest {
+  repeated string policy_ids = 1;
+}
+
+message DeleteAbusePolicyResponse {
+  repeated AbusePolicy policies = 1;
+}

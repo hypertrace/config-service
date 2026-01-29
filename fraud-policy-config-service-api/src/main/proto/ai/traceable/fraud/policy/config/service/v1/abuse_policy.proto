@@ -1,0 +1,208 @@
+syntax = "proto3";
+
+package ai.traceable.fraud.policy.config.service.v1;
+
+import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/struct.proto";
+
+option java_multiple_files = true;
+
+// API abuse policy data (all configuration fields)
+message AbusePolicyData {
+  // Required: Human-readable name
+  string name = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Human-readable name for the policy"];
+
+  // Required: Scope defining where this policy applies
+  AbusePolicyScope scope = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Scope defining where this policy applies"];
+
+  // Required: Enable/disable the policy
+  bool enabled = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Whether the policy is enabled"];
+
+  // Required: Severity level
+  AbuseRiskSeverity severity = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Severity level of the policy"];
+
+  // Required: Action configuration
+  AbuseActionConfig action = 5 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Action to take when policy triggers"];
+
+  // Template-specific configuration (one of the following)
+  oneof template_config {
+    AbuseSimpleAggregationTemplateConfig simple_aggregation_template = 6;
+    AbusePredefinedTemplateConfig predefined_template = 7;
+  }
+
+  // Optional: Description of the policy
+  string description = 8 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Description of the policy"];
+
+  // Optional: Evaluation schedule and time window configuration
+  AbuseEvaluationSchedule evaluation_schedule = 9 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Evaluation schedule and time window configuration"];
+
+  // Version for optimistic locking
+  int64 version = 10 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_skip) = true];
+
+  // Required: Message format template for detection events
+  string message_format = 11 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Message format template for detection events"];
+}
+
+// API abuse policy with ID and data
+message AbusePolicy {
+  // Server-generated unique identifier for the policy
+  string id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Unique identifier for the policy"];
+
+  // Policy configuration data
+  AbusePolicyData data = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Policy configuration data"];
+}
+
+enum AbuseRiskSeverity {
+  ABUSE_RISK_SEVERITY_UNSPECIFIED = 0;
+  ABUSE_RISK_SEVERITY_LOW = 1;
+  ABUSE_RISK_SEVERITY_MEDIUM = 2;
+  ABUSE_RISK_SEVERITY_HIGH = 3;
+  ABUSE_RISK_SEVERITY_CRITICAL = 4;
+}
+
+message AbusePolicyScope {
+  // Environment scope
+  AbuseEnvironmentScope environment_scope = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Environment scope"];
+
+  // API scope defining target endpoints
+  AbuseApiScope api_scope = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "API scope defining target endpoints"];
+}
+
+message AbuseEnvironmentScope {
+  // Environment IDs this policy applies to
+  repeated string environment_ids = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Environment IDs this policy applies to"];
+}
+
+message AbuseApiScope {
+  oneof scope_type {
+    // API identifiers to which this policy applies
+    AbuseApiIds api_ids = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "API identifiers to which this policy applies"];
+
+    // API labels to which this policy applies
+    AbuseApiLabels api_labels = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "API labels to which this policy applies"];
+  }
+}
+
+message AbuseApiIds {
+  repeated string ids = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of API identifiers"];
+}
+
+message AbuseApiLabels {
+  repeated string labels = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of API labels"];
+}
+
+message AbuseActionConfig {
+  // Action type to take when policy triggers
+  AbuseActionType action_type = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Action type to take when policy triggers"];
+}
+
+enum AbuseActionType {
+  ABUSE_ACTION_TYPE_UNSPECIFIED = 0;
+  ABUSE_ACTION_TYPE_ALERT = 1;
+}
+
+// Configuration for simple aggregation template
+message AbuseSimpleAggregationTemplateConfig {
+  // Required: Aggregation configuration
+  AbuseAggregationConfig aggregation = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Aggregation configuration"];
+
+  // Required: Group by configuration
+  AbuseGroupByConfig group_by = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Group by configuration"];
+
+  // Optional: Threshold configuration
+  AbuseThresholdConfig threshold = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Threshold configuration"];
+
+  // Time window to look back for data when evaluating
+  AbuseTimeWindow time_window = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Time window to look back for data when evaluating"];
+}
+
+message AbuseAggregationConfig {
+  // Aggregation function to apply
+  AbuseAggregationFunction function = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Aggregation function to apply"];
+
+  // Derived entity ID to aggregate on (e.g., "user_id", "transaction_amount")
+  // For COUNT, use any field (e.g., "id") to express COUNT(*)
+  string derived_entity_id = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Derived entity ID to aggregate on"];
+}
+
+message AbuseGroupByConfig {
+  // Derived entity ID to group by
+  string derived_entity_id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Derived entity ID to group by"];
+}
+
+// Configuration for predefined template with parameters
+message AbusePredefinedTemplateConfig {
+  // Required: Predefined template type
+  AbusePredefinedTemplateType template_type = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Predefined template type"];
+
+  // Required: Parameters to pass to the backend template
+  map<string, google.protobuf.Value> parameters = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Parameters to pass to the backend template"];
+}
+
+enum AbuseComparisonOperator {
+  ABUSE_COMPARISON_OPERATOR_UNSPECIFIED = 0;
+  ABUSE_COMPARISON_OPERATOR_EQUALS = 1;
+  ABUSE_COMPARISON_OPERATOR_NOT_EQUALS = 2;
+  ABUSE_COMPARISON_OPERATOR_CONTAINS = 3;
+  ABUSE_COMPARISON_OPERATOR_NOT_CONTAINS = 4;
+  ABUSE_COMPARISON_OPERATOR_MATCHES_PATTERN = 5;
+}
+
+enum AbusePredefinedTemplateType {
+  ABUSE_PREDEFINED_TEMPLATE_TYPE_UNSPECIFIED = 0;
+  ABUSE_PREDEFINED_TEMPLATE_TYPE_CREDENTIAL_STUFFING = 1;
+  ABUSE_PREDEFINED_TEMPLATE_TYPE_VOLUMETRIC_ANOMALY = 2;
+}
+
+enum AbuseAggregationFunction {
+  ABUSE_AGGREGATION_FUNCTION_UNSPECIFIED = 0;
+  ABUSE_AGGREGATION_FUNCTION_COUNT = 1;
+  ABUSE_AGGREGATION_FUNCTION_SUM = 2;
+  ABUSE_AGGREGATION_FUNCTION_AVG = 3;
+  ABUSE_AGGREGATION_FUNCTION_MIN = 4;
+  ABUSE_AGGREGATION_FUNCTION_MAX = 5;
+  ABUSE_AGGREGATION_FUNCTION_COUNT_DISTINCT = 6;
+}
+
+message AbuseThresholdConfig {
+  // Threshold operator
+  AbuseThresholdOperator operator = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Threshold operator"];
+
+  // Threshold value
+  double value = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Threshold value"];
+}
+
+enum AbuseThresholdOperator {
+  ABUSE_THRESHOLD_OPERATOR_UNSPECIFIED = 0;
+  ABUSE_THRESHOLD_OPERATOR_GREATER_THAN = 1;
+  ABUSE_THRESHOLD_OPERATOR_LESS_THAN = 2;
+  ABUSE_THRESHOLD_OPERATOR_EQUAL = 3;
+  ABUSE_THRESHOLD_OPERATOR_GREATER_THAN_OR_EQUAL = 4;
+  ABUSE_THRESHOLD_OPERATOR_LESS_THAN_OR_EQUAL = 5;
+}
+
+message AbuseEvaluationSchedule {
+  // How often to evaluate the policy
+  oneof schedule_type {
+    // Cron expression for scheduling (e.g., "0 */10 * * * ?" for every 10 minutes)
+    string cron_expression = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Cron expression for scheduling"];
+
+    // Interval between executions
+    google.protobuf.Duration interval = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Interval between executions"];
+  }
+
+  // Optional: Start time for the schedule (for simulations or delayed start)
+  optional int64 schedule_start_time = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Start time for the schedule"];
+
+  // Optional: End time for the schedule (for simulations or limited duration)
+  optional int64 schedule_end_time = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "End time for the schedule"];
+}
+
+message AbuseTimeWindow {
+  // Time window to look back for data when evaluating
+  oneof window {
+    // Relative time window (e.g., last 1 hour)
+    google.protobuf.Duration lookback_duration = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Relative time window for lookback"];
+  }
+}
