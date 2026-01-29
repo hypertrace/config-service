@@ -46,6 +46,14 @@ message BulkDeleteCustomSignatureRulesRequest {
 
 message BulkDeleteCustomSignatureRulesResponse {}
 
+message BulkUpdateCustomSignatureRulesRequest {
+  repeated string ids = 1;
+  bool disabled = 2;
+  // future extensions: add/remove rule_scope(s)
+}
+
+message BulkUpdateCustomSignatureRulesResponse {}
+
 message GetCustomSignatureRulesRequest {
   GetRulesFilter filter = 1;
 }

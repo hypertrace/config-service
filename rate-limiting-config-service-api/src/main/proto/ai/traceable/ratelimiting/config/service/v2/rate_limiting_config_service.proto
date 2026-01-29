@@ -13,6 +13,7 @@ service RateLimitingConfigService {
   rpc UpdateRateLimitingRule(UpdateRateLimitingRuleRequest) returns (UpdateRateLimitingRuleResponse) {}
   rpc DeleteRateLimitingRule(DeleteRateLimitingRuleRequest) returns (DeleteRateLimitingRuleResponse) {}
   rpc BulkDeleteRateLimitingRules(BulkDeleteRateLimitingRulesRequest) returns (BulkDeleteRateLimitingRulesResponse) {}
+  rpc BulkUpdateRateLimitingRules(BulkUpdateRateLimitingRulesRequest) returns (BulkUpdateRateLimitingRulesResponse) {}
   rpc CreateRateLimitingRule(CreateRateLimitingRuleRequest) returns (CreateRateLimitingRuleResponse) {}
   rpc GetRateLimitingRuleModsecRules(GetRateLimitingRuleModsecRulesRequest) returns (GetRateLimitingRuleModsecRulesResponse) {}
   rpc GetRateLimitingEdgeDecisionRules(GetRateLimitingEdgeDecisionRulesRequest) returns (GetRateLimitingEdgeDecisionRulesResponse) {}
@@ -79,6 +80,14 @@ message BulkDeleteRateLimitingRulesRequest {
 }
 
 message BulkDeleteRateLimitingRulesResponse {}
+
+message BulkUpdateRateLimitingRulesRequest {
+  repeated string ids = 1;
+  bool enabled = 2;
+  // future extensions: add/remove rule_config_scope
+}
+
+message BulkUpdateRateLimitingRulesResponse {}
 
 message CreateRateLimitingRuleRequest {
   RateLimitingRuleData data = 1;

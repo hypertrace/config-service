@@ -16,4 +16,6 @@ service IpRangeConfigService {
   rpc DeleteIpRangeRule(DeleteIpRangeRuleRequest) returns (DeleteIpRangeRuleResponse) {}
 
   rpc BulkDeleteIpRangeRules(BulkDeleteIpRangeRulesRequest) returns (BulkDeleteIpRangeRulesResponse) {}
+
+  rpc BulkUpdateIpRangeRules(BulkUpdateIpRangeRulesRequest) returns (BulkUpdateIpRangeRulesResponse) {}
 }

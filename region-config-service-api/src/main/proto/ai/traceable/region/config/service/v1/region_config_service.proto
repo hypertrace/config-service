@@ -22,4 +22,6 @@ service RegionConfigService {
   rpc DeleteRegionRule(DeleteRegionRuleRequest) returns (DeleteRegionRuleResponse) {}
 
   rpc BulkDeleteRegionRules(BulkDeleteRegionRulesRequest) returns (BulkDeleteRegionRulesResponse) {}
+
+  rpc BulkUpdateRegionRules(BulkUpdateRegionRulesRequest) returns (BulkUpdateRegionRulesResponse) {}
 }

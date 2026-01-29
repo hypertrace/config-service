@@ -144,6 +144,14 @@ message BulkDeleteRegionRulesRequest {
 
 message BulkDeleteRegionRulesResponse {}
 
+message BulkUpdateRegionRulesRequest {
+  repeated string ids = 1;
+  bool disabled = 2;
+  // future extensions: add/remove rule_scope(s)
+}
+
+message BulkUpdateRegionRulesResponse {}
+
 message ExpirationDetails {
   oneof expiration {
     // Duration represented in ISO 8601 duration format.

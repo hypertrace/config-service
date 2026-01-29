@@ -16,4 +16,6 @@ service MaliciousSourcesConfigService {
   rpc DeleteMaliciousSourcesRule(DeleteMaliciousSourcesRuleRequest) returns (DeleteMaliciousSourcesRuleResponse) {}
 
   rpc BulkDeleteMaliciousSourcesRules(BulkDeleteMaliciousSourcesRulesRequest) returns (BulkDeleteMaliciousSourcesRulesResponse) {}
+
+  rpc BulkUpdateMaliciousSourcesRules(BulkUpdateMaliciousSourcesRulesRequest) returns (BulkUpdateMaliciousSourcesRulesResponse) {}
 }

@@ -67,6 +67,14 @@ message BulkDeleteDetectionExclusionRulesRequest {
 
 message BulkDeleteDetectionExclusionRulesResponse {}
 
+message BulkUpdateDetectionExclusionRulesRequest {
+  repeated string ids = 1;
+  bool disabled = 2;
+  // future extensions: add/remove rule_scope(s)
+}
+
+message BulkUpdateDetectionExclusionRulesResponse {}
+
 message GetRulesFilter {
   repeated string rule_ids = 1;
   DetectionExclusionRuleScope rule_scope = 2;

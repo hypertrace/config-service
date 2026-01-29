@@ -17,6 +17,8 @@ service CustomSignatureConfigService {
 
   rpc BulkDeleteCustomSignatureRules(BulkDeleteCustomSignatureRulesRequest) returns (BulkDeleteCustomSignatureRulesResponse) {}
 
+  rpc BulkUpdateCustomSignatureRules(BulkUpdateCustomSignatureRulesRequest) returns (BulkUpdateCustomSignatureRulesResponse) {}
+
   rpc GetCustomSignatureModsecRules(GetCustomSignatureModsecRulesRequest) returns (GetCustomSignatureModsecRulesResponse) {}
 
   rpc GetCustomSignatureEdgeDecisionRules(GetCustomSignatureEdgeDecisionRulesRequest) returns (GetCustomSignatureEdgeDecisionRulesResponse) {}

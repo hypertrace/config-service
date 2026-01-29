@@ -40,6 +40,14 @@ message BulkDeleteIpRangeRulesRequest {
 
 message BulkDeleteIpRangeRulesResponse {}
 
+message BulkUpdateIpRangeRulesRequest {
+  repeated string ids = 1;
+  bool disabled = 2;
+  // future extensions: add/remove rule_scope(s)
+}
+
+message BulkUpdateIpRangeRulesResponse {}
+
 message GetIpRangeRulesRequest {
   GetRulesFilter filter = 1;
 }

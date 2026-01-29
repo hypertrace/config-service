@@ -36,6 +36,14 @@ message BulkDeleteMaliciousSourcesRulesRequest {
 
 message BulkDeleteMaliciousSourcesRulesResponse {}
 
+message BulkUpdateMaliciousSourcesRulesRequest {
+  repeated string ids = 1;
+  bool disabled = 2;
+  // future extensions: add/remove rule_scope(s)
+}
+
+message BulkUpdateMaliciousSourcesRulesResponse {}
+
 message GetMaliciousSourcesRulesRequest {
   GetRulesFilter filter = 1;
 }
