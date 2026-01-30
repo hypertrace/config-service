@@ -3,13 +3,18 @@ package ai.traceable.region.config.service.rules;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import ai.traceable.config.commons.v1.AuditFilter;
 import ai.traceable.config.commons.v1.TimestampRange;
+import ai.traceable.config.service.commons.utils.UserVisibleEmailConfig;
 import ai.traceable.config.utils.TimestampConverter;
+import ai.traceable.region.config.service.RegionConfigServiceConfig;
 import ai.traceable.region.config.service.v1.GetRegionRulesFilter;
 import ai.traceable.region.config.service.v1.RegionRule;
 import ai.traceable.region.config.service.v1.RegionRuleRecord;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import java.time.Instant;
 import java.util.List;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
@@ -38,9 +43,18 @@ class RegionRulesStoreAuditFilterTest {
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
+    Config typesafeConfig =
+        ConfigFactory.parseString(
+            "generic.config.service.customer.visible.excluded.email.patterns: []");
+    RegionConfigServiceConfig regionConfigServiceConfig = mock(RegionConfigServiceConfig.class);
+    when(regionConfigServiceConfig.getUserVisibleEmailConfig())
+        .thenReturn(new UserVisibleEmailConfig(typesafeConfig));
     regionRulesStore =
         new RegionRulesStore(
-            configServiceBlockingStub, configChangeEventGenerator, timestampConverter);
+            configServiceBlockingStub,
+            configChangeEventGenerator,
+            timestampConverter,
+            regionConfigServiceConfig);
   }
 
   @AfterEach

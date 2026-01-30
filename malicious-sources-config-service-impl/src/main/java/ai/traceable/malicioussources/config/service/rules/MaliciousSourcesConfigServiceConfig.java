@@ -1,5 +1,6 @@
 package ai.traceable.malicioussources.config.service.rules;
 
+import ai.traceable.config.service.commons.utils.UserVisibleEmailConfig;
 import com.typesafe.config.Config;
 import lombok.Getter;
 
@@ -9,8 +10,10 @@ public class MaliciousSourcesConfigServiceConfig {
   private static final String CHANGE_LOG_1_MIGRATION_DISABLED_KEY =
       MALICIOUS_SOURCES_CONFIG_KEY + "changeLog1." + MIGRATION_DISABLED_KEY;
   @Getter private final boolean changeLog1MigrationDisabled;
+  @Getter private final UserVisibleEmailConfig userVisibleEmailConfig;
 
   public MaliciousSourcesConfigServiceConfig(Config config) {
     this.changeLog1MigrationDisabled = config.getBoolean(CHANGE_LOG_1_MIGRATION_DISABLED_KEY);
+    this.userVisibleEmailConfig = new UserVisibleEmailConfig(config);
   }
 }

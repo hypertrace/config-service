@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.config.commons.v1.AuditFilter;
 import ai.traceable.config.commons.v1.TimestampRange;
+import ai.traceable.config.service.commons.utils.UserVisibleEmailConfig;
 import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
@@ -14,6 +15,8 @@ import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleRecord;
 import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceConfig;
 import ai.traceable.ratelimiting.service.v2.rules.RateLimitingRulesStore;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -43,6 +46,10 @@ class RateLimitingRulesStoreAuditFilterTest {
     timestampConverter = new TimestampConverter();
     config = mock(RateLimitingConfigServiceConfig.class);
     when(config.getDefaultRateLimitingRules()).thenReturn(Collections.emptyList());
+    Config typesafeConfig =
+        ConfigFactory.parseString(
+            "generic.config.service.customer.visible.excluded.email.patterns: []");
+    when(config.getUserVisibleEmailConfig()).thenReturn(new UserVisibleEmailConfig(typesafeConfig));
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
@@ -290,6 +297,11 @@ class RateLimitingRulesStoreAuditFilterTest {
       RateLimitingConfigServiceConfig configWithDefaults =
           mock(RateLimitingConfigServiceConfig.class);
       when(configWithDefaults.getDefaultRateLimitingRules()).thenReturn(defaultRules);
+      Config typesafeConfig =
+          ConfigFactory.parseString(
+              "generic.config.service.customer.visible.excluded.email.patterns: []");
+      when(configWithDefaults.getUserVisibleEmailConfig())
+          .thenReturn(new UserVisibleEmailConfig(typesafeConfig));
       ConfigChangeEventGenerator changeEventGenerator = mock(ConfigChangeEventGenerator.class);
       ConfigServiceGrpc.ConfigServiceBlockingStub stub =
           ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());

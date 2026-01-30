@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.config.commons.v1.AuditFilter;
 import ai.traceable.config.commons.v1.TimestampRange;
+import ai.traceable.config.service.commons.utils.UserVisibleEmailConfig;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceConfig;
@@ -15,6 +16,8 @@ import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleInfo;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleRecord;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -51,13 +54,17 @@ class DetectionExclusionRulesStoreAuditFilterTest {
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
+    Config typesafeConfig =
+        ConfigFactory.parseString(
+            "generic.config.service.customer.visible.excluded.email.patterns: []");
+    when(config.getUserVisibleEmailConfig()).thenReturn(new UserVisibleEmailConfig(typesafeConfig));
     detectionExclusionRulesStore =
         new DetectionExclusionRulesStore(
             configServiceBlockingStub,
             configChangeEventGenerator,
             featureCachingClient,
             config,
-            new DetectionExclusionAuditHelper(timestampConverter));
+            new DetectionExclusionAuditHelper(timestampConverter, config));
   }
 
   @AfterEach
@@ -335,12 +342,17 @@ class DetectionExclusionRulesStoreAuditFilterTest {
       ConfigChangeEventGenerator changeEventGenerator = mock(ConfigChangeEventGenerator.class);
       ConfigServiceGrpc.ConfigServiceBlockingStub stub =
           ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
+      Config typesafeConfig =
+          ConfigFactory.parseString(
+              "generic.config.service.customer.visible.excluded.email.patterns: []");
+      when(configWithDefaults.getUserVisibleEmailConfig())
+          .thenReturn(new UserVisibleEmailConfig(typesafeConfig));
       return new DetectionExclusionRulesStore(
           stub,
           changeEventGenerator,
           featureCachingClient,
           configWithDefaults,
-          new DetectionExclusionAuditHelper(timestampConverter));
+          new DetectionExclusionAuditHelper(timestampConverter, configWithDefaults));
     }
 
     @Test

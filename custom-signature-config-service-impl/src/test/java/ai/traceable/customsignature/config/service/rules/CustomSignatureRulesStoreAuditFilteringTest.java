@@ -8,12 +8,15 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.config.commons.v1.AuditFilter;
 import ai.traceable.config.commons.v1.TimestampRange;
+import ai.traceable.config.service.commons.utils.UserVisibleEmailConfig;
 import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceConfig;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRuleRecord;
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import com.google.protobuf.Timestamp;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -769,8 +772,12 @@ class CustomSignatureRulesStoreAuditFilteringTest {
 
   private static CustomSignatureRulesStore newTestStore(
       List<ContextualConfigObject<CustomSignatureRule>> objects) {
+    Config typesafeConfig =
+        ConfigFactory.parseString(
+            "generic.config.service.customer.visible.excluded.email.patterns: []");
     CustomSignatureConfigServiceConfig config = mock(CustomSignatureConfigServiceConfig.class);
     when(config.getDefaultCustomSignatureRules()).thenReturn(List.of());
+    when(config.getUserVisibleEmailConfig()).thenReturn(new UserVisibleEmailConfig(typesafeConfig));
 
     return new TestCustomSignatureRulesStore(objects, config, new TimestampConverter());
   }
@@ -778,8 +785,12 @@ class CustomSignatureRulesStoreAuditFilteringTest {
   private static CustomSignatureRulesStore newTestStoreWithDefaults(
       List<ContextualConfigObject<CustomSignatureRule>> objects,
       List<CustomSignatureRule> defaultRules) {
+    Config typesafeConfig =
+        ConfigFactory.parseString(
+            "generic.config.service.customer.visible.excluded.email.patterns: []");
     CustomSignatureConfigServiceConfig config = mock(CustomSignatureConfigServiceConfig.class);
     when(config.getDefaultCustomSignatureRules()).thenReturn(defaultRules);
+    when(config.getUserVisibleEmailConfig()).thenReturn(new UserVisibleEmailConfig(typesafeConfig));
 
     return new TestCustomSignatureRulesStore(objects, config, new TimestampConverter());
   }

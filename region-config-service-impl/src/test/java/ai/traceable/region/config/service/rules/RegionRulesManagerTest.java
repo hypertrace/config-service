@@ -64,7 +64,10 @@ class RegionRulesManagerTest {
         ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
     regionRulesStore =
         new RegionRulesStore(
-            configServiceBlockingStub, configChangeEventGenerator, new TimestampConverter());
+            configServiceBlockingStub,
+            configChangeEventGenerator,
+            new TimestampConverter(),
+            mock(ai.traceable.region.config.service.RegionConfigServiceConfig.class));
     this.rulesManager = new RegionRulesManager(clock, regionRulesStore, uuidGenerator);
   }
 

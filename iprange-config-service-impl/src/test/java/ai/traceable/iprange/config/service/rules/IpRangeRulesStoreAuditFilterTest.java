@@ -3,14 +3,19 @@ package ai.traceable.iprange.config.service.rules;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import ai.traceable.config.commons.v1.AuditFilter;
 import ai.traceable.config.commons.v1.TimestampRange;
+import ai.traceable.config.service.commons.utils.UserVisibleEmailConfig;
 import ai.traceable.config.utils.TimestampConverter;
+import ai.traceable.iprange.config.service.IpRangeConfigServiceConfig;
 import ai.traceable.iprange.config.service.v1.GetRulesFilter;
 import ai.traceable.iprange.config.service.v1.IpRangeRule;
 import ai.traceable.iprange.config.service.v1.IpRangeRuleDetails;
 import ai.traceable.iprange.config.service.v1.IpRangeRuleRecord;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import java.time.Instant;
 import java.util.List;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
@@ -39,9 +44,18 @@ class IpRangeRulesStoreAuditFilterTest {
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
+    Config typesafeConfig =
+        ConfigFactory.parseString(
+            "generic.config.service.customer.visible.excluded.email.patterns: []");
+    IpRangeConfigServiceConfig ipRangeConfigServiceConfig = mock(IpRangeConfigServiceConfig.class);
+    when(ipRangeConfigServiceConfig.getUserVisibleEmailConfig())
+        .thenReturn(new UserVisibleEmailConfig(typesafeConfig));
     ipRangeRulesStore =
         new IpRangeRulesStore(
-            configServiceBlockingStub, configChangeEventGenerator, timestampConverter);
+            configServiceBlockingStub,
+            configChangeEventGenerator,
+            timestampConverter,
+            ipRangeConfigServiceConfig);
   }
 
   @AfterEach

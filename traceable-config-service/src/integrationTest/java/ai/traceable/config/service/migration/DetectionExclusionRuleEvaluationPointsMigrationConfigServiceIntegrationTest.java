@@ -141,7 +141,8 @@ public class DetectionExclusionRuleEvaluationPointsMigrationConfigServiceIntegra
             configChangeEventGenerator,
             featureCachingClient,
             detectionExclusionConfigServiceConfig,
-            new DetectionExclusionAuditHelper(new TimestampConverter()));
+            new DetectionExclusionAuditHelper(
+                new TimestampConverter(), detectionExclusionConfigServiceConfig));
   }
 
   @Test

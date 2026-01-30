@@ -1,6 +1,7 @@
 package ai.traceable.customsignature.config.service;
 
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
+import ai.traceable.config.service.commons.utils.UserVisibleEmailConfig;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
@@ -43,6 +44,7 @@ public class CustomSignatureConfigServiceConfig {
   @Getter private final boolean ruleCategoryMigrationDisabled;
   @Getter private final boolean allowRulesPlatformExclusionMigrationDisabled;
   @Getter private final boolean markForTestingInlineAgentMigrationDisabled;
+  @Getter private final UserVisibleEmailConfig userVisibleEmailConfig;
 
   public CustomSignatureConfigServiceConfig(Config config) {
     this.config =
@@ -62,6 +64,7 @@ public class CustomSignatureConfigServiceConfig {
     this.markForTestingInlineAgentMigrationDisabled =
         this.config.hasPath(MARK_FOR_TESTING_INLINE_AGENT_MIGRATION_DISABLED_KEY)
             && this.config.getBoolean(MARK_FOR_TESTING_INLINE_AGENT_MIGRATION_DISABLED_KEY);
+    this.userVisibleEmailConfig = new UserVisibleEmailConfig(config);
   }
 
   private List<CustomSignatureRule> loadDefaultCustomSignatureRules() {

@@ -1,5 +1,6 @@
 package ai.traceable.ratelimiting.service.v2.rules;
 
+import static ai.traceable.config.service.commons.utils.AuditFilterUtils.getVisibleUserEmail;
 import static ai.traceable.config.service.commons.utils.AuditFilterUtils.hasActiveAuditFilter;
 import static ai.traceable.ratelimiting.service.v2.constants.RateLimitingConfigConstants.RATE_LIMITING_RULE_CONFIG_RESOURCE_NAME;
 import static ai.traceable.ratelimiting.service.v2.constants.RateLimitingConfigConstants.RATE_LIMITING_RULE_CONFIG_RESOURCE_NAMESPACE;
@@ -42,6 +43,7 @@ public class RateLimitingRulesStore
   Logger log = LoggerFactory.getLogger(RateLimitingRulesStore.class);
   private final List<RateLimitingRule> defaultRateLimitingRules;
   private final TimestampConverter timestampConverter;
+  private final RateLimitingConfigServiceConfig rateLimitingConfigServiceConfig;
 
   @Inject
   public RateLimitingRulesStore(
@@ -56,6 +58,7 @@ public class RateLimitingRulesStore
         configChangeEventGenerator);
     this.defaultRateLimitingRules = config.getDefaultRateLimitingRules();
     this.timestampConverter = timestampConverter;
+    this.rateLimitingConfigServiceConfig = config;
   }
 
   @Override
@@ -269,7 +272,11 @@ public class RateLimitingRulesStore
     if (lastUpdatedByContains.isEmpty()) {
       return true;
     }
-    String lastUserUpdateEmail = contextual.getLastUserUpdateEmail();
+    String lastUserUpdateEmail =
+        getVisibleUserEmail(
+            contextual.getLastUserUpdateEmail(),
+            contextual.getLastUpdateEmail(),
+            this.rateLimitingConfigServiceConfig.getUserVisibleEmailConfig());
     return lastUserUpdateEmail != null
         && lastUserUpdateEmail.toLowerCase().contains(lastUpdatedByContains.toLowerCase());
   }
@@ -311,9 +318,14 @@ public class RateLimitingRulesStore
 
     Instant lastUserUpdateTimestamp = contextual.getLastUserUpdateTimestamp();
     if (lastUserUpdateTimestamp != null && lastUserUpdateTimestamp.getEpochSecond() > 0) {
+      String userEmail =
+          getVisibleUserEmail(
+              contextual.getLastUserUpdateEmail(),
+              contextual.getLastUpdateEmail(),
+              this.rateLimitingConfigServiceConfig.getUserVisibleEmailConfig());
       builder.setLastUserUpdateDetails(
           LastUpdateDetails.newBuilder()
-              .setUpdatedBy(contextual.getLastUserUpdateEmail())
+              .setUpdatedBy(userEmail)
               .setUpdatedAt(timestampConverter.convert(lastUserUpdateTimestamp))
               .build());
     }

@@ -1,5 +1,6 @@
 package ai.traceable.customsignature.config.service.rules;
 
+import static ai.traceable.config.service.commons.utils.AuditFilterUtils.getVisibleUserEmail;
 import static ai.traceable.config.service.commons.utils.AuditFilterUtils.hasActiveAuditFilter;
 import static ai.traceable.customsignature.config.service.CustomSignatureConstants.CUSTOM_SIGNATURE_RULE_CONFIG_NAMESPACE;
 import static ai.traceable.customsignature.config.service.CustomSignatureConstants.CUSTOM_SIGNATURE_RULE_CONFIG_RESOURCE_NAME;
@@ -57,6 +58,7 @@ public class CustomSignatureRulesStore
   private final CustomSignatureRuleConverter customSignatureRuleConverter;
   private final List<CustomSignatureRuleRecord> defaultCustomSignatureRules;
   private final TimestampConverter timestampConverter;
+  private final CustomSignatureConfigServiceConfig customSignatureConfigServiceConfig;
 
   private static final Set<ContextualKey<Void>> PROCESSED_RULE_TENANT_IDS = new HashSet<>();
 
@@ -78,6 +80,7 @@ public class CustomSignatureRulesStore
             .map(rule -> CustomSignatureRuleRecord.newBuilder().setRule(rule).build())
             .collect(Collectors.toUnmodifiableList());
     this.timestampConverter = timestampConverter;
+    this.customSignatureConfigServiceConfig = customSignatureConfigServiceConfig;
   }
 
   @Override
@@ -338,9 +341,14 @@ public class CustomSignatureRulesStore
 
     Instant lastUserUpdateTimestamp = contextual.getLastUserUpdateTimestamp();
     if (lastUserUpdateTimestamp != null && lastUserUpdateTimestamp.getEpochSecond() > 0) {
+      String userEmail =
+          getVisibleUserEmail(
+              contextual.getLastUserUpdateEmail(),
+              contextual.getLastUpdateEmail(),
+              this.customSignatureConfigServiceConfig.getUserVisibleEmailConfig());
       builder.setLastUserUpdateDetails(
           LastUpdateDetails.newBuilder()
-              .setUpdatedBy(contextual.getLastUserUpdateEmail())
+              .setUpdatedBy(userEmail)
               .setUpdatedAt(timestampConverter.convert(lastUserUpdateTimestamp))
               .build());
     }
@@ -491,11 +499,13 @@ public class CustomSignatureRulesStore
     if (lastUpdatedByContains.isEmpty()) {
       return true;
     }
-    String lastModifiedBy = configObject.getLastUserUpdateEmail();
-    if (lastModifiedBy == null || lastModifiedBy.isEmpty()) {
-      return false;
-    }
-    return containsIgnoreCase(lastModifiedBy, lastUpdatedByContains);
+    String lastUserUpdateEmail =
+        getVisibleUserEmail(
+            configObject.getLastUserUpdateEmail(),
+            configObject.getLastUpdateEmail(),
+            this.customSignatureConfigServiceConfig.getUserVisibleEmailConfig());
+    return lastUserUpdateEmail != null
+        && lastUserUpdateEmail.toLowerCase().contains(lastUpdatedByContains.toLowerCase());
   }
 
   private boolean isTimestampInRange(Instant timestamp, TimestampRange range) {

@@ -1,5 +1,6 @@
 package ai.traceable.region.config.service;
 
+import ai.traceable.config.service.commons.utils.UserVisibleEmailConfig;
 import ai.traceable.config.utils.refresh.FileRefreshConfig;
 import com.typesafe.config.Config;
 import lombok.Getter;
@@ -15,10 +16,12 @@ public class RegionConfigServiceConfig {
   private static final String CHANGE_LOG_1_MIGRATION_DISABLED_KEY =
       "changeLog1." + MIGRATION_DISABLED_KEY;
   @Getter private final boolean changeLog1MigrationDisabled;
+  @Getter private final UserVisibleEmailConfig userVisibleEmailConfig;
 
   public RegionConfigServiceConfig(Config config) {
     this.config = config.getConfig(REGION_CONFIG_SERVICE);
     this.changeLog1MigrationDisabled = this.config.getBoolean(CHANGE_LOG_1_MIGRATION_DISABLED_KEY);
+    this.userVisibleEmailConfig = new UserVisibleEmailConfig(config);
   }
 
   public FileRefreshConfig getNeustarCountriesDataConfig() {

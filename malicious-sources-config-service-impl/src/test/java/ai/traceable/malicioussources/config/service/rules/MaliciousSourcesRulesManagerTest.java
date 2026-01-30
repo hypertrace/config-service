@@ -73,7 +73,8 @@ class MaliciousSourcesRulesManagerTest {
         new MaliciousSourcesRulesStore(
             configServiceBlockingStub,
             mock(ConfigChangeEventGenerator.class),
-            new TimestampConverter());
+            new TimestampConverter(),
+            mock(MaliciousSourcesConfigServiceConfig.class));
     this.rulesManager =
         new MaliciousSourcesRulesManager(maliciousSourcesRulesStore, uuidGenerator, clock);
     requestContext = RequestContext.forTenantId("default tenant");

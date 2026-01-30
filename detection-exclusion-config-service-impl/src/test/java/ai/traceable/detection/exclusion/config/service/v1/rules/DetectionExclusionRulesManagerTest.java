@@ -82,12 +82,12 @@ class DetectionExclusionRulesManagerTest {
             mockConfigChangeEventGenerator,
             featureCachingClient,
             config,
-            new DetectionExclusionAuditHelper(new TimestampConverter()));
+            new DetectionExclusionAuditHelper(new TimestampConverter(), config));
     ThresholdExceededDetectionExclusionRuleStore thresholdExceededDetectionExclusionRuleStore =
         new ThresholdExceededDetectionExclusionRuleStore(
             configServiceBlockingStub,
             mockConfigChangeEventGenerator,
-            new DetectionExclusionAuditHelper(timestampConverter));
+            new DetectionExclusionAuditHelper(timestampConverter, config));
     uuidGenerator = mock(UuidGenerator.class);
     exclusionModsecRulesManager = mock(ExclusionModsecRulesManager.class);
     RulesMigrationManager rulesMigrationManager =

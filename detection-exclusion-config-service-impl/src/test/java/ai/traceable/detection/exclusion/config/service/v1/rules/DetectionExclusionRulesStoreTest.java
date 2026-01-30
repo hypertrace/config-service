@@ -94,7 +94,7 @@ class DetectionExclusionRulesStoreTest {
             mock(ConfigChangeEventGenerator.class),
             featureCachingClient,
             config,
-            new DetectionExclusionAuditHelper(new TimestampConverter()));
+            new DetectionExclusionAuditHelper(new TimestampConverter(), config));
   }
 
   @AfterEach

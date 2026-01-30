@@ -1,5 +1,6 @@
 package ai.traceable.detection.exclusion.config.service.v1;
 
+import ai.traceable.config.service.commons.utils.UserVisibleEmailConfig;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
 import com.typesafe.config.Config;
@@ -43,6 +44,7 @@ public class DetectionExclusionConfigServiceConfig {
 
   @Getter private final List<DetectionExclusionRule> defaultDetectionExclusionRules;
   @Getter private final List<DetectionExclusionRule> defaultNewDetectionExclusionRules;
+  @Getter private final UserVisibleEmailConfig userVisibleEmailConfig;
 
   public DetectionExclusionConfigServiceConfig(Config config) {
     this.config =
@@ -69,6 +71,7 @@ public class DetectionExclusionConfigServiceConfig {
     this.allowOnlyPlatformRemovalMigrationDisabled =
         this.config.hasPath(ALLOW_ONLY_PLATFORM_REMOVAL_MIGRATION_DISABLED_KEY)
             && this.config.getBoolean(ALLOW_ONLY_PLATFORM_REMOVAL_MIGRATION_DISABLED_KEY);
+    this.userVisibleEmailConfig = new UserVisibleEmailConfig(config);
   }
 
   private List<DetectionExclusionRule> loadDefaultDetectionExclusionRules(boolean loadNewRules) {

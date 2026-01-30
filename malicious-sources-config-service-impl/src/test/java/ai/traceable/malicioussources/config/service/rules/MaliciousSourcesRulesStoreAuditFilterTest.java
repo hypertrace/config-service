@@ -3,15 +3,19 @@ package ai.traceable.malicioussources.config.service.rules;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import ai.traceable.config.commons.v1.AuditFilter;
 import ai.traceable.config.commons.v1.TimestampRange;
+import ai.traceable.config.service.commons.utils.UserVisibleEmailConfig;
 import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.malicioussources.config.service.v1.GetRulesFilter;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleInfo;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleRecord;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleStatus;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import java.time.Instant;
 import java.util.List;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
@@ -40,9 +44,19 @@ class MaliciousSourcesRulesStoreAuditFilterTest {
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
+    Config config =
+        ConfigFactory.parseString(
+            "generic.config.service.customer.visible.excluded.email.patterns: []");
+    MaliciousSourcesConfigServiceConfig serviceConfig =
+        mock(MaliciousSourcesConfigServiceConfig.class);
+    when(serviceConfig.getUserVisibleEmailConfig()).thenReturn(new UserVisibleEmailConfig(config));
+
     maliciousSourcesRulesStore =
         new MaliciousSourcesRulesStore(
-            configServiceBlockingStub, configChangeEventGenerator, timestampConverter);
+            configServiceBlockingStub,
+            configChangeEventGenerator,
+            timestampConverter,
+            serviceConfig);
   }
 
   @AfterEach

@@ -1,5 +1,6 @@
 package ai.traceable.malicioussources.config.service.rules;
 
+import static ai.traceable.config.service.commons.utils.AuditFilterUtils.getVisibleUserEmail;
 import static ai.traceable.malicioussources.config.service.constants.MaliciousSourcesConfigConstants.MALICIOUS_SOURCES_RULE_CONFIG_NAMESPACE;
 import static ai.traceable.malicioussources.config.service.constants.MaliciousSourcesConfigConstants.MALICIOUS_SOURCES_RULE_CONFIG_RESOURCE_NAME;
 
@@ -33,17 +34,20 @@ public class MaliciousSourcesRulesStore
     extends IdentifiedObjectStoreWithFilter<MaliciousSourcesRule, GetRulesFilter> {
 
   private final TimestampConverter timestampConverter;
+  private final MaliciousSourcesConfigServiceConfig serviceConfig;
 
   @Inject
   public MaliciousSourcesRulesStore(
       ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
       ConfigChangeEventGenerator configChangeEventGenerator,
-      TimestampConverter timestampConverter) {
+      TimestampConverter timestampConverter,
+      MaliciousSourcesConfigServiceConfig serviceConfig) {
     super(
         configServiceBlockingStub,
         MALICIOUS_SOURCES_RULE_CONFIG_NAMESPACE,
         MALICIOUS_SOURCES_RULE_CONFIG_RESOURCE_NAME,
         configChangeEventGenerator);
+    this.serviceConfig = serviceConfig;
     this.timestampConverter = timestampConverter;
   }
 
@@ -180,7 +184,11 @@ public class MaliciousSourcesRulesStore
     if (lastUpdatedByContains.isEmpty()) {
       return true;
     }
-    String lastUserUpdateEmail = contextual.getLastUserUpdateEmail();
+    String lastUserUpdateEmail =
+        getVisibleUserEmail(
+            contextual.getLastUserUpdateEmail(),
+            contextual.getLastUpdateEmail(),
+            this.serviceConfig.getUserVisibleEmailConfig());
     return lastUserUpdateEmail != null
         && lastUserUpdateEmail.toLowerCase().contains(lastUpdatedByContains.toLowerCase());
   }
@@ -223,9 +231,14 @@ public class MaliciousSourcesRulesStore
 
     Instant lastUserUpdateTimestamp = contextual.getLastUserUpdateTimestamp();
     if (lastUserUpdateTimestamp != null && lastUserUpdateTimestamp.getEpochSecond() > 0) {
+      String userEmail =
+          getVisibleUserEmail(
+              contextual.getLastUserUpdateEmail(),
+              contextual.getLastUpdateEmail(),
+              this.serviceConfig.getUserVisibleEmailConfig());
       builder.setLastUserUpdateDetails(
           LastUpdateDetails.newBuilder()
-              .setUpdatedBy(contextual.getLastUserUpdateEmail())
+              .setUpdatedBy(userEmail)
               .setUpdatedAt(timestampConverter.convert(lastUserUpdateTimestamp))
               .build());
     }

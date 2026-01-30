@@ -1,5 +1,6 @@
 package ai.traceable.region.config.service.rules;
 
+import static ai.traceable.config.service.commons.utils.AuditFilterUtils.getVisibleUserEmail;
 import static ai.traceable.region.config.service.constants.RegionConfigConstants.REGION_RULE_CONFIG_NAMESPACE;
 import static ai.traceable.region.config.service.constants.RegionConfigConstants.REGION_RULE_CONFIG_RESOURCE_NAME;
 
@@ -9,6 +10,7 @@ import ai.traceable.config.commons.v1.CreationDetails;
 import ai.traceable.config.commons.v1.LastUpdateDetails;
 import ai.traceable.config.commons.v1.TimestampRange;
 import ai.traceable.config.utils.TimestampConverter;
+import ai.traceable.region.config.service.RegionConfigServiceConfig;
 import ai.traceable.region.config.service.v1.GetRegionRulesFilter;
 import ai.traceable.region.config.service.v1.RegionRule;
 import ai.traceable.region.config.service.v1.RegionRuleRecord;
@@ -33,18 +35,21 @@ public class RegionRulesStore
     extends IdentifiedObjectStoreWithFilter<RegionRule, GetRegionRulesFilter> {
 
   private final TimestampConverter timestampConverter;
+  private final RegionConfigServiceConfig regionConfigServiceConfig;
 
   @Inject
   public RegionRulesStore(
       ConfigServiceBlockingStub configServiceBlockingStub,
       ConfigChangeEventGenerator configChangeEventGenerator,
-      TimestampConverter timestampConverter) {
+      TimestampConverter timestampConverter,
+      RegionConfigServiceConfig regionConfigServiceConfig) {
     super(
         configServiceBlockingStub,
         REGION_RULE_CONFIG_NAMESPACE,
         REGION_RULE_CONFIG_RESOURCE_NAME,
         configChangeEventGenerator);
     this.timestampConverter = timestampConverter;
+    this.regionConfigServiceConfig = regionConfigServiceConfig;
   }
 
   @Override
@@ -168,7 +173,11 @@ public class RegionRulesStore
     if (lastUpdatedByContains.isEmpty()) {
       return true;
     }
-    String lastUserUpdateEmail = contextual.getLastUserUpdateEmail();
+    String lastUserUpdateEmail =
+        getVisibleUserEmail(
+            contextual.getLastUserUpdateEmail(),
+            contextual.getLastUpdateEmail(),
+            this.regionConfigServiceConfig.getUserVisibleEmailConfig());
     return lastUserUpdateEmail != null
         && lastUserUpdateEmail.toLowerCase().contains(lastUpdatedByContains.toLowerCase());
   }
@@ -210,9 +219,14 @@ public class RegionRulesStore
 
     Instant lastUserUpdateTimestamp = contextual.getLastUserUpdateTimestamp();
     if (lastUserUpdateTimestamp != null && lastUserUpdateTimestamp.getEpochSecond() > 0) {
+      String userEmail =
+          getVisibleUserEmail(
+              contextual.getLastUserUpdateEmail(),
+              contextual.getLastUpdateEmail(),
+              regionConfigServiceConfig.getUserVisibleEmailConfig());
       builder.setLastUserUpdateDetails(
           LastUpdateDetails.newBuilder()
-              .setUpdatedBy(contextual.getLastUserUpdateEmail())
+              .setUpdatedBy(userEmail)
               .setUpdatedAt(timestampConverter.convert(lastUserUpdateTimestamp))
               .build());
     }

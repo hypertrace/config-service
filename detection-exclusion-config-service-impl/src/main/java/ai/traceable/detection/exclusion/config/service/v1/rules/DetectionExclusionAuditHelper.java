@@ -1,11 +1,14 @@
 package ai.traceable.detection.exclusion.config.service.v1.rules;
 
+import static ai.traceable.config.service.commons.utils.AuditFilterUtils.getVisibleUserEmail;
+
 import ai.traceable.config.commons.v1.AuditDetails;
 import ai.traceable.config.commons.v1.AuditFilter;
 import ai.traceable.config.commons.v1.CreationDetails;
 import ai.traceable.config.commons.v1.LastUpdateDetails;
 import ai.traceable.config.commons.v1.TimestampRange;
 import ai.traceable.config.utils.TimestampConverter;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceConfig;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleRecord;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
@@ -16,10 +19,14 @@ import org.hypertrace.config.objectstore.ContextualConfigObject;
 public class DetectionExclusionAuditHelper {
 
   private final TimestampConverter timestampConverter;
+  private final DetectionExclusionConfigServiceConfig detectionExclusionConfigServiceConfig;
 
   @Inject
-  public DetectionExclusionAuditHelper(TimestampConverter timestampConverter) {
+  public DetectionExclusionAuditHelper(
+      TimestampConverter timestampConverter,
+      DetectionExclusionConfigServiceConfig detectionExclusionConfigServiceConfig) {
     this.timestampConverter = timestampConverter;
+    this.detectionExclusionConfigServiceConfig = detectionExclusionConfigServiceConfig;
   }
 
   public DetectionExclusionRuleRecord toRuleRecord(
@@ -60,9 +67,12 @@ public class DetectionExclusionAuditHelper {
       LastUpdateDetails.Builder updateBuilder =
           LastUpdateDetails.newBuilder()
               .setUpdatedAt(timestampConverter.convert(lastUserUpdateTimestamp));
-      if (contextual.getLastUserUpdateEmail() != null) {
-        updateBuilder.setUpdatedBy(contextual.getLastUserUpdateEmail());
-      }
+      String userEmail =
+          getVisibleUserEmail(
+              contextual.getLastUserUpdateEmail(),
+              contextual.getLastUpdateEmail(),
+              this.detectionExclusionConfigServiceConfig.getUserVisibleEmailConfig());
+      updateBuilder.setUpdatedBy(userEmail);
       builder.setLastUserUpdateDetails(updateBuilder.build());
     }
 
@@ -112,11 +122,13 @@ public class DetectionExclusionAuditHelper {
     if (lastUpdatedByContains.isEmpty()) {
       return true;
     }
-    String lastModifiedBy = configObject.getLastUserUpdateEmail();
-    if (lastModifiedBy == null || lastModifiedBy.isEmpty()) {
-      return false;
-    }
-    return containsIgnoreCase(lastModifiedBy, lastUpdatedByContains);
+    String lastUserUpdateEmail =
+        getVisibleUserEmail(
+            configObject.getLastUserUpdateEmail(),
+            configObject.getLastUpdateEmail(),
+            this.detectionExclusionConfigServiceConfig.getUserVisibleEmailConfig());
+    return lastUserUpdateEmail != null
+        && lastUserUpdateEmail.toLowerCase().contains(lastUpdatedByContains.toLowerCase());
   }
 
   private boolean isTimestampInRange(Instant timestamp, TimestampRange range) {

@@ -1,5 +1,6 @@
 package ai.traceable.ratelimiting.service.v2;
 
+import ai.traceable.config.service.commons.utils.UserVisibleEmailConfig;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
@@ -42,9 +43,11 @@ public class RateLimitingConfigServiceConfig {
   @Getter private final boolean changeLog1MigrationDisabled;
   @Getter private final boolean ruleEvaluationPointsMigrationDisabled;
   @Getter private final boolean allowRulesPlatformExclusionMigrationDisabled;
+  @Getter private final UserVisibleEmailConfig userVisibleEmailConfig;
 
   public RateLimitingConfigServiceConfig(Config config) {
     this.config = config.getConfig(RATE_LIMITING_CONFIG_SERVICE);
+    this.userVisibleEmailConfig = new UserVisibleEmailConfig(config);
     defaultRateLimitingRules =
         Stream.of(
                 this.convert(

@@ -1,5 +1,6 @@
 package ai.traceable.iprange.config.service.rules;
 
+import static ai.traceable.config.service.commons.utils.AuditFilterUtils.getVisibleUserEmail;
 import static ai.traceable.iprange.config.service.constants.IpRangeConfigConstants.IPRANGE_RULE_CONFIG_NAMESPACE;
 import static ai.traceable.iprange.config.service.constants.IpRangeConfigConstants.IPRANGE_RULE_CONFIG_RESOURCE_NAME;
 
@@ -9,6 +10,7 @@ import ai.traceable.config.commons.v1.CreationDetails;
 import ai.traceable.config.commons.v1.LastUpdateDetails;
 import ai.traceable.config.commons.v1.TimestampRange;
 import ai.traceable.config.utils.TimestampConverter;
+import ai.traceable.iprange.config.service.IpRangeConfigServiceConfig;
 import ai.traceable.iprange.config.service.v1.GetRulesFilter;
 import ai.traceable.iprange.config.service.v1.IpRangeRule;
 import ai.traceable.iprange.config.service.v1.IpRangeRuleRecord;
@@ -33,18 +35,21 @@ public class IpRangeRulesStore
     extends IdentifiedObjectStoreWithFilter<IpRangeRule, GetRulesFilter> {
 
   private final TimestampConverter timestampConverter;
+  private final IpRangeConfigServiceConfig ipRangeConfigServiceConfig;
 
   @Inject
   public IpRangeRulesStore(
       ConfigServiceBlockingStub configServiceBlockingStub,
       ConfigChangeEventGenerator configChangeEventGenerator,
-      TimestampConverter timestampConverter) {
+      TimestampConverter timestampConverter,
+      IpRangeConfigServiceConfig ipRangeConfigServiceConfig) {
     super(
         configServiceBlockingStub,
         IPRANGE_RULE_CONFIG_NAMESPACE,
         IPRANGE_RULE_CONFIG_RESOURCE_NAME,
         configChangeEventGenerator);
     this.timestampConverter = timestampConverter;
+    this.ipRangeConfigServiceConfig = ipRangeConfigServiceConfig;
   }
 
   @Override
@@ -173,7 +178,11 @@ public class IpRangeRulesStore
     if (lastUpdatedByContains.isEmpty()) {
       return true;
     }
-    String lastUserUpdateEmail = contextual.getLastUserUpdateEmail();
+    String lastUserUpdateEmail =
+        getVisibleUserEmail(
+            contextual.getLastUserUpdateEmail(),
+            contextual.getLastUpdateEmail(),
+            this.ipRangeConfigServiceConfig.getUserVisibleEmailConfig());
     return lastUserUpdateEmail != null
         && lastUserUpdateEmail.toLowerCase().contains(lastUpdatedByContains.toLowerCase());
   }
@@ -215,9 +224,14 @@ public class IpRangeRulesStore
 
     Instant lastUserUpdateTimestamp = contextual.getLastUserUpdateTimestamp();
     if (lastUserUpdateTimestamp != null && lastUserUpdateTimestamp.getEpochSecond() > 0) {
+      String userEmail =
+          getVisibleUserEmail(
+              contextual.getLastUserUpdateEmail(),
+              contextual.getLastUpdateEmail(),
+              this.ipRangeConfigServiceConfig.getUserVisibleEmailConfig());
       builder.setLastUserUpdateDetails(
           LastUpdateDetails.newBuilder()
-              .setUpdatedBy(contextual.getLastUserUpdateEmail())
+              .setUpdatedBy(userEmail)
               .setUpdatedAt(timestampConverter.convert(lastUserUpdateTimestamp))
               .build());
     }
