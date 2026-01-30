@@ -12,6 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
@@ -60,12 +61,33 @@ public class IpResolutionStrategyStore
   @Override
   public List<IpResolutionStrategyConfig> getAllConfigData(
       RequestContext context, IpResolutionStrategyFilter filter) {
+    // Fetch tenant configs without applying the disabled predicate so an explicitly disabled
+    // override still suppresses a default config with the same id.
+    IpResolutionStrategyFilter filterIgnoringDisabled = filter.toBuilder().clearDisabled().build();
+
+    List<IpResolutionStrategyConfig> configs =
+        super.getAllConfigData(context, filterIgnoringDisabled);
+
+    Set<String> overriddenDefaultIds =
+        configs.stream()
+            .map(IpResolutionStrategyConfig::getId)
+            .collect(Collectors.toUnmodifiableSet());
+
     List<IpResolutionStrategyConfig> filteredDefaults =
         defaultIpResolutionStrategyConfigs.stream()
-            .filter(cfg -> filterConfigData(cfg, filter).isPresent())
+            .filter(cfg -> !overriddenDefaultIds.contains(cfg.getId()))
+            .filter(cfg -> filterConfigData(cfg, filterIgnoringDisabled).isPresent())
             .collect(Collectors.toUnmodifiableList());
-    List<IpResolutionStrategyConfig> configs = super.getAllConfigData(context, filter);
-    return mergeConfigs(configs, filteredDefaults);
+
+    List<IpResolutionStrategyConfig> merged = mergeConfigs(configs, filteredDefaults);
+    if (!filter.hasDisabled()) {
+      return merged;
+    }
+
+    boolean disabled = filter.getDisabled();
+    return merged.stream()
+        .filter(cfg -> cfg.getData().getDisabled() == disabled)
+        .collect(Collectors.toUnmodifiableList());
   }
 
   private static List<IpResolutionStrategyConfig> mergeConfigs(

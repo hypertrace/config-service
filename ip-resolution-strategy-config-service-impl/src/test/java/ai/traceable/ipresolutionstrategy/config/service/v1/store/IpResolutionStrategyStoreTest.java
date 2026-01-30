@@ -208,6 +208,50 @@ class IpResolutionStrategyStoreTest {
         store.getAllConfigData(ctx, IpResolutionStrategyFilter.getDefaultInstance()));
   }
 
+  @Test
+  void testDisabledOverrideSuppressesDefaultForEnabledQuery() {
+    IpResolutionStrategyConfigServiceConfig config =
+        mock(IpResolutionStrategyConfigServiceConfig.class);
+    IpResolutionStrategyConfig defaultStrategy =
+        IpResolutionStrategyConfig.newBuilder()
+            .setId("default-id")
+            .setData(
+                IpResolutionStrategyConfigData.newBuilder()
+                    .setDisabled(false)
+                    .setStrategy(
+                        IpResolutionStrategy.newBuilder().setEvaluateAllIpsForBlocking(true)))
+            .build();
+    IpResolutionStrategyConfig disabledOverride =
+        IpResolutionStrategyConfig.newBuilder()
+            .setId("default-id")
+            .setData(
+                IpResolutionStrategyConfigData.newBuilder()
+                    .setDisabled(true)
+                    .setStrategy(
+                        IpResolutionStrategy.newBuilder().setEvaluateAllIpsForBlocking(false)))
+            .build();
+
+    when(config.getDefaultIpResolutionStrategyConfigs()).thenReturn(List.of(defaultStrategy));
+    store =
+        spy(
+            new IpResolutionStrategyStore(
+                mock(ConfigServiceGrpc.ConfigServiceBlockingStub.class),
+                mock(ConfigChangeEventGenerator.class),
+                config));
+
+    doReturn(List.of(new MockContextualConfigObject(disabledOverride)))
+        .when(store)
+        .getAllObjects(any(RequestContext.class), any(IpResolutionStrategyFilter.class));
+
+    RequestContext ctx = RequestContext.forTenantId("test-tenant");
+
+    // Querying for enabled configs should NOT fall back to the default if a disabled override
+    // exists.
+    IpResolutionStrategyFilter enabledOnly =
+        IpResolutionStrategyFilter.newBuilder().setDisabled(false).build();
+    assertEquals(List.of(), store.getAllConfigData(ctx, enabledOnly));
+  }
+
   private static IpResolutionStrategyConfig buildConfig(
       String id, boolean disabled, List<String> envNames, List<String> serviceNames) {
     IpResolutionStrategy strategy =
