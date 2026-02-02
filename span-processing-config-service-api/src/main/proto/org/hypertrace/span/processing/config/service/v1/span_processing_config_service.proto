@@ -48,6 +48,7 @@ message DeleteExcludeSpanRuleResponse {}
 message ExcludeSpanRule {
   string id = 1;
   ExcludeSpanRuleInfo rule_info = 2;
+  repeated EvaluationTarget evaluation_targets = 3;
 }
 
 message ExcludeSpanRuleDetails {
@@ -61,6 +62,20 @@ message ExcludeSpanRuleInfo {
   bool disabled = 3;
   RuleType type = 4;
 }
+
+message EvaluationTarget {
+  oneof target {
+    Platform platform = 1;
+    Agent agent = 2;
+    AgentModule agent_module = 3;
+  }
+}
+
+message Platform {}
+
+message Agent {}
+
+message AgentModule {}
 
 message ExcludeSpanRuleMetadata {
   google.protobuf.Timestamp creation_timestamp = 1;
