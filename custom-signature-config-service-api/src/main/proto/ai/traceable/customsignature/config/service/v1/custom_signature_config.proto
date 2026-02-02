@@ -9,6 +9,14 @@ import "google/protobuf/struct.proto";
 
 option java_multiple_files = true;
 
+message GetCustomSignatureEvaluationConfigContextRequest {
+  RuleEvaluationPoint rule_evaluation_point = 1;
+}
+
+message GetCustomSignatureEvaluationConfigContextResponse {
+  bytes custom_signature_evaluation_config_context = 1;
+}
+
 message CreateCustomSignatureRuleRequest {
   string name = 1;
   string description = 2;

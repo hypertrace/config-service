@@ -22,4 +22,6 @@ service CustomSignatureConfigService {
   rpc GetCustomSignatureModsecRules(GetCustomSignatureModsecRulesRequest) returns (GetCustomSignatureModsecRulesResponse) {}
 
   rpc GetCustomSignatureEdgeDecisionRules(GetCustomSignatureEdgeDecisionRulesRequest) returns (GetCustomSignatureEdgeDecisionRulesResponse) {}
+
+  rpc GetCustomSignatureEvaluationConfigContext(GetCustomSignatureEvaluationConfigContextRequest) returns (GetCustomSignatureEvaluationConfigContextResponse) {}
 }
