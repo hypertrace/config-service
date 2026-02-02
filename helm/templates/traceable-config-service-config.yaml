@@ -433,10 +433,12 @@ data:
         defaultConfigsType = {{ .Values.anomalyConfigServiceConfig.global.modsecGlobalConfig.defaultConfigsType }}
         exitSpansEvalEnabled = {{ .Values.anomalyConfigServiceConfig.global.modsecGlobalConfig.exitSpansEvalEnabled }}
         ruleVersion {
-          newWebAppStableVersion = {{ .Values.anomalyConfigServiceConfig.global.modsecGlobalConfig.newWebAppStableVersion }}
-          newWebAppStableVersionPublishedDate = {{ .Values.anomalyConfigServiceConfig.global.modsecGlobalConfig.newWebAppStableVersionPublishedDate | quote }}
-          oldWebAppStableVersion = {{ .Values.anomalyConfigServiceConfig.global.modsecGlobalConfig.oldWebAppStableVersion }}
-          oldWebAppStableVersionPublishedDate = {{ .Values.anomalyConfigServiceConfig.global.modsecGlobalConfig.oldWebAppStableVersionPublishedDate | quote }}
+          {{- if .Values.anomalyConfigServiceConfig.global.modsecGlobalConfig.ruleVersion }}
+            newWebAppStableVersion = {{ .Values.anomalyConfigServiceConfig.global.modsecGlobalConfig.ruleVersion.newWebAppStableVersion | quote }}
+            newWebAppStableVersionPublishedDate = {{ .Values.anomalyConfigServiceConfig.global.modsecGlobalConfig.ruleVersion.newWebAppStableVersionPublishedDate | quote }}
+            oldWebAppStableVersion = {{ .Values.anomalyConfigServiceConfig.global.modsecGlobalConfig.ruleVersion.oldWebAppStableVersion | quote }}
+            oldWebAppStableVersionPublishedDate = {{ .Values.anomalyConfigServiceConfig.global.modsecGlobalConfig.ruleVersion.oldWebAppStableVersionPublishedDate | quote }}
+          {{- end }}
           webAppRuleTestingModeRetentionDays = {{ .Values.anomalyConfigServiceConfig.global.modsecGlobalConfig.webAppRuleTestingModeRetentionDays }}
         }
         environmentDefaultConfigType = {{ .Values.anomalyConfigServiceConfig.global.modsecGlobalConfig.environmentDefaultConfigType }}
@@ -444,11 +446,13 @@ data:
       apiGlobalConfig {
         defaultConfigsType = {{ .Values.anomalyConfigServiceConfig.global.apiGlobalConfig.defaultConfigsType }}
         exitSpansEvalEnabled = {{ .Values.anomalyConfigServiceConfig.global.apiGlobalConfig.exitSpansEvalEnabled }}
-         ruleVersion {
-            newApiProtectionStableVersion = {{ .Values.anomalyConfigServiceConfig.global.apiGlobalConfig.newApiProtectionStableVersion }}
-            newApiProtectionStableVersionPublishedDate = {{ .Values.anomalyConfigServiceConfig.global.apiGlobalConfig.newApiProtectionStableVersionPublishedDate | quote }}
-            oldApiProtectionStableVersion = {{ .Values.anomalyConfigServiceConfig.global.apiGlobalConfig.oldApiProtectionStableVersion }}
-            oldApiProtectionStableVersionPublishedDate = {{ .Values.anomalyConfigServiceConfig.global.apiGlobalConfig.oldApiProtectionStableVersionPublishedDate | quote }}
+        ruleVersion {
+          {{- if .Values.anomalyConfigServiceConfig.global.apiGlobalConfig.ruleVersion }}
+            newApiProtectionStableVersion = {{ .Values.anomalyConfigServiceConfig.global.apiGlobalConfig.ruleVersion.newApiProtectionStableVersion | quote }}
+            newApiProtectionStableVersionPublishedDate = {{ .Values.anomalyConfigServiceConfig.global.apiGlobalConfig.ruleVersion.newApiProtectionStableVersionPublishedDate | quote }}
+            oldApiProtectionStableVersion = {{ .Values.anomalyConfigServiceConfig.global.apiGlobalConfig.ruleVersion.oldApiProtectionStableVersion | quote }}
+            oldApiProtectionStableVersionPublishedDate = {{ .Values.anomalyConfigServiceConfig.global.apiGlobalConfig.ruleVersion.oldApiProtectionStableVersionPublishedDate | quote }}
+          {{- end }}
         }
       }
     }
