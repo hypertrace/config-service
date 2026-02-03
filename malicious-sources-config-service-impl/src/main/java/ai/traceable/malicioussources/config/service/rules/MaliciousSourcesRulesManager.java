@@ -1,6 +1,7 @@
 package ai.traceable.malicioussources.config.service.rules;
 
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.malicioussources.config.service.v1.BulkUpdateMaliciousSourcesRulesRequest;
 import ai.traceable.malicioussources.config.service.v1.CreateMaliciousSourcesRuleRequest;
 import ai.traceable.malicioussources.config.service.v1.ExpirationDetails;
 import ai.traceable.malicioussources.config.service.v1.GetRulesFilter;
@@ -15,6 +16,7 @@ import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.DeletedConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -94,6 +96,28 @@ public class MaliciousSourcesRulesManager implements RulesManager {
   @Override
   public void bulkDeleteMaliciousSourcesRules(RequestContext requestContext, List<String> ids) {
     maliciousSourcesRulesStore.deleteObjects(requestContext, ids);
+  }
+
+  @Override
+  public void bulkUpdateMaliciousSourcesRules(
+      RequestContext requestContext, BulkUpdateMaliciousSourcesRulesRequest request) {
+    GetRulesFilter filter = GetRulesFilter.newBuilder().addAllRuleIds(request.getIdsList()).build();
+    List<MaliciousSourcesRule> existingRules =
+        maliciousSourcesRulesStore.getAllConfigData(requestContext, filter);
+
+    List<MaliciousSourcesRule> updatedRules =
+        existingRules.stream()
+            .map(rule -> applyBulkUpdates(rule, request))
+            .collect(Collectors.toList());
+
+    maliciousSourcesRulesStore.upsertObjects(requestContext, updatedRules);
+  }
+
+  private MaliciousSourcesRule applyBulkUpdates(
+      MaliciousSourcesRule rule, BulkUpdateMaliciousSourcesRulesRequest request) {
+    return rule.toBuilder()
+        .setRuleStatus(rule.getRuleStatus().toBuilder().setDisabled(request.getDisabled()))
+        .build();
   }
 
   private boolean doesMaliciousSourcesRuleExist(RequestContext requestContext, String ruleId) {

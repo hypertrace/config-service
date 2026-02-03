@@ -5,6 +5,7 @@ import static ai.traceable.platform.utils.ip.IpAddressParsingUtils.parseRawIpRan
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.platform.utils.ip.IpAddressParsingUtils.IpParsingResults;
 import ai.traceable.ratelimiting.config.service.v2.Action;
+import ai.traceable.ratelimiting.config.service.v2.BulkUpdateRateLimitingRulesRequest;
 import ai.traceable.ratelimiting.config.service.v2.Condition;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingModsecRulesFilter;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRuleModsecRulesResponse;
@@ -202,5 +203,29 @@ public class RateLimitingRulesManager implements RulesManager {
   @Override
   public void bulkDeleteRateLimitingRules(RequestContext requestContext, List<String> ruleIds) {
     rateLimitingRulesStore.deleteObjects(requestContext, ruleIds);
+  }
+
+  @Override
+  public void bulkUpdateRateLimitingRules(
+      RequestContext requestContext, BulkUpdateRateLimitingRulesRequest request) {
+    List<String> ruleIds = request.getIdsList();
+    List<RateLimitingRule> existingRules =
+        rateLimitingRulesStore.getAllConfigData(requestContext).stream()
+            .filter(rule -> ruleIds.contains(rule.getId()))
+            .collect(Collectors.toList());
+
+    List<RateLimitingRule> updatedRules =
+        existingRules.stream()
+            .map(rule -> applyBulkUpdates(rule, request))
+            .collect(Collectors.toList());
+
+    rateLimitingRulesStore.upsertObjects(requestContext, updatedRules);
+  }
+
+  private RateLimitingRule applyBulkUpdates(
+      RateLimitingRule rule, BulkUpdateRateLimitingRulesRequest request) {
+    RateLimitingRuleData.Builder dataBuilder = rule.getData().toBuilder();
+    dataBuilder.setEnabled(request.getEnabled());
+    return rule.toBuilder().setData(dataBuilder.build()).build();
   }
 }

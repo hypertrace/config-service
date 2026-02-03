@@ -21,6 +21,7 @@ import ai.traceable.ratelimiting.config.service.v2.Action.BodyModification;
 import ai.traceable.ratelimiting.config.service.v2.Action.HeaderInjection;
 import ai.traceable.ratelimiting.config.service.v2.ApiAggregateType;
 import ai.traceable.ratelimiting.config.service.v2.BulkDeleteRateLimitingRulesRequest;
+import ai.traceable.ratelimiting.config.service.v2.BulkUpdateRateLimitingRulesRequest;
 import ai.traceable.ratelimiting.config.service.v2.Category;
 import ai.traceable.ratelimiting.config.service.v2.Condition;
 import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleRequest;
@@ -570,6 +571,22 @@ public class RateLimitingRulesValidator implements RulesValidator {
     if (request.getIdsList().stream().anyMatch(String::isEmpty)) {
       throw Status.INVALID_ARGUMENT
           .withDescription("Bulk delete Rate Limiting rules request should not have empty ids")
+          .asRuntimeException();
+    }
+  }
+
+  @Override
+  public void validateOrThrow(
+      RequestContext requestContext, BulkUpdateRateLimitingRulesRequest request) {
+    validateRequestContextOrThrow(requestContext);
+    if (request.getIdsList().isEmpty()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Bulk update Rate Limiting rules request should have at least one id")
+          .asRuntimeException();
+    }
+    if (request.getIdsList().stream().anyMatch(String::isEmpty)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Bulk update Rate Limiting rules request should not have empty ids")
           .asRuntimeException();
     }
   }

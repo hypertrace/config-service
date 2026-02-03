@@ -1,6 +1,7 @@
 package ai.traceable.customsignature.config.service.rules;
 
 import ai.traceable.customsignature.config.service.v1.BulkDeleteCustomSignatureRulesRequest;
+import ai.traceable.customsignature.config.service.v1.BulkUpdateCustomSignatureRulesRequest;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.DeleteCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureEdgeDecisionRulesRequest;
@@ -23,4 +24,6 @@ public interface RulesValidator {
   Status validate(GetCustomSignatureRulesRequest request);
 
   Status validate(GetCustomSignatureModsecRulesRequest request);
+
+  Status validate(BulkUpdateCustomSignatureRulesRequest request);
 }

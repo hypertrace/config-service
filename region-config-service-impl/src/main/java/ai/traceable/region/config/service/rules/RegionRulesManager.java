@@ -1,6 +1,7 @@
 package ai.traceable.region.config.service.rules;
 
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.region.config.service.v1.BulkUpdateRegionRulesRequest;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.GetRegionRulesFilter;
 import ai.traceable.region.config.service.v1.RegionRule;
@@ -14,6 +15,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.DeletedConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -151,5 +153,26 @@ class RegionRulesManager implements RulesManager {
   @Override
   public void bulkDeleteRegionRules(RequestContext requestContext, List<String> ids) {
     regionRulesStore.deleteObjects(requestContext, ids);
+  }
+
+  @Override
+  public void bulkUpdateRegionRules(
+      RequestContext requestContext, BulkUpdateRegionRulesRequest request) {
+    List<String> ruleIds = request.getIdsList();
+    List<RegionRule> existingRules =
+        regionRulesStore.getAllConfigData(requestContext).stream()
+            .filter(rule -> ruleIds.contains(rule.getId()))
+            .collect(Collectors.toList());
+
+    List<RegionRule> updatedRules =
+        existingRules.stream()
+            .map(rule -> applyBulkUpdates(rule, request))
+            .collect(Collectors.toList());
+
+    regionRulesStore.upsertObjects(requestContext, updatedRules);
+  }
+
+  private RegionRule applyBulkUpdates(RegionRule rule, BulkUpdateRegionRulesRequest request) {
+    return rule.toBuilder().setDisabled(request.getDisabled()).build();
   }
 }

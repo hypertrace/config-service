@@ -2,6 +2,7 @@ package ai.traceable.region.config.service.rules;
 
 import ai.traceable.region.config.service.v1.AgentModification;
 import ai.traceable.region.config.service.v1.BulkDeleteRegionRulesRequest;
+import ai.traceable.region.config.service.v1.BulkUpdateRegionRulesRequest;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.DeleteRegionRuleRequest;
 import ai.traceable.region.config.service.v1.EventSeverity;
@@ -251,6 +252,19 @@ class RegionRulesValidator implements RulesValidator {
     if (request.getIdsList().stream().anyMatch(String::isEmpty)) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Bulk delete Region rules request should not have empty ids");
+    }
+    return Status.OK;
+  }
+
+  @Override
+  public Status validate(BulkUpdateRegionRulesRequest request) {
+    if (request.getIdsList().isEmpty()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Bulk update Region rules request should have at least one id");
+    }
+    if (request.getIdsList().stream().anyMatch(String::isEmpty)) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Bulk update Region rules request should not have empty ids");
     }
     return Status.OK;
   }

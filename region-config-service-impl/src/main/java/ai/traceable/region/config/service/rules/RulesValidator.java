@@ -1,6 +1,7 @@
 package ai.traceable.region.config.service.rules;
 
 import ai.traceable.region.config.service.v1.BulkDeleteRegionRulesRequest;
+import ai.traceable.region.config.service.v1.BulkUpdateRegionRulesRequest;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.DeleteRegionRuleRequest;
 import ai.traceable.region.config.service.v1.GetRegionRequest;
@@ -25,4 +26,6 @@ public interface RulesValidator {
   Status validate(GetRegionRequest request);
 
   Status validate(BulkDeleteRegionRulesRequest request);
+
+  Status validate(BulkUpdateRegionRulesRequest request);
 }

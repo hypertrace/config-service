@@ -5,6 +5,8 @@ import ai.traceable.malicioussources.config.service.rules.RulesValidator;
 import ai.traceable.malicioussources.config.service.rules.migration.MaliciousSourcesMigrationManager;
 import ai.traceable.malicioussources.config.service.v1.BulkDeleteMaliciousSourcesRulesRequest;
 import ai.traceable.malicioussources.config.service.v1.BulkDeleteMaliciousSourcesRulesResponse;
+import ai.traceable.malicioussources.config.service.v1.BulkUpdateMaliciousSourcesRulesRequest;
+import ai.traceable.malicioussources.config.service.v1.BulkUpdateMaliciousSourcesRulesResponse;
 import ai.traceable.malicioussources.config.service.v1.CreateMaliciousSourcesRuleRequest;
 import ai.traceable.malicioussources.config.service.v1.CreateMaliciousSourcesRuleResponse;
 import ai.traceable.malicioussources.config.service.v1.DeleteMaliciousSourcesRuleRequest;
@@ -162,6 +164,28 @@ public class MaliciousSourcesConfigServiceImpl extends MaliciousSourcesConfigSer
     } catch (Exception e) {
       log.error(
           "Unable to bulk delete malicious sources rules with ids {} :", request.getIdsList(), e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void bulkUpdateMaliciousSourcesRules(
+      BulkUpdateMaliciousSourcesRulesRequest request,
+      StreamObserver<BulkUpdateMaliciousSourcesRulesResponse> responseObserver) {
+    try {
+      Status status = rulesValidator.validate(request);
+      if (!status.isOk()) {
+        log.error(
+            "Bulk Update Malicious Sources Rules Request is not valid {}", status.getDescription());
+        responseObserver.onError(status.asException());
+        return;
+      }
+      rulesManager.bulkUpdateMaliciousSourcesRules(RequestContext.CURRENT.get(), request);
+      responseObserver.onNext(BulkUpdateMaliciousSourcesRulesResponse.getDefaultInstance());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error(
+          "Unable to bulk update malicious sources rules with ids {} :", request.getIdsList(), e);
       responseObserver.onError(e);
     }
   }

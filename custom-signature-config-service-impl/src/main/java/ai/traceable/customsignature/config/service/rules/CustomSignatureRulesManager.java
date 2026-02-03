@@ -3,6 +3,7 @@ package ai.traceable.customsignature.config.service.rules;
 import static ai.traceable.platform.utils.ip.IpAddressParsingUtils.parseRawIpRange;
 
 import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceConfig;
+import ai.traceable.customsignature.config.service.v1.BulkUpdateCustomSignatureRulesRequest;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
@@ -108,6 +109,25 @@ public class CustomSignatureRulesManager implements RulesManager {
   @Override
   public void bulkDeleteCustomSignatureRules(RequestContext requestContext, List<String> ids) {
     rulesStore.deleteObjects(requestContext, ids);
+  }
+
+  @Override
+  public void bulkUpdateCustomSignatureRules(
+      RequestContext requestContext, BulkUpdateCustomSignatureRulesRequest request) {
+    GetRulesFilter filter = GetRulesFilter.newBuilder().addAllRuleIds(request.getIdsList()).build();
+    List<CustomSignatureRule> existingRules = rulesStore.getAllConfigData(requestContext, filter);
+
+    List<CustomSignatureRule> updatedRules =
+        existingRules.stream()
+            .map(rule -> applyBulkUpdates(rule, request))
+            .collect(Collectors.toList());
+
+    rulesStore.upsertObjects(requestContext, updatedRules);
+  }
+
+  private CustomSignatureRule applyBulkUpdates(
+      CustomSignatureRule rule, BulkUpdateCustomSignatureRulesRequest request) {
+    return rule.toBuilder().setDisabled(request.getDisabled()).build();
   }
 
   private Optional<CustomSignatureRule> getCustomSignatureRule(

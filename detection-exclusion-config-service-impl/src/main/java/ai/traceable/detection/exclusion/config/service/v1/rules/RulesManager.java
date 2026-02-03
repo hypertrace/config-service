@@ -1,5 +1,6 @@
 package ai.traceable.detection.exclusion.config.service.v1.rules;
 
+import ai.traceable.detection.exclusion.config.service.v1.BulkUpdateDetectionExclusionRulesRequest;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleInfo;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleRecord;
@@ -36,4 +37,7 @@ public interface RulesManager {
       RequestContext requestContext, GetExclusionModsecRulesRequest request);
 
   void bulkDeleteDetectionExclusionRules(RequestContext requestContext, List<String> ruleIds);
+
+  void bulkUpdateDetectionExclusionRules(
+      RequestContext requestContext, BulkUpdateDetectionExclusionRulesRequest request);
 }

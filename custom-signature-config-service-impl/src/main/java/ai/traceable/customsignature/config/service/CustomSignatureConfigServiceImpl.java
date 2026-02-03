@@ -8,6 +8,8 @@ import ai.traceable.customsignature.config.service.rules.RulesValidator;
 import ai.traceable.customsignature.config.service.rules.converter.CustomSignatureEdgeDecisionConverter;
 import ai.traceable.customsignature.config.service.v1.BulkDeleteCustomSignatureRulesRequest;
 import ai.traceable.customsignature.config.service.v1.BulkDeleteCustomSignatureRulesResponse;
+import ai.traceable.customsignature.config.service.v1.BulkUpdateCustomSignatureRulesRequest;
+import ai.traceable.customsignature.config.service.v1.BulkUpdateCustomSignatureRulesResponse;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleResponse;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc;
@@ -259,6 +261,28 @@ public class CustomSignatureConfigServiceImpl
           Status.INTERNAL
               .withDescription("Unable to fetch custom signature edge decision rules")
               .asException());
+    }
+  }
+
+  @Override
+  public void bulkUpdateCustomSignatureRules(
+      BulkUpdateCustomSignatureRulesRequest request,
+      StreamObserver<BulkUpdateCustomSignatureRulesResponse> responseObserver) {
+    try {
+      Status status = rulesValidator.validate(request);
+      if (!status.isOk()) {
+        log.error(
+            "Bulk Update Custom Signature Rules Request is not valid {}", status.getDescription());
+        responseObserver.onError(status.asException());
+        return;
+      }
+      rulesManager.bulkUpdateCustomSignatureRules(RequestContext.CURRENT.get(), request);
+      responseObserver.onNext(BulkUpdateCustomSignatureRulesResponse.getDefaultInstance());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error(
+          "Unable to bulk update custom signature rules with ids {} :", request.getIdsList(), e);
+      responseObserver.onError(e);
     }
   }
 }

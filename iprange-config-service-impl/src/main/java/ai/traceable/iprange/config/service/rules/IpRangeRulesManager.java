@@ -3,6 +3,7 @@ package ai.traceable.iprange.config.service.rules;
 import static ai.traceable.platform.utils.ip.IpAddressParsingUtils.parseRawIpRange;
 
 import ai.traceable.iprange.config.service.utils.UuidGenerator;
+import ai.traceable.iprange.config.service.v1.BulkUpdateIpRangeRulesRequest;
 import ai.traceable.iprange.config.service.v1.CreateIpRangeRuleRequest;
 import ai.traceable.iprange.config.service.v1.GetRulesFilter;
 import ai.traceable.iprange.config.service.v1.IpRangeRule;
@@ -17,6 +18,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.DeletedConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -106,6 +108,24 @@ class IpRangeRulesManager implements RulesManager {
   @Override
   public void bulkDeleteIpRangeRules(RequestContext requestContext, List<String> ids) {
     ipRangeRulesStore.deleteObjects(requestContext, ids);
+  }
+
+  @Override
+  public void bulkUpdateIpRangeRules(
+      RequestContext requestContext, BulkUpdateIpRangeRulesRequest request) {
+    GetRulesFilter filter = GetRulesFilter.newBuilder().addAllRuleIds(request.getIdsList()).build();
+    List<IpRangeRule> existingRules = ipRangeRulesStore.getAllConfigData(requestContext, filter);
+
+    List<IpRangeRule> updatedRules =
+        existingRules.stream()
+            .map(rule -> applyBulkUpdates(rule, request))
+            .collect(Collectors.toList());
+
+    ipRangeRulesStore.upsertObjects(requestContext, updatedRules);
+  }
+
+  private IpRangeRule applyBulkUpdates(IpRangeRule rule, BulkUpdateIpRangeRulesRequest request) {
+    return rule.toBuilder().setDisabled(request.getDisabled()).build();
   }
 
   private IpRangeRule upsertConfig(RequestContext requestContext, IpRangeRule ipRangeRule) {

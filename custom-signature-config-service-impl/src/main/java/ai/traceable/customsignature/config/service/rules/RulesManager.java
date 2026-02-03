@@ -1,5 +1,6 @@
 package ai.traceable.customsignature.config.service.rules;
 
+import ai.traceable.customsignature.config.service.v1.BulkUpdateCustomSignatureRulesRequest;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRuleRecord;
@@ -28,6 +29,9 @@ public interface RulesManager {
 
   void bulkDeleteCustomSignatureRules(RequestContext requestContext, List<String> ids)
       throws InvalidProtocolBufferException;
+
+  void bulkUpdateCustomSignatureRules(
+      RequestContext requestContext, BulkUpdateCustomSignatureRulesRequest request);
 
   default String generateRuleId() {
     return UUID.randomUUID().toString();

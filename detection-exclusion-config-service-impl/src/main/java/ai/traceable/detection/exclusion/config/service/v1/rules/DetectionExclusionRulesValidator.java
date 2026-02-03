@@ -15,6 +15,7 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDef
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
 import ai.traceable.detection.exclusion.config.service.v1.BulkDeleteDetectionExclusionRulesRequest;
+import ai.traceable.detection.exclusion.config.service.v1.BulkUpdateDetectionExclusionRulesRequest;
 import ai.traceable.detection.exclusion.config.service.v1.CreateDetectionExclusionRuleRequest;
 import ai.traceable.detection.exclusion.config.service.v1.DeleteDetectionExclusionRuleRequest;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
@@ -134,6 +135,24 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
     validateRequestContextOrThrow(requestContext);
     validateNonDefaultPresenceOrThrow(
         request, BulkDeleteDetectionExclusionRulesRequest.IDS_FIELD_NUMBER);
+  }
+
+  @Override
+  public void validateOrThrow(
+      RequestContext requestContext, BulkUpdateDetectionExclusionRulesRequest request) {
+    validateRequestContextOrThrow(requestContext);
+    if (request.getIdsList().isEmpty()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              "Bulk update Detection Exclusion rules request should have at least one id")
+          .asRuntimeException();
+    }
+    if (request.getIdsList().stream().anyMatch(String::isEmpty)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              "Bulk update Detection Exclusion rules request should not have empty ids")
+          .asRuntimeException();
+    }
   }
 
   @VisibleForTesting

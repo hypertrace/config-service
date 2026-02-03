@@ -5,6 +5,8 @@ import ai.traceable.iprange.config.service.rules.RulesValidator;
 import ai.traceable.iprange.config.service.rules.migration.IpRangeRulesMigrationManager;
 import ai.traceable.iprange.config.service.v1.BulkDeleteIpRangeRulesRequest;
 import ai.traceable.iprange.config.service.v1.BulkDeleteIpRangeRulesResponse;
+import ai.traceable.iprange.config.service.v1.BulkUpdateIpRangeRulesRequest;
+import ai.traceable.iprange.config.service.v1.BulkUpdateIpRangeRulesResponse;
 import ai.traceable.iprange.config.service.v1.CreateIpRangeRuleRequest;
 import ai.traceable.iprange.config.service.v1.CreateIpRangeRuleResponse;
 import ai.traceable.iprange.config.service.v1.DeleteIpRangeRuleRequest;
@@ -187,5 +189,25 @@ class IpRangeConfigServiceImpl extends IpRangeConfigServiceImplBase {
     GetRulesFilter actionFilter =
         GetRulesFilter.newBuilder().setRuleAction(RuleAction.RULE_ACTION_BLOCK_ALL_EXCEPT).build();
     return () -> rulesManager.getIpRangeRules(requestContext, actionFilter);
+  }
+
+  @Override
+  public void bulkUpdateIpRangeRules(
+      BulkUpdateIpRangeRulesRequest request,
+      StreamObserver<BulkUpdateIpRangeRulesResponse> responseObserver) {
+    try {
+      Status status = rulesValidator.validate(request);
+      if (!status.isOk()) {
+        log.error("Bulk Update Ip Range Rules Request is not valid {}", status.getDescription());
+        responseObserver.onError(status.asException());
+        return;
+      }
+      rulesManager.bulkUpdateIpRangeRules(RequestContext.CURRENT.get(), request);
+      responseObserver.onNext(BulkUpdateIpRangeRulesResponse.getDefaultInstance());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Unable to bulk update ip range rules with ids {} :", request.getIdsList(), e);
+      responseObserver.onError(e);
+    }
   }
 }

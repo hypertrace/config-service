@@ -1,5 +1,6 @@
 package ai.traceable.iprange.config.service.rules;
 
+import ai.traceable.iprange.config.service.v1.BulkUpdateIpRangeRulesRequest;
 import ai.traceable.iprange.config.service.v1.CreateIpRangeRuleRequest;
 import ai.traceable.iprange.config.service.v1.GetRulesFilter;
 import ai.traceable.iprange.config.service.v1.IpRangeRule;
@@ -27,4 +28,6 @@ public interface RulesManager {
       throws InvalidProtocolBufferException;
 
   void bulkDeleteIpRangeRules(RequestContext requestContext, List<String> ids);
+
+  void bulkUpdateIpRangeRules(RequestContext requestContext, BulkUpdateIpRangeRulesRequest request);
 }

@@ -1,5 +1,6 @@
 package ai.traceable.malicioussources.config.service.rules;
 
+import ai.traceable.malicioussources.config.service.v1.BulkUpdateMaliciousSourcesRulesRequest;
 import ai.traceable.malicioussources.config.service.v1.CreateMaliciousSourcesRuleRequest;
 import ai.traceable.malicioussources.config.service.v1.GetRulesFilter;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
@@ -26,4 +27,7 @@ public interface RulesManager {
       RequestContext requestContext, String id);
 
   void bulkDeleteMaliciousSourcesRules(RequestContext requestContext, List<String> ids);
+
+  void bulkUpdateMaliciousSourcesRules(
+      RequestContext requestContext, BulkUpdateMaliciousSourcesRulesRequest request);
 }

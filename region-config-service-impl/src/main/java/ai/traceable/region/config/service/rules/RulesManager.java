@@ -1,5 +1,6 @@
 package ai.traceable.region.config.service.rules;
 
+import ai.traceable.region.config.service.v1.BulkUpdateRegionRulesRequest;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.GetRegionRulesFilter;
 import ai.traceable.region.config.service.v1.RegionRule;
@@ -26,4 +27,6 @@ public interface RulesManager {
       throws InvalidProtocolBufferException;
 
   void bulkDeleteRegionRules(RequestContext requestContext, List<String> ids);
+
+  void bulkUpdateRegionRules(RequestContext requestContext, BulkUpdateRegionRulesRequest request);
 }

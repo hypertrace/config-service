@@ -211,6 +211,25 @@ public class DetectionExclusionConfigServiceImpl
     }
   }
 
+  @Override
+  public void bulkUpdateDetectionExclusionRules(
+      BulkUpdateDetectionExclusionRulesRequest request,
+      StreamObserver<BulkUpdateDetectionExclusionRulesResponse> responseObserver) {
+    try {
+      RequestContext context = RequestContext.CURRENT.get();
+      rulesValidator.validateOrThrow(context, request);
+      rulesManager.bulkUpdateDetectionExclusionRules(context, request);
+      responseObserver.onNext(BulkUpdateDetectionExclusionRulesResponse.getDefaultInstance());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.error(
+          "Unable to bulk update detection exclusion rules with ids {} :",
+          request.getIdsList(),
+          exception);
+      responseObserver.onError(exception);
+    }
+  }
+
   private List<DetectionExclusionRule> getExistingRules(RequestContext context) {
     return rulesManager.getDetectionExclusionRules(context, GetRulesFilter.getDefaultInstance());
   }

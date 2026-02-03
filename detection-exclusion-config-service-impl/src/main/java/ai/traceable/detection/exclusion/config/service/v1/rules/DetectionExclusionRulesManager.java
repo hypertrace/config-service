@@ -4,6 +4,7 @@ import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget
 import static ai.traceable.platform.utils.ip.IpAddressParsingUtils.parseRawIpRange;
 
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.detection.exclusion.config.service.v1.BulkUpdateDetectionExclusionRulesRequest;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleInfo;
@@ -245,6 +246,30 @@ public class DetectionExclusionRulesManager implements RulesManager {
   public void bulkDeleteDetectionExclusionRules(
       RequestContext requestContext, List<String> ruleIds) {
     rulesStore.deleteObjects(requestContext, ruleIds);
+  }
+
+  @Override
+  public void bulkUpdateDetectionExclusionRules(
+      RequestContext requestContext, BulkUpdateDetectionExclusionRulesRequest request) {
+    GetRulesFilter filter = GetRulesFilter.newBuilder().addAllRuleIds(request.getIdsList()).build();
+    List<DetectionExclusionRule> existingRules =
+        rulesStore.getAllConfigData(requestContext, filter);
+
+    List<DetectionExclusionRule> updatedRules =
+        existingRules.stream()
+            .map(rule -> applyBulkUpdates(rule, request))
+            .collect(Collectors.toList());
+
+    rulesStore.upsertObjects(requestContext, updatedRules);
+  }
+
+  private DetectionExclusionRule applyBulkUpdates(
+      DetectionExclusionRule rule, BulkUpdateDetectionExclusionRulesRequest request) {
+    DetectionExclusionRuleInfo.Builder ruleInfoBuilder = rule.getRuleInfo().toBuilder();
+    DetectionExclusionRuleStatus.Builder ruleStatusBuilder = ruleInfoBuilder.getRuleStatusBuilder();
+    ruleStatusBuilder.setDisabled(request.getDisabled());
+    ruleInfoBuilder.setRuleStatus(ruleStatusBuilder.build());
+    return rule.toBuilder().setRuleInfo(ruleInfoBuilder.build()).build();
   }
 
   private DetectionExclusionRule processDetectionExclusionRule(

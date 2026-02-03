@@ -13,6 +13,7 @@ import ai.traceable.customsignature.config.service.v1.AgentModification;
 import ai.traceable.customsignature.config.service.v1.AgentRuleEffect;
 import ai.traceable.customsignature.config.service.v1.BodyModification;
 import ai.traceable.customsignature.config.service.v1.BulkDeleteCustomSignatureRulesRequest;
+import ai.traceable.customsignature.config.service.v1.BulkUpdateCustomSignatureRulesRequest;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.ClauseOperator;
@@ -212,6 +213,19 @@ public class CustomSignatureRulesValidator implements RulesValidator {
   @Override
   public Status validate(GetCustomSignatureModsecRulesRequest request) {
     return validateFilter(request.getFilter());
+  }
+
+  @Override
+  public Status validate(BulkUpdateCustomSignatureRulesRequest request) {
+    if (request.getIdsList().isEmpty()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Bulk update Custom Signature rules request should have at least one id");
+    }
+    if (request.getIdsList().stream().anyMatch(String::isEmpty)) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Bulk update Custom Signature rules request should not have empty ids");
+    }
+    return Status.OK;
   }
 
   public static boolean isRuleOfEventTypeAlertAndContainsHeaderInjection(RuleEffect ruleEffect) {

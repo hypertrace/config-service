@@ -1,5 +1,6 @@
 package ai.traceable.ratelimiting.service.v2.rules;
 
+import ai.traceable.ratelimiting.config.service.v2.BulkUpdateRateLimitingRulesRequest;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingModsecRulesFilter;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRuleModsecRulesResponse;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter;
@@ -27,6 +28,9 @@ public interface RulesManager {
   Optional<RateLimitingRule> deleteRateLimitingRule(RequestContext requestContext, String ruleId);
 
   void bulkDeleteRateLimitingRules(RequestContext requestContext, List<String> ruleIds);
+
+  void bulkUpdateRateLimitingRules(
+      RequestContext requestContext, BulkUpdateRateLimitingRulesRequest request);
 
   GetRateLimitingRuleModsecRulesResponse getRateLimitingModsecRules(
       RequestContext requestContext, GetRateLimitingModsecRulesFilter filter);

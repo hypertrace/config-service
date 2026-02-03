@@ -5,6 +5,7 @@ import static ai.traceable.iprange.config.service.v1.RuleAction.RULE_ACTION_BLOC
 import ai.traceable.config.utils.RegexValidator;
 import ai.traceable.iprange.config.service.v1.AgentModification;
 import ai.traceable.iprange.config.service.v1.BulkDeleteIpRangeRulesRequest;
+import ai.traceable.iprange.config.service.v1.BulkUpdateIpRangeRulesRequest;
 import ai.traceable.iprange.config.service.v1.CreateIpRangeRuleRequest;
 import ai.traceable.iprange.config.service.v1.DeleteIpRangeRuleRequest;
 import ai.traceable.iprange.config.service.v1.EventSeverity;
@@ -105,6 +106,19 @@ class IpRangeRulesValidator implements RulesValidator {
     if (request.getIdsList().stream().anyMatch(String::isEmpty)) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Bulk delete Ip Range rules request should not have empty ids");
+    }
+    return Status.OK;
+  }
+
+  @Override
+  public Status validate(BulkUpdateIpRangeRulesRequest request) {
+    if (request.getIdsList().isEmpty()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Bulk update Ip Range rules request should have at least one id");
+    }
+    if (request.getIdsList().stream().anyMatch(String::isEmpty)) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Bulk update Ip Range rules request should not have empty ids");
     }
     return Status.OK;
   }
