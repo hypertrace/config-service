@@ -24,11 +24,19 @@ message CertificateFilter {
   oneof storage_filter {
     AwsFilter aws_filter = 3;
   }
-  // rules having all these label keys will pass the filter
+  // rules having any of these label keys will pass the filter
   repeated string label_keys = 4;
 
   message AwsFilter {
     repeated string regions = 1;
+
+    enum RegionMatchType {
+      REGION_MATCH_TYPE_UNSPECIFIED = 0;
+      REGION_MATCH_TYPE_ALL = 1;
+      REGION_MATCH_TYPE_ANY = 2;
+    }
+
+    RegionMatchType region_match_type = 2;
   }
   CertificateType certificate_type = 5;
 }

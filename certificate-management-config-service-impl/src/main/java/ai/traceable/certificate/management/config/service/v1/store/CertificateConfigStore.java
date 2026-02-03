@@ -144,19 +144,33 @@ public class CertificateConfigStore extends IdentifiedObjectStore<Certificate> {
                 .map(storage -> storage.getAws().getRegion())
                 .collect(Collectors.toSet());
 
-        // Check if all filter regions are present in the certificate
-        if (!certificateRegions.containsAll(awsFilter.getRegionsList())) {
-          return false;
+        switch (awsFilter.getRegionMatchType()) {
+          case REGION_MATCH_TYPE_ANY:
+            boolean matchesAnyRegion =
+                awsFilter.getRegionsList().stream().anyMatch(certificateRegions::contains);
+            if (!matchesAnyRegion) {
+              return false;
+            }
+            break;
+          case REGION_MATCH_TYPE_UNSPECIFIED:
+          case REGION_MATCH_TYPE_ALL:
+          default:
+            if (!certificateRegions.containsAll(awsFilter.getRegionsList())) {
+              return false;
+            }
+            break;
         }
       }
     }
 
-    // Check if all required label keys are present
+    // Check if any required label key is present in certificate
     if (filter.getLabelKeysCount() > 0) {
-      for (String requiredKey : filter.getLabelKeysList()) {
-        if (!certificate.getMetadata().getLabelsMap().containsKey(requiredKey)) {
-          return false;
-        }
+      boolean matchesAnyLabel =
+          filter.getLabelKeysList().stream()
+              .anyMatch(key -> certificate.getMetadata().getLabelsMap().containsKey(key));
+
+      if (!matchesAnyLabel) {
+        return false;
       }
     }
 

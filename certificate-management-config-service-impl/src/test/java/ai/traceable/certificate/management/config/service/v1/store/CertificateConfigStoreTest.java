@@ -126,7 +126,7 @@ class CertificateConfigStoreTest {
     assertTrue(store.matchesFilter(multiRegionCertificate, singleRegionFilter));
     assertTrue(store.matchesFilter(singleRegionCertificate, singleRegionFilter));
 
-    // Test filter with multiple regions (AND condition)
+    // Create a filter with multiple regions (AND condition)
     CertificateFilter multiRegionFilter =
         CertificateFilter.newBuilder()
             .setAwsFilter(
@@ -141,6 +141,165 @@ class CertificateConfigStoreTest {
 
     // Certificate without region filter will match anything
     assertTrue(store.matchesFilter(multiRegionCertificate, CertificateFilter.newBuilder().build()));
+  }
+
+  @Test
+  void testRegionFilteringWithExplicitAllCondition() {
+    CertificateConfigStore store =
+        new CertificateConfigStore(configServiceBlockingStub, configChangeEventGenerator);
+
+    Certificate multiRegionCertificate =
+        Certificate.newBuilder()
+            .setId("cert-1")
+            .setMetadata(CertificateMetadata.newBuilder().addDomainNames("example.com"))
+            .addStorage(
+                CertificateStorageDetails.newBuilder()
+                    .setAws(AwsStorageDetails.newBuilder().setArn("abc012").setRegion("us-east-1")))
+            .addStorage(
+                CertificateStorageDetails.newBuilder()
+                    .setAws(AwsStorageDetails.newBuilder().setArn("asf012").setRegion("us-west-1")))
+            .build();
+
+    Certificate singleRegionCertificate =
+        Certificate.newBuilder()
+            .setId("cert-2")
+            .setMetadata(CertificateMetadata.newBuilder().addDomainNames("example.com"))
+            .addStorage(
+                CertificateStorageDetails.newBuilder()
+                    .setAws(AwsStorageDetails.newBuilder().setArn("gh").setRegion("us-east-1")))
+            .build();
+
+    CertificateFilter explicitAllFilter =
+        CertificateFilter.newBuilder()
+            .setAwsFilter(
+                CertificateFilter.AwsFilter.newBuilder()
+                    .addRegions("us-east-1")
+                    .addRegions("us-west-1")
+                    .setRegionMatchType(
+                        CertificateFilter.AwsFilter.RegionMatchType.REGION_MATCH_TYPE_ALL))
+            .build();
+
+    assertTrue(store.matchesFilter(multiRegionCertificate, explicitAllFilter));
+    assertFalse(store.matchesFilter(singleRegionCertificate, explicitAllFilter));
+  }
+
+  @Test
+  void testRegionFilteringWithExplicitUnspecifiedDefaultsToAll() {
+    CertificateConfigStore store =
+        new CertificateConfigStore(configServiceBlockingStub, configChangeEventGenerator);
+
+    Certificate multiRegionCertificate =
+        Certificate.newBuilder()
+            .setId("cert-1")
+            .setMetadata(CertificateMetadata.newBuilder().addDomainNames("example.com"))
+            .addStorage(
+                CertificateStorageDetails.newBuilder()
+                    .setAws(AwsStorageDetails.newBuilder().setArn("abc012").setRegion("us-east-1")))
+            .addStorage(
+                CertificateStorageDetails.newBuilder()
+                    .setAws(AwsStorageDetails.newBuilder().setArn("asf012").setRegion("us-west-1")))
+            .build();
+
+    Certificate singleRegionCertificate =
+        Certificate.newBuilder()
+            .setId("cert-2")
+            .setMetadata(CertificateMetadata.newBuilder().addDomainNames("example.com"))
+            .addStorage(
+                CertificateStorageDetails.newBuilder()
+                    .setAws(AwsStorageDetails.newBuilder().setArn("gh").setRegion("us-east-1")))
+            .build();
+
+    CertificateFilter explicitUnspecifiedFilter =
+        CertificateFilter.newBuilder()
+            .setAwsFilter(
+                CertificateFilter.AwsFilter.newBuilder()
+                    .addRegions("us-east-1")
+                    .addRegions("us-west-1")
+                    .setRegionMatchType(
+                        CertificateFilter.AwsFilter.RegionMatchType.REGION_MATCH_TYPE_UNSPECIFIED))
+            .build();
+
+    assertTrue(store.matchesFilter(multiRegionCertificate, explicitUnspecifiedFilter));
+    assertFalse(store.matchesFilter(singleRegionCertificate, explicitUnspecifiedFilter));
+  }
+
+  @Test
+  void testRegionFilteringWithOrCondition() {
+    CertificateConfigStore store =
+        new CertificateConfigStore(configServiceBlockingStub, configChangeEventGenerator);
+
+    Certificate multiRegionCertificate =
+        Certificate.newBuilder()
+            .setId("cert-1")
+            .setMetadata(CertificateMetadata.newBuilder().addDomainNames("example.com"))
+            .addStorage(
+                CertificateStorageDetails.newBuilder()
+                    .setAws(AwsStorageDetails.newBuilder().setArn("abc012").setRegion("us-east-1")))
+            .addStorage(
+                CertificateStorageDetails.newBuilder()
+                    .setAws(AwsStorageDetails.newBuilder().setArn("asf012").setRegion("us-west-1")))
+            .build();
+
+    CertificateFilter orRegionFilter =
+        CertificateFilter.newBuilder()
+            .setAwsFilter(
+                CertificateFilter.AwsFilter.newBuilder()
+                    .addRegions("us-west-1")
+                    .addRegions("eu-central-1")
+                    .setRegionMatchType(
+                        CertificateFilter.AwsFilter.RegionMatchType.REGION_MATCH_TYPE_ANY))
+            .build();
+
+    assertTrue(store.matchesFilter(multiRegionCertificate, orRegionFilter));
+  }
+
+  @Test
+  void testRegionFilteringWithOrCondition_NoMatchingRegions() {
+    CertificateConfigStore store =
+        new CertificateConfigStore(configServiceBlockingStub, configChangeEventGenerator);
+
+    Certificate certificate =
+        Certificate.newBuilder()
+            .setId("cert-1")
+            .setMetadata(CertificateMetadata.newBuilder().addDomainNames("example.com"))
+            .addStorage(
+                CertificateStorageDetails.newBuilder()
+                    .setAws(AwsStorageDetails.newBuilder().setArn("abc012").setRegion("us-east-1")))
+            .build();
+
+    CertificateFilter orRegionFilterNoMatch =
+        CertificateFilter.newBuilder()
+            .setAwsFilter(
+                CertificateFilter.AwsFilter.newBuilder()
+                    .addRegions("eu-central-1")
+                    .addRegions("ap-south-1")
+                    .setRegionMatchType(
+                        CertificateFilter.AwsFilter.RegionMatchType.REGION_MATCH_TYPE_ANY))
+            .build();
+
+    assertFalse(store.matchesFilter(certificate, orRegionFilterNoMatch));
+  }
+
+  @Test
+  void testLabelKeyFilteringAnyMatch() {
+    CertificateConfigStore store =
+        new CertificateConfigStore(configServiceBlockingStub, configChangeEventGenerator);
+
+    Certificate certificate =
+        Certificate.newBuilder()
+            .setId("cert-1")
+            .setMetadata(
+                CertificateMetadata.newBuilder()
+                    .addDomainNames("example.com")
+                    .putLabels("k1", "v1"))
+            .build();
+
+    CertificateFilter anyMatchFilter =
+        CertificateFilter.newBuilder().addLabelKeys("k1").addLabelKeys("k2").build();
+    assertTrue(store.matchesFilter(certificate, anyMatchFilter));
+
+    CertificateFilter noMatchFilter = CertificateFilter.newBuilder().addLabelKeys("k2").build();
+    assertFalse(store.matchesFilter(certificate, noMatchFilter));
   }
 
   @Test
