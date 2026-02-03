@@ -1,5 +1,6 @@
 package ai.traceable.fraud.policy.config.service;
 
+import ai.traceable.config.utils.UuidGenerator;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import io.grpc.BindableService;
@@ -20,6 +21,7 @@ public class FraudPolicyConfigServiceModule extends AbstractModule {
   @Override
   protected void configure() {
     bind(ConfigChangeEventGenerator.class).toInstance(changeEventGenerator);
+    bind(UuidGenerator.class).toInstance(new UuidGenerator());
     bind(BindableService.class).to(FraudPolicyConfigServiceImpl.class);
   }
 

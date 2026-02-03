@@ -2,8 +2,8 @@ package ai.traceable.fraud.policy.config.service.store;
 
 import ai.traceable.fraud.policy.config.service.v1.FraudPolicy;
 import ai.traceable.fraud.policy.config.service.v1.GetFraudPolicyListRequest;
-import com.google.inject.Inject;
 import com.google.protobuf.Value;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;

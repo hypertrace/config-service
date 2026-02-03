@@ -15,6 +15,7 @@ dependencies {
 
   implementation(commonLibs.guice7)
   implementation(commonLibs.slf4j2.api)
+  implementation(localLibs.cron.utils)
 
   implementation(localLibs.hypertrace.configservice.validation)
   implementation(localLibs.hypertrace.configservice.api)

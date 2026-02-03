@@ -1,16 +1,25 @@
 package ai.traceable.fraud.policy.config.service;
 
+import ai.traceable.fraud.policy.config.service.store.AbusePolicyConfigStoreManager;
 import ai.traceable.fraud.policy.config.service.store.ApiAccessAnomalyConfigStoreManager;
 import ai.traceable.fraud.policy.config.service.store.FraudPolicyConfigStoreManager;
+import ai.traceable.fraud.policy.config.service.v1.CreateAbusePolicyRequest;
+import ai.traceable.fraud.policy.config.service.v1.CreateAbusePolicyResponse;
 import ai.traceable.fraud.policy.config.service.v1.CreateApiAccessAnomalyConfigRequest;
 import ai.traceable.fraud.policy.config.service.v1.CreateApiAccessAnomalyConfigResponse;
 import ai.traceable.fraud.policy.config.service.v1.CreateFraudPolicyRequest;
 import ai.traceable.fraud.policy.config.service.v1.CreateFraudPolicyResponse;
+import ai.traceable.fraud.policy.config.service.v1.DeleteAbusePolicyRequest;
+import ai.traceable.fraud.policy.config.service.v1.DeleteAbusePolicyResponse;
 import ai.traceable.fraud.policy.config.service.v1.DeleteApiAccessAnomalyConfigRequest;
 import ai.traceable.fraud.policy.config.service.v1.DeleteApiAccessAnomalyConfigResponse;
 import ai.traceable.fraud.policy.config.service.v1.DeleteFraudPolicyRequest;
 import ai.traceable.fraud.policy.config.service.v1.DeleteFraudPolicyResponse;
 import ai.traceable.fraud.policy.config.service.v1.FraudPolicyConfigServiceGrpc;
+import ai.traceable.fraud.policy.config.service.v1.GetAbusePoliciesRequest;
+import ai.traceable.fraud.policy.config.service.v1.GetAbusePoliciesResponse;
+import ai.traceable.fraud.policy.config.service.v1.GetAbusePolicyRequest;
+import ai.traceable.fraud.policy.config.service.v1.GetAbusePolicyResponse;
 import ai.traceable.fraud.policy.config.service.v1.GetApiAccessAnomalyConfigRequest;
 import ai.traceable.fraud.policy.config.service.v1.GetApiAccessAnomalyConfigResponse;
 import ai.traceable.fraud.policy.config.service.v1.GetApiAccessAnomalyConfigsRequest;
@@ -19,12 +28,15 @@ import ai.traceable.fraud.policy.config.service.v1.GetFraudPolicyListRequest;
 import ai.traceable.fraud.policy.config.service.v1.GetFraudPolicyListResponse;
 import ai.traceable.fraud.policy.config.service.v1.GetFraudPolicyRequest;
 import ai.traceable.fraud.policy.config.service.v1.GetFraudPolicyResponse;
+import ai.traceable.fraud.policy.config.service.v1.UpdateAbusePolicyRequest;
+import ai.traceable.fraud.policy.config.service.v1.UpdateAbusePolicyResponse;
 import ai.traceable.fraud.policy.config.service.v1.UpdateApiAccessAnomalyConfigRequest;
 import ai.traceable.fraud.policy.config.service.v1.UpdateApiAccessAnomalyConfigResponse;
 import ai.traceable.fraud.policy.config.service.v1.UpdateFraudPolicyRequest;
 import ai.traceable.fraud.policy.config.service.v1.UpdateFraudPolicyResponse;
 import ai.traceable.fraud.policy.config.service.v1.UpsertFraudPolicyRequest;
 import ai.traceable.fraud.policy.config.service.v1.UpsertFraudPolicyResponse;
+import ai.traceable.fraud.policy.config.service.validation.AbusePolicyConfigRequestValidator;
 import ai.traceable.fraud.policy.config.service.validation.ApiAccessAnomalyConfigServiceRequestValidator;
 import ai.traceable.fraud.policy.config.service.validation.FraudPolicyConfigRequestValidator;
 import io.grpc.Status;
@@ -42,16 +54,22 @@ class FraudPolicyConfigServiceImpl
   private final FraudPolicyConfigRequestValidator requestValidator;
 
   private final ApiAccessAnomalyConfigStoreManager apiAccessAnomalyConfigStoreManager;
+  private final AbusePolicyConfigStoreManager abusePolicyConfigStoreManager;
+  private final AbusePolicyConfigRequestValidator abusePolicyRequestValidator;
 
   @Inject
   FraudPolicyConfigServiceImpl(
       FraudPolicyConfigStoreManager fraudPolicyConfigStoreManager,
       FraudPolicyConfigRequestValidator requestValidator,
       ApiAccessAnomalyConfigStoreManager apiAccessAnomalyConfigStoreManager,
-      ApiAccessAnomalyConfigServiceRequestValidator apiAccessAnomalyConfigServiceRequestValidator) {
+      ApiAccessAnomalyConfigServiceRequestValidator apiAccessAnomalyConfigServiceRequestValidator,
+      AbusePolicyConfigStoreManager abusePolicyConfigStoreManager,
+      AbusePolicyConfigRequestValidator abusePolicyRequestValidator) {
     this.fraudPolicyConfigStoreManager = fraudPolicyConfigStoreManager;
     this.requestValidator = requestValidator;
     this.apiAccessAnomalyConfigStoreManager = apiAccessAnomalyConfigStoreManager;
+    this.abusePolicyConfigStoreManager = abusePolicyConfigStoreManager;
+    this.abusePolicyRequestValidator = abusePolicyRequestValidator;
   }
 
   @Override
@@ -221,6 +239,107 @@ class FraudPolicyConfigServiceImpl
         request,
         responseObserver,
         apiAccessAnomalyConfigStoreManager::deleteApiAccessAnomalyConfig);
+  }
+
+  @Override
+  public void createAbusePolicy(
+      CreateAbusePolicyRequest request,
+      StreamObserver<CreateAbusePolicyResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      abusePolicyRequestValidator.validateCreateRequest(request, requestContext);
+      responseObserver.onNext(
+          abusePolicyConfigStoreManager.createAbusePolicy(requestContext, request));
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      Exception decoratedException = decorateException(requestContext, exception);
+      log.warn(
+          "Error while creating abuse policy for request: {} with context: {}",
+          request,
+          requestContext,
+          decoratedException);
+      responseObserver.onError(decoratedException);
+    }
+  }
+
+  @Override
+  public void updateAbusePolicy(
+      UpdateAbusePolicyRequest request,
+      StreamObserver<UpdateAbusePolicyResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      abusePolicyRequestValidator.validateUpdateRequest(request, requestContext);
+      responseObserver.onNext(
+          abusePolicyConfigStoreManager.updateAbusePolicy(requestContext, request));
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      Exception decoratedException = decorateException(requestContext, exception);
+      log.warn(
+          "Error while updating abuse policy for request: {} with context: {}",
+          request,
+          requestContext,
+          decoratedException);
+      responseObserver.onError(decoratedException);
+    }
+  }
+
+  @Override
+  public void deleteAbusePolicy(
+      DeleteAbusePolicyRequest request,
+      StreamObserver<DeleteAbusePolicyResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      abusePolicyRequestValidator.validateRequestContext(requestContext);
+      responseObserver.onNext(
+          abusePolicyConfigStoreManager.deleteAbusePolicyList(requestContext, request));
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      Exception decoratedException = decorateException(requestContext, exception);
+      log.warn(
+          "Error while deleting abuse policy configs for request: {} with context: {}",
+          request,
+          requestContext,
+          decoratedException);
+      responseObserver.onError(decoratedException);
+    }
+  }
+
+  @Override
+  public void getAbusePolicies(
+      GetAbusePoliciesRequest request, StreamObserver<GetAbusePoliciesResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      responseObserver.onNext(
+          abusePolicyConfigStoreManager.fetchAbusePolicies(requestContext, request));
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      Exception decoratedException = decorateException(requestContext, exception);
+      log.warn(
+          "Error while fetching abuse policies for request: {} with context {}",
+          request,
+          requestContext,
+          decoratedException);
+      responseObserver.onError(decoratedException);
+    }
+  }
+
+  @Override
+  public void getAbusePolicy(
+      GetAbusePolicyRequest request, StreamObserver<GetAbusePolicyResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      responseObserver.onNext(
+          abusePolicyConfigStoreManager.fetchAbusePolicy(requestContext, request));
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      Exception decoratedException = decorateException(requestContext, exception);
+      log.warn(
+          "Error while fetching abuse policy for request: {} with context {}",
+          request,
+          requestContext,
+          decoratedException);
+      responseObserver.onError(decoratedException);
+    }
   }
 
   private Exception decorateException(RequestContext requestContext, Exception exception) {
