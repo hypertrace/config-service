@@ -18,6 +18,7 @@ import ai.traceable.entity.fetcher.cache.StreamingApiMappingProvider.HttpApiDeta
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import io.grpc.Status;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -205,6 +206,25 @@ public class ApiIdResolverConfigSupplier implements TraceableEdgeConfigSupplier 
       }
 
       String[] segments = cleanPattern.split(FORWARD_SLASH);
+
+      // If upstream resolvedUrlPatterns incorrectly include method as the first segment (e.g.
+      // "GET/admin/config"),
+      // strip it so trie is created for "admin/config" and method stays only in HttpDetail.
+      if (segments.length > 0 && segments[0].equalsIgnoreCase(httpMethod)) {
+        segments = Arrays.copyOfRange(segments, 1, segments.length);
+      }
+
+      // If pattern becomes empty after stripping (e.g. "GET" or "/GET"), treat it as root "/"
+      if (segments.length == 0) {
+        UrlSegmentTrieNode.Builder childBuilder =
+            UrlSegmentTrieNode.newBuilder()
+                .setKey(FORWARD_SLASH)
+                .setType(SegmentType.SEGMENT_TYPE_LITERAL);
+        apiDetailsUpdater.accept(childBuilder, Map.entry(httpMethod, apiId));
+        root.addChildren(childBuilder);
+        return;
+      }
+
       UrlSegmentTrieNode.Builder currentNode = root;
 
       for (String segment : segments) {

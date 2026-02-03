@@ -51,9 +51,7 @@ public class UserAttributionEdgeDecisionConverter {
                     .thenComparing(UserAttributionRule::getId))
             .map(UserAttributionRule::getData)
             .filter(UserAttributionRuleData::hasUserIdRule)
-            .map(
-                ruleData ->
-                    convertTokenRule(ruleData, ruleData.getUserIdRule(), FieldType.FIELD_TYPE_STR))
+            .map(ruleData -> convertTokenRule(ruleData, ruleData.getUserIdRule()))
             .filter(Optional::isPresent)
             .map(Optional::get)
             .collect(
@@ -73,10 +71,7 @@ public class UserAttributionEdgeDecisionConverter {
                     .thenComparing(UserAttributionRule::getId))
             .map(UserAttributionRule::getData)
             .filter(UserAttributionRuleData::hasUserRoleRule)
-            .map(
-                ruleData ->
-                    convertTokenRule(
-                        ruleData, ruleData.getUserRoleRule(), FieldType.FIELD_TYPE_LIST))
+            .map(ruleData -> convertTokenRule(ruleData, ruleData.getUserRoleRule()))
             .filter(Optional::isPresent)
             .map(Optional::get)
             .collect(
@@ -95,10 +90,7 @@ public class UserAttributionEdgeDecisionConverter {
                     .thenComparing(UserAttributionRule::getId))
             .map(UserAttributionRule::getData)
             .filter(UserAttributionRuleData::hasUserScopeRule)
-            .map(
-                ruleData ->
-                    convertTokenRule(
-                        ruleData, ruleData.getUserScopeRule(), FieldType.FIELD_TYPE_LIST))
+            .map(ruleData -> convertTokenRule(ruleData, ruleData.getUserScopeRule()))
             .filter(Optional::isPresent)
             .map(Optional::get)
             .collect(
@@ -117,10 +109,7 @@ public class UserAttributionEdgeDecisionConverter {
                     .thenComparing(UserAttributionRule::getId))
             .map(UserAttributionRule::getData)
             .filter(UserAttributionRuleData::hasAuthTypeRule)
-            .map(
-                ruleData ->
-                    convertTokenRule(
-                        ruleData, ruleData.getAuthTypeRule(), FieldType.FIELD_TYPE_LIST))
+            .map(ruleData -> convertTokenRule(ruleData, ruleData.getAuthTypeRule()))
             .filter(Optional::isPresent)
             .map(Optional::get)
             .collect(
@@ -141,9 +130,8 @@ public class UserAttributionEdgeDecisionConverter {
   }
 
   private Optional<DerivationRule> convertTokenRule(
-      UserAttributionRuleData ruleData, UserAttributionTokenRule tokenRule, FieldType outputType) {
-    Optional<String> jexlExpressionOptional =
-        generateJexlExpression(ruleData, tokenRule, outputType);
+      UserAttributionRuleData ruleData, UserAttributionTokenRule tokenRule) {
+    Optional<String> jexlExpressionOptional = generateJexlExpression(ruleData, tokenRule);
     if (jexlExpressionOptional.isEmpty()) {
       return Optional.empty();
     }
@@ -155,14 +143,14 @@ public class UserAttributionEdgeDecisionConverter {
                     .setJexlExpression(
                         JexlExpressionConfig.newBuilder()
                             .setJexlExpression(jexlExpressionOptional.get()))
-                    .setOutputType(outputType));
+                    .setOutputType(FieldType.FIELD_TYPE_STR));
 
     generateMatchCondition(ruleData, tokenRule).ifPresent(builder::setMatchCondition);
     return Optional.of(builder.build());
   }
 
   private Optional<String> generateJexlExpression(
-      UserAttributionRuleData ruleData, UserAttributionTokenRule tokenRule, FieldType outputType) {
+      UserAttributionRuleData ruleData, UserAttributionTokenRule tokenRule) {
     String base = "$s";
     UserAttributionRootTokenRule root = ruleData.getRootTokenRule();
 
@@ -175,8 +163,7 @@ public class UserAttributionEdgeDecisionConverter {
       String projected =
           applyValueProjections(
               rootExpr, tokenRule.getRootRelativeProjection().getValueProjectionsList());
-      String obfuscated = applyObfuscation(tokenRule, projected);
-      return Optional.of(applyOutputWrapping(obfuscated, outputType));
+      return Optional.of(applyObfuscation(tokenRule, projected));
     }
 
     String leafExpr;
@@ -200,22 +187,7 @@ public class UserAttributionEdgeDecisionConverter {
         throw new IllegalArgumentException(
             "Unsupported token rule projection: " + tokenRule.getProjectionCase());
     }
-
-    String obfuscated = applyObfuscation(tokenRule, leafExpr);
-    return Optional.of(applyOutputWrapping(obfuscated, outputType));
-  }
-
-  private String applyOutputWrapping(String inputJexl, FieldType outputType) {
-    if (outputType != FieldType.FIELD_TYPE_LIST) {
-      return inputJexl;
-    }
-    return wrapCommaSeparatedStringToList(inputJexl);
-  }
-
-  private String wrapCommaSeparatedStringToList(String inputJexl) {
-    String splitRegex = "\\s*,\\s*";
-    String csv = String.format("%s", inputJexl);
-    return "java.util.Arrays.asList(" + csv + ".split(\"" + splitRegex + "\"))";
+    return Optional.of(applyObfuscation(tokenRule, leafExpr));
   }
 
   private String applyObfuscation(UserAttributionTokenRule tokenRule, String inputJexl) {

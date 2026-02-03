@@ -136,21 +136,21 @@ class UserAttributionEdgeDecisionConverterTest {
     assertNotNull(authTypesVar);
 
     assertEquals(
-        FieldType.FIELD_TYPE_LIST, roleVar.getRules(0).getTransformationConfig().getOutputType());
+        FieldType.FIELD_TYPE_STR, roleVar.getRules(0).getTransformationConfig().getOutputType());
     assertEquals(
-        FieldType.FIELD_TYPE_LIST, scopeVar.getRules(0).getTransformationConfig().getOutputType());
+        FieldType.FIELD_TYPE_STR, scopeVar.getRules(0).getTransformationConfig().getOutputType());
     assertEquals(
-        FieldType.FIELD_TYPE_LIST,
+        FieldType.FIELD_TYPE_STR,
         authTypesVar.getRules(0).getTransformationConfig().getOutputType());
 
     assertEquals(
-        "java.util.Arrays.asList('admin, user'.split(\"\\s*,\\s*\"))",
+        "'admin, user'",
         roleVar.getRules(0).getTransformationConfig().getJexlExpression().getJexlExpression());
     assertEquals(
-        "java.util.Arrays.asList('read,write'.split(\"\\s*,\\s*\"))",
+        "'read,write'",
         scopeVar.getRules(0).getTransformationConfig().getJexlExpression().getJexlExpression());
     assertEquals(
-        "java.util.Arrays.asList('jwt'.split(\"\\s*,\\s*\"))",
+        "'jwt'",
         authTypesVar.getRules(0).getTransformationConfig().getJexlExpression().getJexlExpression());
   }
 
