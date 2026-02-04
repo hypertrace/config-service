@@ -32,9 +32,6 @@ dependencies {
 
   api(commonLibs.bundles.grpc.api)
   api(commonLibs.hypertrace.framework.metrics)
-  api(commonLibs.commons.lang)
-
-  implementation(localLibs.hypertrace.configservice.objectstore)
 
   testImplementation(commonLibs.junit.jupiter)
   testImplementation(commonLibs.mockito.core)
