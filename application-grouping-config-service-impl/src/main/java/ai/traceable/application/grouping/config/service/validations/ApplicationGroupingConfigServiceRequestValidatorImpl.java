@@ -92,12 +92,14 @@ public class ApplicationGroupingConfigServiceRequestValidatorImpl
     validateStringField(context, configInfo.getRuleName(), "Rule name", MAX_RULE_NAME_LENGTH);
     validateRuleNameStartsAndEndsWithAlphanumeric(context, configInfo.getRuleName());
 
-    validateNonDefaultPresenceOrThrow(
-        configInfo, ApplicationGroupingRuleConfigInfo.SELECTOR_FIELD_NUMBER);
-    if (configInfo.getSelectorList().isEmpty()) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription("At least one asset selector is required")
-          .asRuntimeException(context.buildTrailers());
+    if (!configInfo.getGroupName().hasDynamic()) {
+      validateNonDefaultPresenceOrThrow(
+          configInfo, ApplicationGroupingRuleConfigInfo.SELECTOR_FIELD_NUMBER);
+      if (configInfo.getSelectorList().isEmpty()) {
+        throw Status.INVALID_ARGUMENT
+            .withDescription("At least one asset selector is required")
+            .asRuntimeException(context.buildTrailers());
+      }
     }
 
     for (AssetSelector selector : configInfo.getSelectorList()) {
