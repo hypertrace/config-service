@@ -71,8 +71,6 @@ import org.apache.commons.lang3.SystemUtils;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 
@@ -110,7 +108,7 @@ class CustomSignatureModsecRulesManagerTest {
   }
 
   @Test
-  void testConvertRulesException() throws Exception {
+  public void testConvertRulesException() throws Exception {
     ModsecDirectivesManager mockDirectivesManager = mock(ModsecDirectivesManager.class);
     when(mockDirectivesManager.getModsecHeader(ModsecRuleVersion.MODSEC_RULE_VERSION_V3))
         .thenReturn("");
@@ -162,7 +160,7 @@ class CustomSignatureModsecRulesManagerTest {
   }
 
   @Test
-  void testConversionNotSupported() {
+  public void testConversionNotSupported() {
     ClauseGroup clauseGroup =
         ClauseGroup.newBuilder()
             .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
@@ -291,8 +289,7 @@ class CustomSignatureModsecRulesManagerTest {
   }
 
   @Test
-  @EnabledOnOs(OS.LINUX)
-  void testConvertRules() throws IOException {
+  public void testConvertRules() throws IOException {
     try (MockedStatic<ModsecRuleEngineUtils> mockModsecUtils =
         mockStatic(ModsecRuleEngineUtils.class)) {
       mockModsecUtils
@@ -476,7 +473,7 @@ class CustomSignatureModsecRulesManagerTest {
   }
 
   @Test
-  void testIncludeAllPartialRules() throws Exception {
+  public void testIncludeAllPartialRules() throws Exception {
     ModsecDirectivesManager mockDirectivesManager = mock(ModsecDirectivesManager.class);
     when(mockDirectivesManager.getModsecHeader(ModsecRuleVersion.MODSEC_RULE_VERSION_V3))
         .thenReturn("");
