@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package ai.traceable.fraud.datamodel.event.kind.v1;
+
+import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
+
+option java_multiple_files = true;
+
+// Complex data model event kind - represents a primitive kind, array of types, or template parameter
+// Used by transformation functions to define input/output types
+message ComplexDataModelEventKind {
+  oneof type {
+    // Reference to a primitive kind by ID (e.g., "system_event_kind_string")
+    string kind_id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Reference to a primitive kind by ID"];
+
+    // Array of a type (e.g., array of strings)
+    ComplexDataModelEventKind array_of = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Array of elements of a specific type"];
+
+    // References a declared type parameter by name (for generic functions like get<T>)
+    string type_parameter_ref = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_skip) = true];
+  }
+}

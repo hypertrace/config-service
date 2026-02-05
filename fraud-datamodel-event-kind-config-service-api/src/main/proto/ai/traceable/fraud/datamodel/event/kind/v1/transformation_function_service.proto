@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package ai.traceable.fraud.datamodel.event.kind.v1;
+
+import "ai/traceable/fraud/datamodel/event/kind/v1/complex_data_model_event_kind.proto";
+import "ai/traceable/fraud/datamodel/event/kind/v1/transformation_function.proto";
+import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
+import "ai/traceable/graphql/autogen/schema/annotations/method/v1/graphql_method_options.proto";
+
+option java_multiple_files = true;
+
+// Service for managing Transformation Functions
+service TransformationFunctionService {
+  rpc GetTransformationFunctions(GetTransformationFunctionsRequest) returns (GetTransformationFunctionsResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "List all available transformation functions for data model derivations";
+  }
+}
+
+// Request to list transformation functions
+message GetTransformationFunctionsRequest {
+  TransformationFunctionFilter filter = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Filter criteria for transformation functions"];
+}
+
+message TransformationFunctionFilter {
+  repeated ComplexDataModelEventKind compatible_with_kinds = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Filter functions compatible with these input event kinds"];
+}
+
+message GetTransformationFunctionsResponse {
+  repeated TransformationFunctionsByKind function_mappings = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of kind to functions mappings"];
+}
+
+// Mapping of a kind to its applicable transformation functions
+message TransformationFunctionsByKind {
+  ComplexDataModelEventKind kind = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "The event kind"];
+  repeated TransformationFunction functions = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of transformation functions applicable to this kind"];
+}

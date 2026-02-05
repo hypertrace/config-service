@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package ai.traceable.fraud.datamodel.event.kind.v1;
+
+import "ai/traceable/fraud/datamodel/event/kind/v1/complex_data_model_event_kind.proto";
+import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
+import "google/protobuf/struct.proto";
+
+option java_multiple_files = true;
+
+// Transformation function definition
+message TransformationFunction {
+  // Unique identifier
+  string id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Unique identifier for this function"];
+
+  // Display name for UI
+  string display_name = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Display name shown in UI"];
+
+  // Description of what this function does
+  string description = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Description of what this function does"];
+
+  // List of kinds this function accepts as input
+  // Functions are valid for these kinds AND all their descendants
+  repeated ComplexDataModelEventKind input_kinds = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_skip) = true];
+
+  // Output kind - what type does this function produce?
+  ComplexDataModelEventKind output_kind = 5 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Output kind produced by this function"];
+
+  // Function parameters (besides the input value)
+  repeated FunctionParameter parameters = 6 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Function parameters (besides the input value)"];
+
+  // JEXL expression template for this function
+  // Placeholders: ${input} for the input value, ${param_name} for parameters
+  string jexl_template = 7 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_skip) = true];
+}
+
+message FunctionParameter {
+  string name = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Parameter name"];
+  string description = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Parameter description"];
+  ParameterType type = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Parameter data type"];
+  bool required = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Whether this parameter is required"];
+
+  google.protobuf.Value default_value = 5 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Default value if not provided"];
+
+  // Allowed values - if set, parameter must be one of these (enum-type constraint)
+  repeated AllowedValue allowed_values = 6 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of allowed values for this parameter"];
+}
+
+// Represents an allowed value option for a parameter
+message AllowedValue {
+  // The actual value to use
+  string value = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "The actual value"];
+
+  // Display name for UI
+  string display_name = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Display name shown in UI"];
+}
+
+enum ParameterType {
+  PARAMETER_TYPE_UNSPECIFIED = 0;
+  PARAMETER_TYPE_STRING = 1;
+  PARAMETER_TYPE_NUMBER = 2;
+  PARAMETER_TYPE_BOOLEAN = 3;
+  PARAMETER_TYPE_ENUM = 4;
+}

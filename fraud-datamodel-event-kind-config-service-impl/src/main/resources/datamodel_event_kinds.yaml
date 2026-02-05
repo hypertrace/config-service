@@ -1,0 +1,89 @@
+# DataModel Event Kinds - Hierarchical Type System
+# Used for type-safe transformation functions on entity derivations
+
+kinds:
+  # Root type - all types inherit from this
+  - id: "system_event_kind_value"
+    display_name: "Value"
+    description: "Base type for all values"
+
+  # String hierarchy
+  - id: "system_event_kind_string"
+    display_name: "String"
+    description: "Text-based values that support string operations"
+    parent_kind_id: "system_event_kind_value"
+
+  - id: "system_event_kind_email"
+    display_name: "Email Address"
+    description: "Email address format"
+    parent_kind_id: "system_event_kind_string"
+    validation:
+      validation_regex: "^[\\w.-]+@[\\w.-]+\\.\\w+$"
+
+  - id: "system_event_kind_phone_number"
+    display_name: "Phone Number"
+    description: "Phone number format"
+    parent_kind_id: "system_event_kind_string"
+    validation:
+      validation_regex: "^\\+?[0-9]{10,15}$"
+
+  - id: "system_event_kind_credit_card"
+    display_name: "Credit Card"
+    description: "Credit card number"
+    parent_kind_id: "system_event_kind_string"
+    validation:
+      validation_regex: "^[0-9]{13,19}$"
+
+  # Numeric hierarchy
+  - id: "system_event_kind_numeric"
+    display_name: "Numeric"
+    description: "Numeric values"
+    parent_kind_id: "system_event_kind_value"
+
+  - id: "system_event_kind_integer"
+    display_name: "Integer"
+    description: "Whole number"
+    parent_kind_id: "system_event_kind_numeric"
+    validation:
+      validation_regex: "^-?[0-9]+$"
+
+  - id: "system_event_kind_float"
+    display_name: "Float"
+    description: "Decimal number"
+    parent_kind_id: "system_event_kind_numeric"
+    validation:
+      validation_regex: "^-?[0-9]*\\.?[0-9]+$"
+
+  # Network hierarchy
+  - id: "system_event_kind_network_identifier"
+    display_name: "Network Identifier"
+    description: "Network-related identifiers"
+    parent_kind_id: "system_event_kind_value"
+
+  - id: "system_event_kind_ip_address"
+    display_name: "IP Address"
+    description: "IPv4 or IPv6 address"
+    parent_kind_id: "system_event_kind_network_identifier"
+    validation:
+      validation_regex: "^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$|^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$"
+
+  - id: "system_event_kind_mac_address"
+    display_name: "MAC Address"
+    description: "Hardware MAC address"
+    parent_kind_id: "system_event_kind_network_identifier"
+    validation:
+      validation_regex: "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$"
+
+  # Boolean
+  - id: "system_event_kind_boolean"
+    display_name: "Boolean"
+    description: "True or false value"
+    parent_kind_id: "system_event_kind_value"
+    validation:
+      validation_regex: "^(true|false|TRUE|FALSE|1|0)$"
+
+  # Timestamp
+  - id: "system_event_kind_timestamp"
+    display_name: "Timestamp"
+    description: "Date/time value"
+    parent_kind_id: "system_event_kind_value"

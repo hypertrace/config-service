@@ -1,0 +1,276 @@
+# Transformation Functions Registry
+# Defines available transformation functions and their type compatibility
+
+functions:
+  # Generic functions - work on all types
+  - id: "system_defined_function_to_string"
+    display_name: "toString"
+    description: "Converts any value to its string representation"
+    input_kinds:
+      - kind_id: "system_event_kind_value"
+    output_kind:
+      kind_id: "system_event_kind_string"
+    jexl_template: "String.valueOf(${input})"
+
+  - id: "system_defined_function_hash"
+    display_name: "hash"
+    description: "Computes a hash of the value"
+    input_kinds:
+      - kind_id: "system_event_kind_value"
+    output_kind:
+      kind_id: "system_event_kind_string"
+    jexl_template: "hash(${input}, '${algorithm}')"
+    parameters:
+      - name: "algorithm"
+        description: "Hash algorithm to use"
+        type: PARAMETER_TYPE_ENUM
+        required: false
+        default_value: "SHA256"
+        allowed_values:
+          - value: "MD5"
+            display_name: "MD5"
+          - value: "SHA256"
+            display_name: "SHA-256"
+          - value: "SHA512"
+            display_name: "SHA-512"
+
+  # String functions
+  - id: "system_defined_function_split"
+    display_name: "split"
+    description: "Splits a string by a delimiter and returns an array"
+    input_kinds:
+      - kind_id: "system_event_kind_string"
+    output_kind:
+      array_of:
+        kind_id: "system_event_kind_string"
+    jexl_template: "${input}.split('${delimiter}')"
+    parameters:
+      - name: "delimiter"
+        description: "Delimiter to split by (e.g., ':', ',', ' ')"
+        type: PARAMETER_TYPE_STRING
+        required: true
+
+  # Array functions - use type_parameter_ref for compile-time type safety
+  - id: "system_defined_function_get"
+    display_name: "get"
+    description: "Gets an element at a specific index from an array"
+    # Input: ARRAY<T>
+    input_kinds:
+      - array_of:
+          type_parameter_ref: "T"
+    # Output: T (same as element type - compile-time type preservation!)
+    output_kind:
+      type_parameter_ref: "T"
+    jexl_template: "${input}[${index}]"
+    parameters:
+      - name: "index"
+        description: "Index to extract (0-based)"
+        type: PARAMETER_TYPE_NUMBER
+        required: true
+
+  - id: "system_defined_function_last"
+    display_name: "lastElement"
+    description: "Gets the last element from an array"
+    # Input: ARRAY<T>
+    input_kinds:
+      - array_of:
+          type_parameter_ref: "T"
+    # Output: T (same as element type - compile-time type preservation!)
+    output_kind:
+      type_parameter_ref: "T"
+    jexl_template: "${input}[${input}.size() - 1]"
+
+  - id: "system_defined_function_join"
+    display_name: "join"
+    description: "Joins array elements into a single string with a delimiter"
+    input_kinds:
+      - array_of:
+          kind_id: "system_event_kind_value"
+    output_kind:
+      kind_id: "system_event_kind_string"
+    jexl_template: "String.join('${delimiter}', ${input})"
+    parameters:
+      - name: "delimiter"
+        description: "Delimiter to join with (e.g., ':', ',', ' ')"
+        type: PARAMETER_TYPE_STRING
+        required: false
+        default_value: ""
+
+  - id: "system_defined_function_array_size"
+    display_name: "arraySize"
+    description: "Returns the number of elements in an array"
+    input_kinds:
+      - array_of:
+          kind_id: "system_event_kind_value"
+    output_kind:
+      kind_id: "system_event_kind_integer"
+    jexl_template: "${input}.size()"
+
+  - id: "system_defined_function_substring"
+    display_name: "substring"
+    description: "Extracts a portion of the string"
+    input_kinds:
+      - kind_id: "system_event_kind_string"
+    output_kind:
+      kind_id: "system_event_kind_string"
+    jexl_template: "${input}.substring(${start}, ${end})"
+    parameters:
+      - name: "start"
+        description: "Start index (0-based)"
+        type: PARAMETER_TYPE_NUMBER
+        required: true
+      - name: "end"
+        description: "End index (exclusive)"
+        type: PARAMETER_TYPE_NUMBER
+        required: false
+
+  - id: "system_defined_function_to_lower_case"
+    display_name: "toLowerCase"
+    description: "Converts string to lowercase"
+    input_kinds:
+      - kind_id: "system_event_kind_string"
+    output_kind:
+      kind_id: "system_event_kind_string"
+    jexl_template: "${input}.toLowerCase()"
+
+  - id: "system_defined_function_to_upper_case"
+    display_name: "toUpperCase"
+    description: "Converts string to uppercase"
+    input_kinds:
+      - kind_id: "system_event_kind_string"
+    output_kind:
+      kind_id: "system_event_kind_string"
+    jexl_template: "${input}.toUpperCase()"
+
+  - id: "system_defined_function_trim"
+    display_name: "trim"
+    description: "Removes leading and trailing whitespace"
+    input_kinds:
+      - kind_id: "system_event_kind_string"
+    output_kind:
+      kind_id: "system_event_kind_string"
+    jexl_template: "${input}.trim()"
+
+  - id: "system_defined_function_replace"
+    display_name: "replace"
+    description: "Replaces occurrences of a pattern"
+    input_kinds:
+      - kind_id: "system_event_kind_string"
+    output_kind:
+      kind_id: "system_event_kind_string"
+    jexl_template: "${input}.replace('${pattern}', '${replacement}')"
+    parameters:
+      - name: "pattern"
+        description: "Pattern to find"
+        type: PARAMETER_TYPE_STRING
+        required: true
+      - name: "replacement"
+        description: "Replacement string"
+        type: PARAMETER_TYPE_STRING
+        required: true
+
+  # Masking functions
+  - id: "system_defined_function_last_4_digits"
+    display_name: "last4Digits"
+    description: "Returns only the last 4 digits, masking the rest"
+    input_kinds:
+      - kind_id: "system_event_kind_phone_number"
+      - kind_id: "system_event_kind_credit_card"
+    output_kind:
+      kind_id: "system_event_kind_string"
+    jexl_template: "last4Digits(${input})"
+
+  - id: "system_defined_function_mask"
+    display_name: "mask"
+    description: "Masks the value with asterisks, showing only specified characters"
+    input_kinds:
+      - kind_id: "system_event_kind_string"
+    output_kind:
+      kind_id: "system_event_kind_string"
+    jexl_template: "mask(${input}, ${showFirst}, ${showLast})"
+    parameters:
+      - name: "showFirst"
+        description: "Number of characters to show at start"
+        type: PARAMETER_TYPE_NUMBER
+        required: false
+        default_value: "0"
+      - name: "showLast"
+        description: "Number of characters to show at end"
+        type: PARAMETER_TYPE_NUMBER
+        required: false
+        default_value: "4"
+
+  # IP Address functions
+  - id: "system_defined_function_is_ip_tor"
+    display_name: "isIPTor"
+    description: "Checks if the IP address is a TOR exit node"
+    input_kinds:
+      - kind_id: "system_event_kind_ip_address"
+    output_kind:
+      kind_id: "system_event_kind_boolean"
+    jexl_template: "isIPTor(${input})"
+
+  - id: "system_defined_function_is_private_ip"
+    display_name: "isPrivateIP"
+    description: "Checks if the IP address is in a private range"
+    input_kinds:
+      - kind_id: "system_event_kind_ip_address"
+    output_kind:
+      kind_id: "system_event_kind_boolean"
+    jexl_template: "isPrivateIP(${input})"
+
+  - id: "system_defined_function_get_card_type"
+    display_name: "getCardType"
+    description: "Returns the credit card type (Visa, Mastercard, Amex, etc.)"
+    input_kinds:
+      - kind_id: "system_event_kind_credit_card"
+    output_kind:
+      kind_id: "system_event_kind_string"
+    jexl_template: "getCardType(${input})"
+
+  # Email functions
+  - id: "system_defined_function_get_email_domain"
+    display_name: "getEmailDomain"
+    description: "Extracts the domain from an email address"
+    input_kinds:
+      - kind_id: "system_event_kind_email"
+    output_kind:
+      kind_id: "system_event_kind_string"
+    jexl_template: "${input}.split('@')[1]"
+
+  # Encoding functions
+  - id: "system_defined_function_base64_encode"
+    display_name: "base64Encode"
+    description: "Encodes the value in Base64"
+    input_kinds:
+      - kind_id: "system_event_kind_string"
+    output_kind:
+      kind_id: "system_event_kind_string"
+    jexl_template: "base64Encode(${input})"
+
+  - id: "system_defined_function_base64_decode"
+    display_name: "base64Decode"
+    description: "Decodes a Base64 encoded value"
+    input_kinds:
+      - kind_id: "system_event_kind_string"
+    output_kind:
+      kind_id: "system_event_kind_string"
+    jexl_template: "base64Decode(${input})"
+
+  - id: "system_defined_function_url_encode"
+    display_name: "urlEncode"
+    description: "URL encodes the value"
+    input_kinds:
+      - kind_id: "system_event_kind_string"
+    output_kind:
+      kind_id: "system_event_kind_string"
+    jexl_template: "urlEncode(${input})"
+
+  - id: "system_defined_function_url_decode"
+    display_name: "urlDecode"
+    description: "URL decodes the value"
+    input_kinds:
+      - kind_id: "system_event_kind_string"
+    output_kind:
+      kind_id: "system_event_kind_string"
+    jexl_template: "urlDecode(${input})"

@@ -86,3 +86,4 @@ modules:
   - path: graphql-autogen-schema-annotations/src/main/proto
   - path: google-secops-integration-config-service-api/src/main/proto
   - path: application-grouping-config-service-api/src/main/proto
+  - path: fraud-datamodel-event-kind-config-service-api/src/main/proto

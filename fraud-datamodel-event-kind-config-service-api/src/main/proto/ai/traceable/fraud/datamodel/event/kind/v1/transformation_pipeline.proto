@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package ai.traceable.fraud.datamodel.event.kind.v1;
+
+import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
+import "google/protobuf/struct.proto";
+
+option java_multiple_files = true;
+
+// Represents a configured transformation function invocation with actual parameter values
+message TransformationFunctionInvocation {
+  // Reference to the transformation function ID
+  string function_id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Reference to the transformation function ID"];
+
+  // Actual parameter values for this invocation
+  map<string, google.protobuf.Value> parameter_values = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Actual parameter values for this invocation"];
+}
+
+// Represents a chain of transformation functions to be applied in sequence
+// e.g., split(":").get(1) would be represented as two invocations
+message TransformationPipeline {
+  // Ordered list of function invocations to apply
+  repeated TransformationFunctionInvocation transformation_pipeline = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Ordered list of function invocations to apply"];
+}

@@ -22,7 +22,7 @@ jobs:
         uses: bufbuild/buf-action@v1
         with:
           github_token: ${{ github.token }}
-          breaking_against: ${{ github.event.repository.clone_url }}#format=git,commit=${{ github.event.pull_request.base.sha }},recurse_submodules=true
+          breaking_against: ${{ github.event.repository.clone_url }}#format=git,branch=${{ github.event.pull_request.base.ref }},recurse_submodules=true
 
   validate-helm-charts:
     runs-on: self-hosted-x64-small

@@ -84,6 +84,8 @@ local-processing-config-service-api @shashank11p @tim-mwangi @varkey98
 local-processing-config-service-impl @shashank11p @tim-mwangi @varkey98
 data-obfuscation-config-service-api @shashank11p @tim-mwangi @varkey98
 data-obfuscation-config-service-impl @shashank11p @tim-mwangi @varkey98
+fraud-datamodel-event-kind-config-service-api  @PrajwalKrishna @varsha-abhinandan @saxenakshitiz
+fraud-datamodel-event-kind-config-service-impl @PrajwalKrishna @varsha-abhinandan @saxenakshitiz
 application-grouping-config-service-api @suresh-prakash @singh-viikram @ohiduz
 application-grouping-config-service-impl @suresh-prakash @singh-viikram @ohiduz
 saved-filter-config-service-api @suresh-prakash @singh-viikram

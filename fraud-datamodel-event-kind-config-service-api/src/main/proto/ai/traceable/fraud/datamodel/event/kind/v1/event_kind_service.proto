@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package ai.traceable.fraud.datamodel.event.kind.v1;
+
+import "ai/traceable/fraud/datamodel/event/kind/v1/data_model_event_kind.proto";
+import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
+import "ai/traceable/graphql/autogen/schema/annotations/method/v1/graphql_method_options.proto";
+
+option java_multiple_files = true;
+
+// Service for managing DataModel Event Kinds
+service EventKindService {
+  rpc GetEventKinds(GetEventKindsRequest) returns (GetEventKindsResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "List all available event kinds for data model transformations";
+  }
+}
+
+message GetEventKindsRequest {
+  EventKindFilter filter = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Filter criteria for event kinds"];
+}
+
+message EventKindFilter {
+  optional bool system_only = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "If true, return only system-defined event kinds"];
+}
+
+message GetEventKindsResponse {
+  repeated DataModelEventKind event_kinds = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of event kinds matching the filter criteria"];
+}
