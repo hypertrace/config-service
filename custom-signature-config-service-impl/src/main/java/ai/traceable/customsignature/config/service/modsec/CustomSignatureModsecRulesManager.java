@@ -152,9 +152,17 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
               customSignatureRule.getDefinition().getClauseGroup())) {
             ModsecBlobResult emptyModsecBlobResult =
                 new ModsecBlobResult(EMPTY_BLOB, customSignatureRule.getId());
-            applicableServices.forEach(
-                applicableService ->
-                    serviceToModsecBlobDataMap.get(applicableService).add(emptyModsecBlobResult));
+            // Use applicableServices when available (maintains service scoping).
+            // Fall back to serviceNames when applicableServices is empty - this handles
+            // cases where the rule has both non-modsec trackable clauses (RegionExpression,
+            // IpAddressExpression, etc.) AND ScopeExpression with EntityScope, but the
+            // requested service doesn't match the scope. The agent will evaluate all
+            // clauses together at runtime.
+            List<String> servicesToAddRule =
+                applicableServices.isEmpty() ? serviceNames : applicableServices;
+            servicesToAddRule.forEach(
+                serviceName ->
+                    serviceToModsecBlobDataMap.get(serviceName).add(emptyModsecBlobResult));
           }
           inlineRuleList.add(
               CustomSignatureInlineRule.newBuilder().setRule(customSignatureRule).build());

@@ -12,6 +12,8 @@ import io.grpc.Status;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
@@ -28,6 +30,7 @@ class ModsecBlobValidatorTest {
   }
 
   @Test
+  @EnabledOnOs(OS.LINUX)
   void testValidate_ValidBlob() {
     try (MockedStatic<ModsecRuleEngineUtils> mockModsecUtils =
         mockStatic(ModsecRuleEngineUtils.class)) {
@@ -44,6 +47,7 @@ class ModsecBlobValidatorTest {
   }
 
   @Test
+  @EnabledOnOs(OS.LINUX)
   void testValidate_InvalidBlob() {
     try (MockedStatic<ModsecRuleEngineUtils> mockModsecUtils =
         mockStatic(ModsecRuleEngineUtils.class)) {
@@ -61,6 +65,7 @@ class ModsecBlobValidatorTest {
   }
 
   @Test
+  @EnabledOnOs(OS.LINUX)
   void testValidate_UnknownBlob() {
     try (MockedStatic<ModsecRuleEngineUtils> mockModsecUtils =
         mockStatic(ModsecRuleEngineUtils.class)) {
@@ -82,6 +87,7 @@ class ModsecBlobValidatorTest {
   }
 
   @Test
+  @EnabledOnOs(OS.LINUX)
   void testValidate_CachingBehavior() {
     try (MockedStatic<ModsecRuleEngineUtils> mockModsecUtils =
         mockStatic(ModsecRuleEngineUtils.class)) {
