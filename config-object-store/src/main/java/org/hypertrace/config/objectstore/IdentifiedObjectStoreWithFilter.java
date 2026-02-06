@@ -77,15 +77,14 @@ public abstract class IdentifiedObjectStoreWithFilter<T, F> extends IdentifiedOb
 
   private ContextualConfigObject<T> updateConfigData(
       ContextualConfigObject<T> configObject, T updatedData) {
-    return ContextualConfigObjectImpl.<T>builder()
-        .context(configObject.getContext())
-        .data(updatedData)
-        .creationTimestamp(configObject.getCreationTimestamp())
-        .createdByEmail(configObject.getCreatedByEmail())
-        .lastUserUpdateTimestamp(configObject.getLastUserUpdateTimestamp())
-        .lastUserUpdateEmail(configObject.getLastUserUpdateEmail())
-        .lastUpdatedTimestamp(configObject.getLastUpdatedTimestamp())
-        .lastUpdateEmail(configObject.getLastUpdateEmail())
-        .build();
+    return new ContextualConfigObjectImpl<>(
+        configObject.getContext(),
+        updatedData,
+        configObject.getCreationTimestamp(),
+        configObject.getCreatedByEmail(),
+        configObject.getLastUserUpdateTimestamp(),
+        configObject.getLastUserUpdateEmail(),
+        configObject.getLastUpdatedTimestamp(),
+        configObject.getLastUpdateEmail());
   }
 }
