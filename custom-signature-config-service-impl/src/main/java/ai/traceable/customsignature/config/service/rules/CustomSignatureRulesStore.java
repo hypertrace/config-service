@@ -1,17 +1,12 @@
 package ai.traceable.customsignature.config.service.rules;
 
-import static ai.traceable.config.service.commons.utils.AuditFilterUtils.getVisibleUserEmail;
-import static ai.traceable.config.service.commons.utils.AuditFilterUtils.hasActiveAuditFilter;
+import static ai.traceable.audit.utils.AuditDetailsBuilder.buildAuditDetails;
+import static ai.traceable.audit.utils.AuditFilterUtils.hasActiveAuditFilter;
+import static ai.traceable.audit.utils.AuditFilterUtils.matchesAuditFilters;
 import static ai.traceable.customsignature.config.service.CustomSignatureConstants.CUSTOM_SIGNATURE_RULE_CONFIG_NAMESPACE;
 import static ai.traceable.customsignature.config.service.CustomSignatureConstants.CUSTOM_SIGNATURE_RULE_CONFIG_RESOURCE_NAME;
 import static java.util.Objects.nonNull;
 
-import ai.traceable.config.commons.v1.AuditDetails;
-import ai.traceable.config.commons.v1.AuditFilter;
-import ai.traceable.config.commons.v1.CreationDetails;
-import ai.traceable.config.commons.v1.LastUpdateDetails;
-import ai.traceable.config.commons.v1.TimestampRange;
-import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceConfig;
 import ai.traceable.customsignature.config.service.v1.AttributeKeyValueExpression;
 import ai.traceable.customsignature.config.service.v1.Category;
@@ -29,7 +24,6 @@ import ai.traceable.customsignature.config.service.v1.StringCondition;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
 import jakarta.inject.Inject;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -57,7 +51,6 @@ public class CustomSignatureRulesStore
 
   private final CustomSignatureRuleConverter customSignatureRuleConverter;
   private final List<CustomSignatureRuleRecord> defaultCustomSignatureRules;
-  private final TimestampConverter timestampConverter;
   private final CustomSignatureConfigServiceConfig customSignatureConfigServiceConfig;
 
   private static final Set<ContextualKey<Void>> PROCESSED_RULE_TENANT_IDS = new HashSet<>();
@@ -67,8 +60,7 @@ public class CustomSignatureRulesStore
       ConfigServiceBlockingStub configServiceBlockingStub,
       CustomSignatureRuleConverter customSignatureRuleConverter,
       ConfigChangeEventGenerator configChangeEventGenerator,
-      CustomSignatureConfigServiceConfig customSignatureConfigServiceConfig,
-      TimestampConverter timestampConverter) {
+      CustomSignatureConfigServiceConfig customSignatureConfigServiceConfig) {
     super(
         configServiceBlockingStub,
         CUSTOM_SIGNATURE_RULE_CONFIG_NAMESPACE,
@@ -79,7 +71,6 @@ public class CustomSignatureRulesStore
         customSignatureConfigServiceConfig.getDefaultCustomSignatureRules().stream()
             .map(rule -> CustomSignatureRuleRecord.newBuilder().setRule(rule).build())
             .collect(Collectors.toUnmodifiableList());
-    this.timestampConverter = timestampConverter;
     this.customSignatureConfigServiceConfig = customSignatureConfigServiceConfig;
   }
 
@@ -102,7 +93,12 @@ public class CustomSignatureRulesStore
   public List<ContextualConfigObject<CustomSignatureRule>> getAllObjects(
       RequestContext context, GetRulesFilter filter) {
     return super.getAllObjects(context, filter).stream()
-        .filter(configObject -> matchesAuditFilters(configObject, filter))
+        .filter(
+            configObject ->
+                matchesAuditFilters(
+                    configObject,
+                    filter.getAuditFilter(),
+                    customSignatureConfigServiceConfig.getUserVisibleEmailConfig()))
         .collect(Collectors.toUnmodifiableList());
   }
 
@@ -323,37 +319,10 @@ public class CustomSignatureRulesStore
       ContextualConfigObject<CustomSignatureRule> contextual) {
     return CustomSignatureRuleRecord.newBuilder()
         .setRule(contextual.getData())
-        .setAuditDetails(buildAuditDetails(contextual))
+        .setAuditDetails(
+            buildAuditDetails(
+                contextual, customSignatureConfigServiceConfig.getUserVisibleEmailConfig()))
         .build();
-  }
-
-  private AuditDetails buildAuditDetails(ContextualConfigObject<?> contextual) {
-    AuditDetails.Builder builder = AuditDetails.newBuilder();
-
-    Instant creationTimestamp = contextual.getCreationTimestamp();
-    if (creationTimestamp != null && creationTimestamp.getEpochSecond() > 0) {
-      builder.setCreationDetails(
-          CreationDetails.newBuilder()
-              .setCreatedBy(contextual.getCreatedByEmail())
-              .setCreatedAt(timestampConverter.convert(creationTimestamp))
-              .build());
-    }
-
-    Instant lastUserUpdateTimestamp = contextual.getLastUserUpdateTimestamp();
-    if (lastUserUpdateTimestamp != null && lastUserUpdateTimestamp.getEpochSecond() > 0) {
-      String userEmail =
-          getVisibleUserEmail(
-              contextual.getLastUserUpdateEmail(),
-              contextual.getLastUpdateEmail(),
-              this.customSignatureConfigServiceConfig.getUserVisibleEmailConfig());
-      builder.setLastUserUpdateDetails(
-          LastUpdateDetails.newBuilder()
-              .setUpdatedBy(userEmail)
-              .setUpdatedAt(timestampConverter.convert(lastUserUpdateTimestamp))
-              .build());
-    }
-
-    return builder.build();
   }
 
   // processing existing custom signature rule, when attribute key value expression does not have
@@ -442,87 +411,5 @@ public class CustomSignatureRulesStore
 
   private StringCondition getStringCondition(String value, MatchOperator operator) {
     return StringCondition.newBuilder().setValue(value).setOperator(operator).build();
-  }
-
-  private boolean matchesAuditFilters(
-      ContextualConfigObject<CustomSignatureRule> configObject, GetRulesFilter filter) {
-    if (!filter.hasAuditFilter()) {
-      return true;
-    }
-    AuditFilter auditFilter = filter.getAuditFilter();
-    return matchesCreatedRange(configObject, auditFilter)
-        && matchesUpdatedRange(configObject, auditFilter)
-        && matchesCreatedByContains(configObject, auditFilter)
-        && matchesLastUpdatedByContains(configObject, auditFilter);
-  }
-
-  private boolean matchesCreatedRange(
-      ContextualConfigObject<CustomSignatureRule> configObject, AuditFilter auditFilter) {
-    if (!auditFilter.hasCreatedRange()) {
-      return true;
-    }
-    Instant creationTime = configObject.getCreationTimestamp();
-    if (creationTime == null || creationTime.getEpochSecond() == 0) {
-      return false;
-    }
-    return isTimestampInRange(creationTime, auditFilter.getCreatedRange());
-  }
-
-  private boolean matchesUpdatedRange(
-      ContextualConfigObject<CustomSignatureRule> configObject, AuditFilter auditFilter) {
-    if (!auditFilter.hasUpdatedRange()) {
-      return true;
-    }
-    Instant lastUpdateTime = configObject.getLastUserUpdateTimestamp();
-    if (lastUpdateTime == null || lastUpdateTime.getEpochSecond() == 0) {
-      return false;
-    }
-    return isTimestampInRange(lastUpdateTime, auditFilter.getUpdatedRange());
-  }
-
-  private boolean matchesCreatedByContains(
-      ContextualConfigObject<CustomSignatureRule> configObject, AuditFilter auditFilter) {
-    String createdByContains = auditFilter.getCreatedByContains();
-    if (createdByContains.isEmpty()) {
-      return true;
-    }
-    String createdBy = configObject.getCreatedByEmail();
-    if (createdBy == null || createdBy.isEmpty()) {
-      return false;
-    }
-    return containsIgnoreCase(createdBy, createdByContains);
-  }
-
-  private boolean matchesLastUpdatedByContains(
-      ContextualConfigObject<CustomSignatureRule> configObject, AuditFilter auditFilter) {
-    String lastUpdatedByContains = auditFilter.getLastUpdatedByUserContains();
-    if (lastUpdatedByContains.isEmpty()) {
-      return true;
-    }
-    String lastUserUpdateEmail =
-        getVisibleUserEmail(
-            configObject.getLastUserUpdateEmail(),
-            configObject.getLastUpdateEmail(),
-            this.customSignatureConfigServiceConfig.getUserVisibleEmailConfig());
-    return lastUserUpdateEmail != null
-        && lastUserUpdateEmail.toLowerCase().contains(lastUpdatedByContains.toLowerCase());
-  }
-
-  private boolean isTimestampInRange(Instant timestamp, TimestampRange range) {
-    if (range.hasStart()) {
-      Instant startTime = timestampConverter.convertToInstant(range.getStart());
-      if (timestamp.isBefore(startTime)) {
-        return false;
-      }
-    }
-    if (range.hasEnd()) {
-      Instant endTime = timestampConverter.convertToInstant(range.getEnd());
-      return !timestamp.isAfter(endTime);
-    }
-    return true;
-  }
-
-  private boolean containsIgnoreCase(String source, String searchTerm) {
-    return source.toLowerCase().contains(searchTerm.toLowerCase());
   }
 }

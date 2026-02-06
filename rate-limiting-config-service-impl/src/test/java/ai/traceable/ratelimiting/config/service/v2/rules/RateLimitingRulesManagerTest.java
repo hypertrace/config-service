@@ -9,7 +9,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.traceable.config.utils.TimestampConverter;
+import ai.traceable.audit.utils.UserVisibleEmailConfig;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.ratelimiting.config.service.v2.Action;
 import ai.traceable.ratelimiting.config.service.v2.Action.Allow;
@@ -32,6 +32,7 @@ import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceConfig;
 import ai.traceable.ratelimiting.service.v2.rules.RateLimitingRulesManager;
 import ai.traceable.ratelimiting.service.v2.rules.RateLimitingRulesStore;
 import ai.traceable.ratelimiting.service.v2.rules.modsec.RateLimitingModsecRulesManager;
+import com.typesafe.config.ConfigFactory;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.time.Clock;
@@ -80,12 +81,16 @@ public class RateLimitingRulesManagerTest {
         ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
     ConfigChangeEventGenerator mockConfigChangeEventGenerator =
         mock(ConfigChangeEventGenerator.class);
+    when(rateLimitingConfigServiceConfig.getUserVisibleEmailConfig())
+        .thenReturn(
+            new UserVisibleEmailConfig(
+                ConfigFactory.parseString(
+                    "generic.config.service.customer.visible.excluded.email.patterns: []")));
     RateLimitingRulesStore rulesStore =
         new RateLimitingRulesStore(
             configServiceBlockingStub,
             mockConfigChangeEventGenerator,
-            rateLimitingConfigServiceConfig,
-            new TimestampConverter());
+            rateLimitingConfigServiceConfig);
     uuidGenerator = mock(UuidGenerator.class);
     Clock clock = mock(Clock.class);
     doReturn(1000000L).when(clock).millis();

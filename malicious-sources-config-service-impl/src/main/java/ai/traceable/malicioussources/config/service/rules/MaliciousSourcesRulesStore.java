@@ -1,22 +1,16 @@
 package ai.traceable.malicioussources.config.service.rules;
 
-import static ai.traceable.config.service.commons.utils.AuditFilterUtils.getVisibleUserEmail;
+import static ai.traceable.audit.utils.AuditDetailsBuilder.buildAuditDetails;
+import static ai.traceable.audit.utils.AuditFilterUtils.matchesAuditFilters;
 import static ai.traceable.malicioussources.config.service.constants.MaliciousSourcesConfigConstants.MALICIOUS_SOURCES_RULE_CONFIG_NAMESPACE;
 import static ai.traceable.malicioussources.config.service.constants.MaliciousSourcesConfigConstants.MALICIOUS_SOURCES_RULE_CONFIG_RESOURCE_NAME;
 
-import ai.traceable.config.commons.v1.AuditDetails;
-import ai.traceable.config.commons.v1.AuditFilter;
-import ai.traceable.config.commons.v1.CreationDetails;
-import ai.traceable.config.commons.v1.LastUpdateDetails;
-import ai.traceable.config.commons.v1.TimestampRange;
-import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.malicioussources.config.service.v1.GetRulesFilter;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleRecord;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleScope;
 import com.google.protobuf.Value;
 import jakarta.inject.Inject;
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -33,14 +27,12 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public class MaliciousSourcesRulesStore
     extends IdentifiedObjectStoreWithFilter<MaliciousSourcesRule, GetRulesFilter> {
 
-  private final TimestampConverter timestampConverter;
   private final MaliciousSourcesConfigServiceConfig serviceConfig;
 
   @Inject
   public MaliciousSourcesRulesStore(
       ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
       ConfigChangeEventGenerator configChangeEventGenerator,
-      TimestampConverter timestampConverter,
       MaliciousSourcesConfigServiceConfig serviceConfig) {
     super(
         configServiceBlockingStub,
@@ -48,7 +40,6 @@ public class MaliciousSourcesRulesStore
         MALICIOUS_SOURCES_RULE_CONFIG_RESOURCE_NAME,
         configChangeEventGenerator);
     this.serviceConfig = serviceConfig;
-    this.timestampConverter = timestampConverter;
   }
 
   @Override
@@ -129,120 +120,18 @@ public class MaliciousSourcesRulesStore
   private boolean matchesFilter(
       ContextualConfigObject<MaliciousSourcesRule> ruleWithContext, GetRulesFilter filter) {
     return filterConfigData(ruleWithContext.getData(), filter).isPresent()
-        && matchesAuditFilter(ruleWithContext, filter.getAuditFilter());
-  }
-
-  private boolean matchesAuditFilter(
-      ContextualConfigObject<MaliciousSourcesRule> contextual, AuditFilter auditFilter) {
-    if (AuditFilter.getDefaultInstance().equals(auditFilter)) {
-      return true;
-    }
-    return matchesCreatedRange(contextual, auditFilter)
-        && matchesUpdatedRange(contextual, auditFilter)
-        && matchesCreatedByContains(contextual, auditFilter)
-        && matchesLastUpdatedByContains(contextual, auditFilter);
-  }
-
-  private boolean matchesCreatedRange(
-      ContextualConfigObject<MaliciousSourcesRule> contextual, AuditFilter auditFilter) {
-    if (!auditFilter.hasCreatedRange()) {
-      return true;
-    }
-    Instant creationTimestamp = contextual.getCreationTimestamp();
-    if (creationTimestamp == null) {
-      return false;
-    }
-    return isTimestampInRange(creationTimestamp, auditFilter.getCreatedRange());
-  }
-
-  private boolean matchesUpdatedRange(
-      ContextualConfigObject<MaliciousSourcesRule> contextual, AuditFilter auditFilter) {
-    if (!auditFilter.hasUpdatedRange()) {
-      return true;
-    }
-    Instant lastUserUpdateTimestamp = contextual.getLastUserUpdateTimestamp();
-    if (lastUserUpdateTimestamp == null) {
-      return false;
-    }
-    return isTimestampInRange(lastUserUpdateTimestamp, auditFilter.getUpdatedRange());
-  }
-
-  private boolean matchesCreatedByContains(
-      ContextualConfigObject<MaliciousSourcesRule> contextual, AuditFilter auditFilter) {
-    String createdByContains = auditFilter.getCreatedByContains();
-    if (createdByContains.isEmpty()) {
-      return true;
-    }
-    String createdByEmail = contextual.getCreatedByEmail();
-    return createdByEmail != null
-        && createdByEmail.toLowerCase().contains(createdByContains.toLowerCase());
-  }
-
-  private boolean matchesLastUpdatedByContains(
-      ContextualConfigObject<MaliciousSourcesRule> contextual, AuditFilter auditFilter) {
-    String lastUpdatedByContains = auditFilter.getLastUpdatedByUserContains();
-    if (lastUpdatedByContains.isEmpty()) {
-      return true;
-    }
-    String lastUserUpdateEmail =
-        getVisibleUserEmail(
-            contextual.getLastUserUpdateEmail(),
-            contextual.getLastUpdateEmail(),
+        && matchesAuditFilters(
+            ruleWithContext,
+            filter.getAuditFilter(),
             this.serviceConfig.getUserVisibleEmailConfig());
-    return lastUserUpdateEmail != null
-        && lastUserUpdateEmail.toLowerCase().contains(lastUpdatedByContains.toLowerCase());
-  }
-
-  private boolean isTimestampInRange(Instant timestamp, TimestampRange range) {
-    if (range.hasStart()) {
-      Instant start = timestampConverter.convertToInstant(range.getStart());
-      if (timestamp.isBefore(start)) {
-        return false;
-      }
-    }
-    if (range.hasEnd()) {
-      Instant end = timestampConverter.convertToInstant(range.getEnd());
-      if (timestamp.isAfter(end)) {
-        return false;
-      }
-    }
-    return true;
   }
 
   private MaliciousSourcesRuleRecord toRuleRecord(
       ContextualConfigObject<MaliciousSourcesRule> contextual) {
     return MaliciousSourcesRuleRecord.newBuilder()
         .setRule(contextual.getData())
-        .setAuditDetails(buildAuditDetails(contextual))
+        .setAuditDetails(
+            buildAuditDetails(contextual, this.serviceConfig.getUserVisibleEmailConfig()))
         .build();
-  }
-
-  private AuditDetails buildAuditDetails(ContextualConfigObject<?> contextual) {
-    AuditDetails.Builder builder = AuditDetails.newBuilder();
-
-    Instant creationTimestamp = contextual.getCreationTimestamp();
-    if (creationTimestamp != null && creationTimestamp.getEpochSecond() > 0) {
-      builder.setCreationDetails(
-          CreationDetails.newBuilder()
-              .setCreatedBy(contextual.getCreatedByEmail())
-              .setCreatedAt(timestampConverter.convert(creationTimestamp))
-              .build());
-    }
-
-    Instant lastUserUpdateTimestamp = contextual.getLastUserUpdateTimestamp();
-    if (lastUserUpdateTimestamp != null && lastUserUpdateTimestamp.getEpochSecond() > 0) {
-      String userEmail =
-          getVisibleUserEmail(
-              contextual.getLastUserUpdateEmail(),
-              contextual.getLastUpdateEmail(),
-              this.serviceConfig.getUserVisibleEmailConfig());
-      builder.setLastUserUpdateDetails(
-          LastUpdateDetails.newBuilder()
-              .setUpdatedBy(userEmail)
-              .setUpdatedAt(timestampConverter.convert(lastUserUpdateTimestamp))
-              .build());
-    }
-
-    return builder.build();
   }
 }

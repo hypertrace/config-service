@@ -1,6 +1,6 @@
 package ai.traceable.malicioussources.config.service.rules;
 
-import ai.traceable.config.service.commons.utils.UserVisibleEmailConfig;
+import ai.traceable.audit.utils.UserVisibleEmailConfig;
 import com.typesafe.config.Config;
 import lombok.Getter;
 

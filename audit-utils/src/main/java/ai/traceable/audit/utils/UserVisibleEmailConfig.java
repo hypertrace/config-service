@@ -1,4 +1,4 @@
-package ai.traceable.config.service.commons.utils;
+package ai.traceable.audit.utils;
 
 import static java.util.Objects.nonNull;
 

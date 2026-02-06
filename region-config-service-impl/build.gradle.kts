@@ -11,6 +11,7 @@ dependencies {
   implementation(projects.regionConfigServiceApi)
   implementation(projects.featureCachingClient)
   implementation(projects.configUtils)
+  implementation(projects.auditUtils)
   implementation(localLibs.hypertrace.configservice.api)
   implementation(commonLibs.guice7)
   implementation(commonLibs.guava)

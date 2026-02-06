@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.config.service.TraceableConfigServiceIntegrationTestBase;
-import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceConfig;
 import ai.traceable.customsignature.config.service.rules.CustomSignatureRuleConverter;
 import ai.traceable.customsignature.config.service.rules.CustomSignatureRulesStore;
@@ -127,8 +126,7 @@ public class CustomSignatureRuleEvaluationPointsMigrationConfigServiceIntegratio
             configServiceBlockingStub,
             new CustomSignatureRuleConverter(),
             configChangeEventGenerator,
-            customSignatureConfigServiceConfig,
-            new TimestampConverter());
+            customSignatureConfigServiceConfig);
   }
 
   @Test

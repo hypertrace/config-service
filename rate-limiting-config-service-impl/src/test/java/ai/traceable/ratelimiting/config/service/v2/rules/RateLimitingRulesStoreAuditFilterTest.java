@@ -5,9 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.audit.utils.UserVisibleEmailConfig;
 import ai.traceable.config.commons.v1.AuditFilter;
 import ai.traceable.config.commons.v1.TimestampRange;
-import ai.traceable.config.service.commons.utils.UserVisibleEmailConfig;
 import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
@@ -54,8 +54,7 @@ class RateLimitingRulesStoreAuditFilterTest {
     ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
     rateLimitingRulesStore =
-        new RateLimitingRulesStore(
-            configServiceBlockingStub, configChangeEventGenerator, config, timestampConverter);
+        new RateLimitingRulesStore(configServiceBlockingStub, configChangeEventGenerator, config);
   }
 
   @AfterEach
@@ -305,8 +304,7 @@ class RateLimitingRulesStoreAuditFilterTest {
       ConfigChangeEventGenerator changeEventGenerator = mock(ConfigChangeEventGenerator.class);
       ConfigServiceGrpc.ConfigServiceBlockingStub stub =
           ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
-      return new RateLimitingRulesStore(
-          stub, changeEventGenerator, configWithDefaults, timestampConverter);
+      return new RateLimitingRulesStore(stub, changeEventGenerator, configWithDefaults);
     }
 
     @Test

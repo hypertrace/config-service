@@ -9,6 +9,7 @@ dependencies {
   api(commonLibs.grpc.api)
   implementation(projects.maliciousSourcesConfigServiceApi)
   implementation(projects.configUtils)
+  implementation(projects.auditUtils)
   implementation(localLibs.hypertrace.configservice.objectstore)
   implementation(localLibs.hypertrace.configservice.changeeventgenerator)
   implementation(localLibs.hypertrace.configservice.protoconverter)

@@ -13,6 +13,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.audit.utils.UserVisibleEmailConfig;
 import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceConfig;
 import ai.traceable.customsignature.config.service.v1.AttributeKeyValueExpression;
@@ -39,6 +40,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Timestamp;
 import com.google.protobuf.Value;
+import com.typesafe.config.ConfigFactory;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -94,13 +96,17 @@ class CustomSignatureRulesManagerTest {
     CustomSignatureConfigServiceConfig config = mock(CustomSignatureConfigServiceConfig.class);
     when(config.getDefaultCustomSignatureRules())
         .thenReturn(List.of(DEFAULT_CUSTOM_SIGNATURE_RULE));
+    when(config.getUserVisibleEmailConfig())
+        .thenReturn(
+            new UserVisibleEmailConfig(
+                ConfigFactory.parseString(
+                    "generic.config.service.customer.visible.excluded.email.patterns: []")));
     CustomSignatureRulesStore rulesStore =
         new CustomSignatureRulesStore(
             configServiceBlockingStub,
             ruleConverter,
             mock(ConfigChangeEventGenerator.class),
-            config,
-            timestampConverter);
+            config);
     this.rulesManager = spy(new CustomSignatureRulesManager(rulesStore, config));
     requestContext = RequestContext.forTenantId("default tenant");
     when(timestampConverter.convert(any()))

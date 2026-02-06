@@ -1,6 +1,6 @@
 package ai.traceable.detection.exclusion.config.service.v1;
 
-import ai.traceable.config.service.commons.utils.UserVisibleEmailConfig;
+import ai.traceable.audit.utils.UserVisibleEmailConfig;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
 import com.typesafe.config.Config;

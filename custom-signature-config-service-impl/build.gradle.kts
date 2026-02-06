@@ -12,6 +12,7 @@ dependencies {
   implementation(projects.customSignatureConfigServiceApi)
   implementation(projects.modsecurityUtils)
   implementation(projects.configUtils)
+  implementation(projects.auditUtils)
   implementation(projects.featureCachingClient)
   implementation(projects.traceableDatamodelConfigServiceApi)
   implementation(projects.traceableEdgeDecisionConverterUtils)

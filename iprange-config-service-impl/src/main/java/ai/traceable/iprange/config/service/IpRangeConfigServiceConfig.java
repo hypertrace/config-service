@@ -1,6 +1,6 @@
 package ai.traceable.iprange.config.service;
 
-import ai.traceable.config.service.commons.utils.UserVisibleEmailConfig;
+import ai.traceable.audit.utils.UserVisibleEmailConfig;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
 import lombok.Getter;

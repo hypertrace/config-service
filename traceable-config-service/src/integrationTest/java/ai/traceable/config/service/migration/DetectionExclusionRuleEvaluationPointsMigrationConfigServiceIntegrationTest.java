@@ -10,7 +10,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import ai.traceable.config.service.TraceableConfigServiceIntegrationTestBase;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClientConfig;
-import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.detection.exclusion.config.service.v1.CreateDetectionExclusionRuleRequest;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceConfig;
@@ -141,8 +140,7 @@ public class DetectionExclusionRuleEvaluationPointsMigrationConfigServiceIntegra
             configChangeEventGenerator,
             featureCachingClient,
             detectionExclusionConfigServiceConfig,
-            new DetectionExclusionAuditHelper(
-                new TimestampConverter(), detectionExclusionConfigServiceConfig));
+            new DetectionExclusionAuditHelper(detectionExclusionConfigServiceConfig));
   }
 
   @Test

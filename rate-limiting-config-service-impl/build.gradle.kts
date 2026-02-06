@@ -15,6 +15,7 @@ dependencies {
   implementation(projects.anomalyConfigServiceRegistry)
   implementation(projects.entityFetcherCache)
   implementation(projects.configUtils)
+  implementation(projects.auditUtils)
   implementation(projects.modsecurityUtils)
   implementation(projects.featureCachingClient)
   implementation(projects.traceableEdgeDecisionConverterUtils)

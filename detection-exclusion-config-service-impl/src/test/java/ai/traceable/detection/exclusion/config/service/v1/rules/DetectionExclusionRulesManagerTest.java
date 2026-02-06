@@ -11,6 +11,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.audit.utils.UserVisibleEmailConfig;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.config.utils.UuidGenerator;
@@ -30,6 +31,7 @@ import ai.traceable.detection.exclusion.config.service.v1.UpsertDetectionExclusi
 import ai.traceable.detection.exclusion.config.service.v1.rules.migration.DetectionExclusionRulesMigrationManager;
 import ai.traceable.detection.exclusion.config.service.v1.rules.migration.RulesMigrationManager;
 import ai.traceable.detection.exclusion.config.service.v1.rules.modsec.ExclusionModsecRulesManager;
+import com.typesafe.config.ConfigFactory;
 import java.time.Clock;
 import java.util.List;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
@@ -75,6 +77,11 @@ class DetectionExclusionRulesManagerTest {
     DetectionExclusionConfigServiceConfig config =
         mock(DetectionExclusionConfigServiceConfig.class);
     when(config.getDefaultDetectionExclusionRules()).thenReturn(List.of(DEFAULT_EXCLUSION_RULE));
+    when(config.getUserVisibleEmailConfig())
+        .thenReturn(
+            new UserVisibleEmailConfig(
+                ConfigFactory.parseString(
+                    "generic.config.service.customer.visible.excluded.email.patterns: []")));
     TimestampConverter timestampConverter = new TimestampConverter();
     DetectionExclusionRulesStore rulesStore =
         new DetectionExclusionRulesStore(
@@ -82,12 +89,12 @@ class DetectionExclusionRulesManagerTest {
             mockConfigChangeEventGenerator,
             featureCachingClient,
             config,
-            new DetectionExclusionAuditHelper(new TimestampConverter(), config));
+            new DetectionExclusionAuditHelper(config));
     ThresholdExceededDetectionExclusionRuleStore thresholdExceededDetectionExclusionRuleStore =
         new ThresholdExceededDetectionExclusionRuleStore(
             configServiceBlockingStub,
             mockConfigChangeEventGenerator,
-            new DetectionExclusionAuditHelper(timestampConverter, config));
+            new DetectionExclusionAuditHelper(config));
     uuidGenerator = mock(UuidGenerator.class);
     exclusionModsecRulesManager = mock(ExclusionModsecRulesManager.class);
     RulesMigrationManager rulesMigrationManager =

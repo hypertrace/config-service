@@ -1,6 +1,6 @@
 package ai.traceable.region.config.service;
 
-import ai.traceable.config.service.commons.utils.UserVisibleEmailConfig;
+import ai.traceable.audit.utils.UserVisibleEmailConfig;
 import ai.traceable.config.utils.refresh.FileRefreshConfig;
 import com.typesafe.config.Config;
 import lombok.Getter;

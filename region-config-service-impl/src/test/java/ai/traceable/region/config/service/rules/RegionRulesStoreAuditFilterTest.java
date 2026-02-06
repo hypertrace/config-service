@@ -5,9 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.audit.utils.UserVisibleEmailConfig;
 import ai.traceable.config.commons.v1.AuditFilter;
 import ai.traceable.config.commons.v1.TimestampRange;
-import ai.traceable.config.service.commons.utils.UserVisibleEmailConfig;
 import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.region.config.service.RegionConfigServiceConfig;
 import ai.traceable.region.config.service.v1.GetRegionRulesFilter;
@@ -51,10 +51,7 @@ class RegionRulesStoreAuditFilterTest {
         .thenReturn(new UserVisibleEmailConfig(typesafeConfig));
     regionRulesStore =
         new RegionRulesStore(
-            configServiceBlockingStub,
-            configChangeEventGenerator,
-            timestampConverter,
-            regionConfigServiceConfig);
+            configServiceBlockingStub, configChangeEventGenerator, regionConfigServiceConfig);
   }
 
   @AfterEach

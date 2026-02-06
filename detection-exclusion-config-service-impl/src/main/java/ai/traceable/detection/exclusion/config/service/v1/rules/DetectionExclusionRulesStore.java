@@ -1,6 +1,6 @@
 package ai.traceable.detection.exclusion.config.service.v1.rules;
 
-import static ai.traceable.config.service.commons.utils.AuditFilterUtils.hasActiveAuditFilter;
+import static ai.traceable.audit.utils.AuditFilterUtils.hasActiveAuditFilter;
 import static ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionRulesUtils.DETECTION_EXCLUSION_RULE_CONFIG_RESOURCE_NAME;
 import static ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionRulesUtils.DETECTION_EXCLUSION_RULE_CONFIG_RESOURCE_NAMESPACE;
 import static ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionRulesUtils.filterConfig;

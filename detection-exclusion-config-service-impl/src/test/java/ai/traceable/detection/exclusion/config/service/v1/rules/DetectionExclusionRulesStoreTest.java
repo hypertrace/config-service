@@ -11,8 +11,8 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.audit.utils.UserVisibleEmailConfig;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
-import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceConfig;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
@@ -30,6 +30,7 @@ import ai.traceable.detection.exclusion.config.service.v1.RuleSource;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEventFamily;
 import com.google.protobuf.Value;
+import com.typesafe.config.ConfigFactory;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
 import io.grpc.inprocess.InProcessChannelBuilder;
@@ -88,13 +89,18 @@ class DetectionExclusionRulesStoreTest {
         mock(DetectionExclusionConfigServiceConfig.class);
     when(config.getDefaultDetectionExclusionRules())
         .thenReturn(List.of(DEFAULT_DETECTION_EXCLUSION_RULE));
+    when(config.getUserVisibleEmailConfig())
+        .thenReturn(
+            new UserVisibleEmailConfig(
+                ConfigFactory.parseString(
+                    "generic.config.service.customer.visible.excluded.email.patterns: []")));
     detectionExclusionRulesStore =
         new DetectionExclusionRulesStore(
             configServiceBlockingStub,
             mock(ConfigChangeEventGenerator.class),
             featureCachingClient,
             config,
-            new DetectionExclusionAuditHelper(new TimestampConverter(), config));
+            new DetectionExclusionAuditHelper(config));
   }
 
   @AfterEach

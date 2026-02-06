@@ -3,13 +3,13 @@ package ai.traceable.customsignature.config.service.rules;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.audit.utils.UserVisibleEmailConfig;
 import ai.traceable.config.commons.v1.AuditFilter;
 import ai.traceable.config.commons.v1.TimestampRange;
-import ai.traceable.config.service.commons.utils.UserVisibleEmailConfig;
-import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceConfig;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRuleRecord;
@@ -22,7 +22,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.hypertrace.config.objectstore.ContextualConfigObject;
+import org.hypertrace.config.proto.converter.ConfigProtoConverter;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
+import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
+import org.hypertrace.config.service.v1.ContextSpecificConfig;
+import org.hypertrace.config.service.v1.GetAllConfigsResponse;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.Test;
 
@@ -36,13 +40,13 @@ class CustomSignatureRulesStoreAuditFilteringTest {
     CustomSignatureRulesStore store =
         newTestStore(
             List.of(
-                contextualRule(
+                buildContextSpecificConfig(
                     "id-1",
                     Instant.ofEpochSecond(100),
                     "alice@example.com",
                     Instant.ofEpochSecond(200),
                     "bob@example.com"),
-                contextualRule(
+                buildContextSpecificConfig(
                     "id-2",
                     Instant.ofEpochSecond(100),
                     "charlie@example.com",
@@ -64,13 +68,13 @@ class CustomSignatureRulesStoreAuditFilteringTest {
     CustomSignatureRulesStore store =
         newTestStore(
             List.of(
-                contextualRule(
+                buildContextSpecificConfig(
                     "id-1",
                     Instant.ofEpochSecond(100),
                     "alice@example.com",
                     Instant.ofEpochSecond(200),
                     "bob@example.com"),
-                contextualRule(
+                buildContextSpecificConfig(
                     "id-2",
                     Instant.ofEpochSecond(100),
                     "charlie@example.com",
@@ -91,13 +95,13 @@ class CustomSignatureRulesStoreAuditFilteringTest {
     CustomSignatureRulesStore store =
         newTestStore(
             List.of(
-                contextualRule(
+                buildContextSpecificConfig(
                     "id-1",
                     Instant.ofEpochSecond(99),
                     "alice@example.com",
                     Instant.ofEpochSecond(200),
                     "bob@example.com"),
-                contextualRule(
+                buildContextSpecificConfig(
                     "id-2",
                     Instant.ofEpochSecond(100),
                     "charlie@example.com",
@@ -122,23 +126,16 @@ class CustomSignatureRulesStoreAuditFilteringTest {
 
   @Test
   void testCreatedRangeWithoutBoundsStillRequiresCreationTimestampPresent() {
-    CustomSignatureRule ruleWithNoCreation = CustomSignatureRule.newBuilder().setId("id-1").build();
-    ContextualConfigObject<CustomSignatureRule> noCreationTimestamp =
-        new ContextualConfigObjectTestImpl<>(
-            ruleWithNoCreation,
-            "id-1",
-            null,
-            "alice@example.com",
-            Instant.ofEpochSecond(200),
-            "bob@example.com",
-            Instant.ofEpochSecond(200),
-            "bob@example.com");
-
     CustomSignatureRulesStore store =
         newTestStore(
             List.of(
-                noCreationTimestamp,
-                contextualRule(
+                buildContextSpecificConfig(
+                    "id-1",
+                    Instant.EPOCH,
+                    "alice@example.com",
+                    Instant.ofEpochSecond(200),
+                    "bob@example.com"),
+                buildContextSpecificConfig(
                     "id-2",
                     Instant.ofEpochSecond(100),
                     "charlie@example.com",
@@ -161,19 +158,19 @@ class CustomSignatureRulesStoreAuditFilteringTest {
     CustomSignatureRulesStore store =
         newTestStore(
             List.of(
-                contextualRule(
+                buildContextSpecificConfig(
                     "id-1",
                     Instant.ofEpochSecond(100),
                     "alice@example.com",
                     Instant.ofEpochSecond(200),
                     "bob@example.com"),
-                contextualRule(
+                buildContextSpecificConfig(
                     "id-2",
                     Instant.ofEpochSecond(100),
                     "alice@example.com",
                     Instant.ofEpochSecond(200),
                     "charlie@example.com"),
-                contextualRule(
+                buildContextSpecificConfig(
                     "id-3",
                     Instant.ofEpochSecond(100),
                     "alice@example.com",
@@ -197,25 +194,17 @@ class CustomSignatureRulesStoreAuditFilteringTest {
   }
 
   @Test
-  void testModifiedRangeExcludesNullLastUpdateTimestamp() {
-    CustomSignatureRule ruleWithNoModification =
-        CustomSignatureRule.newBuilder().setId("id-1").build();
-    ContextualConfigObject<CustomSignatureRule> noModificationTimestamp =
-        new ContextualConfigObjectTestImpl<>(
-            ruleWithNoModification,
-            "id-1",
-            Instant.ofEpochSecond(100),
-            "alice@example.com",
-            null,
-            "bob@example.com",
-            null,
-            "bob@example.com");
-
+  void testModifiedRangeExcludesZeroEpochLastUpdateTimestamp() {
     CustomSignatureRulesStore store =
         newTestStore(
             List.of(
-                noModificationTimestamp,
-                contextualRule(
+                buildContextSpecificConfig(
+                    "id-1",
+                    Instant.ofEpochSecond(100),
+                    "alice@example.com",
+                    Instant.EPOCH,
+                    "bob@example.com"),
+                buildContextSpecificConfig(
                     "id-2",
                     Instant.ofEpochSecond(100),
                     "charlie@example.com",
@@ -237,25 +226,17 @@ class CustomSignatureRulesStoreAuditFilteringTest {
   }
 
   @Test
-  void testModifiedRangeExcludesZeroEpochLastUpdateTimestamp() {
-    CustomSignatureRule ruleWithZeroModification =
-        CustomSignatureRule.newBuilder().setId("id-1").build();
-    ContextualConfigObject<CustomSignatureRule> zeroModificationTimestamp =
-        new ContextualConfigObjectTestImpl<>(
-            ruleWithZeroModification,
-            "id-1",
-            Instant.ofEpochSecond(100),
-            "alice@example.com",
-            Instant.ofEpochSecond(0),
-            "bob@example.com",
-            Instant.ofEpochSecond(0),
-            "bob@example.com");
-
+  void testModifiedRangeWithEmptyRangeExcludesZeroEpochLastUpdateTimestamp() {
     CustomSignatureRulesStore store =
         newTestStore(
             List.of(
-                zeroModificationTimestamp,
-                contextualRule(
+                buildContextSpecificConfig(
+                    "id-1",
+                    Instant.ofEpochSecond(100),
+                    "alice@example.com",
+                    Instant.EPOCH,
+                    "bob@example.com"),
+                buildContextSpecificConfig(
                     "id-2",
                     Instant.ofEpochSecond(100),
                     "charlie@example.com",
@@ -274,61 +255,17 @@ class CustomSignatureRulesStoreAuditFilteringTest {
   }
 
   @Test
-  void testCreatedByContainsExcludesNullCreatedBy() {
-    CustomSignatureRule ruleWithNullCreatedBy =
-        CustomSignatureRule.newBuilder().setId("id-1").build();
-    ContextualConfigObject<CustomSignatureRule> nullCreatedBy =
-        new ContextualConfigObjectTestImpl<>(
-            ruleWithNullCreatedBy,
-            "id-1",
-            Instant.ofEpochSecond(100),
-            null,
-            Instant.ofEpochSecond(200),
-            "bob@example.com",
-            Instant.ofEpochSecond(200),
-            "bob@example.com");
-
-    CustomSignatureRulesStore store =
-        newTestStore(
-            List.of(
-                nullCreatedBy,
-                contextualRule(
-                    "id-2",
-                    Instant.ofEpochSecond(100),
-                    "charlie@example.com",
-                    Instant.ofEpochSecond(200),
-                    "dave@example.com")));
-
-    GetRulesFilter filter =
-        GetRulesFilter.newBuilder()
-            .setAuditFilter(AuditFilter.newBuilder().setCreatedByContains("charlie"))
-            .build();
-
-    List<CustomSignatureRuleRecord> results = store.getAllRuleRecords(REQUEST_CONTEXT, filter);
-    assertEquals(1, results.size());
-    assertEquals("id-2", results.get(0).getRule().getId());
-  }
-
-  @Test
   void testCreatedByContainsExcludesEmptyCreatedBy() {
-    CustomSignatureRule ruleWithEmptyCreatedBy =
-        CustomSignatureRule.newBuilder().setId("id-1").build();
-    ContextualConfigObject<CustomSignatureRule> emptyCreatedBy =
-        new ContextualConfigObjectTestImpl<>(
-            ruleWithEmptyCreatedBy,
-            "id-1",
-            Instant.ofEpochSecond(100),
-            "",
-            Instant.ofEpochSecond(200),
-            "bob@example.com",
-            Instant.ofEpochSecond(200),
-            "bob@example.com");
-
     CustomSignatureRulesStore store =
         newTestStore(
             List.of(
-                emptyCreatedBy,
-                contextualRule(
+                buildContextSpecificConfig(
+                    "id-1",
+                    Instant.ofEpochSecond(100),
+                    "",
+                    Instant.ofEpochSecond(200),
+                    "bob@example.com"),
+                buildContextSpecificConfig(
                     "id-2",
                     Instant.ofEpochSecond(100),
                     "charlie@example.com",
@@ -338,42 +275,6 @@ class CustomSignatureRulesStoreAuditFilteringTest {
     GetRulesFilter filter =
         GetRulesFilter.newBuilder()
             .setAuditFilter(AuditFilter.newBuilder().setCreatedByContains("charlie"))
-            .build();
-
-    List<CustomSignatureRuleRecord> results = store.getAllRuleRecords(REQUEST_CONTEXT, filter);
-    assertEquals(1, results.size());
-    assertEquals("id-2", results.get(0).getRule().getId());
-  }
-
-  @Test
-  void testLastModifiedByContainsExcludesNullLastModifiedBy() {
-    CustomSignatureRule ruleWithNullLastModifiedBy =
-        CustomSignatureRule.newBuilder().setId("id-1").build();
-    ContextualConfigObject<CustomSignatureRule> nullLastModifiedBy =
-        new ContextualConfigObjectTestImpl<>(
-            ruleWithNullLastModifiedBy,
-            "id-1",
-            Instant.ofEpochSecond(100),
-            "alice@example.com",
-            Instant.ofEpochSecond(200),
-            null,
-            Instant.ofEpochSecond(200),
-            null);
-
-    CustomSignatureRulesStore store =
-        newTestStore(
-            List.of(
-                nullLastModifiedBy,
-                contextualRule(
-                    "id-2",
-                    Instant.ofEpochSecond(100),
-                    "charlie@example.com",
-                    Instant.ofEpochSecond(200),
-                    "dave@example.com")));
-
-    GetRulesFilter filter =
-        GetRulesFilter.newBuilder()
-            .setAuditFilter(AuditFilter.newBuilder().setLastUpdatedByUserContains("dave"))
             .build();
 
     List<CustomSignatureRuleRecord> results = store.getAllRuleRecords(REQUEST_CONTEXT, filter);
@@ -383,24 +284,16 @@ class CustomSignatureRulesStoreAuditFilteringTest {
 
   @Test
   void testLastModifiedByContainsExcludesEmptyLastModifiedBy() {
-    CustomSignatureRule ruleWithEmptyLastModifiedBy =
-        CustomSignatureRule.newBuilder().setId("id-1").build();
-    ContextualConfigObject<CustomSignatureRule> emptyLastModifiedBy =
-        new ContextualConfigObjectTestImpl<>(
-            ruleWithEmptyLastModifiedBy,
-            "id-1",
-            Instant.ofEpochSecond(100),
-            "alice@example.com",
-            Instant.ofEpochSecond(200),
-            "",
-            Instant.ofEpochSecond(200),
-            "");
-
     CustomSignatureRulesStore store =
         newTestStore(
             List.of(
-                emptyLastModifiedBy,
-                contextualRule(
+                buildContextSpecificConfig(
+                    "id-1",
+                    Instant.ofEpochSecond(100),
+                    "alice@example.com",
+                    Instant.ofEpochSecond(200),
+                    ""),
+                buildContextSpecificConfig(
                     "id-2",
                     Instant.ofEpochSecond(100),
                     "charlie@example.com",
@@ -422,13 +315,13 @@ class CustomSignatureRulesStoreAuditFilteringTest {
     CustomSignatureRulesStore store =
         newTestStore(
             List.of(
-                contextualRule(
+                buildContextSpecificConfig(
                     "id-1",
                     Instant.ofEpochSecond(100),
                     "alice@example.com",
                     Instant.ofEpochSecond(200),
                     "bob@example.com"),
-                contextualRule(
+                buildContextSpecificConfig(
                     "id-2",
                     Instant.ofEpochSecond(100),
                     "charlie@example.com",
@@ -449,13 +342,13 @@ class CustomSignatureRulesStoreAuditFilteringTest {
     CustomSignatureRulesStore store =
         newTestStore(
             List.of(
-                contextualRule(
+                buildContextSpecificConfig(
                     "id-1",
                     Instant.ofEpochSecond(300),
                     "alice@example.com",
                     Instant.ofEpochSecond(400),
                     "bob@example.com"),
-                contextualRule(
+                buildContextSpecificConfig(
                     "id-2",
                     Instant.ofEpochSecond(100),
                     "charlie@example.com",
@@ -480,13 +373,13 @@ class CustomSignatureRulesStoreAuditFilteringTest {
     CustomSignatureRulesStore store =
         newTestStore(
             List.of(
-                contextualRule(
+                buildContextSpecificConfig(
                     "id-1",
                     Instant.ofEpochSecond(100),
                     "alice@example.com",
                     Instant.ofEpochSecond(400),
                     "bob@example.com"),
-                contextualRule(
+                buildContextSpecificConfig(
                     "id-2",
                     Instant.ofEpochSecond(100),
                     "charlie@example.com",
@@ -511,13 +404,13 @@ class CustomSignatureRulesStoreAuditFilteringTest {
     CustomSignatureRulesStore store =
         newTestStore(
             List.of(
-                contextualRule(
+                buildContextSpecificConfig(
                     "id-1",
                     Instant.ofEpochSecond(50),
                     "alice@example.com",
                     Instant.ofEpochSecond(200),
                     "bob@example.com"),
-                contextualRule(
+                buildContextSpecificConfig(
                     "id-2",
                     Instant.ofEpochSecond(150),
                     "charlie@example.com",
@@ -540,25 +433,17 @@ class CustomSignatureRulesStoreAuditFilteringTest {
   }
 
   @Test
-  void testCreatedRangeExcludesNullCreationTimestamp() {
-    CustomSignatureRule ruleWithNullCreation =
-        CustomSignatureRule.newBuilder().setId("id-1").build();
-    ContextualConfigObject<CustomSignatureRule> nullCreationTimestamp =
-        new ContextualConfigObjectTestImpl<>(
-            ruleWithNullCreation,
-            "id-1",
-            null,
-            "alice@example.com",
-            Instant.ofEpochSecond(200),
-            "bob@example.com",
-            Instant.ofEpochSecond(200),
-            "bob@example.com");
-
+  void testCreatedRangeExcludesZeroCreationTimestamp() {
     CustomSignatureRulesStore store =
         newTestStore(
             List.of(
-                nullCreationTimestamp,
-                contextualRule(
+                buildContextSpecificConfig(
+                    "id-1",
+                    Instant.EPOCH,
+                    "alice@example.com",
+                    Instant.ofEpochSecond(200),
+                    "bob@example.com"),
+                buildContextSpecificConfig(
                     "id-2",
                     Instant.ofEpochSecond(100),
                     "charlie@example.com",
@@ -582,13 +467,13 @@ class CustomSignatureRulesStoreAuditFilteringTest {
     CustomSignatureRulesStore store =
         newTestStore(
             List.of(
-                contextualRule(
+                buildContextSpecificConfig(
                     "id-1",
                     Instant.ofEpochSecond(100),
                     "alice@example.com",
                     Instant.ofEpochSecond(200),
                     "bob@example.com"),
-                contextualRule(
+                buildContextSpecificConfig(
                     "id-2",
                     Instant.ofEpochSecond(100),
                     "charlie@example.com",
@@ -609,7 +494,7 @@ class CustomSignatureRulesStoreAuditFilteringTest {
     CustomSignatureRulesStore store =
         newTestStoreWithDefaults(
             List.of(
-                contextualRule(
+                buildContextSpecificConfig(
                     "stored-1",
                     Instant.ofEpochSecond(100),
                     "alice@example.com",
@@ -638,7 +523,7 @@ class CustomSignatureRulesStoreAuditFilteringTest {
     CustomSignatureRulesStore store =
         newTestStoreWithDefaults(
             List.of(
-                contextualRule(
+                buildContextSpecificConfig(
                     "stored-1",
                     Instant.ofEpochSecond(100),
                     "alice@example.com",
@@ -664,7 +549,7 @@ class CustomSignatureRulesStoreAuditFilteringTest {
     CustomSignatureRulesStore store =
         newTestStoreWithDefaults(
             List.of(
-                contextualRule(
+                buildContextSpecificConfig(
                     "stored-1",
                     Instant.ofEpochSecond(100),
                     "alice@example.com",
@@ -689,7 +574,7 @@ class CustomSignatureRulesStoreAuditFilteringTest {
     CustomSignatureRulesStore store =
         newTestStoreWithDefaults(
             List.of(
-                contextualRule(
+                buildContextSpecificConfig(
                     "stored-1",
                     Instant.ofEpochSecond(100),
                     "alice@example.com",
@@ -717,13 +602,13 @@ class CustomSignatureRulesStoreAuditFilteringTest {
     CustomSignatureRulesStore store =
         newTestStore(
             List.of(
-                contextualRule(
+                buildContextSpecificConfig(
                     "id-1",
                     Instant.ofEpochSecond(100),
                     "alice@example.com",
                     Instant.ofEpochSecond(200),
                     "bob@example.com"),
-                contextualRule("id-2", Instant.EPOCH, "", Instant.EPOCH, "")));
+                buildContextSpecificConfig("id-2", Instant.EPOCH, "", Instant.EPOCH, "")));
 
     List<CustomSignatureRuleRecord> records = store.getAllRuleRecords(REQUEST_CONTEXT);
     Map<String, CustomSignatureRuleRecord> recordsById =
@@ -752,26 +637,30 @@ class CustomSignatureRulesStoreAuditFilteringTest {
     assertFalse(record2.getAuditDetails().hasLastUserUpdateDetails());
   }
 
-  private static ContextualConfigObject<CustomSignatureRule> contextualRule(
+  private static ContextSpecificConfig buildContextSpecificConfig(
       String id,
       Instant creationTimestamp,
       String createdByEmail,
       Instant lastUserUpdateTimestamp,
       String lastUserUpdateEmail) {
-    CustomSignatureRule rule = CustomSignatureRule.newBuilder().setId(id).build();
-    return new ContextualConfigObjectTestImpl<>(
-        rule,
-        id,
-        creationTimestamp,
-        createdByEmail,
-        lastUserUpdateTimestamp,
-        lastUserUpdateEmail,
-        lastUserUpdateTimestamp,
-        lastUserUpdateEmail);
+    try {
+      CustomSignatureRule rule = CustomSignatureRule.newBuilder().setId(id).build();
+      return ContextSpecificConfig.newBuilder()
+          .setContext(id)
+          .setConfig(ConfigProtoConverter.convertToValue(rule))
+          .setCreationTimestamp(creationTimestamp.toEpochMilli())
+          .setCreatedByEmail(createdByEmail)
+          .setLastUserUpdateTimestamp(lastUserUpdateTimestamp.toEpochMilli())
+          .setLastUserUpdateEmail(lastUserUpdateEmail)
+          .setUpdateTimestamp(lastUserUpdateTimestamp.toEpochMilli())
+          .setLastUpdateEmail(lastUserUpdateEmail)
+          .build();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
-  private static CustomSignatureRulesStore newTestStore(
-      List<ContextualConfigObject<CustomSignatureRule>> objects) {
+  private static CustomSignatureRulesStore newTestStore(List<ContextSpecificConfig> configs) {
     Config typesafeConfig =
         ConfigFactory.parseString(
             "generic.config.service.customer.visible.excluded.email.patterns: []");
@@ -779,12 +668,18 @@ class CustomSignatureRulesStoreAuditFilteringTest {
     when(config.getDefaultCustomSignatureRules()).thenReturn(List.of());
     when(config.getUserVisibleEmailConfig()).thenReturn(new UserVisibleEmailConfig(typesafeConfig));
 
-    return new TestCustomSignatureRulesStore(objects, config, new TimestampConverter());
+    ConfigServiceBlockingStub stub = mock(ConfigServiceBlockingStub.class);
+    when(stub.withDeadline(any())).thenReturn(stub);
+    when(stub.getAllConfigs(any()))
+        .thenReturn(
+            GetAllConfigsResponse.newBuilder().addAllContextSpecificConfigs(configs).build());
+
+    return new CustomSignatureRulesStore(
+        stub, new CustomSignatureRuleConverter(), mock(ConfigChangeEventGenerator.class), config);
   }
 
   private static CustomSignatureRulesStore newTestStoreWithDefaults(
-      List<ContextualConfigObject<CustomSignatureRule>> objects,
-      List<CustomSignatureRule> defaultRules) {
+      List<ContextSpecificConfig> configs, List<CustomSignatureRule> defaultRules) {
     Config typesafeConfig =
         ConfigFactory.parseString(
             "generic.config.service.customer.visible.excluded.email.patterns: []");
@@ -792,121 +687,13 @@ class CustomSignatureRulesStoreAuditFilteringTest {
     when(config.getDefaultCustomSignatureRules()).thenReturn(defaultRules);
     when(config.getUserVisibleEmailConfig()).thenReturn(new UserVisibleEmailConfig(typesafeConfig));
 
-    return new TestCustomSignatureRulesStore(objects, config, new TimestampConverter());
-  }
+    ConfigServiceBlockingStub stub = mock(ConfigServiceBlockingStub.class);
+    when(stub.withDeadline(any())).thenReturn(stub);
+    when(stub.getAllConfigs(any()))
+        .thenReturn(
+            GetAllConfigsResponse.newBuilder().addAllContextSpecificConfigs(configs).build());
 
-  private static class TestCustomSignatureRulesStore extends CustomSignatureRulesStore {
-
-    private final List<ContextualConfigObject<CustomSignatureRule>> objects;
-
-    TestCustomSignatureRulesStore(
-        List<ContextualConfigObject<CustomSignatureRule>> objects,
-        CustomSignatureConfigServiceConfig config,
-        TimestampConverter timestampConverter) {
-      super(
-          mock(org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub.class),
-          new CustomSignatureRuleConverter(),
-          mock(org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator.class),
-          config,
-          timestampConverter);
-      this.objects = objects;
-    }
-
-    @Override
-    public List<ContextualConfigObject<CustomSignatureRule>> getAllObjects(RequestContext context) {
-      return objects;
-    }
-
-    @Override
-    public List<ContextualConfigObject<CustomSignatureRule>> getAllObjects(
-        RequestContext context, GetRulesFilter filter) {
-      return objects.stream()
-          .filter(obj -> filterConfigData(obj.getData(), filter).isPresent())
-          .filter(obj -> invokeMatchesAuditFilters(obj, filter))
-          .collect(java.util.stream.Collectors.toList());
-    }
-
-    private boolean invokeMatchesAuditFilters(
-        ContextualConfigObject<CustomSignatureRule> configObject, GetRulesFilter filter) {
-      try {
-        java.lang.reflect.Method method =
-            CustomSignatureRulesStore.class.getDeclaredMethod(
-                "matchesAuditFilters", ContextualConfigObject.class, GetRulesFilter.class);
-        method.setAccessible(true);
-        return (boolean) method.invoke(this, configObject, filter);
-      } catch (Exception e) {
-        throw new RuntimeException("Failed to invoke matchesAuditFilters via reflection", e);
-      }
-    }
-  }
-
-  private static class ContextualConfigObjectTestImpl<T> implements ContextualConfigObject<T> {
-    private final T data;
-    private final String context;
-    private final Instant creationTimestamp;
-    private final String createdByEmail;
-    private final Instant lastUserUpdateTimestamp;
-    private final String lastUserUpdateEmail;
-    private final Instant lastUpdatedTimestamp;
-    private final String lastUpdateEmail;
-
-    ContextualConfigObjectTestImpl(
-        T data,
-        String context,
-        Instant creationTimestamp,
-        String createdByEmail,
-        Instant lastUserUpdateTimestamp,
-        String lastUserUpdateEmail,
-        Instant lastUpdatedTimestamp,
-        String lastUpdateEmail) {
-      this.data = data;
-      this.context = context;
-      this.creationTimestamp = creationTimestamp;
-      this.createdByEmail = createdByEmail;
-      this.lastUserUpdateTimestamp = lastUserUpdateTimestamp;
-      this.lastUserUpdateEmail = lastUserUpdateEmail;
-      this.lastUpdatedTimestamp = lastUpdatedTimestamp;
-      this.lastUpdateEmail = lastUpdateEmail;
-    }
-
-    @Override
-    public T getData() {
-      return data;
-    }
-
-    @Override
-    public String getContext() {
-      return context;
-    }
-
-    @Override
-    public Instant getCreationTimestamp() {
-      return creationTimestamp;
-    }
-
-    @Override
-    public String getCreatedByEmail() {
-      return createdByEmail;
-    }
-
-    @Override
-    public Instant getLastUserUpdateTimestamp() {
-      return lastUserUpdateTimestamp;
-    }
-
-    @Override
-    public String getLastUserUpdateEmail() {
-      return lastUserUpdateEmail;
-    }
-
-    @Override
-    public Instant getLastUpdatedTimestamp() {
-      return lastUpdatedTimestamp;
-    }
-
-    @Override
-    public String getLastUpdateEmail() {
-      return lastUpdateEmail;
-    }
+    return new CustomSignatureRulesStore(
+        stub, new CustomSignatureRuleConverter(), mock(ConfigChangeEventGenerator.class), config);
   }
 }

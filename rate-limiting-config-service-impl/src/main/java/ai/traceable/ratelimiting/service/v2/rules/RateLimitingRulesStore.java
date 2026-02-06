@@ -1,16 +1,11 @@
 package ai.traceable.ratelimiting.service.v2.rules;
 
-import static ai.traceable.config.service.commons.utils.AuditFilterUtils.getVisibleUserEmail;
-import static ai.traceable.config.service.commons.utils.AuditFilterUtils.hasActiveAuditFilter;
+import static ai.traceable.audit.utils.AuditDetailsBuilder.buildAuditDetails;
+import static ai.traceable.audit.utils.AuditFilterUtils.hasActiveAuditFilter;
+import static ai.traceable.audit.utils.AuditFilterUtils.matchesAuditFilters;
 import static ai.traceable.ratelimiting.service.v2.constants.RateLimitingConfigConstants.RATE_LIMITING_RULE_CONFIG_RESOURCE_NAME;
 import static ai.traceable.ratelimiting.service.v2.constants.RateLimitingConfigConstants.RATE_LIMITING_RULE_CONFIG_RESOURCE_NAMESPACE;
 
-import ai.traceable.config.commons.v1.AuditDetails;
-import ai.traceable.config.commons.v1.AuditFilter;
-import ai.traceable.config.commons.v1.CreationDetails;
-import ai.traceable.config.commons.v1.LastUpdateDetails;
-import ai.traceable.config.commons.v1.TimestampRange;
-import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.ratelimiting.config.service.v2.Category;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
@@ -21,7 +16,6 @@ import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceConfig;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.google.protobuf.Value;
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,22 +36,19 @@ public class RateLimitingRulesStore
     extends IdentifiedObjectStoreWithFilter<RateLimitingRule, GetRateLimitingRulesFilter> {
   Logger log = LoggerFactory.getLogger(RateLimitingRulesStore.class);
   private final List<RateLimitingRule> defaultRateLimitingRules;
-  private final TimestampConverter timestampConverter;
   private final RateLimitingConfigServiceConfig rateLimitingConfigServiceConfig;
 
   @Inject
   public RateLimitingRulesStore(
       ConfigServiceBlockingStub configServiceBlockingStub,
       ConfigChangeEventGenerator configChangeEventGenerator,
-      RateLimitingConfigServiceConfig config,
-      TimestampConverter timestampConverter) {
+      RateLimitingConfigServiceConfig config) {
     super(
         configServiceBlockingStub,
         RATE_LIMITING_RULE_CONFIG_RESOURCE_NAMESPACE,
         RATE_LIMITING_RULE_CONFIG_RESOURCE_NAME,
         configChangeEventGenerator);
     this.defaultRateLimitingRules = config.getDefaultRateLimitingRules();
-    this.timestampConverter = timestampConverter;
     this.rateLimitingConfigServiceConfig = config;
   }
 
@@ -217,119 +208,18 @@ public class RateLimitingRulesStore
   private boolean matchesFilter(
       ContextualConfigObject<RateLimitingRule> ruleWithContext, GetRateLimitingRulesFilter filter) {
     return filterConfigData(ruleWithContext.getData(), filter).isPresent()
-        && matchesAuditFilter(ruleWithContext, filter.getAuditFilter());
-  }
-
-  private boolean matchesAuditFilter(
-      ContextualConfigObject<RateLimitingRule> contextual, AuditFilter auditFilter) {
-    if (AuditFilter.getDefaultInstance().equals(auditFilter)) {
-      return true;
-    }
-    return matchesCreatedRange(contextual, auditFilter)
-        && matchesUpdatedRange(contextual, auditFilter)
-        && matchesCreatedByContains(contextual, auditFilter)
-        && matchesLastUpdatedByContains(contextual, auditFilter);
-  }
-
-  private boolean matchesCreatedRange(
-      ContextualConfigObject<RateLimitingRule> contextual, AuditFilter auditFilter) {
-    if (!auditFilter.hasCreatedRange()) {
-      return true;
-    }
-    Instant creationTimestamp = contextual.getCreationTimestamp();
-    if (creationTimestamp == null) {
-      return false;
-    }
-    return isTimestampInRange(creationTimestamp, auditFilter.getCreatedRange());
-  }
-
-  private boolean matchesUpdatedRange(
-      ContextualConfigObject<RateLimitingRule> contextual, AuditFilter auditFilter) {
-    if (!auditFilter.hasUpdatedRange()) {
-      return true;
-    }
-    Instant lastUserUpdateTimestamp = contextual.getLastUserUpdateTimestamp();
-    if (lastUserUpdateTimestamp == null) {
-      return false;
-    }
-    return isTimestampInRange(lastUserUpdateTimestamp, auditFilter.getUpdatedRange());
-  }
-
-  private boolean matchesCreatedByContains(
-      ContextualConfigObject<RateLimitingRule> contextual, AuditFilter auditFilter) {
-    String createdByContains = auditFilter.getCreatedByContains();
-    if (createdByContains.isEmpty()) {
-      return true;
-    }
-    String createdByEmail = contextual.getCreatedByEmail();
-    return createdByEmail != null
-        && createdByEmail.toLowerCase().contains(createdByContains.toLowerCase());
-  }
-
-  private boolean matchesLastUpdatedByContains(
-      ContextualConfigObject<RateLimitingRule> contextual, AuditFilter auditFilter) {
-    String lastUpdatedByContains = auditFilter.getLastUpdatedByUserContains();
-    if (lastUpdatedByContains.isEmpty()) {
-      return true;
-    }
-    String lastUserUpdateEmail =
-        getVisibleUserEmail(
-            contextual.getLastUserUpdateEmail(),
-            contextual.getLastUpdateEmail(),
-            this.rateLimitingConfigServiceConfig.getUserVisibleEmailConfig());
-    return lastUserUpdateEmail != null
-        && lastUserUpdateEmail.toLowerCase().contains(lastUpdatedByContains.toLowerCase());
-  }
-
-  private boolean isTimestampInRange(Instant timestamp, TimestampRange range) {
-    if (range.hasStart()) {
-      Instant start = timestampConverter.convertToInstant(range.getStart());
-      if (timestamp.isBefore(start)) {
-        return false;
-      }
-    }
-    if (range.hasEnd()) {
-      Instant end = timestampConverter.convertToInstant(range.getEnd());
-      if (timestamp.isAfter(end)) {
-        return false;
-      }
-    }
-    return true;
+        && matchesAuditFilters(
+            ruleWithContext,
+            filter.getAuditFilter(),
+            rateLimitingConfigServiceConfig.getUserVisibleEmailConfig());
   }
 
   private RateLimitingRuleRecord toRuleRecord(ContextualConfigObject<RateLimitingRule> contextual) {
     return RateLimitingRuleRecord.newBuilder()
         .setRule(contextual.getData())
-        .setAuditDetails(buildAuditDetails(contextual))
+        .setAuditDetails(
+            buildAuditDetails(
+                contextual, rateLimitingConfigServiceConfig.getUserVisibleEmailConfig()))
         .build();
-  }
-
-  private AuditDetails buildAuditDetails(ContextualConfigObject<?> contextual) {
-    AuditDetails.Builder builder = AuditDetails.newBuilder();
-
-    Instant creationTimestamp = contextual.getCreationTimestamp();
-    if (creationTimestamp != null && creationTimestamp.getEpochSecond() > 0) {
-      builder.setCreationDetails(
-          CreationDetails.newBuilder()
-              .setCreatedBy(contextual.getCreatedByEmail())
-              .setCreatedAt(timestampConverter.convert(creationTimestamp))
-              .build());
-    }
-
-    Instant lastUserUpdateTimestamp = contextual.getLastUserUpdateTimestamp();
-    if (lastUserUpdateTimestamp != null && lastUserUpdateTimestamp.getEpochSecond() > 0) {
-      String userEmail =
-          getVisibleUserEmail(
-              contextual.getLastUserUpdateEmail(),
-              contextual.getLastUpdateEmail(),
-              this.rateLimitingConfigServiceConfig.getUserVisibleEmailConfig());
-      builder.setLastUserUpdateDetails(
-          LastUpdateDetails.newBuilder()
-              .setUpdatedBy(userEmail)
-              .setUpdatedAt(timestampConverter.convert(lastUserUpdateTimestamp))
-              .build());
-    }
-
-    return builder.build();
   }
 }

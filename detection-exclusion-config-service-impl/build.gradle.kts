@@ -12,6 +12,7 @@ dependencies {
   api(localLibs.hypertrace.configservice.api)
 
   implementation(projects.configUtils)
+  implementation(projects.auditUtils)
   implementation(projects.customSignatureConfigServiceImpl)
   implementation(projects.anomalyConfigServiceRegistry)
   implementation(projects.entityFetcherCache)

@@ -5,9 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.audit.utils.UserVisibleEmailConfig;
 import ai.traceable.config.commons.v1.AuditFilter;
 import ai.traceable.config.commons.v1.TimestampRange;
-import ai.traceable.config.service.commons.utils.UserVisibleEmailConfig;
 import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.iprange.config.service.IpRangeConfigServiceConfig;
 import ai.traceable.iprange.config.service.v1.GetRulesFilter;
@@ -52,10 +52,7 @@ class IpRangeRulesStoreAuditFilterTest {
         .thenReturn(new UserVisibleEmailConfig(typesafeConfig));
     ipRangeRulesStore =
         new IpRangeRulesStore(
-            configServiceBlockingStub,
-            configChangeEventGenerator,
-            timestampConverter,
-            ipRangeConfigServiceConfig);
+            configServiceBlockingStub, configChangeEventGenerator, ipRangeConfigServiceConfig);
   }
 
   @AfterEach

@@ -9,7 +9,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.malicioussources.config.service.v1.CreateMaliciousSourcesRuleRequest;
 import ai.traceable.malicioussources.config.service.v1.EmailDomainCondition;
@@ -73,7 +72,6 @@ class MaliciousSourcesRulesManagerTest {
         new MaliciousSourcesRulesStore(
             configServiceBlockingStub,
             mock(ConfigChangeEventGenerator.class),
-            new TimestampConverter(),
             mock(MaliciousSourcesConfigServiceConfig.class));
     this.rulesManager =
         new MaliciousSourcesRulesManager(maliciousSourcesRulesStore, uuidGenerator, clock);

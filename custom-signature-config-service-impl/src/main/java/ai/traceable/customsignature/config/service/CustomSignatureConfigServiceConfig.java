@@ -1,7 +1,7 @@
 package ai.traceable.customsignature.config.service;
 
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
-import ai.traceable.config.service.commons.utils.UserVisibleEmailConfig;
+import ai.traceable.audit.utils.UserVisibleEmailConfig;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;

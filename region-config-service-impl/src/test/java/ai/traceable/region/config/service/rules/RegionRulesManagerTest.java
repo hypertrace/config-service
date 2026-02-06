@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.region.config.service.v1.AgentModification;
 import ai.traceable.region.config.service.v1.AgentRuleEffect;
@@ -66,7 +65,6 @@ class RegionRulesManagerTest {
         new RegionRulesStore(
             configServiceBlockingStub,
             configChangeEventGenerator,
-            new TimestampConverter(),
             mock(ai.traceable.region.config.service.RegionConfigServiceConfig.class));
     this.rulesManager = new RegionRulesManager(clock, regionRulesStore, uuidGenerator);
   }

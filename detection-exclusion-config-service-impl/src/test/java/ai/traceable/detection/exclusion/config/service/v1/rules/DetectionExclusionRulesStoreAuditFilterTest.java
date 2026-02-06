@@ -6,9 +6,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.audit.utils.UserVisibleEmailConfig;
 import ai.traceable.config.commons.v1.AuditFilter;
 import ai.traceable.config.commons.v1.TimestampRange;
-import ai.traceable.config.service.commons.utils.UserVisibleEmailConfig;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceConfig;
@@ -64,7 +64,7 @@ class DetectionExclusionRulesStoreAuditFilterTest {
             configChangeEventGenerator,
             featureCachingClient,
             config,
-            new DetectionExclusionAuditHelper(timestampConverter, config));
+            new DetectionExclusionAuditHelper(config));
   }
 
   @AfterEach
@@ -279,8 +279,9 @@ class DetectionExclusionRulesStoreAuditFilterTest {
       List<DetectionExclusionRuleRecord> records =
           detectionExclusionRulesStore.getAllRuleRecords(requestContext, filter);
 
-      // Mock doesn't populate lastUserUpdateTimestamp, so rules are excluded
-      assertTrue(records.isEmpty());
+      // Mock doesn't populate lastUserUpdateTimestamp, but we check that and filter on
+      // lastUpdatedTimestamp now hence expect the record
+      assertEquals(1, records.size());
     }
 
     @Test
@@ -352,7 +353,7 @@ class DetectionExclusionRulesStoreAuditFilterTest {
           changeEventGenerator,
           featureCachingClient,
           configWithDefaults,
-          new DetectionExclusionAuditHelper(timestampConverter, configWithDefaults));
+          new DetectionExclusionAuditHelper(configWithDefaults));
     }
 
     @Test
