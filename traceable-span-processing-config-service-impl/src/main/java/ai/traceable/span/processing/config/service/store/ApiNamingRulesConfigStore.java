@@ -213,6 +213,8 @@ public class ApiNamingRulesConfigStore
       case LOGICAL_SPAN_FILTER:
         return isAttributePartOfLogicalFilter(
             spanFilter.getLogicalSpanFilter(), spanAttributeKey, attributeValue);
+      case SPANFILTEREXPRESSION_NOT_SET:
+        return false;
       default:
         throw Status.INVALID_ARGUMENT
             .withDescription(
