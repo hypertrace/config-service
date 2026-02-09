@@ -250,6 +250,7 @@ message IncidentConfig {
     // project specific tags - usually from the anomaly events
     ai.traceable.fraud.query.model.v1.EntityGraphDataQuery entity_graph_data_query = 5;
   }
+  bool disabled = 6;
   google.protobuf.Value custom_fields = 100;
 }
 
