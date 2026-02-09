@@ -122,6 +122,8 @@ enum MetricDataType {
   METRIC_DATA_TYPE_COUNTER = 2;
   METRIC_DATA_TYPE_HISTO = 3;
   METRIC_DATA_TYPE_RATE = 4;
+  METRIC_DATA_TYPE_MAX = 5;
+  METRIC_DATA_TYPE_MIN = 6;
 }
 
 // In the data model, define a metric as an aggregate on a set of processed spans (events)

@@ -167,6 +167,50 @@ public class MetricTypeToAttributeMetadataAdapter {
                 .setInternal(false)
                 .build());
       }
+    } else if (metricType.getMetricDataType() == MetricDataType.METRIC_DATA_TYPE_MAX) {
+      String fqn = getScopeForMetricType(metricType) + DOT + "max_metric_value";
+      if (fqns.add(fqn)) {
+        builder.addAttributes(
+            AttributeMetadata.newBuilder()
+                .setValueKind(AttributeKind.TYPE_INT64)
+                .setScopeString(getScopeForMetricType(metricType))
+                .addSources(AttributeSource.QS)
+                .setType(AttributeType.ATTRIBUTE)
+                .setGroupable(true)
+                .setFqn(fqn)
+                .setKey("max_metric_value")
+                .setDisplayName("max_metric_value")
+                .setInternal(false)
+                .setDefinition(
+                    AttributeDefinition.newBuilder()
+                        .setProjection(
+                            Projection.newBuilder()
+                                .setAttributeId(GENERIC_METRIC + DOT + "max_metric_value")
+                                .build()))
+                .build());
+      }
+    } else if (metricType.getMetricDataType() == MetricDataType.METRIC_DATA_TYPE_MIN) {
+      String fqn = getScopeForMetricType(metricType) + DOT + "min_metric_value";
+      if (fqns.add(fqn)) {
+        builder.addAttributes(
+            AttributeMetadata.newBuilder()
+                .setValueKind(AttributeKind.TYPE_INT64)
+                .setScopeString(getScopeForMetricType(metricType))
+                .addSources(AttributeSource.QS)
+                .setType(AttributeType.ATTRIBUTE)
+                .setGroupable(true)
+                .setFqn(fqn)
+                .setKey("min_metric_value")
+                .setDisplayName("min_metric_value")
+                .setInternal(false)
+                .setDefinition(
+                    AttributeDefinition.newBuilder()
+                        .setProjection(
+                            Projection.newBuilder()
+                                .setAttributeId(GENERIC_METRIC + DOT + "min_metric_value")
+                                .build()))
+                .build());
+      }
     }
 
     String fqn = getScopeForMetricType(metricType) + DOT + "startTime";
