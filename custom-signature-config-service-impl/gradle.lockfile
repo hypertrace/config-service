@@ -1,13 +1,13 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.4.4692=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.4729=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.7.64=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:cache-provider:0.8.130=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:data-model:0.8.130=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:event-invalidation-cache:0.8.130=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:ip-utils:0.8.130=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:traceable-raw-span-constants:0.8.130=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:cache-provider:0.8.132=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:data-model:0.8.132=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:event-invalidation-cache:0.8.132=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:ip-utils:0.8.132=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:traceable-raw-span-constants:0.8.132=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform:coraza-waf-service-api:0.3.49=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:coraza-waf-service-client:0.3.49=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:enriched-span-constants:5.0.91=runtimeClasspath,testRuntimeClasspath
@@ -122,7 +122,7 @@ org.eclipse.jetty:jetty-servlet:11.0.26=runtimeClasspath,testRuntimeClasspath
 org.eclipse.jetty:jetty-util:11.0.26=runtimeClasspath,testRuntimeClasspath
 org.glassfish.jersey:jersey-bom:2.41=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hdrhistogram:HdrHistogram:2.2.2=runtimeClasspath,testRuntimeClasspath
-org.hypertrace.bom:hypertrace-bom:0.3.69=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.hypertrace.bom:hypertrace-bom:0.3.70=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.datamodel:data-model:0.1.34=runtimeClasspath,testRuntimeClasspath
 org.hypertrace.core.eventstore:event-store:0.1.6=runtimeClasspath,testRuntimeClasspath
 org.hypertrace.core.grpcutils:grpc-client-utils:0.13.19=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
@@ -130,9 +130,9 @@ org.hypertrace.core.grpcutils:grpc-context-utils:0.13.19=compileClasspath,runtim
 org.hypertrace.core.kafkastreams.framework:kafka-bom:0.6.4=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.kafkastreams.framework:kafka-event-listener:0.6.2=runtimeClasspath,testRuntimeClasspath
 org.hypertrace.core.serviceframework:platform-metrics:0.1.91=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-org.hypertrace.core.spannormalizer:raw-span-constants:3.0.10=runtimeClasspath,testRuntimeClasspath
-org.hypertrace.core.spannormalizer:semantic-convention-utils:3.0.10=runtimeClasspath,testRuntimeClasspath
-org.hypertrace.core.spannormalizer:span-normalizer-constants:3.0.10=runtimeClasspath,testRuntimeClasspath
+org.hypertrace.core.spannormalizer:raw-span-constants:3.0.20=runtimeClasspath,testRuntimeClasspath
+org.hypertrace.core.spannormalizer:semantic-convention-utils:3.0.20=runtimeClasspath,testRuntimeClasspath
+org.hypertrace.core.spannormalizer:span-normalizer-constants:3.0.20=runtimeClasspath,testRuntimeClasspath
 org.hypertrace.entity.service:entity-service-api:0.9.4=runtimeClasspath,testRuntimeClasspath
 org.hypertrace.entity.service:entity-service-change-event-api:0.9.4=runtimeClasspath,testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-api:5.10.2=testCompileClasspath,testRuntimeClasspath
