@@ -31,6 +31,9 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
   private static final String REQUIRE_USER_DEFINED_SCHEME = "require_user_defined_scheme";
   private static final String DETECT_MISSING_SECURITY_SCHEME = "detect_missing_security_scheme";
   private static final String TIME_DIFFERENCE_BUFFER_MILLIS = "time_difference_buffer_millis";
+  private static final String EVALUATE_INTERNAL_IPS = "evaluate_internal_ips";
+  private static final String MIN_COUNT = "min_count";
+  private static final String ALLOWED_ALGORITHMS = "allowed_algorithms";
   private static final String MIN_TOTAL_TRAFFIC_SEEN = "min_total_traffic_seen";
   private static final String EXCLUDE_SPECIAL_CHARACTERS = "exclude_special_characters";
   private static final String MAX_DEPTH_DIFFERENCE_ALLOWED = "max_depth_difference_allowed";
@@ -388,6 +391,33 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
                     .build())
             .build();
 
+    ConfigMetadata evaluateInternalIpsConfigMetadata =
+        ConfigMetadata.newBuilder()
+            .setKey(EVALUATE_INTERNAL_IPS)
+            .setConfigValueMetadata(
+                ConfigValueMetadata.newBuilder()
+                    .setType(ConfigValueType.CONFIG_VALUE_TYPE_BOOL)
+                    .build())
+            .build();
+
+    ConfigMetadata minCountConfigMetadata =
+        ConfigMetadata.newBuilder()
+            .setKey(MIN_COUNT)
+            .setConfigValueMetadata(
+                ConfigValueMetadata.newBuilder()
+                    .setType(ConfigValueType.CONFIG_VALUE_TYPE_NUMBER)
+                    .build())
+            .build();
+
+    ConfigMetadata allowedAlgorithmsConfigMetadata =
+        ConfigMetadata.newBuilder()
+            .setKey(ALLOWED_ALGORITHMS)
+            .setConfigValueMetadata(
+                ConfigValueMetadata.newBuilder()
+                    .setType(ConfigValueType.CONFIG_VALUE_TYPE_ARRAY)
+                    .build())
+            .build();
+
     ConfigMetadata minTotalTrafficSeenConfigMetadata =
         ConfigMetadata.newBuilder()
             .setKey(MIN_TOTAL_TRAFFIC_SEEN)
@@ -640,35 +670,62 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
 
     // jwt_exp mapping
     threatRuleIdToConfigMetadataMapping.put(
-        JWT_EXP_SUB_RULE_ID, List.of(timeDifferenceBufferMillisConfigMetadata));
+        JWT_EXP_SUB_RULE_ID,
+        List.of(timeDifferenceBufferMillisConfigMetadata, evaluateInternalIpsConfigMetadata));
 
     // jwt_nbf mapping
     threatRuleIdToConfigMetadataMapping.put(
-        JWT_NBF_SUB_RULE_ID, List.of(timeDifferenceBufferMillisConfigMetadata));
+        JWT_NBF_SUB_RULE_ID,
+        List.of(timeDifferenceBufferMillisConfigMetadata, evaluateInternalIpsConfigMetadata));
 
     // jwt_iss mapping
     threatRuleIdToConfigMetadataMapping.put(
-        JWT_ISS_SUB_RULE_ID, List.of(minPercentSeenConfigMetadata));
+        JWT_ISS_SUB_RULE_ID,
+        List.of(
+            minPercentSeenConfigMetadata,
+            minCountConfigMetadata,
+            evaluateInternalIpsConfigMetadata));
 
     // jwt_aud mapping
     threatRuleIdToConfigMetadataMapping.put(
-        JWT_AUD_SUB_RULE_ID, List.of(minPercentSeenConfigMetadata));
+        JWT_AUD_SUB_RULE_ID,
+        List.of(
+            minPercentSeenConfigMetadata,
+            minCountConfigMetadata,
+            evaluateInternalIpsConfigMetadata));
 
     // jwt_alg mapping
     threatRuleIdToConfigMetadataMapping.put(
-        JWT_ALG_SUB_RULE_ID, List.of(minPercentSeenConfigMetadata));
+        JWT_ALG_SUB_RULE_ID,
+        List.of(
+            minPercentSeenConfigMetadata,
+            allowedAlgorithmsConfigMetadata,
+            minCountConfigMetadata,
+            evaluateInternalIpsConfigMetadata));
 
     // jwt_sign mapping
     threatRuleIdToConfigMetadataMapping.put(
-        JWT_SIGN_SUB_RULE_ID, List.of(minPercentSeenConfigMetadata));
+        JWT_SIGN_SUB_RULE_ID,
+        List.of(
+            minPercentSeenConfigMetadata,
+            minCountConfigMetadata,
+            evaluateInternalIpsConfigMetadata));
 
     // jwt_albeast mapping
     threatRuleIdToConfigMetadataMapping.put(
-        JWT_ALBEAST_SUB_RULE_ID, List.of(minPercentSeenConfigMetadata));
+        JWT_ALBEAST_SUB_RULE_ID,
+        List.of(
+            minPercentSeenConfigMetadata,
+            minCountConfigMetadata,
+            evaluateInternalIpsConfigMetadata));
 
     // jwt_jku mapping
     threatRuleIdToConfigMetadataMapping.put(
-        JWT_JKU_SUB_RULE_ID, List.of(minPercentSeenConfigMetadata));
+        JWT_JKU_SUB_RULE_ID,
+        List.of(
+            minPercentSeenConfigMetadata,
+            minCountConfigMetadata,
+            evaluateInternalIpsConfigMetadata));
 
     // gqla_aba mapping
     threatRuleIdToConfigMetadataMapping.put(
