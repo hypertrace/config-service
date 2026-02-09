@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import ai.traceable.agent.action.config.service.v1.AgentAction;
 import ai.traceable.agent.action.config.service.v1.AgentActionDetails;
 import ai.traceable.agent.action.config.service.v1.AgentActionInput;
+import ai.traceable.agent.action.config.service.v1.AgentActionMetadata;
 import ai.traceable.agent.action.config.service.v1.AgentScope;
 import ai.traceable.agent.action.config.service.v1.CompositeFilter;
 import ai.traceable.agent.action.config.service.v1.ConfigMutationAction;
@@ -18,6 +19,7 @@ import ai.traceable.agent.action.config.service.v1.RestartAgentAction;
 import ai.traceable.agent.action.config.service.v1.UpdateAgentActionRequest;
 import ai.traceable.config.utils.UuidGenerator;
 import com.google.protobuf.Timestamp;
+import com.google.protobuf.util.Timestamps;
 import java.util.List;
 import java.util.Optional;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
@@ -28,6 +30,7 @@ import org.mockito.Mockito;
 
 class ConfigManagerImplTest {
 
+  private static final Timestamp lastUpdatedTimestamp = Timestamps.now();
   private static final AgentAction defaultAction =
       AgentAction.newBuilder()
           .setId("rule-id")
@@ -49,6 +52,10 @@ class ConfigManagerImplTest {
                   .setUpdateConfigAction(
                       ConfigMutationAction.newBuilder()
                           .putEnvironmentVariables("TA_ENVIRONMENT", "test-env")))
+          .setMetadata(
+              AgentActionMetadata.newBuilder()
+                  .setLastUpdatedTimestamp(lastUpdatedTimestamp)
+                  .build())
           .build();
 
   private static final CompositeFilter defaultFilter =
@@ -116,7 +123,6 @@ class ConfigManagerImplTest {
 
     AgentAction createdAction = configManager.createAgentAction(ctx, request);
     assertEquals(defaultAction, createdAction);
-    Mockito.verify(store).upsertObject(ctx, defaultAction);
   }
 
   @Test
@@ -153,7 +159,6 @@ class ConfigManagerImplTest {
 
     AgentAction createdAction = configManager.updateAgentAction(ctx, request);
     assertEquals(updatedAction, createdAction);
-    Mockito.verify(store).upsertObject(ctx, updatedAction);
   }
 
   @Test

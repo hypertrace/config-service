@@ -16,6 +16,7 @@ import static org.mockito.Mockito.when;
 import ai.traceable.agent.action.config.service.v1.AgentAction;
 import ai.traceable.agent.action.config.service.v1.AgentActionConfigServiceGrpc;
 import ai.traceable.agent.action.config.service.v1.AgentActionDetails;
+import ai.traceable.agent.action.config.service.v1.AgentActionMetadata;
 import ai.traceable.agent.action.config.service.v1.ConfigMutationAction;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.external.agent.action.config.service.v1.AgentScope;
@@ -26,6 +27,7 @@ import com.google.protobuf.Timestamp;
 import io.grpc.Context;
 import io.grpc.stub.StreamObserver;
 import java.time.Instant;
+import java.util.List;
 import java.util.stream.Stream;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.AfterEach;
@@ -441,5 +443,79 @@ class ExternalAgentActionConfigServiceImplTest {
     verify(responseObserver).onError(same(expectedError));
     verify(responseObserver, never()).onNext(any());
     verify(responseObserver, never()).onCompleted();
+  }
+
+  @Test
+  void getAgentActions_ordering() {
+    // Given
+    AgentScope scope =
+        AgentScope.newBuilder()
+            .setModuleName("test-module")
+            .setModuleVersion("1.0.0")
+            .setServiceInstanceId("instance-1")
+            .setDeploymentName("deploy-1")
+            .build();
+
+    GetAgentActionsRequest request =
+        GetAgentActionsRequest.newBuilder()
+            .addAgentActionRequests(
+                ScopedActionRequest.newBuilder()
+                    .setScope(scope)
+                    .setPreviousHash("old-hash")
+                    .build())
+            .build();
+
+    AgentAction firstAction =
+        AgentAction.newBuilder()
+            .setId("action-1")
+            .setMetadata(
+                AgentActionMetadata.newBuilder()
+                    .setLastUpdatedTimestamp(Timestamp.newBuilder().setSeconds(1).setNanos(0)))
+            .build();
+    AgentAction secondAction =
+        AgentAction.newBuilder()
+            .setId("action-2")
+            .setMetadata(
+                AgentActionMetadata.newBuilder()
+                    .setLastUpdatedTimestamp(Timestamp.newBuilder().setSeconds(1).setNanos(100)))
+            .build();
+    AgentAction thirdAction = AgentAction.newBuilder().setId("action-3").build();
+    when(agentActionConfigServiceStub.getAgentActions(any()))
+        .thenReturn(
+            ai.traceable.agent.action.config.service.v1.GetAgentActionsResponse.newBuilder()
+                .addAllActions(List.of(secondAction, thirdAction, firstAction))
+                .build());
+
+    when(uuidGenerator.generateId(anyList())).thenReturn("new-hash").thenReturn("global-hash");
+
+    // When
+    service.getAgentActions(request, responseObserver);
+
+    // Then
+    ArgumentCaptor<GetAgentActionsResponse> responseCaptor =
+        ArgumentCaptor.forClass(GetAgentActionsResponse.class);
+    verify(responseObserver).onNext(responseCaptor.capture());
+    verify(responseObserver).onCompleted();
+
+    GetAgentActionsResponse response = responseCaptor.getValue();
+    assertEquals(1, response.getAgentActionsCount());
+    assertEquals(scope, response.getAgentActions(0).getScope());
+    assertEquals("global-hash", response.getHash());
+    assertEquals(3, response.getAgentActions(0).getActionsCount());
+    assertEquals(
+        ai.traceable.external.agent.action.config.service.v1.AgentAction.newBuilder()
+            .setHash("action-1")
+            .build(),
+        response.getAgentActions(0).getActions(0));
+    assertEquals(
+        ai.traceable.external.agent.action.config.service.v1.AgentAction.newBuilder()
+            .setHash("action-2")
+            .build(),
+        response.getAgentActions(0).getActions(1));
+    assertEquals(
+        ai.traceable.external.agent.action.config.service.v1.AgentAction.newBuilder()
+            .setHash("action-3")
+            .build(),
+        response.getAgentActions(0).getActions(2));
   }
 }

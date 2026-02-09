@@ -18,8 +18,10 @@ import ai.traceable.external.agent.action.config.service.v1.RestartAgentAction;
 import ai.traceable.external.agent.action.config.service.v1.ScopedActionRequest;
 import ai.traceable.external.agent.action.config.service.v1.ScopedActionResponse;
 import com.google.inject.Inject;
+import com.google.protobuf.Timestamp;
 import io.grpc.stub.StreamObserver;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +29,9 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 public class ExternalAgentActionConfigServiceImpl extends AgentActionServiceImplBase {
+  private static final Comparator<Timestamp> PROTO_TS_COMPARATOR =
+      Comparator.comparingLong(Timestamp::getSeconds).thenComparingInt(Timestamp::getNanos);
+
   @Inject
   public ExternalAgentActionConfigServiceImpl(
       AgentActionConfigServiceBlockingStub agentActionConfigServiceStub,
@@ -90,6 +95,10 @@ public class ExternalAgentActionConfigServiceImpl extends AgentActionServiceImpl
                                     Instant.ofEpochSecond(
                                         action.getExpirationTimestamp().getSeconds(),
                                         action.getExpirationTimestamp().getNanos())))
+                .sorted(
+                    Comparator.comparing(
+                        a -> a.hasMetadata() ? a.getMetadata().getLastUpdatedTimestamp() : null,
+                        Comparator.nullsLast(PROTO_TS_COMPARATOR)))
                 .collect(Collectors.toUnmodifiableList());
 
         String hash =

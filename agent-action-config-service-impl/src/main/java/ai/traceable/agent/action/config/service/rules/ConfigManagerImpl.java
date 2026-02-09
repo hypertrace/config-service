@@ -2,11 +2,13 @@ package ai.traceable.agent.action.config.service.rules;
 
 import ai.traceable.agent.action.config.service.v1.AgentAction;
 import ai.traceable.agent.action.config.service.v1.AgentActionInput;
+import ai.traceable.agent.action.config.service.v1.AgentActionMetadata;
 import ai.traceable.agent.action.config.service.v1.CreateAgentActionRequest;
 import ai.traceable.agent.action.config.service.v1.GetAgentActionsFilter;
 import ai.traceable.agent.action.config.service.v1.UpdateAgentActionRequest;
 import ai.traceable.config.utils.UuidGenerator;
 import com.google.inject.Inject;
+import com.google.protobuf.util.Timestamps;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.util.List;
@@ -49,6 +51,7 @@ public class ConfigManagerImpl implements ConfigManager {
       action.setExpirationTimestamp(input.getExpirationTimestamp());
     }
 
+    action.setMetadata(createAgentActionMetadata());
     return agentActionStore.upsertObject(requestContext, action.build()).getData();
   }
 
@@ -72,6 +75,7 @@ public class ConfigManagerImpl implements ConfigManager {
       action.setExpirationTimestamp(input.getExpirationTimestamp());
     }
 
+    action.setMetadata(createAgentActionMetadata());
     return agentActionStore.upsertObject(requestContext, action.build()).getData();
   }
 
@@ -86,5 +90,9 @@ public class ConfigManagerImpl implements ConfigManager {
   private boolean doesAgentActionExist(RequestContext requestContext, String ruleId) {
     Optional<AgentAction> optionalRule = agentActionStore.getData(requestContext, ruleId);
     return optionalRule.isPresent();
+  }
+
+  private AgentActionMetadata.Builder createAgentActionMetadata() {
+    return AgentActionMetadata.newBuilder().setLastUpdatedTimestamp(Timestamps.now());
   }
 }

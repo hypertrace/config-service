@@ -13,6 +13,7 @@ message AgentAction {
   google.protobuf.Timestamp expiration_timestamp = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Timestamp when this action expires"];
   // scope of agents for this action.
   AgentScope scope = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Scope of agents for this action"];
+  AgentActionMetadata metadata = 5 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Metadata of this action"];
 }
 
 message AgentActionDetails {
@@ -72,4 +73,8 @@ message LeafFilter {
   optional string service_instance_id = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Service instance id to filter by"];
   optional string module_name = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Module name to filter by"];
   optional string module_version = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Module version to filter by"];
+}
+
+message AgentActionMetadata {
+  google.protobuf.Timestamp last_updated_timestamp = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Timestamp when this action was last updated"];
 }
