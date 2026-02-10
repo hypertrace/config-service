@@ -132,6 +132,10 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
   public static final String SCHEMA_VALIDATION_UREQP_SUB_RULE_ID = "schemaValidation_ureqp";
   public static final String SCHEMA_VALIDATION_REQPTVE_SUB_RULE_ID = "schemaValidation_reqptve";
   public static final String SCHEMA_VALIDATION_URESC_SUB_RULE_ID = "schemaValidation_uresc";
+  public static final String SCHEMA_VALIDATION_RESIE_SUB_RULE_ID = "schemaValidation_resie";
+  public static final String SCHEMA_VALIDATION_RESPTVE_SUB_RULE_ID = "schemaValidation_resptve";
+  public static final String SCHEMA_VALIDATION_MRESP_SUB_RULE_ID = "schemaValidation_mresp";
+  public static final String SCHEMA_VALIDATION_URESP_SUB_RULE_ID = "schemaValidation_uresp";
   public static final String SSRF_UH_SUB_RULE_ID = "ssrf_uh";
   public static final String SSRF_UP_SUB_RULE_ID = "ssrf_up";
   public static final String SSRF_MH_SUB_RULE_ID = "ssrf_mh";
@@ -927,7 +931,8 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
             enabledForInternalIpsConfigMetadata,
             thresholdFamiliesExcluded,
             primaryApiModelTypeConfigMetadata,
-            secondaryApiModelTypeConfigMetadata));
+            secondaryApiModelTypeConfigMetadata,
+            paramRegexToIgnoreConfigMetadata));
 
     // schemaValidation_reqptve mapping
     threatRuleIdToConfigMetadataMapping.put(
@@ -955,12 +960,13 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
     threatRuleIdToConfigMetadataMapping.put(
         SCHEMA_VALIDATION_UREQP_SUB_RULE_ID,
         List.of(
+            severeRegexStrings,
             modsecurityEnabledConfigMetadata,
             enabledForInternalIpsConfigMetadata,
             thresholdFamiliesExcluded,
-            severeRegexStrings,
             primaryApiModelTypeConfigMetadata,
-            secondaryApiModelTypeConfigMetadata));
+            secondaryApiModelTypeConfigMetadata,
+            paramRegexToIgnoreConfigMetadata));
 
     // schemaValidation_mreqp mapping
     threatRuleIdToConfigMetadataMapping.put(
@@ -970,6 +976,55 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
             severeRegexStrings,
             enabledForInternalIpsConfigMetadata,
             evaluateRequestBodyParamsConfigMetadata,
+            thresholdFamiliesExcluded,
+            primaryApiModelTypeConfigMetadata,
+            secondaryApiModelTypeConfigMetadata,
+            paramRegexToIgnoreConfigMetadata));
+
+    // schemaValidation_resie mapping
+    threatRuleIdToConfigMetadataMapping.put(
+        SCHEMA_VALIDATION_RESIE_SUB_RULE_ID,
+        List.of(
+            noAnomalyStrings,
+            modsecurityEnabledConfigMetadata,
+            enabledForInternalIpsConfigMetadata,
+            thresholdFamiliesExcluded,
+            primaryApiModelTypeConfigMetadata,
+            secondaryApiModelTypeConfigMetadata,
+            paramRegexToIgnoreConfigMetadata));
+
+    // schemaValidation_resptve mapping
+    threatRuleIdToConfigMetadataMapping.put(
+        SCHEMA_VALIDATION_RESPTVE_SUB_RULE_ID,
+        List.of(
+            noAnomalyStrings,
+            modsecurityEnabledConfigMetadata,
+            enabledForInternalIpsConfigMetadata,
+            primaryApiModelTypeConfigMetadata,
+            secondaryApiModelTypeConfigMetadata,
+            useLearntModelForParamTypeInfoMissingConfigMetadata,
+            paramRegexToIgnoreConfigMetadata));
+
+    // schemaValidation_mresp mapping
+    threatRuleIdToConfigMetadataMapping.put(
+        SCHEMA_VALIDATION_MRESP_SUB_RULE_ID,
+        List.of(
+            minPercentSeenConfigMetadata,
+            severeRegexStrings,
+            modsecurityEnabledConfigMetadata,
+            enabledForInternalIpsConfigMetadata,
+            thresholdFamiliesExcluded,
+            primaryApiModelTypeConfigMetadata,
+            secondaryApiModelTypeConfigMetadata,
+            paramRegexToIgnoreConfigMetadata));
+
+    // schemaValidation_uresp mapping
+    threatRuleIdToConfigMetadataMapping.put(
+        SCHEMA_VALIDATION_URESP_SUB_RULE_ID,
+        List.of(
+            severeRegexStrings,
+            modsecurityEnabledConfigMetadata,
+            enabledForInternalIpsConfigMetadata,
             thresholdFamiliesExcluded,
             primaryApiModelTypeConfigMetadata,
             secondaryApiModelTypeConfigMetadata,
