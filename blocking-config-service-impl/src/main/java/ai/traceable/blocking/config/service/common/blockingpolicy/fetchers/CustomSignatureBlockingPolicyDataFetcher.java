@@ -130,6 +130,7 @@ class CustomSignatureBlockingPolicyDataFetcher implements BlockingPolicyDataFetc
             .filter(Optional::isPresent)
             .map(Optional::get)
             .collect(Collectors.toList());
+
     boolean hasModsecConvertibleExpression =
         clauseGroup.getClausesList().stream()
             .anyMatch(
@@ -137,14 +138,18 @@ class CustomSignatureBlockingPolicyDataFetcher implements BlockingPolicyDataFetc
                     clause.hasMatchExpression()
                         || clause.hasKeyValueExpression()
                         || clause.hasCustomSecRule()
-                        || clause.hasScopeExpression());
+                        || (clause.hasScopeExpression()
+                            && clause.getScopeExpression().hasUrlScope()));
+
     if (hasModsecConvertibleExpression) {
       blockingDetails.add(
           CustomSignatureBlockingDetails.builder().ruleId(customSignatureRule.getId()).build());
     }
+
     if (blockingDetails.size() == 1) {
       return blockingDetails.get(0);
     }
+
     return CombinationBlockingDetails.builder()
         .operator(
             clauseGroup.getClauseOperator().equals(ClauseOperator.CLAUSE_OPERATOR_AND)

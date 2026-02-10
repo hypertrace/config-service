@@ -26,9 +26,11 @@ import java.util.List;
 import java.util.Objects;
 import org.apache.commons.lang3.SystemUtils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.mockito.MockedStatic;
 
-public class ModsecRuleConverterTest {
+class ModsecRuleConverterTest {
 
   private final ModsecVariableConverter variableConverter = new ModsecVariableConverter();
   private final ModsecOperatorConverter operatorConverter = new ModsecOperatorConverter();
@@ -38,7 +40,8 @@ public class ModsecRuleConverterTest {
           new CustomModsecKeyValueMatchClauseConverter(variableConverter, operatorConverter));
 
   @Test
-  public void testConvertedModsecRules() throws Exception {
+  @EnabledOnOs(OS.LINUX)
+  void testConvertedModsecRules() throws Exception {
     String fileRulesBlob =
         Resources.toString(
             Objects.requireNonNull(
@@ -69,6 +72,7 @@ public class ModsecRuleConverterTest {
   }
 
   @Test
+  @EnabledOnOs(OS.LINUX)
   void testCustomSecRules() throws Exception {
     // Mock custom modsec rules
     try (MockedStatic<ModsecRuleEngineUtils> mockModsecUtils =
