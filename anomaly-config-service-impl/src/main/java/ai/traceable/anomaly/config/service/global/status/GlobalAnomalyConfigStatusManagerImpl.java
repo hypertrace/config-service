@@ -125,8 +125,9 @@ public class GlobalAnomalyConfigStatusManagerImpl
       RequestContext requestContext, List<AnomalyConfigScope> applicableScopesList) {
     Map<String, ScopedAnomalyConfigStatusChange> configMap =
         getFilteredConfigMap(requestContext, applicableScopesList);
+    List<ScopedAnomalyConfigStatusChange> configValues = new ArrayList<>(configMap.values());
     Map<AnomalyConfigScope, ScopedAnomalyConfigStatus> resolvedConfigsMap =
-        configMap.values().stream()
+        configValues.stream()
             .map(
                 scopedAnomalyConfigStatusChange ->
                     getResolvedConfig(
