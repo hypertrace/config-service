@@ -26,6 +26,14 @@ message SavedFilter {
   google.protobuf.Timestamp updated_timestamp = 8;
 
   string category = 9;
+
+  repeated FilterVariable filter_variables = 10;
+}
+
+message FilterVariable {
+  oneof type {
+    Field field = 1;
+  }
 }
 
 message Visibility {
