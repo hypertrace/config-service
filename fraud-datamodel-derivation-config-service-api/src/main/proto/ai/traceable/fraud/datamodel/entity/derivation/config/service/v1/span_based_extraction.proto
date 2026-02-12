@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package ai.traceable.fraud.datamodel.entity.derivation.config.service.v1;
+
+import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
+import "google/protobuf/struct.proto";
+
+option java_multiple_files = true;
+
+// SpanBasedFilter supports filtering on request/response locations
+message SpanBasedFilter {
+  ExtractionLocation location = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Location to filter on (request/response header, body, cookie, etc.)"];
+  FilterOperator operator = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Filter operator"];
+  google.protobuf.Value value = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Filter value"];
+}
+
+// SpanBasedExtraction defines structured extraction config (UI-friendly)
+message SpanBasedExtraction {
+  ExtractionLocation location = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Where to extract from"];
+  SpanBasedScope scope = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Conditions to determine which requests this extraction applies to"];
+}
+
+// Body-specific extraction method (only applicable for body location types)
+message BodyExtractionMethod {
+  oneof method {
+    string json_path = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "JSON path expression"];
+    string regex_capture_group = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Regex with capture group"];
+  }
+}
+
+// SpanBasedScope defines scope using span-based conditions
+message SpanBasedScope {
+  repeated SpanBasedFilter filters = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Conditions that must all match"];
+}
+
+enum ExtractionLocationType {
+  EXTRACTION_LOCATION_TYPE_UNSPECIFIED = 0;
+  EXTRACTION_LOCATION_TYPE_REQUEST_HEADER = 1;
+  EXTRACTION_LOCATION_TYPE_REQUEST_BODY = 2;
+  EXTRACTION_LOCATION_TYPE_REQUEST_QUERY_PARAM = 3;
+  EXTRACTION_LOCATION_TYPE_REQUEST_COOKIE = 4;
+  EXTRACTION_LOCATION_TYPE_RESPONSE_HEADER = 5;
+  EXTRACTION_LOCATION_TYPE_RESPONSE_BODY = 6;
+}
+
+message ExtractionLocation {
+  ExtractionLocationType location_type = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Where to extract from"];
+  string key = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Key to extract (header name, body path, etc.)"];
+  // When match type is non-exact and matches multiple keys, the first match is used
+  KeyMatchType key_match_type = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "How to match the key"];
+}
+
+enum FilterOperator {
+  FILTER_OPERATOR_UNSPECIFIED = 0;
+  FILTER_OPERATOR_EQ = 1;
+  FILTER_OPERATOR_NEQ = 2;
+  FILTER_OPERATOR_GT = 3;
+  FILTER_OPERATOR_LT = 4;
+  FILTER_OPERATOR_GTE = 5;
+  FILTER_OPERATOR_LTE = 6;
+  FILTER_OPERATOR_REGEX_MATCHES = 7;
+  FILTER_OPERATOR_CONTAINS = 8;
+}
+
+enum KeyMatchType {
+  KEY_MATCH_TYPE_UNSPECIFIED = 0;
+  KEY_MATCH_TYPE_EXACT = 1; // Exact match (default)
+  KEY_MATCH_TYPE_REGEX = 2; // Regex pattern match
+  KEY_MATCH_TYPE_PREFIX = 3; // Prefix match
+  KEY_MATCH_TYPE_CONTAINS = 4; // Contains match
+}

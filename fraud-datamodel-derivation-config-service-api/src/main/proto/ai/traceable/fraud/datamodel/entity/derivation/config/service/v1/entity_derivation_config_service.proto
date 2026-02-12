@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package ai.traceable.fraud.datamodel.entity.derivation.config.service.v1;
+
+import "ai/traceable/fraud/datamodel/entity/derivation/config/service/v1/entity_derivation_config.proto";
+import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
+
+option java_multiple_files = true;
+
+service EntityDerivationConfigService {
+  rpc CreateEntityDerivationConfig(CreateEntityDerivationConfigRequest) returns (CreateEntityDerivationConfigResponse) {}
+  rpc UpdateEntityDerivationConfig(UpdateEntityDerivationConfigRequest) returns (UpdateEntityDerivationConfigResponse) {}
+  rpc GetEntityDerivationConfigSummaries(GetEntityDerivationConfigSummariesRequest) returns (GetEntityDerivationConfigSummariesResponse) {}
+  rpc GetEntityDerivationConfigs(GetEntityDerivationConfigsRequest) returns (GetEntityDerivationConfigsResponse) {}
+  rpc DeleteEntityDerivationConfig(DeleteEntityDerivationConfigRequest) returns (DeleteEntityDerivationConfigResponse) {}
+}
+
+message CreateEntityDerivationConfigRequest {
+  EntityDerivationConfigData data = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Entity derivation configuration data"];
+}
+
+message CreateEntityDerivationConfigResponse {
+  EntityDerivationConfig entity_derivation_config = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Created entity derivation configuration"];
+}
+
+message UpdateEntityDerivationConfigRequest {
+  string id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Entity derivation config ID to update"];
+  EntityDerivationConfigData data = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Updated entity derivation configuration data"];
+}
+
+message UpdateEntityDerivationConfigResponse {
+  EntityDerivationConfig entity_derivation_config = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Updated entity derivation configuration"];
+}
+
+message GetEntityDerivationConfigSummariesRequest {
+  EntityDerivationConfigFilter filter = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Filter criteria for entity derivation configs"];
+}
+
+message GetEntityDerivationConfigSummariesResponse {
+  repeated EntityDerivationConfigSummary summaries = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of entity derivation config summaries"];
+}
+
+message EntityDerivationConfigSummary {
+  string id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Entity derivation config ID"];
+  string display_name = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Display name"];
+}
+
+message EntityDerivationConfigFilter {
+  optional bool include_disabled = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Include disabled entities"];
+  optional bool include_internal = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Include internal entities"];
+}
+
+message GetEntityDerivationConfigsRequest {
+  EntityDerivationConfigFilter filter = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Filter criteria for entity derivation configs"];
+  repeated string ids = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Filter by specific entity IDs (empty = all)"];
+}
+
+message GetEntityDerivationConfigsResponse {
+  repeated EntityDerivationConfig entity_derivation_configs = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of entity derivation configurations"];
+}
+
+message DeleteEntityDerivationConfigRequest {
+  string entity_derivation_config_id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Entity derivation config ID to delete"];
+}
+
+message DeleteEntityDerivationConfigResponse {}

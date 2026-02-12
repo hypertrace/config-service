@@ -12,3 +12,6 @@ out/
 .DS_Store
 bin/
 .github/actions
+
+.cursor
+.windsurf

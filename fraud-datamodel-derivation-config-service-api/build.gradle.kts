@@ -26,6 +26,9 @@ protobuf {
 
 dependencies {
   api(commonLibs.bundles.grpc.api)
+  api(projects.fraudDatamodelEventKindConfigServiceApi)
+  api(projects.graphqlAutogenSchemaAnnotations)
+
   testImplementation(commonLibs.protobuf.javautil)
   testImplementation(commonLibs.junit.jupiter)
   testImplementation(commonLibs.mockito.core)

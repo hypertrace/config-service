@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package ai.traceable.fraud.datamodel.entity.derivation.config.service.v1;
+
+import "ai/traceable/fraud/datamodel/entity/derivation/config/service/v1/span_based_extraction.proto";
+import "ai/traceable/fraud/datamodel/event/kind/v1/transformation_pipeline.proto";
+import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
+
+option java_multiple_files = true;
+
+// EventDerivationConfigDetails defines how to derive event attributes from source data.
+message EventDerivationConfigDetails {
+  Scope scope = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Scope filters for this derivation rule"];
+  bool disabled = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Whether this derivation rule is disabled"];
+
+  oneof extraction {
+    SpanBasedExtraction span_extraction = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Extract from API request/response data"];
+    string jexl_expression = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_skip) = true];
+  }
+
+  ai.traceable.fraud.datamodel.event.kind.v1.TransformationPipeline pipeline = 5 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Transformation pipeline to apply after extraction"];
+}
+
+// Scope groups optional, combinable scope filters. All set fields are ANDed together.
+message Scope {
+  // Mandatory — filters which environments this rule applies to
+  EnvironmentScope environment_scope = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Environment scope filter (required)"];
+  EntityScope entity_scope = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Filter by specific API or service IDs"];
+  JexlScope jexl_scope = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_skip) = true];
+  SpanBasedScope span_based_scope = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Filter by request/response conditions"];
+}
+
+enum EntityType {
+  ENTITY_TYPE_UNSPECIFIED = 0;
+  ENTITY_TYPE_API = 1;
+  ENTITY_TYPE_SERVICE = 2;
+}
+
+message EntityScope {
+  repeated string entity_ids = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "API or service IDs to restrict to"];
+  EntityType entity_type = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Type of entity (API or service)"];
+}
+
+message EnvironmentScope {
+  repeated string environments = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Environments to scope to"];
+}
+
+message JexlScope {
+  string jexl_expression = 1;
+}

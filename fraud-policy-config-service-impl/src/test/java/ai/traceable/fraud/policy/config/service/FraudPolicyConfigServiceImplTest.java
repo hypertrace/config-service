@@ -1,7 +1,9 @@
 package ai.traceable.fraud.policy.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 import static org.mockito.quality.Strictness.LENIENT;
 
@@ -35,6 +37,7 @@ import ai.traceable.fraud.policy.config.service.v1.GroupedConfig;
 import ai.traceable.fraud.policy.config.service.v1.TimeObj;
 import ai.traceable.fraud.policy.config.service.v1.TimeUnit;
 import ai.traceable.fraud.policy.config.service.v1.TimeWindow;
+import ai.traceable.fraud.policy.config.service.v1.UpdateAbusePolicyRequest;
 import ai.traceable.fraud.policy.config.service.v1.UpdateApiAccessAnomalyConfigRequest;
 import ai.traceable.fraud.policy.config.service.v1.UpdateFraudPolicyRequest;
 import ai.traceable.fraud.policy.config.service.validation.AbusePolicyConfigRequestValidator;
@@ -396,7 +399,8 @@ class FraudPolicyConfigServiceImplTest {
     assertNotNull(created.getId());
     assertEquals(UUID_1, created.getId());
     assertEquals("Test Abuse Policy", created.getData().getName());
-    assertEquals(true, created.getData().getEnabled());
+    assertTrue(created.getData().getEnabled());
+    assertEquals(0, created.getData().getVersion());
     assertEquals(
         ai.traceable.fraud.policy.config.service.v1.AbuseRiskSeverity.ABUSE_RISK_SEVERITY_HIGH,
         created.getData().getSeverity());
@@ -427,20 +431,19 @@ class FraudPolicyConfigServiceImplTest {
             () ->
                 fraudPolicyConfigServiceBlockingStub
                     .updateAbusePolicy(
-                        ai.traceable.fraud.policy.config.service.v1.UpdateAbusePolicyRequest
-                            .newBuilder()
+                        UpdateAbusePolicyRequest.newBuilder()
                             .setPolicyId(policyId)
                             .setData(
                                 created.getData().toBuilder()
                                     .setName("Updated Abuse Policy")
                                     .setEnabled(false)
-                                    .build())
+                                    .setVersion(0))
                             .build())
                     .getPolicy());
 
     assertEquals(policyId, updated.getId());
     assertEquals("Updated Abuse Policy", updated.getData().getName());
-    assertEquals(false, updated.getData().getEnabled());
+    assertFalse(updated.getData().getEnabled());
     assertEquals(1, updated.getData().getVersion());
   }
 
