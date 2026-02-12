@@ -2,9 +2,13 @@ package ai.traceable.saved.filter.config.service.validation;
 
 import static ai.traceable.saved.filter.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_EQ;
 import static ai.traceable.saved.filter.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_NEQ;
+import static java.util.Collections.unmodifiableSet;
 
+import ai.traceable.saved.filter.config.service.v1.Field;
 import ai.traceable.saved.filter.config.service.v1.RelationalOperator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -24,6 +28,15 @@ public interface SavedFilterValidator<S> {
   class ValidationContext {
     RequestContext requestContext;
     String scope;
+    @Builder.Default Set<Field> filterVariables = new LinkedHashSet<>();
+
+    public void addFilterVariable(final Field field) {
+      filterVariables.add(field);
+    }
+
+    public Set<Field> getFilterVariable() {
+      return unmodifiableSet(filterVariables);
+    }
   }
 
   enum NullValueStrategy {

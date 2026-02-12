@@ -1,18 +1,31 @@
 package ai.traceable.saved.filter.config.service;
 
+import static java.util.stream.Collectors.toUnmodifiableList;
+import static org.hypertrace.core.attribute.service.v1.AttributeKind.TYPE_STRING;
+import static org.hypertrace.core.attribute.service.v1.AttributeKind.TYPE_STRING_ARRAY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.saved.filter.config.service.store.SavedFilterConfigStore;
 import ai.traceable.saved.filter.config.service.store.SavedFilterStoreManager;
+import ai.traceable.saved.filter.config.service.v1.ArrayFilterCondition;
+import ai.traceable.saved.filter.config.service.v1.ArrayOperator;
 import ai.traceable.saved.filter.config.service.v1.CreateSavedFilterRequest;
 import ai.traceable.saved.filter.config.service.v1.DeleteSavedFilterRequest;
+import ai.traceable.saved.filter.config.service.v1.Expression;
+import ai.traceable.saved.filter.config.service.v1.Field;
 import ai.traceable.saved.filter.config.service.v1.FilterCriteria;
+import ai.traceable.saved.filter.config.service.v1.FilterVariable;
 import ai.traceable.saved.filter.config.service.v1.GetSavedFiltersRequest;
 import ai.traceable.saved.filter.config.service.v1.GetSavedFiltersResponse;
+import ai.traceable.saved.filter.config.service.v1.LogicalFilterCondition;
+import ai.traceable.saved.filter.config.service.v1.LogicalOperator;
 import ai.traceable.saved.filter.config.service.v1.PrivateVisibility;
 import ai.traceable.saved.filter.config.service.v1.PublicVisibility;
 import ai.traceable.saved.filter.config.service.v1.RelationalFilterCondition;
@@ -31,10 +44,14 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.util.Modules;
 import com.google.protobuf.Timestamp;
 import com.google.protobuf.Value;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.attribute.service.client.AttributeServiceCachedClient;
+import org.hypertrace.core.attribute.service.v1.AttributeMetadata;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.AfterEach;
@@ -74,10 +91,10 @@ class SavedFilterConfigServiceImplTest {
                           }
                         }))
             .getInstance(Key.get(new TypeLiteral<SavedFilterValidator<FilterCriteria>>() {}));
-    this.mockGenericConfigService =
-        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
+    this.mockGenericConfigService = new MockGenericConfigService().mockUpsert();
     ConfigServiceGrpc.ConfigServiceBlockingStub genericStub =
         ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+
     this.mockGenericConfigService
         .addService(
             new SavedFilterConfigServiceImpl(
@@ -101,6 +118,10 @@ class SavedFilterConfigServiceImplTest {
     when(this.timestampConverter.convert(any()))
         .thenReturn(Timestamp.newBuilder().setSeconds(100).build());
     when(uuidGenerator.generateRandomId()).thenReturn(UUID_1);
+
+    lenient()
+        .when(mockAttributeServiceCachedClient.get(any(), eq(TRACES_SCOPE), anyString()))
+        .thenReturn(Optional.of(AttributeMetadata.newBuilder().setValueKind(TYPE_STRING).build()));
   }
 
   @AfterEach
@@ -110,6 +131,7 @@ class SavedFilterConfigServiceImplTest {
 
   @Test
   void testSavedFilterCRUD() {
+    this.mockGenericConfigService.mockGetAll().mockGet().mockDelete();
     FilterCriteria filterCriteria1 =
         buildRelationalFilterCriteria("c1", RelationalOperator.RELATIONAL_OPERATOR_EQ, "v1");
     Visibility publicVisibility =
@@ -201,6 +223,202 @@ class SavedFilterConfigServiceImplTest {
                 .setFieldName(ColName)
                 .setOperator(op)
                 .setFieldValue(Value.newBuilder().setStringValue(ColValue).build())
+                .build())
+        .build();
+  }
+
+  @Test
+  void testFilterVariablesPopulatedOnCreate() {
+    this.mockGenericConfigService.mockGetAll();
+    final Field field1 = Field.newBuilder().setKey("serviceName").build();
+    final Field field2 = Field.newBuilder().setKey("statusCode").build();
+
+    final FilterCriteria filterCriteria =
+        FilterCriteria.newBuilder()
+            .setLogicalFilter(
+                LogicalFilterCondition.newBuilder()
+                    .setOperator(LogicalOperator.LOGICAL_OPERATOR_AND)
+                    .addFilterCriteria(buildRelationalFilterCriteriaWithField(field1, "service1"))
+                    .addFilterCriteria(buildRelationalFilterCriteriaWithField(field2, "200"))
+                    .build())
+            .build();
+
+    final Visibility privateVisibility =
+        Visibility.newBuilder().setPrivate(PrivateVisibility.newBuilder().build()).build();
+    final RequestContext requestContext = buildRequestContext();
+
+    final SavedFilter createdSavedFilter =
+        requestContext.call(
+            () ->
+                this.savedFilterServiceBlockingStub
+                    .createSavedFilter(
+                        CreateSavedFilterRequest.newBuilder()
+                            .setName(FILTER_NAME_1)
+                            .setScope(TRACES_SCOPE)
+                            .setVisibility(privateVisibility)
+                            .setFilterCriteria(filterCriteria)
+                            .build())
+                    .getSavedFilter());
+
+    assertEquals(2, createdSavedFilter.getFilterVariablesCount());
+    assertEquals("", createdSavedFilter.getFilterVariables(0).getField().getScope());
+    assertEquals("serviceName", createdSavedFilter.getFilterVariables(0).getField().getKey());
+    assertEquals("", createdSavedFilter.getFilterVariables(1).getField().getScope());
+    assertEquals("statusCode", createdSavedFilter.getFilterVariables(1).getField().getKey());
+
+    final GetSavedFiltersResponse getSavedFiltersResponse =
+        requestContext.call(
+            () ->
+                this.savedFilterServiceBlockingStub.getSavedFilters(
+                    GetSavedFiltersRequest.newBuilder().setScope(TRACES_SCOPE).build()));
+    assertEquals(1, getSavedFiltersResponse.getSavedFiltersCount());
+  }
+
+  @Test
+  void testFilterVariablesPopulatedOnUpdate() {
+    this.mockGenericConfigService.mockGetAll().mockGet();
+    final FilterCriteria filterCriteria1 =
+        buildRelationalFilterCriteria("c1", RelationalOperator.RELATIONAL_OPERATOR_EQ, "v1");
+    final Visibility privateVisibility =
+        Visibility.newBuilder().setPrivate(PrivateVisibility.newBuilder().build()).build();
+    final RequestContext requestContext = buildRequestContext();
+
+    requestContext.call(
+        () ->
+            this.savedFilterServiceBlockingStub.createSavedFilter(
+                CreateSavedFilterRequest.newBuilder()
+                    .setName(FILTER_NAME_1)
+                    .setScope(TRACES_SCOPE)
+                    .setVisibility(privateVisibility)
+                    .setFilterCriteria(filterCriteria1)
+                    .build()));
+
+    final Field field1 = Field.newBuilder().setKey("serviceName").build();
+    final Field field2 = Field.newBuilder().setKey("duration").build();
+
+    final FilterCriteria filterCriteria2 =
+        FilterCriteria.newBuilder()
+            .setLogicalFilter(
+                LogicalFilterCondition.newBuilder()
+                    .setOperator(LogicalOperator.LOGICAL_OPERATOR_OR)
+                    .addFilterCriteria(buildRelationalFilterCriteriaWithField(field1, "service2"))
+                    .addFilterCriteria(buildRelationalFilterCriteriaWithField(field2, "1000"))
+                    .build())
+            .build();
+
+    final SavedFilter updatedSavedFilter =
+        requestContext.call(
+            () ->
+                this.savedFilterServiceBlockingStub
+                    .updateSavedFilter(
+                        UpdateSavedFilterRequest.newBuilder()
+                            .setId(UUID_1)
+                            .setName(FILTER_NAME_2)
+                            .setVisibility(privateVisibility)
+                            .setFilterCriteria(filterCriteria2)
+                            .build())
+                    .getSavedFilter());
+
+    assertEquals(2, updatedSavedFilter.getFilterVariablesCount());
+    assertEquals("serviceName", updatedSavedFilter.getFilterVariables(0).getField().getKey());
+    assertEquals("duration", updatedSavedFilter.getFilterVariables(1).getField().getKey());
+
+    final GetSavedFiltersResponse getSavedFiltersResponse =
+        requestContext.call(
+            () ->
+                this.savedFilterServiceBlockingStub.getSavedFilters(
+                    GetSavedFiltersRequest.newBuilder().setScope(TRACES_SCOPE).build()));
+    assertEquals(1, getSavedFiltersResponse.getSavedFiltersCount());
+  }
+
+  @Test
+  void testComplexNestedFilterWithLogicalArrayAndRelationalFilters() {
+    when(mockAttributeServiceCachedClient.get(any(), eq(TRACES_SCOPE), eq("tags")))
+        .thenReturn(
+            Optional.of(AttributeMetadata.newBuilder().setValueKind(TYPE_STRING_ARRAY).build()));
+
+    final Field field1 = Field.newBuilder().setKey("serviceName").build();
+    final Field field2 = Field.newBuilder().setKey("statusCode").build();
+    final Field field3 = Field.newBuilder().setKey("endpoint").build();
+    final Field field4 = Field.newBuilder().setKey("duration").build();
+    final Field field5 = Field.newBuilder().setKey("tags").build();
+
+    final FilterCriteria arrayFilter =
+        FilterCriteria.newBuilder()
+            .setArrayFilter(
+                ArrayFilterCondition.newBuilder()
+                    .setOperator(ArrayOperator.ARRAY_OPERATOR_ANY)
+                    .setRelationalFilter(
+                        RelationalFilterCondition.newBuilder()
+                            .setLhsExpression(Expression.newBuilder().setField(field5).build())
+                            .setOperator(RelationalOperator.RELATIONAL_OPERATOR_EQ)
+                            .setRhsExpression(
+                                Expression.newBuilder()
+                                    .setValue(Value.newBuilder().setStringValue("prod").build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
+    final FilterCriteria nestedLogicalFilter =
+        FilterCriteria.newBuilder()
+            .setLogicalFilter(
+                LogicalFilterCondition.newBuilder()
+                    .setOperator(LogicalOperator.LOGICAL_OPERATOR_OR)
+                    .addFilterCriteria(buildRelationalFilterCriteriaWithField(field3, "/api/v1"))
+                    .addFilterCriteria(buildRelationalFilterCriteriaWithField(field4, "1000"))
+                    .build())
+            .build();
+
+    final FilterCriteria complexFilter =
+        FilterCriteria.newBuilder()
+            .setLogicalFilter(
+                LogicalFilterCondition.newBuilder()
+                    .setOperator(LogicalOperator.LOGICAL_OPERATOR_AND)
+                    .addFilterCriteria(
+                        buildRelationalFilterCriteriaWithField(field1, "payment-service"))
+                    .addFilterCriteria(buildRelationalFilterCriteriaWithField(field2, "200"))
+                    .addFilterCriteria(arrayFilter)
+                    .addFilterCriteria(nestedLogicalFilter)
+                    .build())
+            .build();
+
+    final Visibility privateVisibility =
+        Visibility.newBuilder().setPrivate(PrivateVisibility.newBuilder().build()).build();
+    final RequestContext requestContext = buildRequestContext();
+
+    final SavedFilter createdSavedFilter =
+        requestContext.call(
+            () ->
+                this.savedFilterServiceBlockingStub
+                    .createSavedFilter(
+                        CreateSavedFilterRequest.newBuilder()
+                            .setName("complex-filter")
+                            .setScope(TRACES_SCOPE)
+                            .setVisibility(privateVisibility)
+                            .setFilterCriteria(complexFilter)
+                            .build())
+                    .getSavedFilter());
+
+    final List<FilterVariable> expectedFilterVariables =
+        Stream.of(field1, field2, field5, field3, field4)
+            .map(field -> FilterVariable.newBuilder().setField(field).build())
+            .collect(toUnmodifiableList());
+
+    assertEquals(expectedFilterVariables, createdSavedFilter.getFilterVariablesList());
+  }
+
+  private static FilterCriteria buildRelationalFilterCriteriaWithField(
+      final Field field, final String value) {
+    return FilterCriteria.newBuilder()
+        .setRelationalFilter(
+            RelationalFilterCondition.newBuilder()
+                .setLhsExpression(Expression.newBuilder().setField(field).build())
+                .setOperator(RelationalOperator.RELATIONAL_OPERATOR_EQ)
+                .setRhsExpression(
+                    Expression.newBuilder()
+                        .setValue(Value.newBuilder().setStringValue(value).build())
+                        .build())
                 .build())
         .build();
   }

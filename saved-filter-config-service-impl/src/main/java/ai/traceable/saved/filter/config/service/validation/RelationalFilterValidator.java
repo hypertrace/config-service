@@ -1,5 +1,6 @@
 package ai.traceable.saved.filter.config.service.validation;
 
+import static ai.traceable.saved.filter.config.service.v1.Expression.TypeCase.FIELD;
 import static ai.traceable.saved.filter.config.service.v1.Expression.TypeCase.VALUE;
 
 import ai.traceable.saved.filter.config.service.v1.Expression;
@@ -30,6 +31,9 @@ public class RelationalFilterValidator implements SavedFilterValidator<Relationa
 
     validateLhsExpression(relationalFilterCondition, validationContext);
     validateRhsExpression(relationalFilterCondition, validationContext);
+
+    collectFieldFromExpression(relationalFilterCondition.getLhsExpression(), validationContext);
+    collectFieldFromExpression(relationalFilterCondition.getRhsExpression(), validationContext);
 
     if (areBothSidesConstant(relationalFilterCondition)) {
       throw Status.INVALID_ARGUMENT
@@ -87,6 +91,13 @@ public class RelationalFilterValidator implements SavedFilterValidator<Relationa
           .withDescription(
               String.format("Unable to extract attributeKind from expression: %s", expression))
           .asRuntimeException();
+    }
+  }
+
+  private void collectFieldFromExpression(
+      final Expression expression, final ValidationContext validationContext) {
+    if (FIELD.equals(expression.getTypeCase())) {
+      validationContext.addFilterVariable(expression.getField());
     }
   }
 }

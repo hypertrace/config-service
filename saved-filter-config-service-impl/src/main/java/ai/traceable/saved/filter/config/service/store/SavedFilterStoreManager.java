@@ -1,11 +1,15 @@
 package ai.traceable.saved.filter.config.service.store;
 
+import static java.util.stream.Collectors.toUnmodifiableList;
+
 import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.saved.filter.config.service.v1.CreateSavedFilterRequest;
 import ai.traceable.saved.filter.config.service.v1.CreateSavedFilterResponse;
 import ai.traceable.saved.filter.config.service.v1.DeleteSavedFilterRequest;
 import ai.traceable.saved.filter.config.service.v1.DeleteSavedFilterResponse;
+import ai.traceable.saved.filter.config.service.v1.Field;
+import ai.traceable.saved.filter.config.service.v1.FilterVariable;
 import ai.traceable.saved.filter.config.service.v1.GetSavedFiltersRequest;
 import ai.traceable.saved.filter.config.service.v1.GetSavedFiltersResponse;
 import ai.traceable.saved.filter.config.service.v1.SavedFilter;
@@ -15,6 +19,7 @@ import io.grpc.Status;
 import io.grpc.StatusException;
 import jakarta.inject.Inject;
 import java.util.List;
+import java.util.Set;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -35,7 +40,7 @@ public class SavedFilterStoreManager {
   }
 
   public CreateSavedFilterResponse createSavedFilter(
-      RequestContext requestContext, CreateSavedFilterRequest request) {
+      RequestContext requestContext, CreateSavedFilterRequest request, Set<Field> filterVariables) {
     SavedFilter newSavedFilter =
         SavedFilter.newBuilder()
             .setId(uuidGenerator.generateRandomId())
@@ -43,6 +48,7 @@ public class SavedFilterStoreManager {
             .setScope(request.getScope())
             .setVisibility(request.getVisibility())
             .setFilterCriteria(request.getFilterCriteria())
+            .addAllFilterVariables(buildFilterVariables(filterVariables))
             .setCreatedByUserId(requestContext.getUserId().orElseThrow())
             .setCategory(request.getCategory())
             .build();
@@ -53,7 +59,8 @@ public class SavedFilterStoreManager {
   }
 
   public UpdateSavedFilterResponse updateSavedFilter(
-      RequestContext requestContext, UpdateSavedFilterRequest request) throws StatusException {
+      RequestContext requestContext, UpdateSavedFilterRequest request, Set<Field> filterVariables)
+      throws StatusException {
     SavedFilter existingSavedFilter =
         fetchExistingSavedFilterOrThrow(request.getId(), requestContext);
     SavedFilter updatedSavedFilter =
@@ -61,6 +68,8 @@ public class SavedFilterStoreManager {
             .setName(request.getName())
             .setVisibility(request.getVisibility())
             .setFilterCriteria(request.getFilterCriteria())
+            .clearFilterVariables()
+            .addAllFilterVariables(buildFilterVariables(filterVariables))
             .build();
     ContextualConfigObject<SavedFilter> configObject =
         savedFilterConfigStore.upsertObject(requestContext, updatedSavedFilter);
@@ -109,5 +118,11 @@ public class SavedFilterStoreManager {
         .equals(existingSavedFilter.getCreatedByUserId())) {
       throw Status.PERMISSION_DENIED.asException();
     }
+  }
+
+  private static List<FilterVariable> buildFilterVariables(final Set<Field> collectedFields) {
+    return collectedFields.stream()
+        .map(field -> FilterVariable.newBuilder().setField(field).build())
+        .collect(toUnmodifiableList());
   }
 }

@@ -7,6 +7,7 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateReques
 import ai.traceable.saved.filter.config.service.store.SavedFilterStoreManager;
 import ai.traceable.saved.filter.config.service.v1.CreateSavedFilterRequest;
 import ai.traceable.saved.filter.config.service.v1.DeleteSavedFilterRequest;
+import ai.traceable.saved.filter.config.service.v1.Field;
 import ai.traceable.saved.filter.config.service.v1.FilterCriteria;
 import ai.traceable.saved.filter.config.service.v1.GetSavedFiltersRequest;
 import ai.traceable.saved.filter.config.service.v1.SavedFilter;
@@ -16,6 +17,7 @@ import ai.traceable.saved.filter.config.service.validation.SavedFilterValidator.
 import io.grpc.Status;
 import jakarta.inject.Inject;
 import java.util.List;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -34,10 +36,16 @@ public class SavedFilterRequestValidator {
 
   private void validateFilterCriteria(
       RequestContext requestContext, String scope, FilterCriteria filterCriteria) {
+    validateFilterCriteriaAndCollectFilterVariables(requestContext, scope, filterCriteria);
+  }
+
+  public Set<Field> validateFilterCriteriaAndCollectFilterVariables(
+      RequestContext requestContext, String scope, FilterCriteria filterCriteria) {
 
     ValidationContext validationContext =
         ValidationContext.builder().scope(scope).requestContext(requestContext).build();
     savedFilterCriteriaValidator.validate(filterCriteria, validationContext);
+    return validationContext.getFilterVariable();
   }
 
   public void validateOrThrow(RequestContext requestContext, UpdateSavedFilterRequest request) {
@@ -49,6 +57,11 @@ public class SavedFilterRequestValidator {
   }
 
   private void fetchAndValidateFilterCriteriaForUpdate(
+      RequestContext requestContext, UpdateSavedFilterRequest request) {
+    validateFilterCriteriaForUpdateAndCollectFilterVariables(requestContext, request);
+  }
+
+  public Set<Field> validateFilterCriteriaForUpdateAndCollectFilterVariables(
       RequestContext requestContext, UpdateSavedFilterRequest request) {
     List<SavedFilter> savedFiltersFromDb =
         savedFilterStoreManager
@@ -62,7 +75,7 @@ public class SavedFilterRequestValidator {
           .asRuntimeException();
     }
 
-    validateFilterCriteria(
+    return validateFilterCriteriaAndCollectFilterVariables(
         requestContext, savedFiltersFromDb.get(0).getScope(), request.getFilterCriteria());
   }
 
