@@ -1,7 +1,8 @@
 package ai.traceable.customsignature.config.service.rules;
 
+import static ai.traceable.audit.utils.AuditContextualObjectUtils.contextualObjectWithDefaultTraceableAuditInfo;
+import static ai.traceable.audit.utils.AuditContextualObjectUtils.enrichWithDefaultAuditInfo;
 import static ai.traceable.audit.utils.AuditDetailsBuilder.buildAuditDetails;
-import static ai.traceable.audit.utils.AuditFilterUtils.hasActiveAuditFilter;
 import static ai.traceable.audit.utils.AuditFilterUtils.matchesAuditFilters;
 import static ai.traceable.customsignature.config.service.CustomSignatureConstants.CUSTOM_SIGNATURE_RULE_CONFIG_NAMESPACE;
 import static ai.traceable.customsignature.config.service.CustomSignatureConstants.CUSTOM_SIGNATURE_RULE_CONFIG_RESOURCE_NAME;
@@ -50,7 +51,8 @@ public class CustomSignatureRulesStore
     extends IdentifiedObjectStoreWithFilter<CustomSignatureRule, GetRulesFilter> {
 
   private final CustomSignatureRuleConverter customSignatureRuleConverter;
-  private final List<CustomSignatureRuleRecord> defaultCustomSignatureRules;
+  private final Map<String, ContextualConfigObject<CustomSignatureRule>>
+      defaultCustomSignatureRuleObjectsMap;
   private final CustomSignatureConfigServiceConfig customSignatureConfigServiceConfig;
 
   private static final Set<ContextualKey<Void>> PROCESSED_RULE_TENANT_IDS = new HashSet<>();
@@ -67,32 +69,46 @@ public class CustomSignatureRulesStore
         CUSTOM_SIGNATURE_RULE_CONFIG_RESOURCE_NAME,
         configChangeEventGenerator);
     this.customSignatureRuleConverter = customSignatureRuleConverter;
-    this.defaultCustomSignatureRules =
-        customSignatureConfigServiceConfig.getDefaultCustomSignatureRules().stream()
-            .map(rule -> CustomSignatureRuleRecord.newBuilder().setRule(rule).build())
-            .collect(Collectors.toUnmodifiableList());
+    this.defaultCustomSignatureRuleObjectsMap =
+        buildDefaultRuleObjectsMap(
+            customSignatureConfigServiceConfig.getDefaultCustomSignatureRules());
     this.customSignatureConfigServiceConfig = customSignatureConfigServiceConfig;
   }
 
   @Override
-  public List<CustomSignatureRule> getAllConfigData(RequestContext requestContext) {
-    return getAllRuleRecords(requestContext).stream()
-        .map(CustomSignatureRuleRecord::getRule)
-        .collect(Collectors.toUnmodifiableList());
+  public Optional<ContextualConfigObject<CustomSignatureRule>> getObject(
+      RequestContext context, String id) {
+    return super.getObject(context, id)
+        .map(
+            contextualObj ->
+                enrichWithDefaultAuditInfo(
+                    contextualObj, defaultCustomSignatureRuleObjectsMap.get(id)))
+        .or(() -> Optional.ofNullable(defaultCustomSignatureRuleObjectsMap.get(id)));
   }
 
   @Override
-  public List<CustomSignatureRule> getAllConfigData(
-      RequestContext requestContext, GetRulesFilter filter) {
-    return getAllRuleRecords(requestContext, filter).stream()
-        .map(CustomSignatureRuleRecord::getRule)
-        .collect(Collectors.toUnmodifiableList());
+  public List<ContextualConfigObject<CustomSignatureRule>> getAllObjects(RequestContext context) {
+    List<ContextualConfigObject<CustomSignatureRule>> persistedRules = super.getAllObjects(context);
+
+    // Start with defaults, then overlay persisted rules (enriching with default audit info if
+    // needed)
+    Map<String, ContextualConfigObject<CustomSignatureRule>> mergedRulesMap =
+        new HashMap<>(defaultCustomSignatureRuleObjectsMap);
+    persistedRules.forEach(
+        rule ->
+            mergedRulesMap.put(
+                rule.getData().getId(),
+                enrichWithDefaultAuditInfo(
+                    rule, defaultCustomSignatureRuleObjectsMap.get(rule.getData().getId()))));
+
+    return List.copyOf(mergedRulesMap.values());
   }
 
   @Override
   public List<ContextualConfigObject<CustomSignatureRule>> getAllObjects(
       RequestContext context, GetRulesFilter filter) {
-    return super.getAllObjects(context, filter).stream()
+    return getAllObjects(context).stream()
+        .filter(configObject -> filterConfigData(configObject.getData(), filter).isPresent())
         .filter(
             configObject ->
                 matchesAuditFilters(
@@ -103,27 +119,12 @@ public class CustomSignatureRulesStore
   }
 
   public List<CustomSignatureRuleRecord> getAllRuleRecords(RequestContext context) {
-    List<CustomSignatureRuleRecord> backwardCompatibleExistingRules =
-        getBackwardCompatibleExistingRuleRecords(context, null);
-    return mergeCustomSignatureRules(backwardCompatibleExistingRules, defaultCustomSignatureRules);
+    return getBackwardCompatibleExistingRuleRecords(context, null);
   }
 
   public List<CustomSignatureRuleRecord> getAllRuleRecords(
       RequestContext context, GetRulesFilter filter) {
-    List<CustomSignatureRuleRecord> backwardCompatibleExistingRules =
-        getBackwardCompatibleExistingRuleRecords(context, filter);
-
-    // When audit filter is active, don't include default rules (they have no audit data)
-    if (hasActiveAuditFilter(filter.getAuditFilter())) {
-      return backwardCompatibleExistingRules;
-    }
-
-    List<CustomSignatureRuleRecord> filteredDefaultCustomSignatureRules =
-        defaultCustomSignatureRules.stream()
-            .filter(ruleRecord -> filterConfigData(ruleRecord.getRule(), filter).isPresent())
-            .collect(Collectors.toList());
-    return mergeCustomSignatureRules(
-        backwardCompatibleExistingRules, filteredDefaultCustomSignatureRules);
+    return getBackwardCompatibleExistingRuleRecords(context, filter);
   }
 
   @Override
@@ -147,23 +148,11 @@ public class CustomSignatureRulesStore
     return data.getId();
   }
 
-  private List<CustomSignatureRuleRecord> mergeCustomSignatureRules(
-      List<CustomSignatureRuleRecord> customSignatureRules,
-      List<CustomSignatureRuleRecord> defaultCustomSignatureRules) {
-
-    Map<String, CustomSignatureRuleRecord> customSignatureRuleMap = new HashMap<>();
-    customSignatureRuleMap.putAll(this.getRuleIdToRuleMap(defaultCustomSignatureRules));
-    customSignatureRuleMap.putAll(this.getRuleIdToRuleMap(customSignatureRules));
-
-    return customSignatureRuleMap.values().stream().collect(Collectors.toUnmodifiableList());
-  }
-
-  private Map<String, CustomSignatureRuleRecord> getRuleIdToRuleMap(
-      List<CustomSignatureRuleRecord> customSignatureRules) {
-    return customSignatureRules.stream()
-        .collect(
-            Collectors.toUnmodifiableMap(
-                ruleRecord -> ruleRecord.getRule().getId(), Function.identity()));
+  private Map<String, ContextualConfigObject<CustomSignatureRule>> buildDefaultRuleObjectsMap(
+      List<CustomSignatureRule> defaultRules) {
+    return defaultRules.stream()
+        .map(rule -> contextualObjectWithDefaultTraceableAuditInfo(rule, rule.getId()))
+        .collect(Collectors.toMap(ContextualConfigObject::getContext, Function.identity()));
   }
 
   @Override

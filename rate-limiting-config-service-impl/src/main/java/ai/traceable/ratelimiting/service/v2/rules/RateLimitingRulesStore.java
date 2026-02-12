@@ -1,7 +1,8 @@
 package ai.traceable.ratelimiting.service.v2.rules;
 
+import static ai.traceable.audit.utils.AuditContextualObjectUtils.contextualObjectWithDefaultTraceableAuditInfo;
+import static ai.traceable.audit.utils.AuditContextualObjectUtils.enrichWithDefaultAuditInfo;
 import static ai.traceable.audit.utils.AuditDetailsBuilder.buildAuditDetails;
-import static ai.traceable.audit.utils.AuditFilterUtils.hasActiveAuditFilter;
 import static ai.traceable.audit.utils.AuditFilterUtils.matchesAuditFilters;
 import static ai.traceable.ratelimiting.service.v2.constants.RateLimitingConfigConstants.RATE_LIMITING_RULE_CONFIG_RESOURCE_NAME;
 import static ai.traceable.ratelimiting.service.v2.constants.RateLimitingConfigConstants.RATE_LIMITING_RULE_CONFIG_RESOURCE_NAMESPACE;
@@ -13,13 +14,13 @@ import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleRecord;
 import ai.traceable.ratelimiting.config.service.v2.RuleConfigScope;
 import ai.traceable.ratelimiting.config.service.v2.RuleEvaluationPoint;
 import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceConfig;
-import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.google.protobuf.Value;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
@@ -35,7 +36,8 @@ import org.slf4j.LoggerFactory;
 public class RateLimitingRulesStore
     extends IdentifiedObjectStoreWithFilter<RateLimitingRule, GetRateLimitingRulesFilter> {
   Logger log = LoggerFactory.getLogger(RateLimitingRulesStore.class);
-  private final List<RateLimitingRule> defaultRateLimitingRules;
+  private final Map<String, ContextualConfigObject<RateLimitingRule>>
+      defaultRateLimitingRuleObjectsMap;
   private final RateLimitingConfigServiceConfig rateLimitingConfigServiceConfig;
 
   @Inject
@@ -48,35 +50,38 @@ public class RateLimitingRulesStore
         RATE_LIMITING_RULE_CONFIG_RESOURCE_NAMESPACE,
         RATE_LIMITING_RULE_CONFIG_RESOURCE_NAME,
         configChangeEventGenerator);
-    this.defaultRateLimitingRules = config.getDefaultRateLimitingRules();
+    this.defaultRateLimitingRuleObjectsMap =
+        buildDefaultRuleObjectsMap(config.getDefaultRateLimitingRules());
     this.rateLimitingConfigServiceConfig = config;
   }
 
   @Override
-  public Optional<RateLimitingRule> getData(RequestContext context, String id) {
-    return super.getData(context, id)
-        .or(
-            () ->
-                defaultRateLimitingRules.stream()
-                    .filter(rule -> rule.getId().equals(id))
-                    .findFirst());
+  public Optional<ContextualConfigObject<RateLimitingRule>> getObject(
+      RequestContext context, String id) {
+    return super.getObject(context, id)
+        .map(
+            contextualObj ->
+                enrichWithDefaultAuditInfo(
+                    contextualObj, defaultRateLimitingRuleObjectsMap.get(id)))
+        .or(() -> Optional.ofNullable(defaultRateLimitingRuleObjectsMap.get(id)));
   }
 
   @Override
-  public List<RateLimitingRule> getAllConfigData(RequestContext context) {
-    List<RateLimitingRule> rateLimitingRules = super.getAllConfigData(context);
-    return mergeRateLimitingRules(rateLimitingRules, defaultRateLimitingRules);
-  }
+  public List<ContextualConfigObject<RateLimitingRule>> getAllObjects(RequestContext context) {
+    List<ContextualConfigObject<RateLimitingRule>> persistedRules = super.getAllObjects(context);
 
-  @Override
-  public List<RateLimitingRule> getAllConfigData(
-      RequestContext context, GetRateLimitingRulesFilter filter) {
-    List<RateLimitingRule> filteredDefaultRateLimitingRules =
-        defaultRateLimitingRules.stream()
-            .filter(rule -> filterConfigData(rule, filter).isPresent())
-            .collect(Collectors.toUnmodifiableList());
-    List<RateLimitingRule> rateLimitingRules = super.getAllConfigData(context, filter);
-    return mergeRateLimitingRules(rateLimitingRules, filteredDefaultRateLimitingRules);
+    // Start with defaults, then overlay persisted rules (enriching with default audit info if
+    // needed)
+    Map<String, ContextualConfigObject<RateLimitingRule>> mergedRulesMap =
+        new HashMap<>(defaultRateLimitingRuleObjectsMap);
+    persistedRules.forEach(
+        rule ->
+            mergedRulesMap.put(
+                rule.getData().getId(),
+                enrichWithDefaultAuditInfo(
+                    rule, defaultRateLimitingRuleObjectsMap.get(rule.getData().getId()))));
+
+    return List.copyOf(mergedRulesMap.values());
   }
 
   @Override
@@ -160,49 +165,20 @@ public class RateLimitingRulesStore
             .anyMatch(ruleEvaluationPointsInFilter::contains);
   }
 
-  private List<RateLimitingRule> mergeRateLimitingRules(
-      List<RateLimitingRule> rateLimitingRules, List<RateLimitingRule> defaultRateLimitingRules) {
-    Map<String, RateLimitingRule> rateLimitingRuleMap = new HashMap<>();
-    rateLimitingRuleMap.putAll(this.getRuleIdToRuleMap(defaultRateLimitingRules));
-    rateLimitingRuleMap.putAll(this.getRuleIdToRuleMap(rateLimitingRules));
-    return rateLimitingRuleMap.values().stream().collect(Collectors.toUnmodifiableList());
-  }
-
-  private Map<String, RateLimitingRule> getRuleIdToRuleMap(
-      List<RateLimitingRule> rateLimitingRules) {
-    return Maps.uniqueIndex(rateLimitingRules, RateLimitingRule::getId);
+  private Map<String, ContextualConfigObject<RateLimitingRule>> buildDefaultRuleObjectsMap(
+      List<RateLimitingRule> defaultRules) {
+    return defaultRules.stream()
+        .map(rule -> contextualObjectWithDefaultTraceableAuditInfo(rule, rule.getId()))
+        .collect(Collectors.toMap(ContextualConfigObject::getContext, Function.identity()));
   }
 
   public List<RateLimitingRuleRecord> getRuleRecords(
       RequestContext context, GetRateLimitingRulesFilter filter) {
     boolean isDefaultFilter = GetRateLimitingRulesFilter.getDefaultInstance().equals(filter);
-    List<RateLimitingRuleRecord> storedRecords =
-        getAllObjects(context).stream()
-            .filter(ruleWithContext -> isDefaultFilter || matchesFilter(ruleWithContext, filter))
-            .map(this::toRuleRecord)
-            .collect(Collectors.toList());
-
-    // When audit filter is active, don't include default rules (they have no audit data)
-    if (hasActiveAuditFilter(filter.getAuditFilter())) {
-      return storedRecords;
-    }
-
-    // Add default rules (without audit details since they're not stored)
-    List<RateLimitingRuleRecord> defaultRecords =
-        defaultRateLimitingRules.stream()
-            .filter(rule -> filterConfigData(rule, filter).isPresent())
-            .map(rule -> RateLimitingRuleRecord.newBuilder().setRule(rule).build())
-            .collect(Collectors.toList());
-
-    return mergeRuleRecords(storedRecords, defaultRecords);
-  }
-
-  private List<RateLimitingRuleRecord> mergeRuleRecords(
-      List<RateLimitingRuleRecord> storedRecords, List<RateLimitingRuleRecord> defaultRecords) {
-    Map<String, RateLimitingRuleRecord> recordMap = new HashMap<>();
-    defaultRecords.forEach(ruleRecord -> recordMap.put(ruleRecord.getRule().getId(), ruleRecord));
-    storedRecords.forEach(ruleRecord -> recordMap.put(ruleRecord.getRule().getId(), ruleRecord));
-    return recordMap.values().stream().collect(Collectors.toUnmodifiableList());
+    return getAllObjects(context).stream()
+        .filter(ruleWithContext -> isDefaultFilter || matchesFilter(ruleWithContext, filter))
+        .map(this::toRuleRecord)
+        .collect(Collectors.toUnmodifiableList());
   }
 
   private boolean matchesFilter(

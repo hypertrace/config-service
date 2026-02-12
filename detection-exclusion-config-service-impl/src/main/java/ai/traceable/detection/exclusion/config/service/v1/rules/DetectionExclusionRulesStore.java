@@ -1,6 +1,7 @@
 package ai.traceable.detection.exclusion.config.service.v1.rules;
 
-import static ai.traceable.audit.utils.AuditFilterUtils.hasActiveAuditFilter;
+import static ai.traceable.audit.utils.AuditContextualObjectUtils.contextualObjectWithDefaultTraceableAuditInfo;
+import static ai.traceable.audit.utils.AuditContextualObjectUtils.enrichWithDefaultAuditInfo;
 import static ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionRulesUtils.DETECTION_EXCLUSION_RULE_CONFIG_RESOURCE_NAME;
 import static ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionRulesUtils.DETECTION_EXCLUSION_RULE_CONFIG_RESOURCE_NAMESPACE;
 import static ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionRulesUtils.filterConfig;
@@ -47,8 +48,10 @@ public class DetectionExclusionRulesStore
   private static final Set<ContextualKey<Void>> SSRF_FIXED_TENANTS = new HashSet<>();
 
   private final ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub;
-  private final List<DetectionExclusionRuleRecord> defaultDetectionExclusionRuleRecords;
-  private final List<DetectionExclusionRuleRecord> defaultNewDetectionExclusionRuleRecords;
+  private final Map<String, ContextualConfigObject<DetectionExclusionRule>>
+      defaultOldDetectionExclusionRuleObjectsMap;
+  private final Map<String, ContextualConfigObject<DetectionExclusionRule>>
+      defaultNewDetectionExclusionRuleObjectsMap;
   private final FeatureCachingClient featureFlagServiceClient;
   private final DetectionExclusionAuditHelper auditHelper;
 
@@ -65,28 +68,24 @@ public class DetectionExclusionRulesStore
         DETECTION_EXCLUSION_RULE_CONFIG_RESOURCE_NAME,
         configChangeEventGenerator);
     this.configServiceBlockingStub = configServiceBlockingStub;
-    this.defaultDetectionExclusionRuleRecords =
-        config.getDefaultDetectionExclusionRules().stream()
-            .map(rule -> DetectionExclusionRuleRecord.newBuilder().setRule(rule).build())
-            .collect(Collectors.toUnmodifiableList());
-    this.defaultNewDetectionExclusionRuleRecords =
-        config.getDefaultNewDetectionExclusionRules().stream()
-            .map(rule -> DetectionExclusionRuleRecord.newBuilder().setRule(rule).build())
-            .collect(Collectors.toUnmodifiableList());
+    this.defaultOldDetectionExclusionRuleObjectsMap =
+        buildDefaultRuleObjectsMap(config.getDefaultDetectionExclusionRules());
+    this.defaultNewDetectionExclusionRuleObjectsMap =
+        buildDefaultRuleObjectsMap(config.getDefaultNewDetectionExclusionRules());
     this.featureFlagServiceClient = featureFlagServiceClient;
     this.auditHelper = auditHelper;
   }
 
   @Override
-  public Optional<DetectionExclusionRule> getData(RequestContext context, String id) {
-    List<DetectionExclusionRuleRecord> defaultRecords = getDefaultRuleRecords(context);
-    return super.getData(context, id)
-        .or(
-            () ->
-                defaultRecords.stream()
-                    .map(DetectionExclusionRuleRecord::getRule)
-                    .filter(rule -> rule.getId().equals(id))
-                    .findFirst());
+  public Optional<ContextualConfigObject<DetectionExclusionRule>> getObject(
+      RequestContext context, String id) {
+    Map<String, ContextualConfigObject<DetectionExclusionRule>> defaultRuleObjectsMap =
+        getDefaultRuleObjects(context);
+    return super.getObject(context, id)
+        .map(
+            contextualObj ->
+                enrichWithDefaultAuditInfo(contextualObj, defaultRuleObjectsMap.get(id)))
+        .or(() -> Optional.ofNullable(defaultRuleObjectsMap.get(id)));
   }
 
   @Override
@@ -105,7 +104,9 @@ public class DetectionExclusionRulesStore
   }
 
   public List<DetectionExclusionRule> getAllConfigDataWithoutDefaults(RequestContext context) {
-    return super.getAllConfigData(context);
+    return super.getAllObjects(context).stream()
+        .map(ContextualConfigObject::getData)
+        .collect(Collectors.toUnmodifiableList());
   }
 
   @Override
@@ -117,32 +118,26 @@ public class DetectionExclusionRulesStore
   }
 
   public List<DetectionExclusionRuleRecord> getAllRuleRecords(RequestContext context) {
-    List<DetectionExclusionRuleRecord> storedRecords = getStoredRuleRecords(context, null);
-    List<DetectionExclusionRuleRecord> defaultRecords = getDefaultRuleRecords(context);
-    return mergeRuleRecords(context, storedRecords, defaultRecords);
+    return getStoredRuleRecords(context, null);
   }
 
   public List<DetectionExclusionRuleRecord> getAllRuleRecords(
       RequestContext context, GetRulesFilter filter) {
-    List<DetectionExclusionRuleRecord> storedRecords = getStoredRuleRecords(context, filter);
-
-    // When audit filter is active, don't include default rules (they have no audit data)
-    if (hasActiveAuditFilter(filter.getAuditFilter())) {
-      return storedRecords;
-    }
-
-    List<DetectionExclusionRuleRecord> filteredDefaultRecords =
-        getDefaultRuleRecords(context).stream()
-            .filter(ruleRecord -> filterConfigData(ruleRecord.getRule(), filter).isPresent())
-            .collect(Collectors.toUnmodifiableList());
-
-    return mergeRuleRecords(context, storedRecords, filteredDefaultRecords);
+    return getStoredRuleRecords(context, filter);
   }
 
-  private List<DetectionExclusionRuleRecord> getDefaultRuleRecords(RequestContext context) {
+  private Map<String, ContextualConfigObject<DetectionExclusionRule>> buildDefaultRuleObjectsMap(
+      List<DetectionExclusionRule> defaultRules) {
+    return defaultRules.stream()
+        .map(rule -> contextualObjectWithDefaultTraceableAuditInfo(rule, rule.getId()))
+        .collect(Collectors.toMap(ContextualConfigObject::getContext, Function.identity()));
+  }
+
+  private Map<String, ContextualConfigObject<DetectionExclusionRule>> getDefaultRuleObjects(
+      RequestContext context) {
     return featureFlagServiceClient.isApiProtectConfigPoliciesRevampEnabled(context)
-        ? defaultNewDetectionExclusionRuleRecords
-        : defaultDetectionExclusionRuleRecords;
+        ? defaultNewDetectionExclusionRuleObjectsMap
+        : defaultOldDetectionExclusionRuleObjectsMap;
   }
 
   private List<DetectionExclusionRuleRecord> getStoredRuleRecords(
@@ -151,7 +146,30 @@ public class DetectionExclusionRulesStore
         filter != null ? getAllObjects(context, filter) : getAllObjects(context);
 
     // Build records
-    return objects.stream().map(auditHelper::toRuleRecord).collect(Collectors.toUnmodifiableList());
+    List<DetectionExclusionRuleRecord> storedRecords =
+        objects.stream().map(auditHelper::toRuleRecord).collect(Collectors.toUnmodifiableList());
+    return fixSsrfRulesIfAny(context, storedRecords);
+  }
+
+  @Override
+  public List<ContextualConfigObject<DetectionExclusionRule>> getAllObjects(
+      RequestContext context) {
+    List<ContextualConfigObject<DetectionExclusionRule>> persistedRules =
+        super.getAllObjects(context);
+    Map<String, ContextualConfigObject<DetectionExclusionRule>> defaultRulesMap =
+        getDefaultRuleObjects(context);
+
+    // Start with defaults, then overlay persisted rules (enriching with default audit info if
+    // needed)
+    Map<String, ContextualConfigObject<DetectionExclusionRule>> mergedRulesMap =
+        new HashMap<>(defaultRulesMap);
+    persistedRules.forEach(
+        rule ->
+            mergedRulesMap.put(
+                rule.getData().getId(),
+                enrichWithDefaultAuditInfo(rule, defaultRulesMap.get(rule.getData().getId()))));
+
+    return List.copyOf(mergedRulesMap.values());
   }
 
   @Override
@@ -247,33 +265,13 @@ public class DetectionExclusionRulesStore
     String lastUpdateEmail;
   }
 
-  private List<DetectionExclusionRuleRecord> mergeRuleRecords(
-      RequestContext context,
-      List<DetectionExclusionRuleRecord> storedRecords,
-      List<DetectionExclusionRuleRecord> defaultRecords) {
-
-    if (!SSRF_FIXED_TENANTS.contains(context.buildInternalContextualKey())) {
-      // Bugfix: https://traceableai.atlassian.net/browse/ENG-33151
-      storedRecords = fixSsrfRulesIfAny(context, storedRecords);
-    }
-
-    Map<String, DetectionExclusionRuleRecord> recordMap = new HashMap<>();
-    recordMap.putAll(getRuleIdToRecordMap(defaultRecords));
-    recordMap.putAll(getRuleIdToRecordMap(storedRecords));
-
-    return recordMap.values().stream().collect(Collectors.toUnmodifiableList());
-  }
-
-  private Map<String, DetectionExclusionRuleRecord> getRuleIdToRecordMap(
-      List<DetectionExclusionRuleRecord> records) {
-    return records.stream()
-        .collect(
-            Collectors.toUnmodifiableMap(
-                ruleRecord -> ruleRecord.getRule().getId(), Function.identity()));
-  }
-
   private List<DetectionExclusionRuleRecord> fixSsrfRulesIfAny(
       RequestContext context, List<DetectionExclusionRuleRecord> storedRuleRecords) {
+
+    if (SSRF_FIXED_TENANTS.contains(context.buildInternalContextualKey())) {
+      return storedRuleRecords;
+    }
+
     Map<String, DetectionExclusionRuleRecord> ssrfFixedRules =
         storedRuleRecords.stream()
             .filter(

@@ -1,5 +1,6 @@
 package ai.traceable.audit.utils;
 
+import static ai.traceable.audit.utils.AuditContextualObjectUtils.UNKNOWN_EMAIL;
 import static java.util.Objects.nonNull;
 
 import com.typesafe.config.Config;
@@ -31,6 +32,6 @@ public class UserVisibleEmailConfig {
   }
 
   public String maskEmailIfNotVisible(String email) {
-    return isVisibleEmail(email) ? email : "Unknown";
+    return isVisibleEmail(email) ? email : UNKNOWN_EMAIL;
   }
 }
