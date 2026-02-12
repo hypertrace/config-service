@@ -198,6 +198,19 @@ public class AbusePolicyConfigRequestValidator {
           .asRuntimeException(requestContext.buildTrailers());
     }
 
+    // Aggregation and group by must not use the same derived entity
+    if (template.hasGroupBy()
+        && !template.getGroupBy().getDerivedEntityId().isEmpty()
+        && !template.getAggregation().getDerivedEntityId().isEmpty()
+        && template
+            .getAggregation()
+            .getDerivedEntityId()
+            .equals(template.getGroupBy().getDerivedEntityId())) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Aggregation and group by must not use the same derived entity ID")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+
     // Validate threshold (required)
     if (!template.hasThreshold()) {
       throw Status.INVALID_ARGUMENT

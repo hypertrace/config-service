@@ -108,7 +108,7 @@ message AbuseSimpleAggregationTemplateConfig {
   AbuseAggregationConfig aggregation = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Aggregation configuration"];
 
   // Required: Group by configuration
-  AbuseGroupByConfig group_by = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Group by configuration"];
+  AbuseGroupByConfig group_by = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Group by configuration. Must not use the same derived entity as the aggregation field"];
 
   // Optional: Threshold configuration
   AbuseThresholdConfig threshold = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Required. Threshold configuration"];
