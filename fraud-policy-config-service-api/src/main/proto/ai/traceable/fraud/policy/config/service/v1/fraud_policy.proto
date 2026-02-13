@@ -27,6 +27,7 @@ enum PolicyType {
   POLICY_TYPE_ACCOUNT_TAKEOVER = 3;
   POLICY_TYPE_CUSTOM = 4;
   POLICY_TYPE_INTERNAL = 5;
+  POLICY_TYPE_ABUSE = 6;
 }
 
 enum PolicyGroup {
