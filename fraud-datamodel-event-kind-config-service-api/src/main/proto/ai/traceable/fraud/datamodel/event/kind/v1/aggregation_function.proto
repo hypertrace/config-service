@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package ai.traceable.fraud.datamodel.event.kind.v1;
+
+import "ai/traceable/fraud/datamodel/event/kind/v1/complex_data_model_event_kind.proto";
+import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
+
+option java_multiple_files = true;
+
+// Aggregation function definition (system-defined only)
+message AggregationFunction {
+  // Unique identifier
+  string id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Unique identifier for this aggregation function"];
+
+  // Display name for UI (e.g., "COUNT", "SUM", "AVG")
+  string display_name = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Display name shown in UI"];
+
+  // Description of what this function does
+  string description = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Description of what this function does"];
+
+  // List of kinds this function accepts as input
+  // Functions are valid for these kinds AND all their descendants
+  repeated ComplexDataModelEventKind input_kinds = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_skip) = true];
+
+  // SQL function name/template
+  string sql_template = 5 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_skip) = true];
+}

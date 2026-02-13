@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package ai.traceable.fraud.datamodel.event.kind.v1;
+
+import "ai/traceable/fraud/datamodel/event/kind/v1/aggregation_function.proto";
+import "ai/traceable/fraud/datamodel/event/kind/v1/complex_data_model_event_kind.proto";
+import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
+import "ai/traceable/graphql/autogen/schema/annotations/method/v1/graphql_method_options.proto";
+
+option java_multiple_files = true;
+
+// Service for managing Aggregation Functions
+service AggregationFunctionService {
+  rpc GetAggregationFunctions(GetAggregationFunctionsRequest) returns (GetAggregationFunctionsResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "List all available aggregation functions for the given data types";
+  }
+}
+
+// Request to list aggregation functions
+message GetAggregationFunctionsRequest {
+  AggregationFunctionFilter filter = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Filter criteria for aggregation functions"];
+}
+
+message AggregationFunctionFilter {
+  repeated ComplexDataModelEventKind compatible_with_kinds = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Filter functions compatible with these input event kinds"];
+}
+
+message GetAggregationFunctionsResponse {
+  repeated AggregationFunctionsByKind function_mappings = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of kind to aggregation functions mappings"];
+}
+
+// Mapping of a kind to its applicable aggregation functions
+message AggregationFunctionsByKind {
+  ComplexDataModelEventKind kind = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "The event kind"];
+  repeated AggregationFunction functions = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of aggregation functions applicable to this kind"];
+}

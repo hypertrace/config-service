@@ -1,0 +1,56 @@
+# Aggregation Functions Registry
+# Defines system-defined SQL aggregation functions and their type compatibility
+
+functions:
+  # Universal aggregations - work on all types
+  - id: "system_aggregation_count"
+    display_name: "COUNT"
+    description: "Counts the number of values"
+    input_kinds:
+      - kind_id: "system_event_kind_value"
+    sql_template: "COUNT(${field})"
+
+  - id: "system_aggregation_count_distinct"
+    display_name: "DISTINCT_COUNT"
+    description: "Counts the number of unique values"
+    input_kinds:
+      - kind_id: "system_event_kind_value"
+    sql_template: "COUNT(DISTINCT ${field})"
+
+  # Numeric aggregations
+  - id: "system_aggregation_sum"
+    display_name: "SUM"
+    description: "Sums numeric values"
+    input_kinds:
+      - kind_id: "system_event_kind_numeric"
+    sql_template: "SUM(${field})"
+
+  - id: "system_aggregation_avg"
+    display_name: "AVG"
+    description: "Calculates average of numeric values"
+    input_kinds:
+      - kind_id: "system_event_kind_numeric"
+    sql_template: "AVG(${field})"
+
+  - id: "system_aggregation_min"
+    display_name: "MIN"
+    description: "Finds minimum value"
+    input_kinds:
+      - kind_id: "system_event_kind_numeric"
+      - kind_id: "system_event_kind_timestamp"
+    sql_template: "MIN(${field})"
+
+  - id: "system_aggregation_max"
+    display_name: "MAX"
+    description: "Finds maximum value"
+    input_kinds:
+      - kind_id: "system_event_kind_numeric"
+      - kind_id: "system_event_kind_timestamp"
+    sql_template: "MAX(${field})"
+
+  - id: "system_aggregation_coalesce"
+    display_name: "COALESCE"
+    description: "Removes non-null values"
+    input_kinds:
+      - kind_id: "system_event_kind_value"
+    sql_template: "COALESCE(${field})"

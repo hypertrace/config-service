@@ -3,7 +3,7 @@ syntax = "proto3";
 package ai.traceable.fraud.datamodel.entity.derivation.config.service.v1;
 
 import "ai/traceable/fraud/datamodel/entity/derivation/config/service/v1/event_derivation_config_details.proto";
-import "ai/traceable/fraud/datamodel/event/kind/v1/data_model_event_kind.proto";
+import "ai/traceable/fraud/datamodel/event/kind/v1/complex_data_model_event_kind.proto";
 import "ai/traceable/fraud/datamodel/event/kind/v1/transformation_pipeline.proto";
 import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
 
@@ -12,20 +12,21 @@ option java_multiple_files = true;
 // EntityDerivationConfig with ID and configuration data
 message EntityDerivationConfig {
   string id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Unique identifier"];
-  EntityDerivationConfigData data = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Entity derivation configuration data"];
+  // Machine-readable name of the entity
+  string column_name = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_skip) = true];
+  EntityDerivationConfigData data = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Entity derivation configuration data"];
 }
 
 // EntityDerivationConfigData contains all configuration fields for entity derivation.
 // SpanProjection embeds EventDerivationConfigDetails directly. ParentDerivation derives from a parent entity.
 message EntityDerivationConfigData {
-  string name = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Machine-readable name of the entity"];
   string display_name = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Display name shown in UI"];
   string description = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Description"];
   bool disabled = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Whether this entity is disabled"];
   bool internal = 5 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Whether this entity is internal and hidden from UI"];
   EntityCategory category = 6 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Category of this entity"];
-  // Strong type of the entity
-  ai.traceable.fraud.datamodel.event.kind.v1.DataModelEventKind event_kind = 7 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Data type of the derived value (e.g., string, integer, IP address)"];
+  // Strong type of the entity - can be simple or complex (e.g., array<string>)
+  ai.traceable.fraud.datamodel.event.kind.v1.ComplexDataModelEventKind event_kind = 7 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Data type of the derived value (e.g., string, integer, IP address, array<string>)"];
 
   // How the raw value is extracted — either from spans or from a parent entity
   oneof value_source {
