@@ -321,10 +321,20 @@ public class CustomSignatureRulesValidator implements RulesValidator {
       }
 
       EventType eventType = ruleEffect.getEventType();
+      boolean hasAllowOrBlockEventType =
+          eventType == EVENT_TYPE_ALLOW || eventType == EVENT_TYPE_DETECTION_AND_BLOCKING;
+
+      // TODO: Remove this validation if and when support for exclude gets added in libtraceable.
+      // Temporary checks have been added to CustomSignatureRuleEvaluationPointsMigrator in order to
+      // pass the integration test
+      if (hasAllowOrBlockEventType
+          && ClauseExcludeChecker.hasAnyClauseWithExcludeEnabled(clauseGroup)) {
+        return Status.INVALID_ARGUMENT.withDescription(
+            "Rules with ALLOW or BLOCK event type cannot have clauses with exclude enabled in case of INLINE_TRACING_AGENT.");
+      }
+
       boolean isCompatibleEventType =
-          eventType == EVENT_TYPE_ALLOW
-              || eventType == EVENT_TYPE_DETECTION_AND_BLOCKING
-              || isRuleOfEventTypeAlertAndContainsHeaderInjection(ruleEffect);
+          hasAllowOrBlockEventType || isRuleOfEventTypeAlertAndContainsHeaderInjection(ruleEffect);
       if (!isCompatibleEventType) {
         return Status.INVALID_ARGUMENT.withDescription("Rule is not AGENT-compatible");
       }

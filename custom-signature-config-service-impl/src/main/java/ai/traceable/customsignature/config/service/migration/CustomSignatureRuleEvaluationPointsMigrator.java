@@ -1,6 +1,7 @@
 package ai.traceable.customsignature.config.service.migration;
 
 import ai.traceable.customsignature.config.service.modsec.ModsecRulesSupportChecker;
+import ai.traceable.customsignature.config.service.rules.ClauseExcludeChecker;
 import ai.traceable.customsignature.config.service.rules.CustomSignatureRulesEdgeDecisionFilter;
 import ai.traceable.customsignature.config.service.rules.CustomSignatureRulesManager;
 import ai.traceable.customsignature.config.service.rules.CustomSignatureRulesValidator;
@@ -119,10 +120,18 @@ public class CustomSignatureRuleEvaluationPointsMigrator {
     }
 
     // check for agent
+    // Don't add INLINE_TRACING_AGENT if rule has ALLOW/BLOCK event type with exclude clauses
+    // enabled
+    // since libtraceable doesn't support exclude for these event types yet
     if (ModsecRulesSupportChecker.isInlineRuleMappingSupported(clauseGroup)) {
       EventType ruleEventType = ruleEffect.getEventType();
-      if (ruleEventType == EventType.EVENT_TYPE_ALLOW
-          || ruleEventType == EventType.EVENT_TYPE_DETECTION_AND_BLOCKING
+      boolean hasAllowOrBlockEventType =
+          ruleEventType == EventType.EVENT_TYPE_ALLOW
+              || ruleEventType == EventType.EVENT_TYPE_DETECTION_AND_BLOCKING;
+      boolean hasExcludeEnabledForAllowOrBlock =
+          hasAllowOrBlockEventType
+              && ClauseExcludeChecker.hasAnyClauseWithExcludeEnabled(clauseGroup);
+      if ((hasAllowOrBlockEventType && !hasExcludeEnabledForAllowOrBlock)
           || CustomSignatureRulesValidator.isRuleOfEventTypeAlertAndContainsHeaderInjection(
               ruleEffect)) {
         ruleEvaluationPoints.add(RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT);

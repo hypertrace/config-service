@@ -330,6 +330,20 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
                 "RULE_EVALUATION_POINT_INLINE_TRACING_AGENT cannot be one of the rule evaluation points as either exclusionTargets or conditions is unsupported")
             .asRuntimeException();
       }
+
+      // TODO: Remove this validation if and when support for exclude gets added in libtraceable.
+      // Temporary checks have been added to DetectionExclusionRuleEvaluationPointsMigrator in order
+      // to pass the integration test
+      boolean hasAllowOrBlockTarget =
+          exclusionTargets.contains(EXCLUSION_TARGET_ALLOW)
+              || exclusionTargets.contains(EXCLUSION_TARGET_BLOCK);
+      if (hasAllowOrBlockTarget
+          && ConditionExcludeChecker.hasAnyConditionWithExcludeEnabled(conditions)) {
+        throw Status.INVALID_ARGUMENT
+            .withDescription(
+                "Rules with INLINE_TRACING_AGENT evaluation point and ALLOW/BLOCK exclusion target cannot have conditions with exclude enabled.")
+            .asRuntimeException();
+      }
     }
   }
 
