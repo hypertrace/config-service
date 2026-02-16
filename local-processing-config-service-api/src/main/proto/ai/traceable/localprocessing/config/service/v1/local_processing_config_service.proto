@@ -131,7 +131,7 @@ message PercentageLimitConfig {
   // allowed_percentage is a percentage value between 0 and 100
   // and only if the generated value, which will be generated via an unbiased random number generator,
   // is less than allowed_percentage, the span will be allowed to pass through
-  float allowed_percentage = 2;
+  int32 allowed_percentage = 2;
   SpanFilter filter = 3;
   SpanLimitingStrategy limiting_strategy = 4;
 }

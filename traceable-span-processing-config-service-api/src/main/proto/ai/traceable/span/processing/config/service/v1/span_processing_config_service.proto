@@ -159,6 +159,7 @@ message UpdateSamplingConfig {
   string id = 1;
   RateLimitConfig rate_limit_config = 2;
   SpanFilter filter = 3;
+  PercentageLimitConfig percentage_limit_config = 4;
 }
 
 message DeleteSamplingConfigRequest {
