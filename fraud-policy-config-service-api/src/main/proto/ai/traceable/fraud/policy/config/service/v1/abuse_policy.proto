@@ -115,6 +115,9 @@ message AbuseSimpleAggregationTemplateConfig {
 
   // Time window to look back for data when evaluating
   AbuseTimeWindow time_window = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Required. Time window to look back for data. Must be > 0"];
+
+  // Filters to be added as a part of the where clause
+  repeated AbusePolicyDetectionFilter filters = 5 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Optional. Additional filters to increase detection efficacy/confidence"];
 }
 
 message AbuseAggregationConfig {
@@ -138,15 +141,6 @@ message AbusePredefinedTemplateConfig {
 
   // Required: Parameters to pass to the backend template
   map<string, google.protobuf.Value> parameters = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Required. Parameters to pass to the backend template. At least one parameter"];
-}
-
-enum AbuseComparisonOperator {
-  ABUSE_COMPARISON_OPERATOR_UNSPECIFIED = 0;
-  ABUSE_COMPARISON_OPERATOR_EQUALS = 1;
-  ABUSE_COMPARISON_OPERATOR_NOT_EQUALS = 2;
-  ABUSE_COMPARISON_OPERATOR_CONTAINS = 3;
-  ABUSE_COMPARISON_OPERATOR_NOT_CONTAINS = 4;
-  ABUSE_COMPARISON_OPERATOR_MATCHES_PATTERN = 5;
 }
 
 enum AbusePredefinedTemplateType {
@@ -205,4 +199,66 @@ message AbuseTimeWindow {
     // Relative time window (e.g., last 1 hour)
     google.protobuf.Duration lookback_duration = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Relative time window for lookback"];
   }
+}
+
+message AbusePolicyDetectionFilter {
+  oneof filter {
+    AbusePolicyLogicalFilter logical_filter = 1;
+    AbusePolicyRelationalFilter relational_filter = 2;
+  }
+}
+
+message AbusePolicyLogicalFilter {
+  AbusePolicyLogicalOperator operator = 1;
+  repeated AbusePolicyDetectionFilter operands = 2;
+}
+
+message AbusePolicyRelationalFilter {
+  AbusePolicyRelationalFilterOperandKey key = 1;
+  AbusePolicyRelationalFilterOperator operator = 2;
+  AbusePolicyRelationalFilterOperandValue value = 3;
+}
+
+enum AbusePolicyLogicalOperator {
+  ABUSE_POLICY_LOGICAL_OPERATOR_UNSPECIFIED = 0;
+  ABUSE_POLICY_LOGICAL_OPERATOR_AND = 1;
+  ABUSE_POLICY_LOGICAL_OPERATOR_OR = 2;
+}
+
+enum AbusePolicyRelationalFilterOperator {
+  ABUSE_POLICY_RELATIONAL_FILTER_OPERATOR_UNSPECIFIED = 0;
+  // string / numeric
+  ABUSE_POLICY_RELATIONAL_FILTER_OPERATOR_EQ = 1;
+  // numeric
+  ABUSE_POLICY_RELATIONAL_FILTER_OPERATOR_GT = 2;
+  ABUSE_POLICY_RELATIONAL_FILTER_OPERATOR_GTE = 3;
+  ABUSE_POLICY_RELATIONAL_FILTER_OPERATOR_LT = 4;
+  ABUSE_POLICY_RELATIONAL_FILTER_OPERATOR_LTE = 5;
+  // string
+  ABUSE_POLICY_RELATIONAL_FILTER_OPERATOR_LIKE = 6;
+}
+
+message AbusePolicyRelationalFilterOperandKey {
+  oneof operand_key {
+    string entity_id = 1;
+  }
+}
+
+message AbusePolicyRelationalFilterOperandValue {
+  oneof operand_value {
+    // column value match
+    string entity_id = 1;
+    // compare against literal
+    google.protobuf.Value value = 2;
+  }
+}
+
+// TODO: this is not being used, to be cleaned up
+enum AbuseComparisonOperator {
+  ABUSE_COMPARISON_OPERATOR_UNSPECIFIED = 0;
+  ABUSE_COMPARISON_OPERATOR_EQUALS = 1;
+  ABUSE_COMPARISON_OPERATOR_NOT_EQUALS = 2;
+  ABUSE_COMPARISON_OPERATOR_CONTAINS = 3;
+  ABUSE_COMPARISON_OPERATOR_NOT_CONTAINS = 4;
+  ABUSE_COMPARISON_OPERATOR_MATCHES_PATTERN = 5;
 }
