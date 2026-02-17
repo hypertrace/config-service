@@ -40,6 +40,7 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
   private static final String URL_REGEX_TO_REQD_PARAM_REGEX_DETAILS =
       "url_regex_to_reqd_param_regex_details";
   private static final String URL_REGEXES = "url_regexes";
+  private static final String HTTP_METHOD_REGEX = "http_method_regex";
   private static final String MAX_ALIASES = "max_aliases";
   private static final String MAX_DUPLICATES = "max_duplicates";
   private static final String MAX_BATCHES = "max_batches";
@@ -186,6 +187,15 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
             .setConfigValueMetadata(
                 ConfigValueMetadata.newBuilder()
                     .setType(ConfigValueType.CONFIG_VALUE_TYPE_ARRAY)
+                    .build())
+            .build();
+
+    ConfigMetadata httpMethodRegexConfigMetadata =
+        ConfigMetadata.newBuilder()
+            .setKey(HTTP_METHOD_REGEX)
+            .setConfigValueMetadata(
+                ConfigValueMetadata.newBuilder()
+                    .setType(ConfigValueType.CONFIG_VALUE_TYPE_STRING)
                     .build())
             .build();
 
@@ -817,6 +827,7 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
             minPercentSeenConfigMetadata,
             csrfRegexStrings,
             urlRegexesConfigMetadata,
+            httpMethodRegexConfigMetadata,
             enabledForInternalIpsConfigMetadata,
             evaluateRequestBodyParamsConfigMetadata,
             thresholdFamiliesExcluded,
