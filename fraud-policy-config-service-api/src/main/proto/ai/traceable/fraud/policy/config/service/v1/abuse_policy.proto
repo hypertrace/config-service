@@ -203,20 +203,20 @@ message AbuseTimeWindow {
 
 message AbusePolicyDetectionFilter {
   oneof filter {
-    AbusePolicyLogicalFilter logical_filter = 1;
-    AbusePolicyRelationalFilter relational_filter = 2;
+    AbusePolicyLogicalFilter logical_filter = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Logical filter combining multiple filters with AND/OR"];
+    AbusePolicyRelationalFilter relational_filter = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Relational filter comparing key-value pairs"];
   }
 }
 
 message AbusePolicyLogicalFilter {
-  AbusePolicyLogicalOperator operator = 1;
-  repeated AbusePolicyDetectionFilter operands = 2;
+  AbusePolicyLogicalOperator operator = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Required. Logical operator (AND/OR)"];
+  repeated AbusePolicyDetectionFilter operands = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Required. Filters to combine"];
 }
 
 message AbusePolicyRelationalFilter {
-  AbusePolicyRelationalFilterOperandKey key = 1;
-  AbusePolicyRelationalFilterOperator operator = 2;
-  AbusePolicyRelationalFilterOperandValue value = 3;
+  AbusePolicyRelationalFilterOperandKey key = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Required. Key/field to filter on"];
+  AbusePolicyRelationalFilterOperator operator = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Required. Comparison operator"];
+  AbusePolicyRelationalFilterOperandValue value = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Required. Value to compare against"];
 }
 
 enum AbusePolicyLogicalOperator {
@@ -240,16 +240,16 @@ enum AbusePolicyRelationalFilterOperator {
 
 message AbusePolicyRelationalFilterOperandKey {
   oneof operand_key {
-    string entity_id = 1;
+    string entity_id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Derived entity ID to filter on"];
   }
 }
 
 message AbusePolicyRelationalFilterOperandValue {
   oneof operand_value {
     // column value match
-    string entity_id = 1;
+    string entity_id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Derived entity ID for column value comparison"];
     // compare against literal
-    google.protobuf.Value value = 2;
+    google.protobuf.Value value = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Literal value to compare against"];
   }
 }
 

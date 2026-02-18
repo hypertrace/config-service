@@ -92,6 +92,7 @@ dependencies {
   implementation(projects.agentActionConfigServiceImpl)
   implementation(projects.applicationGroupingConfigServiceImpl)
   implementation(projects.dataObfuscationConfigServiceImpl)
+  implementation(projects.fraudDatamodelEventKindConfigServiceImpl)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

@@ -3,7 +3,7 @@
 # All operators are binary: input value + single comparison parameter
 # Uses same structure as TransformationFunction proto
 
-operators:
+functions:
   # String equals/not-equals (also covers IP address, email, etc. which inherit from string)
   - id: "system_defined_operator_string_equals"
     display_name: "="
