@@ -8,6 +8,7 @@ import static org.hypertrace.config.service.store.ConfigDocument.RESOURCE_NAMESP
 import static org.hypertrace.config.service.store.ConfigDocument.TENANT_ID_FIELD_NAME;
 import static org.hypertrace.core.documentstore.Filter.Op.OR;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 import com.google.protobuf.Value;
 import io.grpc.Status;
@@ -306,7 +307,8 @@ public class DocumentConfigStore implements ConfigStore {
       String userEmail,
       boolean suppressUserTracking) {
     long updateTimestamp = clock.millis();
-    boolean excludedEmail = suppressUserTracking || isExcludedEmail(userEmail);
+    String resolvedEmail = suppressUserTracking ? userEmail : resolveUserEmail(userEmail);
+    boolean excludedEmail = suppressUserTracking || isExcludedEmail(resolvedEmail);
     return new ConfigDocument(
         configResourceContext.getConfigResource().getResourceName(),
         configResourceContext.getConfigResource().getResourceNamespace(),
@@ -316,7 +318,7 @@ public class DocumentConfigStore implements ConfigStore {
         userId,
         userEmail,
         previousConfig.getCreatedByEmail(),
-        excludedEmail ? previousConfig.getLastUserUpdateEmail() : userEmail,
+        excludedEmail ? previousConfig.getLastUserUpdateEmail() : resolvedEmail,
         excludedEmail ? previousConfig.getLastUserUpdateTimestamp() : updateTimestamp,
         latestConfig,
         previousConfig.getCreationTimestamp(),
@@ -336,7 +338,8 @@ public class DocumentConfigStore implements ConfigStore {
       String userEmail,
       boolean suppressUserTracking) {
     long updateTimestamp = clock.millis();
-    boolean excludedEmail = suppressUserTracking || isExcludedEmail(userEmail);
+    String resolvedEmail = suppressUserTracking ? userEmail : resolveUserEmail(userEmail);
+    boolean excludedEmail = suppressUserTracking || isExcludedEmail(resolvedEmail);
     return new ConfigDocument(
         configResourceContext.getConfigResource().getResourceName(),
         configResourceContext.getConfigResource().getResourceNamespace(),
@@ -345,8 +348,8 @@ public class DocumentConfigStore implements ConfigStore {
         1L,
         userId,
         userEmail,
-        userEmail,
-        excludedEmail ? null : userEmail,
+        resolvedEmail, // created by email
+        excludedEmail ? null : resolvedEmail,
         excludedEmail ? 0L : updateTimestamp,
         latestConfig,
         updateTimestamp,
@@ -608,6 +611,13 @@ public class DocumentConfigStore implements ConfigStore {
   private boolean isExcludedEmail(String userEmail) {
     return storeConfig.getCustomerVisibleExcludedEmailPatterns().stream()
         .anyMatch(pattern -> pattern.matcher(userEmail).matches());
+  }
+
+  private String resolveUserEmail(String userEmail) {
+    if (Strings.isNullOrEmpty(userEmail)) {
+      return storeConfig.getInternalPlatformEmail();
+    }
+    return userEmail;
   }
 
   /**
