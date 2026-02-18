@@ -9,10 +9,14 @@ import "ai/traceable/graphql/autogen/schema/annotations/method/v1/graphql_method
 
 option java_multiple_files = true;
 
-// Service for managing Transformation Functions
+// Service for managing Transformation Functions and Operators
 service TransformationFunctionService {
   rpc GetTransformationFunctions(GetTransformationFunctionsRequest) returns (GetTransformationFunctionsResponse) {
     option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "List all available transformation functions for data model derivations";
+  }
+
+  rpc GetOperators(GetOperatorsRequest) returns (GetOperatorsResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "List all available operators for filtering event kind values";
   }
 }
 
@@ -33,4 +37,23 @@ message GetTransformationFunctionsResponse {
 message TransformationFunctionsByKind {
   ComplexDataModelEventKind kind = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "The event kind"];
   repeated TransformationFunction functions = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of transformation functions applicable to this kind"];
+}
+
+// Request to list operators
+message GetOperatorsRequest {
+  OperatorFilter filter = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Filter criteria for operators"];
+}
+
+message OperatorFilter {
+  repeated ComplexDataModelEventKind compatible_with_kinds = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Filter operators compatible with these input event kinds"];
+}
+
+message GetOperatorsResponse {
+  repeated OperatorsByKind operator_mappings = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of kind to operators mappings"];
+}
+
+// Mapping of a kind to its applicable operators
+message OperatorsByKind {
+  ComplexDataModelEventKind kind = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "The event kind"];
+  repeated TransformationFunction operators = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of operators applicable to this kind"];
 }

@@ -1,0 +1,229 @@
+# Operators Registry
+# Defines available operators for filtering/conditions on event kind values
+# All operators are binary: input value + single comparison parameter
+# Uses same structure as TransformationFunction proto
+
+operators:
+  # String equals/not-equals (also covers IP address, email, etc. which inherit from string)
+  - id: "system_defined_operator_string_equals"
+    display_name: "="
+    description: "Checks if the string equals the specified value"
+    input_kinds:
+      - kind_id: "system_event_kind_string"
+      - kind_id: "system_event_kind_network_identifier"
+    output_kind:
+      kind_id: "system_event_kind_boolean"
+    jexl_template: "${input} == '${value}'"
+    parameters:
+      - name: "value"
+        description: "Value to compare against"
+        type: PARAMETER_TYPE_STRING
+        required: true
+
+  - id: "system_defined_operator_string_not_equals"
+    display_name: "!="
+    description: "Checks if the string does not equal the specified value"
+    input_kinds:
+      - kind_id: "system_event_kind_string"
+      - kind_id: "system_event_kind_network_identifier"
+    output_kind:
+      kind_id: "system_event_kind_boolean"
+    jexl_template: "${input} != '${value}'"
+    parameters:
+      - name: "value"
+        description: "Value to compare against"
+        type: PARAMETER_TYPE_STRING
+        required: true
+
+  # Numeric equals/not-equals (also covers timestamp)
+  - id: "system_defined_operator_numeric_equals"
+    display_name: "="
+    description: "Checks if the number equals the specified value"
+    input_kinds:
+      - kind_id: "system_event_kind_numeric"
+      - kind_id: "system_event_kind_timestamp"
+    output_kind:
+      kind_id: "system_event_kind_boolean"
+    jexl_template: "${input} == ${value}"
+    parameters:
+      - name: "value"
+        description: "Value to compare against"
+        type: PARAMETER_TYPE_NUMBER
+        required: true
+
+  - id: "system_defined_operator_numeric_not_equals"
+    display_name: "!="
+    description: "Checks if the number does not equal the specified value"
+    input_kinds:
+      - kind_id: "system_event_kind_numeric"
+      - kind_id: "system_event_kind_timestamp"
+    output_kind:
+      kind_id: "system_event_kind_boolean"
+    jexl_template: "${input} != ${value}"
+    parameters:
+      - name: "value"
+        description: "Value to compare against"
+        type: PARAMETER_TYPE_NUMBER
+        required: true
+
+  # Boolean equals
+  - id: "system_defined_operator_boolean_equals"
+    display_name: "="
+    description: "Checks if the boolean equals the specified value"
+    input_kinds:
+      - kind_id: "system_event_kind_boolean"
+    output_kind:
+      kind_id: "system_event_kind_boolean"
+    jexl_template: "${input} == ${value}"
+    parameters:
+      - name: "value"
+        description: "Value to compare against (true or false)"
+        type: PARAMETER_TYPE_BOOLEAN
+        required: true
+
+  # Numeric/Timestamp comparison operators
+  - id: "system_defined_operator_less_than"
+    display_name: "<"
+    description: "Checks if the value is less than the specified value"
+    input_kinds:
+      - kind_id: "system_event_kind_numeric"
+      - kind_id: "system_event_kind_timestamp"
+    output_kind:
+      kind_id: "system_event_kind_boolean"
+    jexl_template: "${input} < ${value}"
+    parameters:
+      - name: "value"
+        description: "Value to compare against"
+        type: PARAMETER_TYPE_NUMBER
+        required: true
+
+  - id: "system_defined_operator_less_than_or_equals"
+    display_name: "<="
+    description: "Checks if the value is less than or equal to the specified value"
+    input_kinds:
+      - kind_id: "system_event_kind_numeric"
+      - kind_id: "system_event_kind_timestamp"
+    output_kind:
+      kind_id: "system_event_kind_boolean"
+    jexl_template: "${input} <= ${value}"
+    parameters:
+      - name: "value"
+        description: "Value to compare against"
+        type: PARAMETER_TYPE_NUMBER
+        required: true
+
+  - id: "system_defined_operator_greater_than"
+    display_name: ">"
+    description: "Checks if the value is greater than the specified value"
+    input_kinds:
+      - kind_id: "system_event_kind_numeric"
+      - kind_id: "system_event_kind_timestamp"
+    output_kind:
+      kind_id: "system_event_kind_boolean"
+    jexl_template: "${input} > ${value}"
+    parameters:
+      - name: "value"
+        description: "Value to compare against"
+        type: PARAMETER_TYPE_NUMBER
+        required: true
+
+  - id: "system_defined_operator_greater_than_or_equals"
+    display_name: ">="
+    description: "Checks if the value is greater than or equal to the specified value"
+    input_kinds:
+      - kind_id: "system_event_kind_numeric"
+      - kind_id: "system_event_kind_timestamp"
+    output_kind:
+      kind_id: "system_event_kind_boolean"
+    jexl_template: "${input} >= ${value}"
+    parameters:
+      - name: "value"
+        description: "Value to compare against"
+        type: PARAMETER_TYPE_NUMBER
+        required: true
+
+  # String operators
+  - id: "system_defined_operator_contains"
+    display_name: "contains"
+    description: "Checks if the string contains the specified substring"
+    input_kinds:
+      - kind_id: "system_event_kind_string"
+    output_kind:
+      kind_id: "system_event_kind_boolean"
+    jexl_template: "${input}.contains('${substring}')"
+    parameters:
+      - name: "substring"
+        description: "Substring to search for"
+        type: PARAMETER_TYPE_STRING
+        required: true
+
+  - id: "system_defined_operator_not_contains"
+    display_name: "not contains"
+    description: "Checks if the string does not contain the specified substring"
+    input_kinds:
+      - kind_id: "system_event_kind_string"
+    output_kind:
+      kind_id: "system_event_kind_boolean"
+    jexl_template: "!${input}.contains('${substring}')"
+    parameters:
+      - name: "substring"
+        description: "Substring to search for"
+        type: PARAMETER_TYPE_STRING
+        required: true
+
+  - id: "system_defined_operator_starts_with"
+    display_name: "starts with"
+    description: "Checks if the string starts with the specified prefix"
+    input_kinds:
+      - kind_id: "system_event_kind_string"
+    output_kind:
+      kind_id: "system_event_kind_boolean"
+    jexl_template: "${input}.startsWith('${prefix}')"
+    parameters:
+      - name: "prefix"
+        description: "Prefix to check for"
+        type: PARAMETER_TYPE_STRING
+        required: true
+
+  - id: "system_defined_operator_ends_with"
+    display_name: "ends with"
+    description: "Checks if the string ends with the specified suffix"
+    input_kinds:
+      - kind_id: "system_event_kind_string"
+    output_kind:
+      kind_id: "system_event_kind_boolean"
+    jexl_template: "${input}.endsWith('${suffix}')"
+    parameters:
+      - name: "suffix"
+        description: "Suffix to check for"
+        type: PARAMETER_TYPE_STRING
+        required: true
+
+  - id: "system_defined_operator_matches_regex"
+    display_name: "matches regex"
+    description: "Checks if the string matches the specified regular expression"
+    input_kinds:
+      - kind_id: "system_event_kind_string"
+    output_kind:
+      kind_id: "system_event_kind_boolean"
+    jexl_template: "${input} =~ '${pattern}'"
+    parameters:
+      - name: "pattern"
+        description: "Regular expression pattern"
+        type: PARAMETER_TYPE_STRING
+        required: true
+
+  # IP Address operators
+  - id: "system_defined_operator_in_cidr_range"
+    display_name: "in CIDR range"
+    description: "Checks if the IP address is within the specified CIDR range"
+    input_kinds:
+      - kind_id: "system_event_kind_ip_address"
+    output_kind:
+      kind_id: "system_event_kind_boolean"
+    jexl_template: "ipInCidr(${input}, '${cidr}')"
+    parameters:
+      - name: "cidr"
+        description: "CIDR range (e.g., '192.168.0.0/16')"
+        type: PARAMETER_TYPE_STRING
+        required: true
