@@ -1,19 +1,19 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.4.4856=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.4873=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.7.67=runtimeClasspath,testRuntimeClasspath
 ai.traceable.license.metering.service:license-metering-service-api:0.1.81=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:cache-provider:0.8.133=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:event-invalidation-cache:0.8.133=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:cache-provider:0.8.134=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:event-invalidation-cache:0.8.134=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:coraza-waf-service-api:0.3.49=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:coraza-waf-service-client:0.3.49=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:jni-modsecurity-v2:0.1.149=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:jni-modsecurity:0.1.149=runtimeClasspath,testRuntimeClasspath
-ai.traceable.protection.rules:ai-application-protection-rules:0.1.122=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.protection.rules:api-protection-rules:0.1.122=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.protection.rules:protection-rules-common:0.1.122=runtimeClasspath,testRuntimeClasspath
-ai.traceable.protection.rules:web-application-protection-rules:0.1.122=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.protection.rules:ai-application-protection-rules:0.1.123=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.protection.rules:api-protection-rules:0.1.123=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.protection.rules:protection-rules-common:0.1.123=runtimeClasspath,testRuntimeClasspath
+ai.traceable.protection.rules:web-application-protection-rules:0.1.123=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.protection:api-protection-engine-config:0.1.131=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.protection:data-parser:0.1.131=runtimeClasspath,testRuntimeClasspath
 ai.traceable.protection:protection-processing-common:0.1.131=runtimeClasspath,testRuntimeClasspath
@@ -131,8 +131,8 @@ org.hypertrace.core.grpcutils:grpc-context-utils:0.13.21=compileClasspath,runtim
 org.hypertrace.core.kafkastreams.framework:kafka-bom:0.6.4=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.kafkastreams.framework:kafka-event-listener:0.6.2=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.serviceframework:platform-metrics:0.1.91=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-org.hypertrace.entity.service:entity-service-api:0.9.10=runtimeClasspath,testRuntimeClasspath
-org.hypertrace.entity.service:entity-service-change-event-api:0.9.10=runtimeClasspath,testRuntimeClasspath
+org.hypertrace.entity.service:entity-service-api:0.9.12=runtimeClasspath,testRuntimeClasspath
+org.hypertrace.entity.service:entity-service-change-event-api:0.9.12=runtimeClasspath,testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-api:5.10.2=testCompileClasspath,testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-engine:5.10.2=testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-params:5.10.2=testCompileClasspath,testRuntimeClasspath
