@@ -163,7 +163,10 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
 
         ModsecBlobResult modsecBlobResult =
             getModsecBlobResult(
-                customSignatureRule.getId(), modsecConvertibleClauses, modsecIdAssignment++);
+                customSignatureRule.getId(),
+                modsecConvertibleClauses,
+                modsecIdAssignment++,
+                customModsecRuleVersion);
         modsecBlob = modsecBlobResult.getModsecBlob();
 
         applicableServices.forEach(
@@ -233,7 +236,11 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
       List<Clause> modsecConvertibleClauses =
           getModsecConvertibleClauses(ruleDefinition.getClauseGroup());
       customModsecRuleConverter.getValidatedModsecRule(
-          MODSEC_ID_SEED, RANDOM_RULE_ID, ruleName, modsecConvertibleClauses);
+          MODSEC_ID_SEED,
+          RANDOM_RULE_ID,
+          ruleName,
+          modsecConvertibleClauses,
+          CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_UNSPECIFIED);
       return Status.OK;
     } catch (Exception ex) {
       return Status.INTERNAL
@@ -397,7 +404,10 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
   }
 
   private ModsecBlobResult getModsecBlobResult(
-      String ruleIdentifier, List<Clause> ANDClausesList, long modsecIdAssignment) {
+      String ruleIdentifier,
+      List<Clause> ANDClausesList,
+      long modsecIdAssignment,
+      CustomModsecRuleVersion customModsecRuleVersion) {
     try {
       if (ANDClausesList.isEmpty()) {
         return new ModsecBlobResult(EMPTY_BLOB, ruleIdentifier);
@@ -407,7 +417,8 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
               modsecIdAssignment,
               ruleIdentifier,
               String.format(MODSEC_MATCH_MESSAGE, ruleIdentifier),
-              ANDClausesList),
+              ANDClausesList,
+              customModsecRuleVersion),
           ruleIdentifier);
     } catch (Exception e) {
       log.warn(

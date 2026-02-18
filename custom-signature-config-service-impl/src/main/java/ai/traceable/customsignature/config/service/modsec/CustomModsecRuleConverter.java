@@ -3,6 +3,7 @@ package ai.traceable.customsignature.config.service.modsec;
 import static ai.traceable.config.utils.RegexValidator.validateRegex;
 
 import ai.traceable.customsignature.config.service.v1.Clause;
+import ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion;
 import ai.traceable.customsignature.config.service.v1.KeyValueExpression;
 import ai.traceable.customsignature.config.service.v1.KeyValueTag;
 import ai.traceable.customsignature.config.service.v1.MatchCategory;
@@ -38,20 +39,37 @@ public class CustomModsecRuleConverter {
   }
 
   public String getValidatedModsecRule(
-      long ruleId, String ruleUuid, String ruleMsg, List<Clause> clauses) throws Exception {
+      long ruleId,
+      String ruleUuid,
+      String ruleMsg,
+      List<Clause> clauses,
+      CustomModsecRuleVersion customModsecRuleVersion)
+      throws Exception {
     return modsecRuleConverter.getValidatedModsecRule(
-        createCustomModsecRule(ruleId, ruleUuid, ruleMsg, clauses, Optional.empty()));
+        createCustomModsecRule(
+            ruleId, ruleUuid, ruleMsg, clauses, Optional.empty(), customModsecRuleVersion));
   }
 
   public String getJNIValidatedModsecRuleWithCustomLogMsg(
       long ruleId, String ruleUuid, String ruleMsg, List<Clause> clauses, String logMsg)
       throws Exception {
     return modsecRuleConverter.getJNIValidatedModsecRule(
-        createCustomModsecRule(ruleId, ruleUuid, ruleMsg, clauses, Optional.ofNullable(logMsg)));
+        createCustomModsecRule(
+            ruleId,
+            ruleUuid,
+            ruleMsg,
+            clauses,
+            Optional.ofNullable(logMsg),
+            CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_UNSPECIFIED));
   }
 
   private CustomModsecRule createCustomModsecRule(
-      long ruleId, String ruleUuid, String ruleMsg, List<Clause> clauses, Optional<String> logMsg) {
+      long ruleId,
+      String ruleUuid,
+      String ruleMsg,
+      List<Clause> clauses,
+      Optional<String> logMsg,
+      CustomModsecRuleVersion customModsecRuleVersion) {
     if (clauses.isEmpty()) {
       throw new IllegalArgumentException(
           "There should be at least one valid clause in the rule: " + ruleId);
@@ -62,15 +80,18 @@ public class CustomModsecRuleConverter {
             .setRuleUuid(ruleUuid)
             .setRuleMsg(ruleMsg)
             .addAllAndClauses(
-                clauses.stream().map(this::convert).collect(Collectors.toUnmodifiableList()));
+                clauses.stream()
+                    .map(clause -> convert(clause, customModsecRuleVersion))
+                    .collect(Collectors.toUnmodifiableList()));
     logMsg.ifPresent(builder::setLogMessage);
     return builder.build();
   }
 
-  private CustomModsecRuleClause convert(Clause clause) {
+  private CustomModsecRuleClause convert(
+      Clause clause, CustomModsecRuleVersion customModsecRuleVersion) {
     switch (clause.getClauseCase()) {
       case MATCH_EXPRESSION:
-        return convert(clause.getMatchExpression());
+        return convert(clause.getMatchExpression(), customModsecRuleVersion);
       case KEY_VALUE_EXPRESSION:
         return convert(clause.getKeyValueExpression());
       case CUSTOM_SEC_RULE:
@@ -88,27 +109,37 @@ public class CustomModsecRuleConverter {
         .build();
   }
 
-  private CustomModsecRuleClause convert(MatchExpression expression) {
+  private CustomModsecRuleClause convert(
+      MatchExpression expression, CustomModsecRuleVersion customModsecRuleVersion) {
+    // Apply header count adjustment for V3 rule version
+    MatchExpression processedExpression = expression;
+    if (customModsecRuleVersion == CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3
+        && isRequestHeaderCountExpression(expression)) {
+      processedExpression = adjustHeaderCount(expression);
+    }
+
     CustomModsecRuleClause.Builder clauseBuilder = CustomModsecRuleClause.newBuilder();
     CustomModsecMatchExpression matchExpression =
-        expression.hasValue()
-            ? convert(expression.getMatchOperator(), expression.getValue().getStringValue())
-            : convert(expression.getMatchOperator(), expression.getMatchValue());
+        processedExpression.hasValue()
+            ? convert(
+                processedExpression.getMatchOperator(),
+                processedExpression.getValue().getStringValue())
+            : convert(processedExpression.getMatchOperator(), processedExpression.getMatchValue());
 
     Optional<CustomModsecValueMatchClause> valueMatchClause = Optional.empty();
 
-    if (expression.getMatchCategory() == MatchCategory.MATCH_CATEGORY_REQUEST) {
+    if (processedExpression.getMatchCategory() == MatchCategory.MATCH_CATEGORY_REQUEST) {
       valueMatchClause =
-          this.getRequestValueMatchMetadata(expression.getMatchKey())
+          this.getRequestValueMatchMetadata(processedExpression.getMatchKey())
               .map(
                   requestMetadata ->
                       CustomModsecValueMatchClause.newBuilder()
                           .setRequestValueMetadata(requestMetadata)
                           .setValueMatchExpression(matchExpression)
                           .build());
-    } else if (expression.getMatchCategory() == MatchCategory.MATCH_CATEGORY_RESPONSE) {
+    } else if (processedExpression.getMatchCategory() == MatchCategory.MATCH_CATEGORY_RESPONSE) {
       valueMatchClause =
-          this.getResponseValueMatchMetadata(expression.getMatchKey())
+          this.getResponseValueMatchMetadata(processedExpression.getMatchKey())
               .map(
                   responseMetadata ->
                       CustomModsecValueMatchClause.newBuilder()
@@ -122,21 +153,56 @@ public class CustomModsecRuleConverter {
     }
 
     CustomModsecKeyValueMatchClause.Builder builder = CustomModsecKeyValueMatchClause.newBuilder();
-    if (expression.getMatchKey().name().endsWith("_NAME")) {
+    if (processedExpression.getMatchKey().name().endsWith("_NAME")) {
       builder.setKeyMatchExpression(matchExpression);
-    } else if (expression.getMatchKey().name().endsWith("_VALUE")) {
+    } else if (processedExpression.getMatchKey().name().endsWith("_VALUE")) {
       builder.setValueMatchExpression(matchExpression);
     } else {
       throw new IllegalArgumentException(
-          String.format("Unsupported match key: %s", expression.getMatchKey()));
+          String.format("Unsupported match key: %s", processedExpression.getMatchKey()));
     }
 
-    if (expression.getMatchCategory() == MatchCategory.MATCH_CATEGORY_RESPONSE) {
-      builder.setResponseMetadata(getResponseKeyValueMatchMetadata(expression.getMatchKey()));
+    if (processedExpression.getMatchCategory() == MatchCategory.MATCH_CATEGORY_RESPONSE) {
+      builder.setResponseMetadata(
+          getResponseKeyValueMatchMetadata(processedExpression.getMatchKey()));
     } else { // request
-      builder.setRequestMetadata(getRequestKeyValueMatchMetadata(expression.getMatchKey()));
+      builder.setRequestMetadata(
+          getRequestKeyValueMatchMetadata(processedExpression.getMatchKey()));
     }
     return clauseBuilder.setKeyValueMatchClause(builder).build();
+  }
+
+  private boolean isRequestHeaderCountExpression(MatchExpression expression) {
+    return expression.getMatchCategory() == MatchCategory.MATCH_CATEGORY_REQUEST
+        && expression.getMatchKey() == MatchKey.MATCH_KEY_HEADERS_COUNT;
+  }
+
+  private MatchExpression adjustHeaderCount(MatchExpression expression) {
+    if (expression.hasValue() && expression.getValue().hasStringValue()) {
+      try {
+        int currentValue = Integer.parseInt(expression.getValue().getStringValue());
+        int adjustedValue = currentValue + 1;
+        return expression.toBuilder()
+            .setValue(
+                expression.getValue().toBuilder()
+                    .setStringValue(String.valueOf(adjustedValue))
+                    .build())
+            .build();
+      } catch (NumberFormatException e) {
+        // If value is not a number, return original expression
+        return expression;
+      }
+    } else {
+      // Handle the fallback case using getMatchValue (deprecated but still used)
+      try {
+        int currentValue = Integer.parseInt(expression.getMatchValue());
+        int adjustedValue = currentValue + 1;
+        return expression.toBuilder().setMatchValue(String.valueOf(adjustedValue)).build();
+      } catch (NumberFormatException e) {
+        // If value is not a number, return original expression
+        return expression;
+      }
+    }
   }
 
   private CustomModsecRuleClause convert(KeyValueExpression expression) {

@@ -4,6 +4,7 @@ import static ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion.MO
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -147,7 +148,7 @@ class CustomSignatureModsecRulesManagerTest {
     assertTrue(response.getInlineRulesList().isEmpty());
 
     when(customModsecRuleConverter.getValidatedModsecRule(
-            anyLong(), anyString(), anyString(), anyList()))
+            anyLong(), anyString(), anyString(), anyList(), any(CustomModsecRuleVersion.class)))
         .thenThrow(new UnsupportedOperationException());
     response =
         modsecRulesManager.getModsecRules(
@@ -429,6 +430,57 @@ class CustomSignatureModsecRulesManagerTest {
       createChainedRule(rules, 0, 10, 80, 100);
       createChainedRule(rules, 15, 95);
 
+      // Test header count adjustment for V3 rule version
+      List<CustomSignatureRule> headerCountRules = new ArrayList<>();
+      createRules(
+          headerCountRules,
+          List.of(
+              new MatchCombination(MatchKey.MATCH_KEY_HEADERS_COUNT, "5"),
+              new MatchCombination(MatchKey.MATCH_KEY_HEADERS_COUNT, "3")),
+          List.of(MatchOperator.MATCH_OPERATOR_EQUALS),
+          EventType.EVENT_TYPE_DETECTION_AND_BLOCKING,
+          MatchCategory.MATCH_CATEGORY_REQUEST);
+
+      // Test with V3 rule version (should adjust +1)
+      GetCustomSignatureModsecRulesResponse headerCountV3Response =
+          modsecRulesManager.getModsecRules(
+              RequestContext.forTenantId(TENANT_ID),
+              headerCountRules,
+              CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3,
+              false,
+              ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING,
+              List.of());
+
+      String headerCountV3Rules = headerCountV3Response.getModsecRulesBlob();
+      String[] v3RuleBlobs = headerCountV3Rules.split("\n\n");
+
+      // Verify adjustment: 5 -> 6, 3 -> 4
+      assertTrue(
+          v3RuleBlobs[1].contains("@streq 6"), "Expected 5 to be adjusted to 6 for V3 rules");
+      assertTrue(
+          v3RuleBlobs[2].contains("@streq 4"), "Expected 3 to be adjusted to 4 for V3 rules");
+
+      // Test with non-V3 rule version (should not adjust)
+      GetCustomSignatureModsecRulesResponse headerCountSecArgResponse =
+          modsecRulesManager.getModsecRules(
+              RequestContext.forTenantId(TENANT_ID),
+              headerCountRules,
+              CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS,
+              false,
+              ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING,
+              List.of());
+
+      String headerCountSecArgRules = headerCountSecArgResponse.getModsecRulesBlob();
+      String[] secArgRuleBlobs = headerCountSecArgRules.split("\n\n");
+
+      // Verify no adjustment for non-V3: should contain original values
+      assertTrue(
+          secArgRuleBlobs[1].contains("@streq 5"),
+          "Expected 5 to remain unchanged for non-V3 rules");
+      assertTrue(
+          secArgRuleBlobs[2].contains("@streq 3"),
+          "Expected 3 to remain unchanged for non-V3 rules");
+
       GetCustomSignatureModsecRulesResponse response =
           modsecRulesManager.getModsecRules(
               RequestContext.forTenantId(TENANT_ID),
@@ -490,7 +542,7 @@ class CustomSignatureModsecRulesManagerTest {
             mockModsecBlobValidator,
             mockCachedServiceMappingProvider);
     when(customModsecRuleConverter.getValidatedModsecRule(
-            anyLong(), anyString(), anyString(), anyList()))
+            anyLong(), anyString(), anyString(), anyList(), any(CustomModsecRuleVersion.class)))
         .thenReturn("SecRule");
 
     CustomSignatureRule ruleWithModsecConvertibleClause =
@@ -607,8 +659,22 @@ class CustomSignatureModsecRulesManagerTest {
                 + "SecArgumentsLimit 1000"
                 + "\n\n");
 
+    // Add V3 rule version header configuration
+    when(mockDirectivesManager.getModsecHeader(ModsecRuleVersion.MODSEC_RULE_VERSION_V3))
+        .thenReturn(
+            "SecRuleEngine On\n"
+                + "SecRequestBodyAccess On\n"
+                + "SecResponseBodyAccess On\n"
+                + "SecAuditEngine Off\n"
+                + "SecDefaultAction \"phase:1,log,auditlog,deny,status:403\"\n"
+                + "SecDefaultAction \"phase:2,log,auditlog,deny,status:403\"\n"
+                + "\n\n");
+
     ModsecVariableConverter modsecVariableConverter = new ModsecVariableConverter();
     ModsecOperatorConverter modsecOperatorConverter = new ModsecOperatorConverter();
+
+    // Configure the blob validator to always return true (valid)
+    when(mockModsecBlobValidator.validate(any(), anyString(), anyString())).thenReturn(true);
 
     return new CustomSignatureModsecRulesManager(
         new CustomModsecRuleConverter(
