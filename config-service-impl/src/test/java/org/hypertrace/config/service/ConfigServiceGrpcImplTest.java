@@ -76,7 +76,8 @@ class ConfigServiceGrpcImplTest {
             any(ConfigResourceContext.class),
             anyString(),
             any(UpsertConfigRequest.class),
-            anyString()))
+            anyString(),
+            any(Boolean.class)))
         .thenAnswer(
             invocation -> {
               UpsertConfigRequest request = invocation.getArgument(2, UpsertConfigRequest.class);
@@ -398,7 +399,8 @@ class ConfigServiceGrpcImplTest {
             any(ConfigResourceContext.class),
             anyString(),
             any(UpsertConfigRequest.class),
-            anyString());
+            anyString(),
+            any(Boolean.class));
     verify(responseObserver, never()).onNext(any(DeleteConfigResponse.class));
     verify(responseObserver, never()).onCompleted();
   }

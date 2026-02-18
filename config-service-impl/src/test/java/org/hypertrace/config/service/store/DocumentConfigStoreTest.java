@@ -106,7 +106,7 @@ class DocumentConfigStoreTest {
     when(request.hasUpsertCondition()).thenReturn(false);
     when(mockClock.millis()).thenReturn(TIMESTAMP1);
     UpsertedConfig upsertedConfig =
-        configStore.writeConfig(configResourceContext, USER_ID, request, USER_EMAIL);
+        configStore.writeConfig(configResourceContext, USER_ID, request, USER_EMAIL, false);
     assertEquals(config1, upsertedConfig.getConfig());
     assertEquals(TIMESTAMP1, upsertedConfig.getCreationTimestamp());
 
@@ -125,7 +125,7 @@ class DocumentConfigStoreTest {
     when(request.hasUpsertCondition()).thenReturn(true);
     assertThrows(
         StatusRuntimeException.class,
-        () -> configStore.writeConfig(configResourceContext, USER_ID, request, USER_EMAIL));
+        () -> configStore.writeConfig(configResourceContext, USER_ID, request, USER_EMAIL, false));
   }
 
   @Test
@@ -145,7 +145,7 @@ class DocumentConfigStoreTest {
     when(request.hasUpsertCondition()).thenReturn(false);
     when(mockClock.millis()).thenReturn(TIMESTAMP2);
     UpsertedConfig upsertedConfig =
-        configStore.writeConfig(configResourceContext, USER_ID, request, USER_EMAIL);
+        configStore.writeConfig(configResourceContext, USER_ID, request, USER_EMAIL, false);
     assertEquals(config1, upsertedConfig.getConfig());
     assertEquals(TIMESTAMP1, upsertedConfig.getCreationTimestamp());
     assertEquals(TIMESTAMP2, upsertedConfig.getUpdateTimestamp());
@@ -206,7 +206,7 @@ class DocumentConfigStoreTest {
 
     when(request.getUpsertCondition()).thenReturn(upsertCondition);
     UpsertedConfig upsertedConfig =
-        configStore.writeConfig(configResourceContext, USER_ID, request, USER_EMAIL);
+        configStore.writeConfig(configResourceContext, USER_ID, request, USER_EMAIL, false);
     assertEquals(config2, upsertedConfig.getConfig());
     assertEquals(TIMESTAMP1, upsertedConfig.getCreationTimestamp());
 
@@ -233,7 +233,7 @@ class DocumentConfigStoreTest {
     // failed upsert condition
     assertThrows(
         StatusRuntimeException.class,
-        () -> configStore.writeConfig(configResourceContext, USER_ID, request, USER_EMAIL));
+        () -> configStore.writeConfig(configResourceContext, USER_ID, request, USER_EMAIL, false));
   }
 
   @Test
@@ -353,7 +353,8 @@ class DocumentConfigStoreTest {
         configStore.writeAllConfigs(
             ImmutableMap.of(resourceContext1, config2, resourceContext2, config1),
             USER_ID,
-            USER_EMAIL);
+            USER_EMAIL,
+            false);
 
     assertEquals(
         List.of(
@@ -534,7 +535,7 @@ class DocumentConfigStoreTest {
 
     String creatorEmail = "creator@example.com";
     UpsertedConfig upsertedConfig =
-        configStore.writeConfig(configResourceContext, USER_ID, request, creatorEmail);
+        configStore.writeConfig(configResourceContext, USER_ID, request, creatorEmail, false);
 
     // Verify the upserted config has creator email populated
     assertEquals(creatorEmail, upsertedConfig.getCreatedByEmail());
@@ -574,7 +575,7 @@ class DocumentConfigStoreTest {
 
     // Act: bob updates the config
     UpsertedConfig upsertedConfig =
-        configStore.writeConfig(configResourceContext, USER_ID, request, modifier);
+        configStore.writeConfig(configResourceContext, USER_ID, request, modifier, false);
 
     // Assert: creator email should still be alice, but last modifier should be bob
     assertEquals(originalCreator, upsertedConfig.getCreatedByEmail());
@@ -708,7 +709,8 @@ class DocumentConfigStoreTest {
     when(request.hasUpsertCondition()).thenReturn(false);
 
     UpsertedConfig result =
-        storeWithExclusion.writeConfig(configResourceContext, "agent-user-id", request, agentEmail);
+        storeWithExclusion.writeConfig(
+            configResourceContext, "agent-user-id", request, agentEmail, false);
 
     // Verify: lastUserUpdate fields should preserve original user (not the agent)
     assertEquals(originalEmail, result.getLastUserUpdateEmail());
@@ -767,7 +769,8 @@ class DocumentConfigStoreTest {
     when(request.hasUpsertCondition()).thenReturn(false);
 
     UpsertedConfig result =
-        storeWithExclusion.writeConfig(configResourceContext, normalUserId, request, normalEmail);
+        storeWithExclusion.writeConfig(
+            configResourceContext, normalUserId, request, normalEmail, false);
 
     // Verify: User tracking fields should be updated to normal user
     assertEquals(TIMESTAMP2, result.getUpdateTimestamp());
@@ -806,7 +809,8 @@ class DocumentConfigStoreTest {
     when(request.hasUpsertCondition()).thenReturn(false);
 
     UpsertedConfig result =
-        storeWithExclusion.writeConfig(configResourceContext, agentUserId, request, agentEmail);
+        storeWithExclusion.writeConfig(
+            configResourceContext, agentUserId, request, agentEmail, false);
 
     // Verify: On creation with excluded email
     // created_by_email shows "System" for excluded emails
@@ -929,10 +933,118 @@ class DocumentConfigStoreTest {
     when(request.hasUpsertCondition()).thenReturn(false);
 
     UpsertedConfig result =
-        storeWithExclusion.writeConfig(configResourceContext, agentUserId, request, agentEmail);
+        storeWithExclusion.writeConfig(
+            configResourceContext, agentUserId, request, agentEmail, false);
 
     // Verify: With no exclusion patterns, agent email should update user tracking fields normally
     assertEquals(TIMESTAMP2, result.getUpdateTimestamp());
+  }
+
+  @Test
+  void testSuppressUserTracking_OnCreate_SetsNullUserTrackingFields() throws IOException {
+    CloseableIteratorImpl iterator = new CloseableIteratorImpl(List.of());
+    when(collection.query(any(Query.class), any())).thenReturn(iterator);
+    UpsertConfigRequest request = mock(UpsertConfigRequest.class);
+    when(request.getConfig()).thenReturn(config1);
+    when(request.hasUpsertCondition()).thenReturn(false);
+    when(mockClock.millis()).thenReturn(TIMESTAMP1);
+
+    UpsertedConfig result =
+        configStore.writeConfig(configResourceContext, USER_ID, request, USER_EMAIL, true);
+
+    // lastUserUpdate fields should be null/0 when suppressed
+    assertEquals("Unknown", result.getLastUserUpdateEmail());
+    assertEquals(0L, result.getLastUserUpdateTimestamp());
+    // Other audit fields should still be set normally
+    assertEquals(TIMESTAMP1, result.getCreationTimestamp());
+    assertEquals(TIMESTAMP1, result.getUpdateTimestamp());
+    assertEquals(USER_EMAIL, result.getCreatedByEmail());
+    assertEquals(USER_EMAIL, result.getLastUpdateEmail());
+  }
+
+  @Test
+  void testSuppressUserTracking_OnUpdate_PreservesUserTrackingFields() throws IOException {
+    String originalUserEmail = "original-user@test.com";
+    long originalUserTimestamp = TIMESTAMP1;
+
+    CloseableIteratorImpl iterator =
+        new CloseableIteratorImpl(
+            List.of(
+                new ConfigDocument(
+                    RESOURCE_NAME,
+                    RESOURCE_NAMESPACE,
+                    TENANT_ID,
+                    configResourceContext.getContext(),
+                    CONFIG_VERSION,
+                    USER_ID,
+                    USER_EMAIL,
+                    USER_EMAIL,
+                    originalUserEmail,
+                    originalUserTimestamp,
+                    config1,
+                    TIMESTAMP1,
+                    TIMESTAMP1)));
+    when(collection.query(any(Query.class), any())).thenReturn(iterator);
+    when(mockClock.millis()).thenReturn(TIMESTAMP2);
+
+    UpsertConfigRequest request = mock(UpsertConfigRequest.class);
+    when(request.getConfig()).thenReturn(config2);
+    when(request.hasUpsertCondition()).thenReturn(false);
+
+    UpsertedConfig result =
+        configStore.writeConfig(configResourceContext, USER_ID, request, USER_EMAIL, true);
+
+    // lastUserUpdate fields should be preserved from previous config
+    assertEquals(originalUserEmail, result.getLastUserUpdateEmail());
+    assertEquals(originalUserTimestamp, result.getLastUserUpdateTimestamp());
+    // Other audit fields should be updated normally
+    assertEquals(TIMESTAMP2, result.getUpdateTimestamp());
+    assertEquals(TIMESTAMP1, result.getCreationTimestamp());
+    assertEquals(USER_EMAIL, result.getLastUpdateEmail());
+
+    // Verify the document was saved with preserved user tracking fields
+    ArgumentCaptor<Document> documentCaptor = ArgumentCaptor.forClass(Document.class);
+    verify(collection).upsert(any(Key.class), documentCaptor.capture());
+    ConfigDocument savedDoc = (ConfigDocument) documentCaptor.getValue();
+    assertEquals(originalUserEmail, savedDoc.getLastUserUpdateEmail());
+    assertEquals(originalUserTimestamp, savedDoc.getLastUserUpdateTimestamp());
+    assertEquals(USER_EMAIL, savedDoc.getLastUpdatedUserEmail());
+  }
+
+  @Test
+  void testSuppressUserTracking_WriteAllConfigs() throws IOException {
+    ConfigResourceContext resourceContext1 = getConfigResourceContext("context-1");
+    ConfigResourceContext resourceContext2 = getConfigResourceContext("context-2");
+    long updateTime = 1234;
+    CloseableIterator<Document> getResult =
+        new CloseableIteratorImpl(
+            List.of(
+                getConfigDocument(
+                    resourceContext1.getContext(), CONFIG_VERSION, config1, TIMESTAMP1, TIMESTAMP1),
+                getConfigDocument(
+                    resourceContext2.getContext(),
+                    CONFIG_VERSION,
+                    config2,
+                    TIMESTAMP2,
+                    TIMESTAMP2)));
+
+    when(collection.query(any(Query.class), any())).thenReturn(getResult);
+    when(collection.bulkUpsert(any())).thenReturn(true);
+    when(this.mockClock.millis()).thenReturn(updateTime);
+
+    List<UpsertedConfig> upsertedConfigs =
+        configStore.writeAllConfigs(
+            ImmutableMap.of(resourceContext1, config2, resourceContext2, config1),
+            USER_ID,
+            USER_EMAIL,
+            true);
+
+    // All upserted configs should preserve previous lastUserUpdate fields
+    for (UpsertedConfig upsertedConfig : upsertedConfigs) {
+      // Because existing docs had USER_EMAIL as lastUserUpdateEmail and updateTimestamp as
+      // lastUserUpdateTimestamp, and we're suppressing, those should be preserved
+      assertEquals(USER_EMAIL, upsertedConfig.getLastUserUpdateEmail());
+    }
   }
 
   private Document getConfigDocument(

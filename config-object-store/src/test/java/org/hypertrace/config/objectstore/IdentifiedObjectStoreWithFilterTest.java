@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -127,6 +128,7 @@ class IdentifiedObjectStoreWithFilterTest {
 
   @BeforeEach
   void beforeEach() {
+    lenient().doReturn(false).when(this.mockRequestContext).isUserTrackingSuppressed();
     this.store = new TestObjectStore(this.mockStub, configChangeEventGenerator);
   }
 
