@@ -20,13 +20,12 @@ message EntityDerivationConfig {
 // EntityDerivationConfigData contains all configuration fields for entity derivation.
 // SpanProjection embeds EventDerivationConfigDetails directly. ParentDerivation derives from a parent entity.
 message EntityDerivationConfigData {
-  string display_name = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Display name shown in UI"];
+  string display_name = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Display name shown in UI (Required)"];
   string description = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Description"];
   bool disabled = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Whether this entity is disabled"];
   bool internal = 5 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Whether this entity is internal and hidden from UI"];
-  EntityCategory category = 6 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Category of this entity"];
-  // Strong type of the entity - can be simple or complex (e.g., array<string>)
-  ai.traceable.fraud.datamodel.event.kind.v1.ComplexDataModelEventKind event_kind = 7 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Data type of the derived value (e.g., string, integer, IP address, array<string>)"];
+  EntityCategory category = 6 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Category of this entity (Required)"];
+  ai.traceable.fraud.datamodel.event.kind.v1.ComplexDataModelEventKind event_kind = 7 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Data type of the derived value (Required)"];
 
   // How the raw value is extracted — either from spans or from a parent entity
   oneof value_source {
@@ -37,13 +36,12 @@ message EntityDerivationConfigData {
 
 // SpanProjection extracts values directly from span data (request/response)
 message SpanProjection {
-  repeated EventDerivationConfigDetails event_derivation_configs = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Extraction rules for deriving values from request/response data"];
+  repeated EventDerivationConfigDetails event_derivation_configs = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Extraction rules for deriving values from request/response data (Required: at least one)"];
 }
 
 // ParentDerivation derives a value by referencing a parent entity
 message ParentDerivation {
-  string parent_entity_derivation_id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Parent entity derivation config ID"];
-  // Transformation applied on the extracted value from parent
+  string parent_entity_derivation_id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Parent entity derivation config ID (Required)"];
   ai.traceable.fraud.datamodel.event.kind.v1.TransformationPipeline pipeline = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Transformation applied on the extracted value from parent"];
 }
 

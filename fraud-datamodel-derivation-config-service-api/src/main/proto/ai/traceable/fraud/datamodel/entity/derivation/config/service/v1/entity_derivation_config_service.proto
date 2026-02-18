@@ -17,7 +17,7 @@ service EntityDerivationConfigService {
 }
 
 message CreateEntityDerivationConfigRequest {
-  EntityDerivationConfigData data = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Entity derivation configuration data"];
+  EntityDerivationConfigData data = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Entity derivation configuration data (Required)"];
 }
 
 message CreateEntityDerivationConfigResponse {
@@ -25,8 +25,8 @@ message CreateEntityDerivationConfigResponse {
 }
 
 message UpdateEntityDerivationConfigRequest {
-  string id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Entity derivation config ID to update"];
-  EntityDerivationConfigData data = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Updated entity derivation configuration data"];
+  string id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Entity derivation config ID to update (Required)"];
+  EntityDerivationConfigData data = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Updated entity derivation configuration data (Required)"];
 }
 
 message UpdateEntityDerivationConfigResponse {
@@ -62,7 +62,7 @@ message GetEntityDerivationConfigsResponse {
 }
 
 message DeleteEntityDerivationConfigRequest {
-  string entity_derivation_config_id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Entity derivation config ID to delete"];
+  string entity_derivation_config_id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Entity derivation config ID to delete (Required)"];
 }
 
 message DeleteEntityDerivationConfigResponse {}

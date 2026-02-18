@@ -2,6 +2,7 @@ package ai.traceable.config.service;
 
 import ai.traceable.fraud.datamodel.config.service.FraudDataModelConfigServiceFactory;
 import ai.traceable.fraud.datamodel.derivation.config.service.FraudDataModelDerivationConfigServiceFactory;
+import ai.traceable.fraud.datamodel.derivation.config.service.entity.EntityDerivationConfigServiceFactory;
 import com.typesafe.config.Config;
 import java.util.List;
 import javax.annotation.Nonnull;
@@ -35,6 +36,11 @@ public class TraceableInternalGlobalConfigServiceFactory implements GrpcPlatform
                 providers.getChannelRegistry())),
         new GrpcPlatformService(
             FraudDataModelDerivationConfigServiceFactory.build(
+                providers.getConfig(),
+                providers.getLocalChannel(),
+                providers.getChangeEventGenerator())),
+        new GrpcPlatformService(
+            EntityDerivationConfigServiceFactory.build(
                 providers.getConfig(),
                 providers.getLocalChannel(),
                 providers.getChangeEventGenerator())));
