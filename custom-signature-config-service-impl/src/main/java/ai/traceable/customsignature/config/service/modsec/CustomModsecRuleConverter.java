@@ -32,6 +32,11 @@ public class CustomModsecRuleConverter {
 
   private final ModsecRuleConverter modsecRuleConverter;
   private static final String OR_REGEX_DELIMITER = "|";
+  private static final List<CustomModsecRuleVersion> modsecRuleVersions =
+      List.of(
+          CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS_DETECTION_ONLY_MODE,
+          CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS,
+          CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3);
 
   @Inject
   public CustomModsecRuleConverter(ModsecRuleConverter modsecRuleConverter) {
@@ -113,7 +118,8 @@ public class CustomModsecRuleConverter {
       MatchExpression expression, CustomModsecRuleVersion customModsecRuleVersion) {
     // Apply header count adjustment for V3 rule version
     MatchExpression processedExpression = expression;
-    if (customModsecRuleVersion == CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3
+    if (customModsecRuleVersion != null
+        && modsecRuleVersions.contains(customModsecRuleVersion)
         && isRequestHeaderCountExpression(expression)) {
       processedExpression = adjustHeaderCount(expression);
     }

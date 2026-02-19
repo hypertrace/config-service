@@ -465,7 +465,7 @@ class CustomSignatureModsecRulesManagerTest {
           modsecRulesManager.getModsecRules(
               RequestContext.forTenantId(TENANT_ID),
               headerCountRules,
-              CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS,
+              CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_CORAZA_V3,
               false,
               ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING,
               List.of());
@@ -661,6 +661,16 @@ class CustomSignatureModsecRulesManagerTest {
 
     // Add V3 rule version header configuration
     when(mockDirectivesManager.getModsecHeader(ModsecRuleVersion.MODSEC_RULE_VERSION_V3))
+        .thenReturn(
+            "SecRuleEngine On\n"
+                + "SecRequestBodyAccess On\n"
+                + "SecResponseBodyAccess On\n"
+                + "SecAuditEngine Off\n"
+                + "SecDefaultAction \"phase:1,log,auditlog,deny,status:403\"\n"
+                + "SecDefaultAction \"phase:2,log,auditlog,deny,status:403\"\n"
+                + "\n\n");
+
+    when(mockDirectivesManager.getModsecHeader(ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3))
         .thenReturn(
             "SecRuleEngine On\n"
                 + "SecRequestBodyAccess On\n"
