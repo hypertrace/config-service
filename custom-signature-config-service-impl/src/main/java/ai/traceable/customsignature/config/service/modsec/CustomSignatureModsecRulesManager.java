@@ -196,16 +196,13 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
     if (inlineRuleList.isEmpty()) {
       return GetCustomSignatureModsecRulesResponse.getDefaultInstance();
     }
-    if (allowModsecRules.isEmpty() && violationModsecRules.isEmpty()) {
-      return GetCustomSignatureModsecRulesResponse.newBuilder()
-          .addAllInlineRules(inlineRuleList)
-          .build();
+    String modsecRulesBlob = "";
+    if (!(allowModsecRules.isEmpty() && violationModsecRules.isEmpty())) {
+      modsecRulesBlob =
+          getModsecDirective(customModsecRuleVersion)
+              + Stream.concat(allowModsecRules.stream(), violationModsecRules.stream())
+                  .collect(Collectors.joining(NEW_LINES_DELIMITER));
     }
-
-    String modsecRulesBlob =
-        getModsecDirective(customModsecRuleVersion)
-            + Stream.concat(allowModsecRules.stream(), violationModsecRules.stream())
-                .collect(Collectors.joining(NEW_LINES_DELIMITER));
 
     // merging blobs across services with the same rules
     List<ModsecBlobData> modsecBlobDataList =
