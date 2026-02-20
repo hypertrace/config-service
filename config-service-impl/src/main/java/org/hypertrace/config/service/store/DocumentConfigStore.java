@@ -8,6 +8,7 @@ import static org.hypertrace.config.service.store.ConfigDocument.RESOURCE_NAMESP
 import static org.hypertrace.config.service.store.ConfigDocument.TENANT_ID_FIELD_NAME;
 import static org.hypertrace.core.documentstore.Filter.Op.OR;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 import com.google.protobuf.Value;
 import io.grpc.Status;
@@ -78,7 +79,8 @@ public class DocumentConfigStore implements ConfigStore {
       ConfigResourceContext configResourceContext,
       String userId,
       UpsertConfigRequest request,
-      String userEmail)
+      String userEmail,
+      boolean suppressUserTracking)
       throws IOException {
     Optional<ConfigDocument> previousConfigDoc = getConfigDocument(configResourceContext);
     Optional<ContextSpecificConfig> optionalPreviousConfig =
@@ -94,7 +96,12 @@ public class DocumentConfigStore implements ConfigStore {
     Key latestDocKey = new ConfigDocumentKey(configResourceContext);
     ConfigDocument latestConfigDocument =
         buildConfigDocument(
-            configResourceContext, request.getConfig(), previousConfigDoc, userId, userEmail);
+            configResourceContext,
+            request.getConfig(),
+            previousConfigDoc,
+            userId,
+            userEmail,
+            suppressUserTracking);
 
     if (request.hasUpsertCondition()) {
       Filter filter = this.filterBuilder.buildDocStoreFilter(request.getUpsertCondition());
@@ -114,7 +121,10 @@ public class DocumentConfigStore implements ConfigStore {
   }
 
   private List<UpsertedConfig> writeConfigs(
-      Map<ConfigResourceContext, Value> resourceContextValueMap, String userId, String userEmail)
+      Map<ConfigResourceContext, Value> resourceContextValueMap,
+      String userId,
+      String userEmail,
+      boolean suppressUserTracking)
       throws IOException {
     Map<ConfigResourceContext, Optional<ConfigDocument>> previousConfigDocs =
         getLatestVersionConfigDocs(resourceContextValueMap.keySet());
@@ -126,7 +136,13 @@ public class DocumentConfigStore implements ConfigStore {
           }
           documentsToBeUpserted.put(
               new ConfigDocumentKey(key),
-              buildConfigDocument(key, resourceContextValueMap.get(key), value, userId, userEmail));
+              buildConfigDocument(
+                  key,
+                  resourceContextValueMap.get(key),
+                  value,
+                  userId,
+                  userEmail,
+                  suppressUserTracking));
         });
 
     boolean successfulBulkUpsertDocuments = collection.bulkUpsert(documentsToBeUpserted);
@@ -161,19 +177,29 @@ public class DocumentConfigStore implements ConfigStore {
       Value latestConfig,
       Optional<ConfigDocument> previousConfigDoc,
       String userId,
-      String userEmail) {
+      String userEmail,
+      boolean suppressUserTracking) {
 
     return isPreviousConfigPresent(previousConfigDoc)
         ? buildConfigDocumentForUpdate(
-            configResourceContext, latestConfig, previousConfigDoc.get(), userId, userEmail)
-        : buildConfigDocumentForCreate(configResourceContext, latestConfig, userId, userEmail);
+            configResourceContext,
+            latestConfig,
+            previousConfigDoc.get(),
+            userId,
+            userEmail,
+            suppressUserTracking)
+        : buildConfigDocumentForCreate(
+            configResourceContext, latestConfig, userId, userEmail, suppressUserTracking);
   }
 
   @Override
   public List<UpsertedConfig> writeAllConfigs(
-      Map<ConfigResourceContext, Value> resourceContextValueMap, String userId, String userEmail)
+      Map<ConfigResourceContext, Value> resourceContextValueMap,
+      String userId,
+      String userEmail,
+      boolean suppressUserTracking)
       throws IOException {
-    return this.writeConfigs(resourceContextValueMap, userId, userEmail);
+    return this.writeConfigs(resourceContextValueMap, userId, userEmail, suppressUserTracking);
   }
 
   @Override
@@ -278,9 +304,11 @@ public class DocumentConfigStore implements ConfigStore {
       Value latestConfig,
       ConfigDocument previousConfig,
       String userId,
-      String userEmail) {
+      String userEmail,
+      boolean suppressUserTracking) {
     long updateTimestamp = clock.millis();
-    boolean excludedEmail = isExcludedEmail(userEmail);
+    String resolvedEmail = suppressUserTracking ? userEmail : resolveUserEmail(userEmail);
+    boolean excludedEmail = suppressUserTracking || isExcludedEmail(resolvedEmail);
     return new ConfigDocument(
         configResourceContext.getConfigResource().getResourceName(),
         configResourceContext.getConfigResource().getResourceNamespace(),
@@ -290,7 +318,7 @@ public class DocumentConfigStore implements ConfigStore {
         userId,
         userEmail,
         previousConfig.getCreatedByEmail(),
-        excludedEmail ? previousConfig.getLastUserUpdateEmail() : userEmail,
+        excludedEmail ? previousConfig.getLastUserUpdateEmail() : resolvedEmail,
         excludedEmail ? previousConfig.getLastUserUpdateTimestamp() : updateTimestamp,
         latestConfig,
         previousConfig.getCreationTimestamp(),
@@ -307,9 +335,11 @@ public class DocumentConfigStore implements ConfigStore {
       ConfigResourceContext configResourceContext,
       Value latestConfig,
       String userId,
-      String userEmail) {
+      String userEmail,
+      boolean suppressUserTracking) {
     long updateTimestamp = clock.millis();
-    boolean excludedEmail = isExcludedEmail(userEmail);
+    String resolvedEmail = suppressUserTracking ? userEmail : resolveUserEmail(userEmail);
+    boolean excludedEmail = suppressUserTracking || isExcludedEmail(resolvedEmail);
     return new ConfigDocument(
         configResourceContext.getConfigResource().getResourceName(),
         configResourceContext.getConfigResource().getResourceNamespace(),
@@ -318,8 +348,8 @@ public class DocumentConfigStore implements ConfigStore {
         1L,
         userId,
         userEmail,
-        userEmail,
-        excludedEmail ? null : userEmail,
+        resolvedEmail, // created by email
+        excludedEmail ? null : resolvedEmail,
         excludedEmail ? 0L : updateTimestamp,
         latestConfig,
         updateTimestamp,
@@ -581,6 +611,13 @@ public class DocumentConfigStore implements ConfigStore {
   private boolean isExcludedEmail(String userEmail) {
     return storeConfig.getCustomerVisibleExcludedEmailPatterns().stream()
         .anyMatch(pattern -> pattern.matcher(userEmail).matches());
+  }
+
+  private String resolveUserEmail(String userEmail) {
+    if (Strings.isNullOrEmpty(userEmail)) {
+      return storeConfig.getInternalPlatformEmail();
+    }
+    return userEmail;
   }
 
   /**

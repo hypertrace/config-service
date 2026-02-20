@@ -3,8 +3,12 @@ package org.hypertrace.config.objectstore;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.protobuf.Struct;
@@ -87,6 +91,7 @@ class IdentifiedObjectStoreTest {
 
   @BeforeEach
   void beforeEach() {
+    lenient().doReturn(false).when(this.mockRequestContext).isUserTrackingSuppressed();
     this.store = new TestObjectStore(this.mockStub, configChangeEventGenerator);
   }
 
@@ -421,6 +426,91 @@ class IdentifiedObjectStoreTest {
   @Test
   void buildClassNameForChangeEvent_test() {
     assertEquals(TestApiObject.class.getName(), this.store.buildClassNameForChangeEvent(OBJECT_1));
+  }
+
+  @Test
+  void upsertCreate_suppressesChangeEvent_whenUserTrackingSuppressed() {
+    doReturn(true).when(this.mockRequestContext).isUserTrackingSuppressed();
+    when(this.mockStub.upsertConfig(any()))
+        .thenReturn(
+            UpsertConfigResponse.newBuilder()
+                .setConfig(OBJECT_1_AS_VALUE)
+                .setCreationTimestamp(TEST_CREATE_TIMESTAMP_1.toEpochMilli())
+                .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
+                .build());
+
+    this.store.upsertObject(this.mockRequestContext, OBJECT_1);
+
+    verify(this.configChangeEventGenerator, never())
+        .sendCreateNotification(any(), any(), any(), any());
+    verify(this.configChangeEventGenerator, never())
+        .sendUpdateNotification(any(), any(), any(), any(), any());
+  }
+
+  @Test
+  void upsertUpdate_suppressesChangeEvent_whenUserTrackingSuppressed() {
+    doReturn(true).when(this.mockRequestContext).isUserTrackingSuppressed();
+    when(this.mockStub.upsertConfig(any()))
+        .thenReturn(
+            UpsertConfigResponse.newBuilder()
+                .setConfig(OBJECT_2_AS_VALUE)
+                .setPrevConfig(OBJECT_1_AS_VALUE)
+                .setCreationTimestamp(TEST_CREATE_TIMESTAMP_1.toEpochMilli())
+                .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
+                .build());
+
+    this.store.upsertObject(this.mockRequestContext, OBJECT_2);
+
+    verify(this.configChangeEventGenerator, never())
+        .sendCreateNotification(any(), any(), any(), any());
+    verify(this.configChangeEventGenerator, never())
+        .sendUpdateNotification(any(), any(), any(), any(), any());
+  }
+
+  @Test
+  void delete_suppressesChangeEvent_whenUserTrackingSuppressed() {
+    doReturn(true).when(this.mockRequestContext).isUserTrackingSuppressed();
+    when(this.mockStub.deleteConfig(any()))
+        .thenReturn(
+            DeleteConfigResponse.newBuilder()
+                .setDeletedConfig(
+                    ContextSpecificConfig.newBuilder()
+                        .setConfig(OBJECT_1_AS_VALUE)
+                        .setContext(OBJECT_1.getId())
+                        .setCreationTimestamp(TEST_CREATE_TIMESTAMP_1.toEpochMilli())
+                        .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli()))
+                .build());
+
+    this.store.deleteObject(mockRequestContext, "first-id");
+
+    verify(this.configChangeEventGenerator, never())
+        .sendDeleteNotification(any(), any(), any(), any());
+  }
+
+  @Test
+  void upsertAll_suppressesChangeEvents_whenUserTrackingSuppressed() {
+    doReturn(true).when(this.mockRequestContext).isUserTrackingSuppressed();
+    when(this.mockStub.upsertAllConfigs(any()))
+        .thenReturn(
+            UpsertAllConfigsResponse.newBuilder()
+                .addUpsertedConfigs(
+                    UpsertedConfig.newBuilder()
+                        .setConfig(OBJECT_1_AS_VALUE)
+                        .setContext(OBJECT_1.getId())
+                        .setCreationTimestamp(TEST_CREATE_TIMESTAMP_1.toEpochMilli())
+                        .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli()))
+                .addUpsertedConfigs(
+                    UpsertedConfig.newBuilder()
+                        .setConfig(OBJECT_2_AS_VALUE)
+                        .setContext(OBJECT_2.getId())
+                        .setPrevConfig(OBJECT_1_AS_VALUE)
+                        .setCreationTimestamp(TEST_CREATE_TIMESTAMP_2.toEpochMilli())
+                        .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli()))
+                .build());
+
+    this.store.upsertObjects(this.mockRequestContext, List.of(OBJECT_1, OBJECT_2));
+
+    verifyNoInteractions(this.configChangeEventGenerator);
   }
 
   @lombok.Value

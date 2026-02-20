@@ -32,7 +32,8 @@ public interface ConfigStore {
       ConfigResourceContext configResourceContext,
       String userId,
       UpsertConfigRequest request,
-      String userEmail)
+      String userEmail,
+      boolean suppressUserTracking)
       throws IOException;
 
   /**
@@ -82,7 +83,10 @@ public interface ConfigStore {
    * @return the upserted configs
    */
   List<UpsertedConfig> writeAllConfigs(
-      Map<ConfigResourceContext, Value> resourceContextValueMap, String userId, String userEmail)
+      Map<ConfigResourceContext, Value> resourceContextValueMap,
+      String userId,
+      String userEmail,
+      boolean suppressUserTracking)
       throws IOException;
 
   /**

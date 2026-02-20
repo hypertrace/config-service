@@ -61,7 +61,12 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
     try {
       ConfigResourceContext configResourceContext = getConfigResourceContext(request);
       UpsertedConfig upsertedConfig =
-          configStore.writeConfig(configResourceContext, getUserId(), request, getUserEmail());
+          configStore.writeConfig(
+              configResourceContext,
+              getUserId(),
+              request,
+              getUserEmail(),
+              isUserTrackingSuppressed());
       UpsertConfigResponse.Builder builder = UpsertConfigResponse.newBuilder();
       builder.setConfig(request.getConfig());
       builder.setCreationTimestamp(upsertedConfig.getCreationTimestamp());
@@ -252,7 +257,8 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
                           requestedUpsert.getConfig()))
               .collect(ImmutableMap.toImmutableMap(Entry::getKey, Entry::getValue));
       List<UpsertedConfig> upsertedConfigs =
-          configStore.writeAllConfigs(valuesByContext, getUserId(), getUserEmail());
+          configStore.writeAllConfigs(
+              valuesByContext, getUserId(), getUserEmail(), isUserTrackingSuppressed());
       responseObserver.onNext(
           UpsertAllConfigsResponse.newBuilder().addAllUpsertedConfigs(upsertedConfigs).build());
       responseObserver.onCompleted();
@@ -327,5 +333,9 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
 
   private String getUserId() {
     return RequestContext.CURRENT.get().getUserId().orElse(DEFAULT_USER_ID);
+  }
+
+  private boolean isUserTrackingSuppressed() {
+    return RequestContext.CURRENT.get().isUserTrackingSuppressed();
   }
 }

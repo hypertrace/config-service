@@ -145,29 +145,31 @@ public abstract class DefaultObjectStore<T> {
         ConfigObjectImpl.tryBuild(response, this::buildDataFromValue)
             .orElseThrow(Status.INTERNAL::asRuntimeException);
 
-    configChangeEventGeneratorOptional.ifPresent(
-        configChangeEventGenerator -> {
-          if (response.hasPrevConfig()) {
-            configChangeEventGenerator.sendUpdateNotification(
-                context,
-                this.buildClassNameForChangeEvent(upsertedObject.getData()),
-                this.buildDataFromValue(response.getPrevConfig())
-                    .map(this::buildValueForChangeEvent)
-                    .orElseGet(
-                        () -> {
-                          log.error(
-                              "Unable to convert previousValue back to data for change event. Falling back to raw value {}",
-                              response.getPrevConfig());
-                          return response.getPrevConfig();
-                        }),
-                this.buildValueForChangeEvent(upsertedObject.getData()));
-          } else {
-            configChangeEventGenerator.sendCreateNotification(
-                context,
-                this.buildClassNameForChangeEvent(upsertedObject.getData()),
-                this.buildValueForChangeEvent(upsertedObject.getData()));
-          }
-        });
+    if (!context.isUserTrackingSuppressed()) {
+      configChangeEventGeneratorOptional.ifPresent(
+          configChangeEventGenerator -> {
+            if (response.hasPrevConfig()) {
+              configChangeEventGenerator.sendUpdateNotification(
+                  context,
+                  this.buildClassNameForChangeEvent(upsertedObject.getData()),
+                  this.buildDataFromValue(response.getPrevConfig())
+                      .map(this::buildValueForChangeEvent)
+                      .orElseGet(
+                          () -> {
+                            log.error(
+                                "Unable to convert previousValue back to data for change event. Falling back to raw value {}",
+                                response.getPrevConfig());
+                            return response.getPrevConfig();
+                          }),
+                  this.buildValueForChangeEvent(upsertedObject.getData()));
+            } else {
+              configChangeEventGenerator.sendCreateNotification(
+                  context,
+                  this.buildClassNameForChangeEvent(upsertedObject.getData()),
+                  this.buildValueForChangeEvent(upsertedObject.getData()));
+            }
+          });
+    }
     return upsertedObject;
   }
 
@@ -188,12 +190,14 @@ public abstract class DefaultObjectStore<T> {
       ConfigObject<T> object =
           ConfigObjectImpl.tryBuild(deletedConfig, this::buildDataFromValue)
               .orElseThrow(Status.INTERNAL::asRuntimeException);
-      configChangeEventGeneratorOptional.ifPresent(
-          configChangeEventGenerator ->
-              configChangeEventGenerator.sendDeleteNotification(
-                  context,
-                  this.buildClassNameForChangeEvent(object.getData()),
-                  this.buildValueForChangeEvent(object.getData())));
+      if (!context.isUserTrackingSuppressed()) {
+        configChangeEventGeneratorOptional.ifPresent(
+            configChangeEventGenerator ->
+                configChangeEventGenerator.sendDeleteNotification(
+                    context,
+                    this.buildClassNameForChangeEvent(object.getData()),
+                    this.buildValueForChangeEvent(object.getData())));
+      }
       return Optional.of(object);
     } catch (Exception exception) {
       if (Status.fromThrowable(exception).equals(Status.NOT_FOUND)) {
