@@ -839,6 +839,7 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
         List.of(
             minPercentSeenConfigMetadata,
             authRegexStrings,
+            urlRegexesConfigMetadata,
             enabledForInternalIpsConfigMetadata,
             evaluateRequestBodyParamsConfigMetadata,
             thresholdFamiliesExcluded));
