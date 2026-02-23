@@ -8,22 +8,21 @@ import ai.traceable.customsignature.config.service.v1.GetCustomSignatureEdgeDeci
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesRequest;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesRequest;
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleRequest;
-import io.grpc.Status;
 
 public interface RulesValidator {
-  Status validate(CreateCustomSignatureRuleRequest request);
+  void validate(CreateCustomSignatureRuleRequest request);
 
-  Status validate(UpdateCustomSignatureRuleRequest request);
+  void validate(UpdateCustomSignatureRuleRequest request);
 
-  Status validate(DeleteCustomSignatureRuleRequest request);
+  void validate(DeleteCustomSignatureRuleRequest request);
 
-  Status validate(BulkDeleteCustomSignatureRulesRequest request);
+  void validate(GetCustomSignatureEdgeDecisionRulesRequest request);
 
-  Status validate(GetCustomSignatureEdgeDecisionRulesRequest request);
+  void validate(GetCustomSignatureRulesRequest request);
 
-  Status validate(GetCustomSignatureRulesRequest request);
+  void validate(GetCustomSignatureModsecRulesRequest request);
 
-  Status validate(GetCustomSignatureModsecRulesRequest request);
+  void validate(BulkDeleteCustomSignatureRulesRequest request);
 
-  Status validate(BulkUpdateCustomSignatureRulesRequest request);
+  void validate(BulkUpdateCustomSignatureRulesRequest request);
 }

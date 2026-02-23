@@ -5,6 +5,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
@@ -41,7 +43,6 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
@@ -119,7 +120,7 @@ class CustomSignatureConfigServiceImplTest {
     List<CustomSignatureRule> multiEvalPointsRules =
         List.of(platformRule, edgeRule, multipleEvaluationPointsRule);
 
-    when(rulesValidator.validate(any(GetCustomSignatureRulesRequest.class))).thenReturn(Status.OK);
+    doNothing().when(rulesValidator).validate(any(GetCustomSignatureRulesRequest.class));
     StreamObserver<GetCustomSignatureRulesResponse> responseObserver = mock(StreamObserver.class);
 
     // Case 1: Test with no filter (should return all rules)
@@ -270,8 +271,9 @@ class CustomSignatureConfigServiceImplTest {
     reset(responseObserver);
     reset(rulesManager);
     reset(rulesValidator);
-    when(rulesValidator.validate(any(GetCustomSignatureRulesRequest.class)))
-        .thenThrow(new RuntimeException("Validation failed"));
+    doThrow(new RuntimeException("Validation failed"))
+        .when(rulesValidator)
+        .validate(any(GetCustomSignatureRulesRequest.class));
 
     configService.getCustomSignatureRules(
         GetCustomSignatureRulesRequest.getDefaultInstance(), responseObserver);
@@ -280,15 +282,13 @@ class CustomSignatureConfigServiceImplTest {
         .onError(
             argThat(
                 err ->
-                    Status.fromThrowable(err).getCode() == Status.Code.INTERNAL
-                        && Objects.equals(
-                            Status.fromThrowable(err).getDescription(),
-                            "Unable to fetch custom signature rules")));
+                    err instanceof RuntimeException
+                        && err.getMessage().equals("Validation failed")));
 
     // Case 7: Test exception handling from the rules manager
     reset(responseObserver);
     reset(rulesValidator);
-    when(rulesValidator.validate(any(GetCustomSignatureRulesRequest.class))).thenReturn(Status.OK);
+    doNothing().when(rulesValidator).validate(any(GetCustomSignatureRulesRequest.class));
     when(rulesManager.getCustomSignatureRuleRecords(any(), any()))
         .thenThrow(new RuntimeException("Test exception"));
 
@@ -297,10 +297,7 @@ class CustomSignatureConfigServiceImplTest {
         .onError(
             argThat(
                 err ->
-                    Status.fromThrowable(err).getCode() == Status.Code.INTERNAL
-                        && Objects.equals(
-                            Status.fromThrowable(err).getDescription(),
-                            "Unable to fetch custom signature rules")));
+                    err instanceof RuntimeException && err.getMessage().equals("Test exception")));
   }
 
   @Test
@@ -311,8 +308,9 @@ class CustomSignatureConfigServiceImplTest {
         CreateCustomSignatureRuleRequest.newBuilder().setName("Test Rule").build();
 
     // Test case 1: Validation fails
-    when(rulesValidator.validate(any(CreateCustomSignatureRuleRequest.class)))
-        .thenReturn(Status.INVALID_ARGUMENT);
+    doThrow(Status.INVALID_ARGUMENT.asRuntimeException())
+        .when(rulesValidator)
+        .validate(any(CreateCustomSignatureRuleRequest.class));
     Runnable runnable = () -> configService.createCustomSignatureRule(request, responseObserver);
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
     verify(responseObserver, times(1))
@@ -321,8 +319,7 @@ class CustomSignatureConfigServiceImplTest {
 
     // Test case 2: Validation passes but rule creation fails
     reset(responseObserver);
-    when(rulesValidator.validate(any(CreateCustomSignatureRuleRequest.class)))
-        .thenReturn(Status.OK);
+    doNothing().when(rulesValidator).validate(any(CreateCustomSignatureRuleRequest.class));
     when(rulesManager.createCustomSignatureRule(any(), any())).thenReturn(Optional.empty());
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
     verify(responseObserver, times(1))
@@ -330,8 +327,7 @@ class CustomSignatureConfigServiceImplTest {
 
     // Test case 3: Validation passes and rule creation succeeds
     reset(responseObserver);
-    when(rulesValidator.validate(any(CreateCustomSignatureRuleRequest.class)))
-        .thenReturn(Status.OK);
+    doNothing().when(rulesValidator).validate(any(CreateCustomSignatureRuleRequest.class));
     when(rulesManager.createCustomSignatureRule(any(), any())).thenReturn(Optional.of(rule));
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
     verify(responseObserver, times(1))
@@ -349,15 +345,16 @@ class CustomSignatureConfigServiceImplTest {
             configService.updateCustomSignatureRule(
                 UpdateCustomSignatureRuleRequest.getDefaultInstance(), responseObserver);
 
-    when(rulesValidator.validate((UpdateCustomSignatureRuleRequest) any()))
-        .thenReturn(Status.INVALID_ARGUMENT);
+    doThrow(Status.INVALID_ARGUMENT.asRuntimeException())
+        .when(rulesValidator)
+        .validate((UpdateCustomSignatureRuleRequest) any());
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
     verify(responseObserver, times(1))
         .onError(
             argThat(err -> Status.fromThrowable(err).getCode() == Status.Code.INVALID_ARGUMENT));
 
     reset(responseObserver);
-    when(rulesValidator.validate((UpdateCustomSignatureRuleRequest) any())).thenReturn(Status.OK);
+    doNothing().when(rulesValidator).validate((UpdateCustomSignatureRuleRequest) any());
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
     verify(responseObserver, times(1))
         .onError(argThat(err -> Status.fromThrowable(err).getCode() == Status.Code.INTERNAL));
@@ -380,15 +377,16 @@ class CustomSignatureConfigServiceImplTest {
             configService.deleteCustomSignatureRule(
                 deleteCustomSignatureRuleRequest, responseObserver);
 
-    when(rulesValidator.validate((DeleteCustomSignatureRuleRequest) any()))
-        .thenReturn(Status.INVALID_ARGUMENT);
+    doThrow(Status.INVALID_ARGUMENT.asRuntimeException())
+        .when(rulesValidator)
+        .validate((DeleteCustomSignatureRuleRequest) any());
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
     verify(responseObserver, times(1))
         .onError(
             argThat(err -> Status.fromThrowable(err).getCode() == Status.Code.INVALID_ARGUMENT));
 
     reset(responseObserver);
-    when(rulesValidator.validate((DeleteCustomSignatureRuleRequest) any())).thenReturn(Status.OK);
+    doNothing().when(rulesValidator).validate((DeleteCustomSignatureRuleRequest) any());
     when(rulesManager.deleteCustomSignatureRule(any(), eq("id")))
         .thenReturn(Optional.of(CustomSignatureRule.newBuilder().setId("id").build()));
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
@@ -411,8 +409,9 @@ class CustomSignatureConfigServiceImplTest {
         () -> configService.bulkDeleteCustomSignatureRules(bulkDeleteRequest, responseObserver);
 
     // Test case 1: Validation fails
-    when(rulesValidator.validate((BulkDeleteCustomSignatureRulesRequest) any()))
-        .thenReturn(Status.INVALID_ARGUMENT);
+    doThrow(Status.INVALID_ARGUMENT.asRuntimeException())
+        .when(rulesValidator)
+        .validate((BulkDeleteCustomSignatureRulesRequest) any());
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
     verify(responseObserver, times(1))
         .onError(
@@ -420,8 +419,7 @@ class CustomSignatureConfigServiceImplTest {
 
     // Test case 2: Validation passes and bulk delete succeeds
     reset(responseObserver);
-    when(rulesValidator.validate((BulkDeleteCustomSignatureRulesRequest) any()))
-        .thenReturn(Status.OK);
+    doNothing().when(rulesValidator).validate((BulkDeleteCustomSignatureRulesRequest) any());
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
     verify(rulesManager, times(1))
         .bulkDeleteCustomSignatureRules(any(), eq(List.of("id1", "id2", "id3")));
@@ -432,9 +430,8 @@ class CustomSignatureConfigServiceImplTest {
     // Test case 3: Exception during bulk delete
     reset(responseObserver);
     reset(rulesManager);
-    when(rulesValidator.validate((BulkDeleteCustomSignatureRulesRequest) any()))
-        .thenReturn(Status.OK);
-    org.mockito.Mockito.doThrow(new RuntimeException("Delete failed"))
+    doNothing().when(rulesValidator).validate((BulkDeleteCustomSignatureRulesRequest) any());
+    doThrow(new RuntimeException("Delete failed"))
         .when(rulesManager)
         .bulkDeleteCustomSignatureRules(any(), any());
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
@@ -470,8 +467,7 @@ class CustomSignatureConfigServiceImplTest {
             .build();
     List<CustomSignatureRule> allRules = List.of(platformRule, agentRule, edgeRule);
 
-    when(rulesValidator.validate(any(GetCustomSignatureModsecRulesRequest.class)))
-        .thenReturn(Status.OK);
+    doNothing().when(rulesValidator).validate(any(GetCustomSignatureModsecRulesRequest.class));
     when(rulesManager.getCustomSignatureRules(any(), any())).thenReturn(allRules);
     GetCustomSignatureModsecRulesResponse modsecResponse =
         GetCustomSignatureModsecRulesResponse.newBuilder()
@@ -525,24 +521,22 @@ class CustomSignatureConfigServiceImplTest {
     reset(rulesManager);
     reset(rulesValidator);
     reset(modsecRulesManager);
-    when(rulesValidator.validate(any(GetCustomSignatureModsecRulesRequest.class)))
-        .thenThrow(new RuntimeException("Validation failed"));
+    doThrow(new RuntimeException("Validation failed"))
+        .when(rulesValidator)
+        .validate(any(GetCustomSignatureModsecRulesRequest.class));
     configService.getCustomSignatureModsecRules(request, responseObserver);
     verify(responseObserver, times(1))
         .onError(
             argThat(
                 err ->
-                    Status.fromThrowable(err).getCode() == Status.Code.INTERNAL
-                        && Objects.equals(
-                            Status.fromThrowable(err).getDescription(),
-                            "Unable to fetch modsec custom signature rules")));
+                    err instanceof RuntimeException
+                        && err.getMessage().equals("Validation failed")));
 
     // Case 4: Test exception in modsecRulesManager
     reset(responseObserver);
     reset(rulesValidator);
     reset(modsecRulesManager);
-    when(rulesValidator.validate(any(GetCustomSignatureModsecRulesRequest.class)))
-        .thenReturn(Status.OK);
+    doNothing().when(rulesValidator).validate(any(GetCustomSignatureModsecRulesRequest.class));
     when(rulesManager.getCustomSignatureRules(any(), any())).thenReturn(allRules);
     when(modsecRulesManager.getModsecRules(any(), any(), any(), anyBoolean(), any(), eq(List.of())))
         .thenThrow(new RuntimeException("ModSec manager error"));
@@ -551,10 +545,8 @@ class CustomSignatureConfigServiceImplTest {
         .onError(
             argThat(
                 err ->
-                    Status.fromThrowable(err).getCode() == Status.Code.INTERNAL
-                        && Objects.equals(
-                            Status.fromThrowable(err).getDescription(),
-                            "Unable to fetch modsec custom signature rules")));
+                    err instanceof RuntimeException
+                        && err.getMessage().equals("ModSec manager error")));
   }
 
   @Test
@@ -578,8 +570,9 @@ class CustomSignatureConfigServiceImplTest {
     List<CustomSignatureRule> allRules = List.of(platformRule, edgeRule);
     List<CustomSignatureRule> edgeRules = List.of(edgeRule);
 
-    when(rulesValidator.validate(any(GetCustomSignatureEdgeDecisionRulesRequest.class)))
-        .thenReturn(Status.OK);
+    doNothing()
+        .when(rulesValidator)
+        .validate(any(GetCustomSignatureEdgeDecisionRulesRequest.class));
     when(rulesManager.getCustomSignatureRules(any(), any())).thenReturn(allRules);
 
     EdgeDecisionEngineConfig edgeDecisionEngineConfig =
@@ -628,16 +621,15 @@ class CustomSignatureConfigServiceImplTest {
     reset(rulesManager);
     reset(rulesValidator);
     reset(edgeDecisionConverter);
-    when(rulesValidator.validate(any(GetCustomSignatureEdgeDecisionRulesRequest.class)))
-        .thenThrow(new RuntimeException("Validation failed"));
+    doThrow(new RuntimeException("Validation failed"))
+        .when(rulesValidator)
+        .validate(any(GetCustomSignatureEdgeDecisionRulesRequest.class));
     configService.getCustomSignatureEdgeDecisionRules(request, responseObserver);
     verify(responseObserver, times(1))
         .onError(
             argThat(
                 err ->
-                    Status.fromThrowable(err).getCode() == Status.Code.INTERNAL
-                        && Objects.equals(
-                            Status.fromThrowable(err).getDescription(),
-                            "Unable to fetch custom signature edge decision rules")));
+                    err instanceof RuntimeException
+                        && err.getMessage().equals("Validation failed")));
   }
 }

@@ -27,6 +27,7 @@ import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleR
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleResponse;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
 import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import jakarta.inject.Inject;
 import java.util.List;
@@ -59,16 +60,37 @@ public class CustomSignatureConfigServiceImpl
     this.ruleMigrationManager = ruleMigrationManager;
   }
 
+  private <T> boolean isInvalidRequest(
+      T request,
+      StreamObserver<?> responseObserver,
+      String requestType,
+      ValidationFunction<T> validationFunction) {
+    try {
+      validationFunction.validate(request);
+      return false;
+    } catch (StatusRuntimeException e) {
+      log.error(
+          "{} Request is not valid: {}", requestType, Status.fromThrowable(e).getDescription());
+      responseObserver.onError(e);
+      return true;
+    }
+  }
+
+  @FunctionalInterface
+  private interface ValidationFunction<T> {
+    void validate(T request);
+  }
+
   @Override
   public void bulkDeleteCustomSignatureRules(
       BulkDeleteCustomSignatureRulesRequest request,
       StreamObserver<BulkDeleteCustomSignatureRulesResponse> responseObserver) {
     try {
-      Status status = rulesValidator.validate(request);
-      if (!status.isOk()) {
-        log.error(
-            "Bulk delete custom signature rules request is not valid {}", status.getDescription());
-        responseObserver.onError(status.asException());
+      if (isInvalidRequest(
+          request,
+          responseObserver,
+          "Bulk Delete Custom Signature Rules",
+          rulesValidator::validate)) {
         return;
       }
       rulesManager.bulkDeleteCustomSignatureRules(
@@ -87,7 +109,10 @@ public class CustomSignatureConfigServiceImpl
       StreamObserver<GetCustomSignatureRulesResponse> responseObserver) {
     try {
       RequestContext context = RequestContext.CURRENT.get();
-      rulesValidator.validate(request);
+      if (isInvalidRequest(
+          request, responseObserver, "Get Custom Signature Rules", rulesValidator::validate)) {
+        return;
+      }
 
       ruleMigrationManager.migrateCustomSignatureRules(context);
 
@@ -104,8 +129,8 @@ public class CustomSignatureConfigServiceImpl
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
-      responseObserver.onError(
-          Status.INTERNAL.withDescription("Unable to fetch custom signature rules").asException());
+      log.error("Unable to fetch custom signature rules", e);
+      responseObserver.onError(e);
     }
   }
 
@@ -117,10 +142,11 @@ public class CustomSignatureConfigServiceImpl
       CreateCustomSignatureRuleRequest migratedCreateRuleRequest =
           ruleMigrationManager.migrateCreateCustomSignatureRuleRequest(request);
 
-      Status status = rulesValidator.validate(migratedCreateRuleRequest);
-      if (!status.isOk()) {
-        log.error("Create Custom Signature Rule Request is not valid {}", status.getDescription());
-        responseObserver.onError(status.asException());
+      if (isInvalidRequest(
+          migratedCreateRuleRequest,
+          responseObserver,
+          "Create Custom Signature Rule",
+          rulesValidator::validate)) {
         return;
       }
 
@@ -156,10 +182,11 @@ public class CustomSignatureConfigServiceImpl
       UpdateCustomSignatureRuleRequest migratedUpdateRuleRequest =
           ruleMigrationManager.migrateUpdateCustomSignatureRuleRequest(request);
 
-      Status status = rulesValidator.validate(migratedUpdateRuleRequest);
-      if (!status.isOk()) {
-        log.error("Update Custom Signature Rule Request is not valid {}", status.getDescription());
-        responseObserver.onError(status.asException());
+      if (isInvalidRequest(
+          migratedUpdateRuleRequest,
+          responseObserver,
+          "Update Custom Signature Rule",
+          rulesValidator::validate)) {
         return;
       }
 
@@ -193,10 +220,8 @@ public class CustomSignatureConfigServiceImpl
       DeleteCustomSignatureRuleRequest request,
       StreamObserver<DeleteCustomSignatureRuleResponse> responseObserver) {
     try {
-      Status status = rulesValidator.validate(request);
-      if (!status.isOk()) {
-        log.error("Delete Custom Signature Rule Request is not valid {}", status.getDescription());
-        responseObserver.onError(status.asException());
+      if (isInvalidRequest(
+          request, responseObserver, "Delete Custom Signature Rule", rulesValidator::validate)) {
         return;
       }
       String ruleId = request.getId();
@@ -215,7 +240,13 @@ public class CustomSignatureConfigServiceImpl
       StreamObserver<GetCustomSignatureModsecRulesResponse> responseObserver) {
     try {
       RequestContext context = RequestContext.CURRENT.get();
-      rulesValidator.validate(request);
+      if (isInvalidRequest(
+          request,
+          responseObserver,
+          "Get Custom Signature Modsec Rules",
+          rulesValidator::validate)) {
+        return;
+      }
       List<CustomSignatureRule> rules =
           rulesManager.getCustomSignatureRules(context, request.getFilter());
       GetCustomSignatureModsecRulesResponse response =
@@ -229,10 +260,8 @@ public class CustomSignatureConfigServiceImpl
       responseObserver.onNext(response);
       responseObserver.onCompleted();
     } catch (Exception e) {
-      responseObserver.onError(
-          Status.INTERNAL
-              .withDescription("Unable to fetch modsec custom signature rules")
-              .asException());
+      log.error("Unable to fetch modsec custom signature rules", e);
+      responseObserver.onError(e);
     }
   }
 
@@ -242,7 +271,13 @@ public class CustomSignatureConfigServiceImpl
       StreamObserver<GetCustomSignatureEdgeDecisionRulesResponse> responseObserver) {
     try {
       RequestContext context = RequestContext.CURRENT.get();
-      rulesValidator.validate(request);
+      if (isInvalidRequest(
+          request,
+          responseObserver,
+          "Get Custom Signature Edge Decision Rules",
+          rulesValidator::validate)) {
+        return;
+      }
 
       EdgeDecisionEngineConfig edgeDecisionEngineConfig =
           edgeDecisionConverter.convert(
@@ -257,10 +292,8 @@ public class CustomSignatureConfigServiceImpl
       responseObserver.onNext(response);
       responseObserver.onCompleted();
     } catch (Exception e) {
-      responseObserver.onError(
-          Status.INTERNAL
-              .withDescription("Unable to fetch custom signature edge decision rules")
-              .asException());
+      log.error("Unable to fetch custom signature edge decision rules", e);
+      responseObserver.onError(e);
     }
   }
 
@@ -269,11 +302,11 @@ public class CustomSignatureConfigServiceImpl
       BulkUpdateCustomSignatureRulesRequest request,
       StreamObserver<BulkUpdateCustomSignatureRulesResponse> responseObserver) {
     try {
-      Status status = rulesValidator.validate(request);
-      if (!status.isOk()) {
-        log.error(
-            "Bulk Update Custom Signature Rules Request is not valid {}", status.getDescription());
-        responseObserver.onError(status.asException());
+      if (isInvalidRequest(
+          request,
+          responseObserver,
+          "Bulk Update Custom Signature Rules",
+          rulesValidator::validate)) {
         return;
       }
       rulesManager.bulkUpdateCustomSignatureRules(RequestContext.CURRENT.get(), request);
