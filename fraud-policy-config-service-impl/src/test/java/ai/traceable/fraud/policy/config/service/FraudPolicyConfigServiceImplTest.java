@@ -9,6 +9,7 @@ import static org.mockito.quality.Strictness.LENIENT;
 
 import ai.traceable.config.proto.utils.FieldMaskUtils;
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.fraud.datamodel.event.kind.v1.AggregationFunctionType;
 import ai.traceable.fraud.policy.config.service.store.AbusePolicyConfigStore;
 import ai.traceable.fraud.policy.config.service.store.AbusePolicyConfigStoreManager;
 import ai.traceable.fraud.policy.config.service.store.ApiAccessAnomalyConfigStore;
@@ -593,7 +594,8 @@ class FraudPolicyConfigServiceImplTest {
                 .newBuilder()
                 .setAggregation(
                     ai.traceable.fraud.policy.config.service.v1.AbuseAggregationConfig.newBuilder()
-                        .setAggregationFunctionId("system_aggregation_count")
+                        .setAggregationFunction(
+                            AggregationFunctionType.AGGREGATION_FUNCTION_TYPE_COUNT)
                         .setDerivedEntityId("request_count")
                         .build())
                 .setThreshold(

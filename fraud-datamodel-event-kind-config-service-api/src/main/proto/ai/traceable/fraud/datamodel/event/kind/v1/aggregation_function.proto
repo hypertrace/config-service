@@ -9,8 +9,8 @@ option java_multiple_files = true;
 
 // Aggregation function definition (system-defined only)
 message AggregationFunction {
-  // Unique identifier
-  string id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Unique identifier for this aggregation function"];
+  // Type of aggregation function (replaces string id)
+  AggregationFunctionType function_type = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Type of aggregation function"];
 
   // Display name for UI (e.g., "COUNT", "SUM", "AVG")
   string display_name = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Display name shown in UI"];
@@ -21,4 +21,15 @@ message AggregationFunction {
   // List of kinds this function accepts as input
   // Functions are valid for these kinds AND all their descendants
   repeated ComplexDataModelEventKind input_kinds = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_skip) = true];
+}
+
+enum AggregationFunctionType {
+  AGGREGATION_FUNCTION_TYPE_UNSPECIFIED = 0;
+  AGGREGATION_FUNCTION_TYPE_COUNT = 1;
+  AGGREGATION_FUNCTION_TYPE_DISTINCT_COUNT = 2;
+  AGGREGATION_FUNCTION_TYPE_SUM = 3;
+  AGGREGATION_FUNCTION_TYPE_AVG = 4;
+  AGGREGATION_FUNCTION_TYPE_MIN = 5;
+  AGGREGATION_FUNCTION_TYPE_MAX = 6;
+  AGGREGATION_FUNCTION_TYPE_COALESCE = 7;
 }

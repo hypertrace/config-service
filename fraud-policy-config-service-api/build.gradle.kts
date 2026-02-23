@@ -27,6 +27,7 @@ protobuf {
 
 dependencies {
   api(projects.fraudDatamodelConfigServiceApi)
+  api(projects.fraudDatamodelEventKindConfigServiceApi)
   api(projects.traceableEdgeDecisionConfigServiceApi)
   api(projects.graphqlAutogenSchemaAnnotations)
   api(commonLibs.bundles.grpc.api)

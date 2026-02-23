@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package ai.traceable.fraud.policy.config.service.v1;
 
+import "ai/traceable/fraud/datamodel/event/kind/v1/aggregation_function.proto";
 import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/struct.proto";
@@ -124,8 +125,8 @@ message AbuseSimpleAggregationTemplateConfig {
 }
 
 message AbuseAggregationConfig {
-  // Aggregation function ID referencing common aggregation functions (e.g., "system_aggregation_count")
-  string aggregation_function_id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Required. Aggregation function ID referencing common aggregation functions"];
+  // Aggregation function type referencing common aggregation functions
+  ai.traceable.fraud.datamodel.event.kind.v1.AggregationFunctionType aggregation_function = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Required. Aggregation function type referencing common aggregation functions"];
 
   // Derived entity ID to aggregate on (e.g., "user_id", "transaction_amount")
   // For COUNT, use any field (e.g., "id") to express COUNT(*)

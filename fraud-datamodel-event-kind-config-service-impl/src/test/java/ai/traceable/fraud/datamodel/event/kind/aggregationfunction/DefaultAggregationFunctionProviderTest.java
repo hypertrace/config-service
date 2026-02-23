@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import ai.traceable.fraud.datamodel.event.kind.eventkind.DefaultEventKindProvider;
 import ai.traceable.fraud.datamodel.event.kind.eventkind.EventKindHierarchyResolver;
 import ai.traceable.fraud.datamodel.event.kind.v1.AggregationFunction;
+import ai.traceable.fraud.datamodel.event.kind.v1.AggregationFunctionType;
 import ai.traceable.fraud.datamodel.event.kind.v1.AggregationFunctionsByKind;
 import ai.traceable.fraud.datamodel.event.kind.v1.ComplexDataModelEventKind;
 import java.util.List;
@@ -38,7 +39,9 @@ class DefaultAggregationFunctionProviderTest {
     // COUNT and DISTINCT_COUNT work on all types
     assertTrue(
         result.get(0).getFunctionsList().stream()
-            .anyMatch(f -> f.getId().equals("system_aggregation_count")),
+            .anyMatch(
+                f ->
+                    f.getFunctionType() == AggregationFunctionType.AGGREGATION_FUNCTION_TYPE_COUNT),
         "Should include COUNT for value kind");
   }
 
@@ -51,18 +54,22 @@ class DefaultAggregationFunctionProviderTest {
 
     assertFalse(result.isEmpty(), "Should return functions for numeric kind");
 
-    List<String> functionIds =
+    List<AggregationFunctionType> functionTypes =
         result.get(0).getFunctionsList().stream()
-            .map(AggregationFunction::getId)
+            .map(AggregationFunction::getFunctionType)
             .collect(Collectors.toList());
 
     // Numeric-specific functions
-    assertTrue(functionIds.contains("system_aggregation_sum"), "Should include SUM for numeric");
-    assertTrue(functionIds.contains("system_aggregation_avg"), "Should include AVG for numeric");
+    assertTrue(
+        functionTypes.contains(AggregationFunctionType.AGGREGATION_FUNCTION_TYPE_SUM),
+        "Should include SUM for numeric");
+    assertTrue(
+        functionTypes.contains(AggregationFunctionType.AGGREGATION_FUNCTION_TYPE_AVG),
+        "Should include AVG for numeric");
 
     // Inherited from value kind (hierarchy resolution)
     assertTrue(
-        functionIds.contains("system_aggregation_count"),
+        functionTypes.contains(AggregationFunctionType.AGGREGATION_FUNCTION_TYPE_COUNT),
         "Should include COUNT inherited from value kind");
   }
 
@@ -94,14 +101,20 @@ class DefaultAggregationFunctionProviderTest {
     List<AggregationFunctionsByKind> numericResult =
         provider.getFunctionsByKinds(List.of(numericKind));
 
-    List<String> numericFunctionIds =
+    List<AggregationFunctionType> numericFunctionTypes =
         numericResult.get(0).getFunctionsList().stream()
-            .map(AggregationFunction::getId)
+            .map(AggregationFunction::getFunctionType)
             .collect(Collectors.toList());
 
     // Core functions that must exist for numeric (including inherited)
-    assertTrue(numericFunctionIds.contains("system_aggregation_count"), "Must have COUNT function");
-    assertTrue(numericFunctionIds.contains("system_aggregation_avg"), "Must have AVG function");
-    assertTrue(numericFunctionIds.contains("system_aggregation_sum"), "Must have SUM function");
+    assertTrue(
+        numericFunctionTypes.contains(AggregationFunctionType.AGGREGATION_FUNCTION_TYPE_COUNT),
+        "Must have COUNT function");
+    assertTrue(
+        numericFunctionTypes.contains(AggregationFunctionType.AGGREGATION_FUNCTION_TYPE_AVG),
+        "Must have AVG function");
+    assertTrue(
+        numericFunctionTypes.contains(AggregationFunctionType.AGGREGATION_FUNCTION_TYPE_SUM),
+        "Must have SUM function");
   }
 }

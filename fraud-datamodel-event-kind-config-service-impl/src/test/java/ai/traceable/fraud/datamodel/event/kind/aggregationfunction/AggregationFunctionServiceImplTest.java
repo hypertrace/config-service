@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.fraud.datamodel.event.kind.v1.AggregationFunction;
 import ai.traceable.fraud.datamodel.event.kind.v1.AggregationFunctionFilter;
+import ai.traceable.fraud.datamodel.event.kind.v1.AggregationFunctionType;
 import ai.traceable.fraud.datamodel.event.kind.v1.AggregationFunctionsByKind;
 import ai.traceable.fraud.datamodel.event.kind.v1.ComplexDataModelEventKind;
 import ai.traceable.fraud.datamodel.event.kind.v1.GetAggregationFunctionsRequest;
@@ -70,7 +71,7 @@ class AggregationFunctionServiceImplTest {
 
     AggregationFunction func =
         AggregationFunction.newBuilder()
-            .setId("test_func")
+            .setFunctionType(AggregationFunctionType.AGGREGATION_FUNCTION_TYPE_COUNT)
             .setDisplayName("Test")
             .setDescription("Test function")
             .build();

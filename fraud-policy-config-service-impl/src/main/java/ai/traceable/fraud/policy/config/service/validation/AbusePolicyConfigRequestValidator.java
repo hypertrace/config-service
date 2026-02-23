@@ -2,6 +2,7 @@ package ai.traceable.fraud.policy.config.service.validation;
 
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
+import ai.traceable.fraud.datamodel.event.kind.v1.AggregationFunctionType;
 import ai.traceable.fraud.policy.config.service.v1.AbusePolicyData;
 import ai.traceable.fraud.policy.config.service.v1.CreateAbusePolicyRequest;
 import ai.traceable.fraud.policy.config.service.v1.UpdateAbusePolicyRequest;
@@ -176,8 +177,9 @@ public class AbusePolicyConfigRequestValidator {
       ai.traceable.fraud.policy.config.service.v1.AbuseSimpleAggregationTemplateConfig template,
       RequestContext requestContext) {
 
-    // Validate aggregation function ID
-    if (template.getAggregation().getAggregationFunctionId().isEmpty()) {
+    // Validate aggregation function type
+    if (template.getAggregation().getAggregationFunction()
+        == AggregationFunctionType.AGGREGATION_FUNCTION_TYPE_UNSPECIFIED) {
       throw Status.INVALID_ARGUMENT
           .withDescription("Aggregation function must be specified")
           .asRuntimeException(requestContext.buildTrailers());

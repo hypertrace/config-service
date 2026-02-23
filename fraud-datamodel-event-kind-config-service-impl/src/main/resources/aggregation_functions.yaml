@@ -3,46 +3,46 @@
 
 functions:
   # Universal aggregations - work on all types
-  - id: "system_aggregation_count"
+  - function_type: AGGREGATION_FUNCTION_TYPE_COUNT
     display_name: "COUNT"
     description: "Counts the number of values"
     input_kinds:
       - kind_id: "system_event_kind_value"
 
-  - id: "system_aggregation_count_distinct"
+  - function_type: AGGREGATION_FUNCTION_TYPE_DISTINCT_COUNT
     display_name: "DISTINCT_COUNT"
     description: "Counts the number of unique values"
     input_kinds:
       - kind_id: "system_event_kind_value"
 
   # Numeric aggregations
-  - id: "system_aggregation_sum"
+  - function_type: AGGREGATION_FUNCTION_TYPE_SUM
     display_name: "SUM"
     description: "Sums numeric values"
     input_kinds:
       - kind_id: "system_event_kind_numeric"
 
-  - id: "system_aggregation_avg"
+  - function_type: AGGREGATION_FUNCTION_TYPE_AVG
     display_name: "AVG"
     description: "Calculates average of numeric values"
     input_kinds:
       - kind_id: "system_event_kind_numeric"
 
-  - id: "system_aggregation_min"
+  - function_type: AGGREGATION_FUNCTION_TYPE_MIN
     display_name: "MIN"
     description: "Finds minimum value"
     input_kinds:
       - kind_id: "system_event_kind_numeric"
       - kind_id: "system_event_kind_timestamp"
 
-  - id: "system_aggregation_max"
+  - function_type: AGGREGATION_FUNCTION_TYPE_MAX
     display_name: "MAX"
     description: "Finds maximum value"
     input_kinds:
       - kind_id: "system_event_kind_numeric"
       - kind_id: "system_event_kind_timestamp"
 
-  - id: "system_aggregation_coalesce"
+  - function_type: AGGREGATION_FUNCTION_TYPE_COALESCE
     display_name: "COALESCE"
     description: "Removes non-null values"
     input_kinds:

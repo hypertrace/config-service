@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import ai.traceable.fraud.datamodel.event.kind.v1.AggregationFunctionType;
 import ai.traceable.fraud.policy.config.service.v1.AbuseActionConfig;
 import ai.traceable.fraud.policy.config.service.v1.AbuseActionType;
 import ai.traceable.fraud.policy.config.service.v1.AbuseAggregationConfig;
@@ -276,7 +277,8 @@ class AbusePolicyConfigRequestValidatorTest {
         createValidSimpleAggregationTemplate().toBuilder()
             .setAggregation(
                 AbuseAggregationConfig.newBuilder()
-                    .setAggregationFunctionId("")
+                    .setAggregationFunction(
+                        AggregationFunctionType.AGGREGATION_FUNCTION_TYPE_UNSPECIFIED)
                     .setDerivedEntityId("entity")
                     .build())
             .build();
@@ -546,7 +548,7 @@ class AbusePolicyConfigRequestValidatorTest {
     return AbuseSimpleAggregationTemplateConfig.newBuilder()
         .setAggregation(
             AbuseAggregationConfig.newBuilder()
-                .setAggregationFunctionId("system_aggregation_count")
+                .setAggregationFunction(AggregationFunctionType.AGGREGATION_FUNCTION_TYPE_COUNT)
                 .setDerivedEntityId("request_count")
                 .build())
         .setGroupBy(AbuseGroupByConfig.newBuilder().setDerivedEntityId("user_id").build())
