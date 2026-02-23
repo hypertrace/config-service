@@ -325,7 +325,7 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
                 ApiNamingRule.newBuilder()
                     .setId(
                         apiNamingRuleIdGenerator.generateGenAiRuleId(
-                            genAiBasedConfig.getRegexesList(), genAiBasedConfig.getValuesList()))
+                            genAiBasedConfig.getRegexesList()))
                     .setRuleInfo(apiNamingRuleInfo)
                     .build())
             .isNewRule(true)

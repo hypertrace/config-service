@@ -10,11 +10,10 @@ public class ApiNamingRuleIdGenerator {
 
   private final UuidGenerator uuidGenerator;
 
-  public String generateGenAiRuleId(List<String> regexes, List<String> values) {
+  public String generateGenAiRuleId(List<String> regexes) {
     StringBuilder idBuilder = new StringBuilder();
 
     regexes.forEach(regex -> idBuilder.append(regex).append("_"));
-    values.forEach(value -> idBuilder.append(value).append("_"));
 
     return uuidGenerator.generateId(idBuilder.toString());
   }
