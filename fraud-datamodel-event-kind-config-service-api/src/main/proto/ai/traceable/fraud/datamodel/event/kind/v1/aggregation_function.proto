@@ -21,7 +21,4 @@ message AggregationFunction {
   // List of kinds this function accepts as input
   // Functions are valid for these kinds AND all their descendants
   repeated ComplexDataModelEventKind input_kinds = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_skip) = true];
-
-  // SQL function name/template
-  string sql_template = 5 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_skip) = true];
 }

@@ -17,7 +17,6 @@ message SpanBasedFilter {
 // SpanBasedExtraction defines structured extraction config (UI-friendly)
 message SpanBasedExtraction {
   ExtractionLocation location = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Where to extract from"];
-  SpanBasedScope scope = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Conditions to determine which requests this extraction applies to"];
 }
 
 // Body-specific extraction method (only applicable for body location types)

@@ -2,6 +2,7 @@
 # Defines available operators for filtering/conditions on event kind values
 # All operators are binary: input value + single comparison parameter
 # Uses same structure as TransformationFunction proto
+# Only includes operators that can be supported with SQL
 
 functions:
   # String equals/not-equals (also covers IP address, email, etc. which inherit from string)
@@ -13,7 +14,6 @@ functions:
       - kind_id: "system_event_kind_network_identifier"
     output_kind:
       kind_id: "system_event_kind_boolean"
-    jexl_template: "${input} == '${value}'"
     parameters:
       - name: "value"
         description: "Value to compare against"
@@ -28,7 +28,6 @@ functions:
       - kind_id: "system_event_kind_network_identifier"
     output_kind:
       kind_id: "system_event_kind_boolean"
-    jexl_template: "${input} != '${value}'"
     parameters:
       - name: "value"
         description: "Value to compare against"
@@ -44,7 +43,6 @@ functions:
       - kind_id: "system_event_kind_timestamp"
     output_kind:
       kind_id: "system_event_kind_boolean"
-    jexl_template: "${input} == ${value}"
     parameters:
       - name: "value"
         description: "Value to compare against"
@@ -59,7 +57,6 @@ functions:
       - kind_id: "system_event_kind_timestamp"
     output_kind:
       kind_id: "system_event_kind_boolean"
-    jexl_template: "${input} != ${value}"
     parameters:
       - name: "value"
         description: "Value to compare against"
@@ -74,7 +71,6 @@ functions:
       - kind_id: "system_event_kind_boolean"
     output_kind:
       kind_id: "system_event_kind_boolean"
-    jexl_template: "${input} == ${value}"
     parameters:
       - name: "value"
         description: "Value to compare against (true or false)"
@@ -90,7 +86,6 @@ functions:
       - kind_id: "system_event_kind_timestamp"
     output_kind:
       kind_id: "system_event_kind_boolean"
-    jexl_template: "${input} < ${value}"
     parameters:
       - name: "value"
         description: "Value to compare against"
@@ -105,7 +100,6 @@ functions:
       - kind_id: "system_event_kind_timestamp"
     output_kind:
       kind_id: "system_event_kind_boolean"
-    jexl_template: "${input} <= ${value}"
     parameters:
       - name: "value"
         description: "Value to compare against"
@@ -120,7 +114,6 @@ functions:
       - kind_id: "system_event_kind_timestamp"
     output_kind:
       kind_id: "system_event_kind_boolean"
-    jexl_template: "${input} > ${value}"
     parameters:
       - name: "value"
         description: "Value to compare against"
@@ -135,7 +128,6 @@ functions:
       - kind_id: "system_event_kind_timestamp"
     output_kind:
       kind_id: "system_event_kind_boolean"
-    jexl_template: "${input} >= ${value}"
     parameters:
       - name: "value"
         description: "Value to compare against"
@@ -150,7 +142,6 @@ functions:
       - kind_id: "system_event_kind_string"
     output_kind:
       kind_id: "system_event_kind_boolean"
-    jexl_template: "${input}.contains('${substring}')"
     parameters:
       - name: "substring"
         description: "Substring to search for"
@@ -164,7 +155,6 @@ functions:
       - kind_id: "system_event_kind_string"
     output_kind:
       kind_id: "system_event_kind_boolean"
-    jexl_template: "!${input}.contains('${substring}')"
     parameters:
       - name: "substring"
         description: "Substring to search for"
@@ -178,7 +168,6 @@ functions:
       - kind_id: "system_event_kind_string"
     output_kind:
       kind_id: "system_event_kind_boolean"
-    jexl_template: "${input}.startsWith('${prefix}')"
     parameters:
       - name: "prefix"
         description: "Prefix to check for"
@@ -192,7 +181,6 @@ functions:
       - kind_id: "system_event_kind_string"
     output_kind:
       kind_id: "system_event_kind_boolean"
-    jexl_template: "${input}.endsWith('${suffix}')"
     parameters:
       - name: "suffix"
         description: "Suffix to check for"
@@ -206,24 +194,8 @@ functions:
       - kind_id: "system_event_kind_string"
     output_kind:
       kind_id: "system_event_kind_boolean"
-    jexl_template: "${input} =~ '${pattern}'"
     parameters:
       - name: "pattern"
         description: "Regular expression pattern"
-        type: PARAMETER_TYPE_STRING
-        required: true
-
-  # IP Address operators
-  - id: "system_defined_operator_in_cidr_range"
-    display_name: "in CIDR range"
-    description: "Checks if the IP address is within the specified CIDR range"
-    input_kinds:
-      - kind_id: "system_event_kind_ip_address"
-    output_kind:
-      kind_id: "system_event_kind_boolean"
-    jexl_template: "ipInCidr(${input}, '${cidr}')"
-    parameters:
-      - name: "cidr"
-        description: "CIDR range (e.g., '192.168.0.0/16')"
         type: PARAMETER_TYPE_STRING
         required: true

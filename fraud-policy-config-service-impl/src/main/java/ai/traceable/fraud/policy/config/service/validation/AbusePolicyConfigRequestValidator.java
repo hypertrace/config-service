@@ -176,10 +176,8 @@ public class AbusePolicyConfigRequestValidator {
       ai.traceable.fraud.policy.config.service.v1.AbuseSimpleAggregationTemplateConfig template,
       RequestContext requestContext) {
 
-    // Validate aggregation function
-    if (template.getAggregation().getFunction()
-        == ai.traceable.fraud.policy.config.service.v1.AbuseAggregationFunction
-            .ABUSE_AGGREGATION_FUNCTION_UNSPECIFIED) {
+    // Validate aggregation function ID
+    if (template.getAggregation().getAggregationFunctionId().isEmpty()) {
       throw Status.INVALID_ARGUMENT
           .withDescription("Aggregation function must be specified")
           .asRuntimeException(requestContext.buildTrailers());
@@ -242,6 +240,58 @@ public class AbusePolicyConfigRequestValidator {
     if (template.getTimeWindow().getLookbackDuration().getSeconds() <= 0) {
       throw Status.INVALID_ARGUMENT
           .withDescription("Lookback duration must be positive")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+
+    // Validate filters if present
+    for (ai.traceable.fraud.policy.config.service.v1.AbusePolicyDetectionFilter filter :
+        template.getFiltersList()) {
+      validateDetectionFilter(filter, requestContext);
+    }
+  }
+
+  private void validateDetectionFilter(
+      ai.traceable.fraud.policy.config.service.v1.AbusePolicyDetectionFilter filter,
+      RequestContext requestContext) {
+    if (filter.hasRelationalFilter()) {
+      validateRelationalFilter(filter.getRelationalFilter(), requestContext);
+    } else if (filter.hasLogicalFilter()) {
+      ai.traceable.fraud.policy.config.service.v1.AbusePolicyLogicalFilter logicalFilter =
+          filter.getLogicalFilter();
+      if (logicalFilter.getOperator()
+          == ai.traceable.fraud.policy.config.service.v1.AbusePolicyLogicalOperator
+              .ABUSE_POLICY_LOGICAL_OPERATOR_UNSPECIFIED) {
+        throw Status.INVALID_ARGUMENT
+            .withDescription("Logical filter operator must be specified")
+            .asRuntimeException(requestContext.buildTrailers());
+      }
+      if (logicalFilter.getOperandsCount() < 2) {
+        throw Status.INVALID_ARGUMENT
+            .withDescription("Logical filter must have at least 2 operands")
+            .asRuntimeException(requestContext.buildTrailers());
+      }
+      for (ai.traceable.fraud.policy.config.service.v1.AbusePolicyDetectionFilter operand :
+          logicalFilter.getOperandsList()) {
+        validateDetectionFilter(operand, requestContext);
+      }
+    } else {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Detection filter must have either a relational or logical filter")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+  }
+
+  private void validateRelationalFilter(
+      ai.traceable.fraud.policy.config.service.v1.AbusePolicyRelationalFilter filter,
+      RequestContext requestContext) {
+    if (filter.getDerivedEntityId().isEmpty()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Relational filter derived entity ID is required")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+    if (filter.getOperatorId().isEmpty()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Relational filter operator ID is required")
           .asRuntimeException(requestContext.buildTrailers());
     }
   }

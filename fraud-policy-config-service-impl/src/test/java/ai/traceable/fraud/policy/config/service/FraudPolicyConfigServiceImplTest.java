@@ -593,9 +593,7 @@ class FraudPolicyConfigServiceImplTest {
                 .newBuilder()
                 .setAggregation(
                     ai.traceable.fraud.policy.config.service.v1.AbuseAggregationConfig.newBuilder()
-                        .setFunction(
-                            ai.traceable.fraud.policy.config.service.v1.AbuseAggregationFunction
-                                .ABUSE_AGGREGATION_FUNCTION_COUNT)
+                        .setAggregationFunctionId("system_aggregation_count")
                         .setDerivedEntityId("request_count")
                         .build())
                 .setThreshold(
@@ -610,7 +608,20 @@ class FraudPolicyConfigServiceImplTest {
                         .setLookbackDuration(
                             com.google.protobuf.Duration.newBuilder().setSeconds(3600).build())
                         .build())
-                .build())
+                .addFilters(
+                    ai.traceable.fraud.policy.config.service.v1.AbusePolicyDetectionFilter
+                        .newBuilder()
+                        .setRelationalFilter(
+                            ai.traceable.fraud.policy.config.service.v1.AbusePolicyRelationalFilter
+                                .newBuilder()
+                                .setDerivedEntityId("status_code")
+                                .setOperatorId("system_defined_operator_string_equals")
+                                .setLiteralValues(
+                                    ai.traceable.fraud.policy.config.service.v1
+                                        .AbusePolicyLiteralValues.newBuilder()
+                                        .addValues(
+                                            com.google.protobuf.Value.newBuilder()
+                                                .setStringValue("200"))))))
         .setMessageFormat("Abuse detected: {message}")
         .build();
   }

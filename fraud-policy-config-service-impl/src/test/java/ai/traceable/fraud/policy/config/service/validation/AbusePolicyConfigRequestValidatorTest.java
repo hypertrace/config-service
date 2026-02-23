@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import ai.traceable.fraud.policy.config.service.v1.AbuseActionConfig;
 import ai.traceable.fraud.policy.config.service.v1.AbuseActionType;
 import ai.traceable.fraud.policy.config.service.v1.AbuseAggregationConfig;
-import ai.traceable.fraud.policy.config.service.v1.AbuseAggregationFunction;
 import ai.traceable.fraud.policy.config.service.v1.AbuseApiIds;
 import ai.traceable.fraud.policy.config.service.v1.AbuseApiLabels;
 import ai.traceable.fraud.policy.config.service.v1.AbuseApiScope;
@@ -16,6 +15,9 @@ import ai.traceable.fraud.policy.config.service.v1.AbuseEnvironmentScope;
 import ai.traceable.fraud.policy.config.service.v1.AbuseEvaluationSchedule;
 import ai.traceable.fraud.policy.config.service.v1.AbuseGroupByConfig;
 import ai.traceable.fraud.policy.config.service.v1.AbusePolicyData;
+import ai.traceable.fraud.policy.config.service.v1.AbusePolicyDetectionFilter;
+import ai.traceable.fraud.policy.config.service.v1.AbusePolicyLiteralValues;
+import ai.traceable.fraud.policy.config.service.v1.AbusePolicyRelationalFilter;
 import ai.traceable.fraud.policy.config.service.v1.AbusePolicyScope;
 import ai.traceable.fraud.policy.config.service.v1.AbusePredefinedTemplateConfig;
 import ai.traceable.fraud.policy.config.service.v1.AbusePredefinedTemplateType;
@@ -274,7 +276,7 @@ class AbusePolicyConfigRequestValidatorTest {
         createValidSimpleAggregationTemplate().toBuilder()
             .setAggregation(
                 AbuseAggregationConfig.newBuilder()
-                    .setFunction(AbuseAggregationFunction.ABUSE_AGGREGATION_FUNCTION_UNSPECIFIED)
+                    .setAggregationFunctionId("")
                     .setDerivedEntityId("entity")
                     .build())
             .build();
@@ -441,6 +443,82 @@ class AbusePolicyConfigRequestValidatorTest {
         "INVALID_ARGUMENT: Schedule end time must be after start time", exception.getMessage());
   }
 
+  @Test
+  void testValidateFilter_RelationalFilter_MissingDerivedEntityId() {
+    AbuseSimpleAggregationTemplateConfig template =
+        createValidSimpleAggregationTemplate().toBuilder()
+            .addFilters(
+                AbusePolicyDetectionFilter.newBuilder()
+                    .setRelationalFilter(
+                        AbusePolicyRelationalFilter.newBuilder()
+                            .setOperatorId("system_defined_operator_string_equals")
+                            .build())
+                    .build())
+            .build();
+    AbusePolicyData data =
+        createValidPolicyData().toBuilder().setSimpleAggregationTemplate(template).build();
+    CreateAbusePolicyRequest request = CreateAbusePolicyRequest.newBuilder().setData(data).build();
+
+    StatusRuntimeException exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> validator.validateCreateRequest(request, requestContext));
+    assertEquals(
+        "INVALID_ARGUMENT: Relational filter derived entity ID is required",
+        exception.getMessage());
+  }
+
+  @Test
+  void testValidateFilter_RelationalFilter_MissingOperatorId() {
+    AbuseSimpleAggregationTemplateConfig template =
+        createValidSimpleAggregationTemplate().toBuilder()
+            .addFilters(
+                AbusePolicyDetectionFilter.newBuilder()
+                    .setRelationalFilter(
+                        AbusePolicyRelationalFilter.newBuilder()
+                            .setDerivedEntityId("some_entity")
+                            .build())
+                    .build())
+            .build();
+    AbusePolicyData data =
+        createValidPolicyData().toBuilder().setSimpleAggregationTemplate(template).build();
+    CreateAbusePolicyRequest request = CreateAbusePolicyRequest.newBuilder().setData(data).build();
+
+    StatusRuntimeException exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> validator.validateCreateRequest(request, requestContext));
+    assertEquals(
+        "INVALID_ARGUMENT: Relational filter operator ID is required", exception.getMessage());
+  }
+
+  @Test
+  void testValidateFilter_ValidRelationalFilter() {
+    AbuseSimpleAggregationTemplateConfig template =
+        createValidSimpleAggregationTemplate().toBuilder()
+            .addFilters(
+                AbusePolicyDetectionFilter.newBuilder()
+                    .setRelationalFilter(
+                        AbusePolicyRelationalFilter.newBuilder()
+                            .setDerivedEntityId("some_entity")
+                            .setOperatorId("system_defined_operator_string_equals")
+                            .setLiteralValues(
+                                AbusePolicyLiteralValues.newBuilder()
+                                    .addValues(
+                                        com.google.protobuf.Value.newBuilder()
+                                            .setStringValue("test")
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    AbusePolicyData data =
+        createValidPolicyData().toBuilder().setSimpleAggregationTemplate(template).build();
+    CreateAbusePolicyRequest request = CreateAbusePolicyRequest.newBuilder().setData(data).build();
+
+    assertDoesNotThrow(() -> validator.validateCreateRequest(request, requestContext));
+  }
+
   private AbusePolicyData createValidPolicyData() {
     return AbusePolicyData.newBuilder()
         .setName("Test Policy")
@@ -468,7 +546,7 @@ class AbusePolicyConfigRequestValidatorTest {
     return AbuseSimpleAggregationTemplateConfig.newBuilder()
         .setAggregation(
             AbuseAggregationConfig.newBuilder()
-                .setFunction(AbuseAggregationFunction.ABUSE_AGGREGATION_FUNCTION_COUNT)
+                .setAggregationFunctionId("system_aggregation_count")
                 .setDerivedEntityId("request_count")
                 .build())
         .setGroupBy(AbuseGroupByConfig.newBuilder().setDerivedEntityId("user_id").build())
