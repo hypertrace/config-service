@@ -8,7 +8,6 @@ import ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget;
 import ai.traceable.detection.exclusion.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.detection.exclusion.config.service.v1.UpdateDetectionExclusionRuleRequest;
 import ai.traceable.detection.exclusion.config.service.v1.UpsertDetectionExclusionRuleData;
-import ai.traceable.detection.exclusion.config.service.v1.rules.ConditionExcludeChecker;
 import ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionRulesValidator;
 import java.util.ArrayList;
 import java.util.List;
@@ -85,16 +84,8 @@ public class DetectionExclusionRuleEvaluationPointsMigrator {
     }
 
     // check for agent
-    // Don't add INLINE_TRACING_AGENT if rule has ALLOW/BLOCK target with exclude conditions enabled
-    // since libtraceable doesn't support exclude for these targets yet
-    boolean hasExcludeEnabledForAllowOrBlock =
-        (exclusionTargets.contains(ExclusionTarget.EXCLUSION_TARGET_ALLOW)
-                || exclusionTargets.contains(ExclusionTarget.EXCLUSION_TARGET_BLOCK))
-            && ConditionExcludeChecker.hasAnyConditionWithExcludeEnabled(
-                detectionExclusionConditions);
     if (DetectionExclusionRulesValidator.checkForModsecSupportedConditionsAndTargets(
-            exclusionTargets, detectionExclusionConditions)
-        && !hasExcludeEnabledForAllowOrBlock) {
+        exclusionTargets, detectionExclusionConditions)) {
       ruleEvaluationPoints.add(RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT);
     }
 
