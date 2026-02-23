@@ -42,6 +42,9 @@ message AbusePolicyData {
 
   // Required: Message format template for detection events
   string message_format = 11 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Required. Message format template for detection events"];
+
+  // add custom labels to abuse policies
+  repeated string labels = 12 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Optional, add custom labels to policies"];
 }
 
 // API abuse policy with ID and data
