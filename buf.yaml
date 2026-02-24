@@ -6,6 +6,9 @@ breaking:
   use:
     - PACKAGE
     - WIRE_JSON
+  ignore:
+    - traceable-span-processing-config-service-api/src/main/proto
+    - local-processing-config-service-api/src/main/proto
 modules:
   - path: anomaly-config-service-api/src/main/proto
   - path: anomaly-scoring-config-service-api/src/main/proto

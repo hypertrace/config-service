@@ -38,7 +38,7 @@ message RateLimitConfig {
 }
 
 message PercentageLimitConfig {
-  int32 allowed_percentage = 1;
+  float allowed_percentage = 1;
   SpanLimitingStrategy limiting_strategy = 2;
 }
 
