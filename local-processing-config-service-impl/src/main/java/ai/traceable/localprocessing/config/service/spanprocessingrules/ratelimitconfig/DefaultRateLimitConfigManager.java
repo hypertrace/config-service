@@ -6,12 +6,15 @@ import static ai.traceable.span.processing.config.service.v1.RateLimitStrategy.R
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.SpanFilterMatcher;
 import ai.traceable.localprocessing.config.service.utils.FilterConverter;
+import ai.traceable.localprocessing.config.service.v1.PercentageLimitConfig;
 import ai.traceable.localprocessing.config.service.v1.RateLimit;
 import ai.traceable.localprocessing.config.service.v1.RateLimitConfig;
 import ai.traceable.localprocessing.config.service.v1.RateLimitStrategy;
+import ai.traceable.localprocessing.config.service.v1.SpanLimitingStrategy;
 import ai.traceable.localprocessing.config.service.v1.WindowedRateLimit;
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedSamplingConfigsRequest;
 import ai.traceable.span.processing.config.service.v1.SamplingConfig;
+import ai.traceable.span.processing.config.service.v1.SamplingConfigInfo;
 import ai.traceable.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc;
 import com.google.inject.Inject;
 import java.util.HashSet;
@@ -175,6 +178,74 @@ public class DefaultRateLimitConfigManager implements RateLimitConfigManager {
         .setQuantityAllowed(windowedRateLimit.getQuantityAllowed())
         .setWindowDuration(windowedRateLimit.getWindowDuration())
         .build();
+  }
+
+  @Override
+  public List<PercentageLimitConfig> getAllMatchingPercentageLimitConfigs(
+      RequestContext requestContext,
+      List<SamplingConfig> samplingConfigs,
+      String serviceName,
+      Optional<String> environment) {
+    return samplingConfigs.stream()
+        .map(
+            samplingConfig ->
+                convertToPercentageLimitConfig(samplingConfig, serviceName, environment))
+        .flatMap(Optional::stream)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  private Optional<PercentageLimitConfig> convertToPercentageLimitConfig(
+      SamplingConfig samplingConfig, String serviceName, Optional<String> environment) {
+    if (samplingConfig.getId().isEmpty()) {
+      return Optional.empty();
+    }
+
+    SamplingConfigInfo samplingConfigInfo = samplingConfig.getSamplingConfigInfo();
+
+    if (!samplingConfigInfo.hasPercentageLimitConfig()) {
+      return Optional.empty();
+    }
+
+    ai.traceable.span.processing.config.service.v1.SpanFilter spanFilter =
+        samplingConfigInfo.getFilter();
+
+    // apply environment filters if any
+    if (!spanFilterMatcher.matchesEnvironment(spanFilter, environment)) {
+      return Optional.empty();
+    }
+
+    // apply service name filters if any
+    if (!spanFilterMatcher.matchesServiceName(spanFilter, serviceName)) {
+      return Optional.empty();
+    }
+
+    ai.traceable.span.processing.config.service.v1.PercentageLimitConfig sourceConfig =
+        samplingConfigInfo.getPercentageLimitConfig();
+
+    PercentageLimitConfig.Builder builder =
+        PercentageLimitConfig.newBuilder()
+            .setId(samplingConfig.getId())
+            .setAllowedPercentage(sourceConfig.getAllowedPercentage())
+            .setLimitingStrategy(convertSpanLimitingStrategy(sourceConfig.getLimitingStrategy()));
+
+    Optional<ai.traceable.localprocessing.config.service.v1.SpanFilter> filter =
+        filterConverter.convert(spanFilter);
+    filter.ifPresent(builder::setFilter);
+
+    return Optional.of(builder.build());
+  }
+
+  private SpanLimitingStrategy convertSpanLimitingStrategy(
+      ai.traceable.span.processing.config.service.v1.SpanLimitingStrategy spanLimitingStrategy) {
+    switch (spanLimitingStrategy) {
+      case SPAN_LIMITING_STRATEGY_DROP:
+        return SpanLimitingStrategy.SPAN_LIMITING_STRATEGY_DROP;
+      case SPAN_LIMITING_STRATEGY_BARESPAN:
+        return SpanLimitingStrategy.SPAN_LIMITING_STRATEGY_BARESPAN;
+      default:
+        throw new UnsupportedOperationException(
+            "Unknown span limiting strategy: " + spanLimitingStrategy);
+    }
   }
 
   private Optional<RateLimitConfig> convertToCustomRateLimitConfig(

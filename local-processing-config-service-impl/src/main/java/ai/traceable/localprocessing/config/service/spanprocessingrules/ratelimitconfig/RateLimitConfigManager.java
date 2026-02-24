@@ -1,5 +1,6 @@
 package ai.traceable.localprocessing.config.service.spanprocessingrules.ratelimitconfig;
 
+import ai.traceable.localprocessing.config.service.v1.PercentageLimitConfig;
 import ai.traceable.localprocessing.config.service.v1.RateLimitConfig;
 import ai.traceable.span.processing.config.service.v1.SamplingConfig;
 import java.util.List;
@@ -17,6 +18,12 @@ public interface RateLimitConfigManager {
       Optional<String> environment);
 
   List<RateLimitConfig> getAllCustomRateLimitConfigs(
+      RequestContext requestContext,
+      List<SamplingConfig> samplingConfigs,
+      String serviceName,
+      Optional<String> environment);
+
+  List<PercentageLimitConfig> getAllMatchingPercentageLimitConfigs(
       RequestContext requestContext,
       List<SamplingConfig> samplingConfigs,
       String serviceName,

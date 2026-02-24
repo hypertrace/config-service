@@ -2,6 +2,7 @@ package ai.traceable.localprocessing.config.service.spanprocessingrules;
 
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildExpectedExcludeSpanProcessingRule;
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildExpectedExcludeSpanProcessingRuleServiceNamesAndEnvironmentsProcessed;
+import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildExpectedPercentageLimitConfig;
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildExpectedProtectionSpanProcessingRule;
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildExpectedProtectionSpanProcessingRuleServiceNamesAndEnvironmentsProcessed;
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildExpectedRateLimitConfig;
@@ -15,6 +16,7 @@ import static ai.traceable.localprocessing.config.service.spanprocessingrules.Sp
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllResolvedSamplingConfigsResponseEnvironmentFilter;
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllResolvedSamplingConfigsResponseNoFilter;
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllResolvedSamplingConfigsResponseServiceNameFilter;
+import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllResolvedSamplingConfigsResponseWithPercentageLimitConfig;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -935,5 +937,47 @@ class DefaultSpanProcessingRulesManagerTest {
             .getCustomRateLimitConfigsList()
             .get(0)
             .hasFilter());
+  }
+
+  @Test
+  void testGetAllPercentageLimitConfigs() {
+    when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedSamplingConfigs(any()))
+        .thenReturn(buildGetAllResolvedSamplingConfigsResponseWithPercentageLimitConfig());
+    when(spanProcessingConfigServiceBlockingStub.getAllExcludeSpanRules(any()))
+        .thenReturn(GetAllExcludeSpanRulesResponse.getDefaultInstance());
+    when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedProtectionSpanRules(any()))
+        .thenReturn(GetAllResolvedProtectionSpanRulesResponse.getDefaultInstance());
+
+    GetSpanProcessingRulesResponse getSpanProcessingRulesResponse =
+        spanProcessingRulesManager.getSpanProcessingRulesResponse(
+            requestContext,
+            GetSpanProcessingRulesRequest.newBuilder()
+                .addServiceRequests(
+                    SpanProcessingRulesServiceRequest.newBuilder().setServiceName("value").build())
+                .build());
+
+    assertFalse(
+        getSpanProcessingRulesResponse.getSpanProcessingRulesServiceResponsesList().isEmpty());
+    assertEquals(
+        "value",
+        getSpanProcessingRulesResponse
+            .getSpanProcessingRulesServiceResponsesList()
+            .get(0)
+            .getServiceName());
+    assertFalse(
+        getSpanProcessingRulesResponse
+            .getSpanProcessingRulesServiceResponsesList()
+            .get(0)
+            .getSpanProcessingRules()
+            .getPercentageLimitConfigsList()
+            .isEmpty());
+    assertEquals(
+        buildExpectedPercentageLimitConfig(),
+        getSpanProcessingRulesResponse
+            .getSpanProcessingRulesServiceResponsesList()
+            .get(0)
+            .getSpanProcessingRules()
+            .getPercentageLimitConfigsList()
+            .get(0));
   }
 }

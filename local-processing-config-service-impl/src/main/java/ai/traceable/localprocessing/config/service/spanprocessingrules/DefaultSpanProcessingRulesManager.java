@@ -103,6 +103,9 @@ public class DefaultSpanProcessingRulesManager implements SpanProcessingRulesMan
                     requestContext, protectionSpanRules, serviceName, environment))
             .addAllCustomRateLimitConfigs(
                 rateLimitConfigManager.getAllCustomRateLimitConfigs(
+                    requestContext, samplingConfigs, serviceName, environment))
+            .addAllPercentageLimitConfigs(
+                rateLimitConfigManager.getAllMatchingPercentageLimitConfigs(
                     requestContext, samplingConfigs, serviceName, environment));
 
     Optional<RateLimitConfig> rateLimitConfigOptional =

@@ -29,6 +29,7 @@ import ai.traceable.span.processing.config.service.v1.GetApiNamingRulesRequest;
 import ai.traceable.span.processing.config.service.v1.GetDefaultProtectionSpanRuleEvaluationStatusRequest;
 import ai.traceable.span.processing.config.service.v1.JobBasedConfig;
 import ai.traceable.span.processing.config.service.v1.LogicalSpanFilterExpression;
+import ai.traceable.span.processing.config.service.v1.PercentageLimitConfig;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleInfo;
 import ai.traceable.span.processing.config.service.v1.RateLimit;
 import ai.traceable.span.processing.config.service.v1.RateLimitConfig;
@@ -38,6 +39,7 @@ import ai.traceable.span.processing.config.service.v1.SamplingConfigInfo;
 import ai.traceable.span.processing.config.service.v1.SegmentMatchingBasedConfig;
 import ai.traceable.span.processing.config.service.v1.SpanFilter;
 import ai.traceable.span.processing.config.service.v1.SpanFilterValue;
+import ai.traceable.span.processing.config.service.v1.SpanLimitingStrategy;
 import ai.traceable.span.processing.config.service.v1.UpdateApiNamingRule;
 import ai.traceable.span.processing.config.service.v1.UpdateApiNamingRuleRequest;
 import ai.traceable.span.processing.config.service.v1.UpdateApiNamingRulesRequest;
@@ -355,9 +357,14 @@ public class SpanProcessingConfigRequestValidator {
   }
 
   private void validateData(SamplingConfigInfo samplingConfigInfo) {
-    this.validateRateLimitConfig(samplingConfigInfo.getRateLimitConfig());
+    if (samplingConfigInfo.hasRateLimitConfig()) {
+      this.validateRateLimitConfig(samplingConfigInfo.getRateLimitConfig());
+    }
     if (samplingConfigInfo.hasFilter()) {
       this.validateSpanFilter(samplingConfigInfo.getFilter());
+    }
+    if (samplingConfigInfo.hasPercentageLimitConfig()) {
+      this.validatePercentageLimitConfig(samplingConfigInfo.getPercentageLimitConfig());
     }
   }
 
@@ -366,7 +373,12 @@ public class SpanProcessingConfigRequestValidator {
     if (updateSamplingConfig.hasFilter()) {
       this.validateSpanFilter(updateSamplingConfig.getFilter());
     }
-    this.validateRateLimitConfig(updateSamplingConfig.getRateLimitConfig());
+    if (updateSamplingConfig.hasRateLimitConfig()) {
+      this.validateRateLimitConfig(updateSamplingConfig.getRateLimitConfig());
+    }
+    if (updateSamplingConfig.hasPercentageLimitConfig()) {
+      this.validatePercentageLimitConfig(updateSamplingConfig.getPercentageLimitConfig());
+    }
   }
 
   private void validateRateLimitConfig(RateLimitConfig rateLimitConfig) {
@@ -395,6 +407,30 @@ public class SpanProcessingConfigRequestValidator {
       default:
         throw Status.INVALID_ARGUMENT
             .withDescription("Unexpected rate limit strategy: " + rateLimitStrategy)
+            .asRuntimeException();
+    }
+  }
+
+  private void validatePercentageLimitConfig(PercentageLimitConfig percentageLimitConfig) {
+    float allowedPercentage = percentageLimitConfig.getAllowedPercentage();
+    if (allowedPercentage < 0 || allowedPercentage > 100) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              "allowed_percentage must be greater than or equal to 0 and less than  or equal to 100, got: "
+                  + allowedPercentage)
+          .asRuntimeException();
+    }
+    this.validateSpanLimitingStrategy(percentageLimitConfig.getLimitingStrategy());
+  }
+
+  private void validateSpanLimitingStrategy(SpanLimitingStrategy spanLimitingStrategy) {
+    switch (spanLimitingStrategy) {
+      case SPAN_LIMITING_STRATEGY_DROP:
+      case SPAN_LIMITING_STRATEGY_BARESPAN:
+        break;
+      default:
+        throw Status.INVALID_ARGUMENT
+            .withDescription("Unexpected span limiting strategy: " + spanLimitingStrategy)
             .asRuntimeException();
     }
   }

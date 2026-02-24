@@ -2,10 +2,12 @@ package ai.traceable.localprocessing.config.service.spanprocessingrules;
 
 import ai.traceable.localprocessing.config.service.v1.ExcludeSpanProcessingRule;
 import ai.traceable.localprocessing.config.service.v1.ExcludeSpanProcessingRuleInfo;
+import ai.traceable.localprocessing.config.service.v1.PercentageLimitConfig;
 import ai.traceable.localprocessing.config.service.v1.ProtectionSpanProcessingRule;
 import ai.traceable.localprocessing.config.service.v1.ProtectionSpanProcessingRuleInfo;
 import ai.traceable.localprocessing.config.service.v1.RateLimit;
 import ai.traceable.localprocessing.config.service.v1.RateLimitConfig;
+import ai.traceable.localprocessing.config.service.v1.SpanLimitingStrategy;
 import ai.traceable.localprocessing.config.service.v1.WindowedRateLimit;
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedProtectionSpanRulesResponse;
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedSamplingConfigsResponse;
@@ -794,6 +796,44 @@ public class SpanProcessingRulesManagerTestUtils {
                         .build())
                 .build())
         .setRateLimitStrategy(RateLimitStrategy.RATE_LIMIT_STRATEGY_DROP)
+        .build();
+  }
+
+  public static GetAllResolvedSamplingConfigsResponse
+      buildGetAllResolvedSamplingConfigsResponseWithPercentageLimitConfig() {
+    return GetAllResolvedSamplingConfigsResponse.newBuilder()
+        .addSamplingConfigs(
+            SamplingConfig.newBuilder()
+                .setId("percentage-id")
+                .setSamplingConfigInfo(
+                    SamplingConfigInfo.newBuilder()
+                        .setRateLimitConfig(buildRateLimitConfig())
+                        .setPercentageLimitConfig(
+                            ai.traceable.span.processing.config.service.v1.PercentageLimitConfig
+                                .newBuilder()
+                                .setAllowedPercentage(50)
+                                .setLimitingStrategy(
+                                    ai.traceable.span.processing.config.service.v1
+                                        .SpanLimitingStrategy.SPAN_LIMITING_STRATEGY_DROP)
+                                .build())
+                        .setFilter(
+                            buildRelationalFilter(
+                                ai.traceable.span.processing.config.service.v1.Field
+                                    .FIELD_SERVICE_NAME,
+                                null,
+                                ai.traceable.span.processing.config.service.v1.RelationalOperator
+                                    .RELATIONAL_OPERATOR_CONTAINS,
+                                "val"))
+                        .build())
+                .build())
+        .build();
+  }
+
+  public static PercentageLimitConfig buildExpectedPercentageLimitConfig() {
+    return PercentageLimitConfig.newBuilder()
+        .setId("percentage-id")
+        .setAllowedPercentage(50)
+        .setLimitingStrategy(SpanLimitingStrategy.SPAN_LIMITING_STRATEGY_DROP)
         .build();
   }
 }

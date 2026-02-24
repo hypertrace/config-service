@@ -28,6 +28,7 @@ import ai.traceable.span.processing.config.service.v1.GetAllSamplingConfigsReque
 import ai.traceable.span.processing.config.service.v1.GetDefaultProtectionSpanRuleEvaluationStatusRequest;
 import ai.traceable.span.processing.config.service.v1.LogicalOperator;
 import ai.traceable.span.processing.config.service.v1.LogicalSpanFilterExpression;
+import ai.traceable.span.processing.config.service.v1.PercentageLimitConfig;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleInfo;
 import ai.traceable.span.processing.config.service.v1.RateLimit;
 import ai.traceable.span.processing.config.service.v1.RateLimitConfig;
@@ -38,6 +39,7 @@ import ai.traceable.span.processing.config.service.v1.SamplingConfigInfo;
 import ai.traceable.span.processing.config.service.v1.SegmentMatchingBasedConfig;
 import ai.traceable.span.processing.config.service.v1.SpanFilter;
 import ai.traceable.span.processing.config.service.v1.SpanFilterValue;
+import ai.traceable.span.processing.config.service.v1.SpanLimitingStrategy;
 import ai.traceable.span.processing.config.service.v1.UpdateApiNamingRule;
 import ai.traceable.span.processing.config.service.v1.UpdateApiNamingRuleRequest;
 import ai.traceable.span.processing.config.service.v1.UpdateApiNamingRulesRequest;
@@ -449,6 +451,196 @@ class SpanProcessingConfigRequestValidatorTest {
                             .setRateLimitConfig(
                                 buildTestRateLimitConfig(
                                     RateLimitStrategy.RATE_LIMIT_STRATEGY_BARESPAN))
+                            .setFilter(buildTestFilter())
+                            .build())
+                    .build()));
+  }
+
+  @Test
+  void validatesSamplingConfigCreateRequestWithPercentageLimitConfig() {
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+
+    assertInvalidArgStatusContaining(
+        "allowed_percentage must be greater than or equal to 0 and less than  or equal to 100",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateSamplingConfigRequest.newBuilder()
+                    .setSamplingConfigInfo(
+                        SamplingConfigInfo.newBuilder()
+                            .setRateLimitConfig(
+                                buildTestRateLimitConfig(
+                                    RateLimitStrategy.RATE_LIMIT_STRATEGY_DROP))
+                            .setPercentageLimitConfig(
+                                PercentageLimitConfig.newBuilder()
+                                    .setAllowedPercentage(101)
+                                    .setLimitingStrategy(
+                                        SpanLimitingStrategy.SPAN_LIMITING_STRATEGY_DROP)
+                                    .build())
+                            .setFilter(buildTestFilter())
+                            .build())
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "allowed_percentage must be greater than or equal to 0 and less than  or equal to 100",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateSamplingConfigRequest.newBuilder()
+                    .setSamplingConfigInfo(
+                        SamplingConfigInfo.newBuilder()
+                            .setRateLimitConfig(
+                                buildTestRateLimitConfig(
+                                    RateLimitStrategy.RATE_LIMIT_STRATEGY_DROP))
+                            .setPercentageLimitConfig(
+                                PercentageLimitConfig.newBuilder()
+                                    .setAllowedPercentage(-1)
+                                    .setLimitingStrategy(
+                                        SpanLimitingStrategy.SPAN_LIMITING_STRATEGY_DROP)
+                                    .build())
+                            .setFilter(buildTestFilter())
+                            .build())
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "Unexpected span limiting strategy",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateSamplingConfigRequest.newBuilder()
+                    .setSamplingConfigInfo(
+                        SamplingConfigInfo.newBuilder()
+                            .setRateLimitConfig(
+                                buildTestRateLimitConfig(
+                                    RateLimitStrategy.RATE_LIMIT_STRATEGY_DROP))
+                            .setPercentageLimitConfig(
+                                PercentageLimitConfig.newBuilder()
+                                    .setAllowedPercentage(50)
+                                    .setLimitingStrategy(
+                                        SpanLimitingStrategy.SPAN_LIMITING_STRATEGY_UNSPECIFIED)
+                                    .build())
+                            .setFilter(buildTestFilter())
+                            .build())
+                    .build()));
+
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateSamplingConfigRequest.newBuilder()
+                    .setSamplingConfigInfo(
+                        SamplingConfigInfo.newBuilder()
+                            .setRateLimitConfig(
+                                buildTestRateLimitConfig(
+                                    RateLimitStrategy.RATE_LIMIT_STRATEGY_DROP))
+                            .setPercentageLimitConfig(
+                                PercentageLimitConfig.newBuilder()
+                                    .setAllowedPercentage(50)
+                                    .setLimitingStrategy(
+                                        SpanLimitingStrategy.SPAN_LIMITING_STRATEGY_DROP)
+                                    .build())
+                            .setFilter(buildTestFilter())
+                            .build())
+                    .build()));
+
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateSamplingConfigRequest.newBuilder()
+                    .setSamplingConfigInfo(
+                        SamplingConfigInfo.newBuilder()
+                            .setRateLimitConfig(
+                                buildTestRateLimitConfig(
+                                    RateLimitStrategy.RATE_LIMIT_STRATEGY_DROP))
+                            .setPercentageLimitConfig(
+                                PercentageLimitConfig.newBuilder()
+                                    .setAllowedPercentage(99)
+                                    .setLimitingStrategy(
+                                        SpanLimitingStrategy.SPAN_LIMITING_STRATEGY_BARESPAN)
+                                    .build())
+                            .setFilter(buildTestFilter())
+                            .build())
+                    .build()));
+
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateSamplingConfigRequest.newBuilder()
+                    .setSamplingConfigInfo(
+                        SamplingConfigInfo.newBuilder()
+                            .setPercentageLimitConfig(
+                                PercentageLimitConfig.newBuilder()
+                                    .setAllowedPercentage(0)
+                                    .setLimitingStrategy(
+                                        SpanLimitingStrategy.SPAN_LIMITING_STRATEGY_DROP)
+                                    .build())
+                            .setFilter(buildTestFilter())
+                            .build())
+                    .build()));
+
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateSamplingConfigRequest.newBuilder()
+                    .setSamplingConfigInfo(
+                        SamplingConfigInfo.newBuilder()
+                            .setPercentageLimitConfig(
+                                PercentageLimitConfig.newBuilder()
+                                    .setAllowedPercentage(100)
+                                    .setLimitingStrategy(
+                                        SpanLimitingStrategy.SPAN_LIMITING_STRATEGY_DROP)
+                                    .build())
+                            .setFilter(buildTestFilter())
+                            .build())
+                    .build()));
+  }
+
+  @Test
+  void validatesSamplingConfigUpdateRequestWithPercentageLimitConfig() {
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+
+    assertInvalidArgStatusContaining(
+        "allowed_percentage must be greater than or equal to 0 and less than  or equal to 100",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                UpdateSamplingConfigRequest.newBuilder()
+                    .setSamplingConfig(
+                        UpdateSamplingConfig.newBuilder()
+                            .setId("id")
+                            .setRateLimitConfig(
+                                buildTestRateLimitConfig(
+                                    RateLimitStrategy.RATE_LIMIT_STRATEGY_BARESPAN))
+                            .setPercentageLimitConfig(
+                                PercentageLimitConfig.newBuilder()
+                                    .setAllowedPercentage(200)
+                                    .setLimitingStrategy(
+                                        SpanLimitingStrategy.SPAN_LIMITING_STRATEGY_DROP)
+                                    .build())
+                            .setFilter(buildTestFilter())
+                            .build())
+                    .build()));
+
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                UpdateSamplingConfigRequest.newBuilder()
+                    .setSamplingConfig(
+                        UpdateSamplingConfig.newBuilder()
+                            .setId("id")
+                            .setRateLimitConfig(
+                                buildTestRateLimitConfig(
+                                    RateLimitStrategy.RATE_LIMIT_STRATEGY_BARESPAN))
+                            .setPercentageLimitConfig(
+                                PercentageLimitConfig.newBuilder()
+                                    .setAllowedPercentage(75)
+                                    .setLimitingStrategy(
+                                        SpanLimitingStrategy.SPAN_LIMITING_STRATEGY_BARESPAN)
+                                    .build())
                             .setFilter(buildTestFilter())
                             .build())
                     .build()));

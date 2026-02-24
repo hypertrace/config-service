@@ -4,6 +4,7 @@ import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.span.processing.config.service.store.SamplingConfigsConfigStore;
 import ai.traceable.span.processing.config.service.v1.CreateSamplingConfigRequest;
 import ai.traceable.span.processing.config.service.v1.DeleteSamplingConfigRequest;
+import ai.traceable.span.processing.config.service.v1.PercentageLimitConfig;
 import ai.traceable.span.processing.config.service.v1.SamplingConfig;
 import ai.traceable.span.processing.config.service.v1.SamplingConfigDetails;
 import ai.traceable.span.processing.config.service.v1.SamplingConfigInfo;
@@ -13,6 +14,8 @@ import ai.traceable.span.processing.config.service.v1.UpdateSamplingConfigReques
 import com.google.inject.Inject;
 import io.grpc.Status;
 import io.grpc.StatusException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -42,10 +45,12 @@ public class DefaultSamplingConfigManager implements SamplingConfigManager {
   public SamplingConfigDetails createSamplingConfig(
       RequestContext requestContext, CreateSamplingConfigRequest createSamplingConfigRequest) {
     // TODO: need to handle priorities
+    SamplingConfigInfo samplingConfigInfo =
+        truncatePercentage(createSamplingConfigRequest.getSamplingConfigInfo());
     SamplingConfig newSamplingConfig =
         SamplingConfig.newBuilder()
             .setId(UUID.randomUUID().toString())
-            .setSamplingConfigInfo(createSamplingConfigRequest.getSamplingConfigInfo())
+            .setSamplingConfigInfo(samplingConfigInfo)
             .build();
     return buildSamplingConfigDetails(
         this.samplingConfigsConfigStore.upsertObject(requestContext, newSamplingConfig));
@@ -98,12 +103,37 @@ public class DefaultSamplingConfigManager implements SamplingConfigManager {
 
   private SamplingConfig buildUpdatedSamplingConfig(
       SamplingConfig existingSamplingConfig, UpdateSamplingConfig updateSamplingConfig) {
-    return SamplingConfig.newBuilder(existingSamplingConfig)
-        .setSamplingConfigInfo(
-            SamplingConfigInfo.newBuilder()
-                .setRateLimitConfig(updateSamplingConfig.getRateLimitConfig())
-                .setFilter(updateSamplingConfig.getFilter())
-                .build())
+    SamplingConfig.Builder samplingConfigBuilder =
+        SamplingConfig.newBuilder(existingSamplingConfig);
+    SamplingConfigInfo.Builder samplingConfigInfoBuilder =
+        SamplingConfigInfo.newBuilder(existingSamplingConfig.getSamplingConfigInfo());
+    if (updateSamplingConfig.hasRateLimitConfig()) {
+      samplingConfigInfoBuilder.setRateLimitConfig(updateSamplingConfig.getRateLimitConfig());
+    }
+    if (updateSamplingConfig.hasFilter()) {
+      samplingConfigInfoBuilder.setFilter(updateSamplingConfig.getFilter());
+    }
+    if (updateSamplingConfig.hasPercentageLimitConfig()) {
+      samplingConfigInfoBuilder.setPercentageLimitConfig(
+          truncatePercentage(updateSamplingConfig.getPercentageLimitConfig()));
+    }
+    return samplingConfigBuilder.setSamplingConfigInfo(samplingConfigInfoBuilder.build()).build();
+  }
+
+  private SamplingConfigInfo truncatePercentage(SamplingConfigInfo samplingConfigInfo) {
+    if (!samplingConfigInfo.hasPercentageLimitConfig()) {
+      return samplingConfigInfo;
+    }
+    return samplingConfigInfo.toBuilder()
+        .setPercentageLimitConfig(truncatePercentage(samplingConfigInfo.getPercentageLimitConfig()))
         .build();
+  }
+
+  private PercentageLimitConfig truncatePercentage(PercentageLimitConfig config) {
+    float truncated =
+        BigDecimal.valueOf(config.getAllowedPercentage())
+            .setScale(2, RoundingMode.DOWN)
+            .floatValue();
+    return config.toBuilder().setAllowedPercentage(truncated).build();
   }
 }

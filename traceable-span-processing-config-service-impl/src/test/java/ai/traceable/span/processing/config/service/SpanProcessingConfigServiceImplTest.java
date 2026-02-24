@@ -65,6 +65,7 @@ import ai.traceable.span.processing.config.service.v1.GetDefaultProtectionSpanRu
 import ai.traceable.span.processing.config.service.v1.ListValue;
 import ai.traceable.span.processing.config.service.v1.LogicalOperator;
 import ai.traceable.span.processing.config.service.v1.LogicalSpanFilterExpression;
+import ai.traceable.span.processing.config.service.v1.PercentageLimitConfig;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRule;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleDetails;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleInfo;
@@ -79,6 +80,7 @@ import ai.traceable.span.processing.config.service.v1.ScopeFilter.EnvironmentSco
 import ai.traceable.span.processing.config.service.v1.SegmentMatchingBasedConfig;
 import ai.traceable.span.processing.config.service.v1.SpanFilter;
 import ai.traceable.span.processing.config.service.v1.SpanFilterValue;
+import ai.traceable.span.processing.config.service.v1.SpanLimitingStrategy;
 import ai.traceable.span.processing.config.service.v1.UpdateApiNamingRule;
 import ai.traceable.span.processing.config.service.v1.UpdateApiNamingRuleRequest;
 import ai.traceable.span.processing.config.service.v1.UpdateApiNamingRulesRequest;
@@ -592,6 +594,253 @@ class SpanProcessingConfigServiceImplTest {
     assertEquals(2, samplingConfigs.size());
     assertTrue(samplingConfigs.contains(secondCreatedSamplingConfig));
     assertTrue(samplingConfigs.contains(thirdCreatedSamplingConfig));
+  }
+
+  @Test
+  void testSamplingConfigsCrudWithPercentageLimitConfig() {
+    SamplingConfigDetails createdSamplingConfigDetails =
+        this.spanProcessingConfigServiceStub
+            .createSamplingConfig(
+                CreateSamplingConfigRequest.newBuilder()
+                    .setSamplingConfigInfo(
+                        SamplingConfigInfo.newBuilder()
+                            .setRateLimitConfig(
+                                RateLimitConfig.newBuilder()
+                                    .setTraceLimitGlobal(
+                                        RateLimit.newBuilder()
+                                            .setFixedWindowLimit(
+                                                WindowedRateLimit.newBuilder()
+                                                    .setQuantityAllowed(100)
+                                                    .setWindowDuration(
+                                                        Duration.newBuilder()
+                                                            .setSeconds(60)
+                                                            .build())
+                                                    .build())
+                                            .build())
+                                    .setTraceLimitPerEndpoint(
+                                        RateLimit.newBuilder()
+                                            .setFixedWindowLimit(
+                                                WindowedRateLimit.newBuilder()
+                                                    .setQuantityAllowed(100)
+                                                    .setWindowDuration(
+                                                        Duration.newBuilder()
+                                                            .setSeconds(60)
+                                                            .build())
+                                                    .build())
+                                            .build())
+                                    .setApiEndpointCacheDuration(
+                                        Duration.newBuilder().setSeconds(100).setNanos(100).build())
+                                    .setRateLimitStrategy(RATE_LIMIT_STRATEGY_DROP)
+                                    .build())
+                            .setPercentageLimitConfig(
+                                PercentageLimitConfig.newBuilder()
+                                    .setAllowedPercentage(50)
+                                    .setLimitingStrategy(
+                                        SpanLimitingStrategy.SPAN_LIMITING_STRATEGY_DROP)
+                                    .build())
+                            .setFilter(
+                                SpanFilter.newBuilder()
+                                    .setRelationalSpanFilter(
+                                        RelationalSpanFilterExpression.newBuilder()
+                                            .setField(Field.FIELD_SERVICE_NAME)
+                                            .setOperator(RELATIONAL_OPERATOR_CONTAINS)
+                                            .setRightOperand(
+                                                SpanFilterValue.newBuilder().setStringValue("a")))))
+                    .build())
+            .getSamplingConfigDetails();
+    SamplingConfig createdSamplingConfig = createdSamplingConfigDetails.getSamplingConfig();
+
+    assertEquals(
+        50f,
+        createdSamplingConfig
+            .getSamplingConfigInfo()
+            .getPercentageLimitConfig()
+            .getAllowedPercentage());
+    assertEquals(
+        SpanLimitingStrategy.SPAN_LIMITING_STRATEGY_DROP,
+        createdSamplingConfig
+            .getSamplingConfigInfo()
+            .getPercentageLimitConfig()
+            .getLimitingStrategy());
+
+    SamplingConfig updatedSamplingConfig =
+        this.spanProcessingConfigServiceStub
+            .updateSamplingConfig(
+                UpdateSamplingConfigRequest.newBuilder()
+                    .setSamplingConfig(
+                        UpdateSamplingConfig.newBuilder()
+                            .setId(createdSamplingConfig.getId())
+                            .setRateLimitConfig(
+                                RateLimitConfig.newBuilder()
+                                    .setTraceLimitGlobal(
+                                        RateLimit.newBuilder()
+                                            .setFixedWindowLimit(
+                                                WindowedRateLimit.newBuilder()
+                                                    .setQuantityAllowed(100)
+                                                    .setWindowDuration(
+                                                        Duration.newBuilder()
+                                                            .setSeconds(60)
+                                                            .build())
+                                                    .build())
+                                            .build())
+                                    .setTraceLimitPerEndpoint(
+                                        RateLimit.newBuilder()
+                                            .setFixedWindowLimit(
+                                                WindowedRateLimit.newBuilder()
+                                                    .setQuantityAllowed(100)
+                                                    .setWindowDuration(
+                                                        Duration.newBuilder()
+                                                            .setSeconds(60)
+                                                            .build())
+                                                    .build())
+                                            .build())
+                                    .setApiEndpointCacheDuration(
+                                        Duration.newBuilder().setSeconds(100).setNanos(100).build())
+                                    .setRateLimitStrategy(RATE_LIMIT_STRATEGY_BARESPAN)
+                                    .build())
+                            .setPercentageLimitConfig(
+                                PercentageLimitConfig.newBuilder()
+                                    .setAllowedPercentage(75)
+                                    .setLimitingStrategy(
+                                        SpanLimitingStrategy.SPAN_LIMITING_STRATEGY_BARESPAN)
+                                    .build())
+                            .setFilter(
+                                SpanFilter.newBuilder()
+                                    .setRelationalSpanFilter(
+                                        RelationalSpanFilterExpression.newBuilder()
+                                            .setField(Field.FIELD_SERVICE_NAME)
+                                            .setOperator(RELATIONAL_OPERATOR_CONTAINS)
+                                            .setRightOperand(
+                                                SpanFilterValue.newBuilder().setStringValue("a")))))
+                    .build())
+            .getSamplingConfigDetails()
+            .getSamplingConfig();
+
+    assertEquals(
+        75f,
+        updatedSamplingConfig
+            .getSamplingConfigInfo()
+            .getPercentageLimitConfig()
+            .getAllowedPercentage());
+    assertEquals(
+        SpanLimitingStrategy.SPAN_LIMITING_STRATEGY_BARESPAN,
+        updatedSamplingConfig
+            .getSamplingConfigInfo()
+            .getPercentageLimitConfig()
+            .getLimitingStrategy());
+
+    List<SamplingConfig> resolvedConfigs =
+        this.spanProcessingConfigServiceStub
+            .getAllResolvedSamplingConfigs(
+                GetAllResolvedSamplingConfigsRequest.newBuilder().build())
+            .getSamplingConfigsList();
+    assertEquals(1, resolvedConfigs.size());
+    assertEquals(
+        75f,
+        resolvedConfigs
+            .get(0)
+            .getSamplingConfigInfo()
+            .getPercentageLimitConfig()
+            .getAllowedPercentage());
+  }
+
+  @Test
+  void testPercentageLimitConfigTruncatesDecimalOnCreate() {
+    SamplingConfig createdSamplingConfig =
+        this.spanProcessingConfigServiceStub
+            .createSamplingConfig(
+                CreateSamplingConfigRequest.newBuilder()
+                    .setSamplingConfigInfo(
+                        SamplingConfigInfo.newBuilder()
+                            .setPercentageLimitConfig(
+                                PercentageLimitConfig.newBuilder()
+                                    .setAllowedPercentage(50.12345f)
+                                    .setLimitingStrategy(
+                                        SpanLimitingStrategy.SPAN_LIMITING_STRATEGY_DROP)
+                                    .build())
+                            .build())
+                    .build())
+            .getSamplingConfigDetails()
+            .getSamplingConfig();
+
+    assertEquals(
+        50.12f,
+        createdSamplingConfig
+            .getSamplingConfigInfo()
+            .getPercentageLimitConfig()
+            .getAllowedPercentage());
+  }
+
+  @Test
+  void testPercentageLimitConfigTruncatesDecimalOnUpdate() {
+    SamplingConfig createdSamplingConfig =
+        this.spanProcessingConfigServiceStub
+            .createSamplingConfig(
+                CreateSamplingConfigRequest.newBuilder()
+                    .setSamplingConfigInfo(
+                        SamplingConfigInfo.newBuilder()
+                            .setPercentageLimitConfig(
+                                PercentageLimitConfig.newBuilder()
+                                    .setAllowedPercentage(50f)
+                                    .setLimitingStrategy(
+                                        SpanLimitingStrategy.SPAN_LIMITING_STRATEGY_DROP)
+                                    .build())
+                            .build())
+                    .build())
+            .getSamplingConfigDetails()
+            .getSamplingConfig();
+
+    SamplingConfig updatedSamplingConfig =
+        this.spanProcessingConfigServiceStub
+            .updateSamplingConfig(
+                UpdateSamplingConfigRequest.newBuilder()
+                    .setSamplingConfig(
+                        UpdateSamplingConfig.newBuilder()
+                            .setId(createdSamplingConfig.getId())
+                            .setPercentageLimitConfig(
+                                PercentageLimitConfig.newBuilder()
+                                    .setAllowedPercentage(99.999f)
+                                    .setLimitingStrategy(
+                                        SpanLimitingStrategy.SPAN_LIMITING_STRATEGY_BARESPAN)
+                                    .build())
+                            .build())
+                    .build())
+            .getSamplingConfigDetails()
+            .getSamplingConfig();
+
+    assertEquals(
+        99.99f,
+        updatedSamplingConfig
+            .getSamplingConfigInfo()
+            .getPercentageLimitConfig()
+            .getAllowedPercentage());
+  }
+
+  @Test
+  void testPercentageLimitConfigPreservesExactTwoDecimalPlaces() {
+    SamplingConfig createdSamplingConfig =
+        this.spanProcessingConfigServiceStub
+            .createSamplingConfig(
+                CreateSamplingConfigRequest.newBuilder()
+                    .setSamplingConfigInfo(
+                        SamplingConfigInfo.newBuilder()
+                            .setPercentageLimitConfig(
+                                PercentageLimitConfig.newBuilder()
+                                    .setAllowedPercentage(75.55f)
+                                    .setLimitingStrategy(
+                                        SpanLimitingStrategy.SPAN_LIMITING_STRATEGY_DROP)
+                                    .build())
+                            .build())
+                    .build())
+            .getSamplingConfigDetails()
+            .getSamplingConfig();
+
+    assertEquals(
+        75.55f,
+        createdSamplingConfig
+            .getSamplingConfigInfo()
+            .getPercentageLimitConfig()
+            .getAllowedPercentage());
   }
 
   @Test
