@@ -13,6 +13,7 @@ import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 public class ApplicationGroupingRuleConfigStore
@@ -50,5 +51,13 @@ public class ApplicationGroupingRuleConfigStore
   protected String getContextFromData(
       final ApplicationGroupingRuleConfig applicationGroupingRuleConfig) {
     return applicationGroupingRuleConfig.getId();
+  }
+
+  public Optional<ApplicationGroupingRuleConfig> findByRuleName(
+      RequestContext requestContext, String ruleName) {
+    return getAllConfigData(requestContext).stream()
+        .filter(
+            config -> config.getApplicationGroupingRuleConfigInfo().getRuleName().equals(ruleName))
+        .findFirst();
   }
 }
