@@ -81,41 +81,16 @@ public class AbusePolicyConfigRequestValidator {
           .asRuntimeException(requestContext.buildTrailers());
     }
 
-    // At least one scope type must be defined (environment or API)
-    boolean hasEnvironmentScope =
-        data.getScope().hasEnvironmentScope()
-            && data.getScope().getEnvironmentScope().getEnvironmentIdsCount() > 0;
-    boolean hasApiScope =
-        data.getScope().hasApiScope()
-            && (data.getScope().getApiScope().hasApiIds()
-                || data.getScope().getApiScope().hasApiLabels());
-
-    if (!hasEnvironmentScope && !hasApiScope) {
+    // Both environment_scope and api_scope are mandatory
+    if (!data.getScope().hasEnvironmentScope()) {
       throw Status.INVALID_ARGUMENT
-          .withDescription("At least one scope (environment_scope or api_scope) must be defined")
+          .withDescription("environment_scope is required (empty list means all environments)")
           .asRuntimeException(requestContext.buildTrailers());
     }
 
-    // Validate API scope if present
-    if (data.getScope().hasApiScope()) {
-      validateApiScope(data.getScope().getApiScope(), requestContext);
-    }
-  }
-
-  private void validateApiScope(
-      ai.traceable.fraud.policy.config.service.v1.AbuseApiScope apiScope,
-      RequestContext requestContext) {
-    // Validate api_ids is not empty if present
-    if (apiScope.hasApiIds() && apiScope.getApiIds().getIdsCount() == 0) {
+    if (!data.getScope().hasApiScope()) {
       throw Status.INVALID_ARGUMENT
-          .withDescription("API IDs list cannot be empty when specified")
-          .asRuntimeException(requestContext.buildTrailers());
-    }
-
-    // Validate api_labels is not empty if present
-    if (apiScope.hasApiLabels() && apiScope.getApiLabels().getLabelsCount() == 0) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription("API labels list cannot be empty when specified")
+          .withDescription("api_scope is required (empty api_ids/api_labels means all APIs)")
           .asRuntimeException(requestContext.buildTrailers());
     }
   }

@@ -11,7 +11,6 @@ import ai.traceable.fraud.policy.config.service.v1.AbuseActionConfig;
 import ai.traceable.fraud.policy.config.service.v1.AbuseActionType;
 import ai.traceable.fraud.policy.config.service.v1.AbuseAggregationConfig;
 import ai.traceable.fraud.policy.config.service.v1.AbuseApiIds;
-import ai.traceable.fraud.policy.config.service.v1.AbuseApiLabels;
 import ai.traceable.fraud.policy.config.service.v1.AbuseApiScope;
 import ai.traceable.fraud.policy.config.service.v1.AbuseEnvironmentScope;
 import ai.traceable.fraud.policy.config.service.v1.AbuseEvaluationSchedule;
@@ -129,7 +128,7 @@ class AbusePolicyConfigRequestValidatorTest {
             StatusRuntimeException.class,
             () -> validator.validateCreateRequest(request, requestContext));
     assertEquals(
-        "INVALID_ARGUMENT: At least one scope (environment_scope or api_scope) must be defined",
+        "INVALID_ARGUMENT: environment_scope is required (empty list means all environments)",
         exception.getMessage());
   }
 
@@ -145,32 +144,22 @@ class AbusePolicyConfigRequestValidatorTest {
             .build();
     CreateAbusePolicyRequest request = CreateAbusePolicyRequest.newBuilder().setData(data).build();
 
-    assertDoesNotThrow(() -> validator.validateCreateRequest(request, requestContext));
+    StatusRuntimeException exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> validator.validateCreateRequest(request, requestContext));
+    assertEquals(
+        "INVALID_ARGUMENT: api_scope is required (empty api_ids/api_labels means all APIs)",
+        exception.getMessage());
   }
 
   @Test
-  void testValidatePolicyData_ApiScopeOnly() {
+  void testValidatePolicyData_AllEnvironmentsAndAllApis() {
     AbusePolicyData data =
         createValidPolicyData().toBuilder()
             .setScope(
                 AbusePolicyScope.newBuilder()
-                    .setApiScope(
-                        AbuseApiScope.newBuilder()
-                            .setApiIds(AbuseApiIds.newBuilder().addIds("api1").build())
-                            .build())
-                    .build())
-            .build();
-    CreateAbusePolicyRequest request = CreateAbusePolicyRequest.newBuilder().setData(data).build();
-
-    assertDoesNotThrow(() -> validator.validateCreateRequest(request, requestContext));
-  }
-
-  @Test
-  void testValidatePolicyData_EmptyApiIdsList() {
-    AbusePolicyData data =
-        createValidPolicyData().toBuilder()
-            .setScope(
-                AbusePolicyScope.newBuilder()
+                    .setEnvironmentScope(AbuseEnvironmentScope.newBuilder().build())
                     .setApiScope(
                         AbuseApiScope.newBuilder()
                             .setApiIds(AbuseApiIds.newBuilder().build())
@@ -179,34 +168,8 @@ class AbusePolicyConfigRequestValidatorTest {
             .build();
     CreateAbusePolicyRequest request = CreateAbusePolicyRequest.newBuilder().setData(data).build();
 
-    StatusRuntimeException exception =
-        assertThrows(
-            StatusRuntimeException.class,
-            () -> validator.validateCreateRequest(request, requestContext));
-    assertEquals(
-        "INVALID_ARGUMENT: API IDs list cannot be empty when specified", exception.getMessage());
-  }
-
-  @Test
-  void testValidatePolicyData_EmptyApiLabelsList() {
-    AbusePolicyData data =
-        createValidPolicyData().toBuilder()
-            .setScope(
-                AbusePolicyScope.newBuilder()
-                    .setApiScope(
-                        AbuseApiScope.newBuilder()
-                            .setApiLabels(AbuseApiLabels.newBuilder().build())
-                            .build())
-                    .build())
-            .build();
-    CreateAbusePolicyRequest request = CreateAbusePolicyRequest.newBuilder().setData(data).build();
-
-    StatusRuntimeException exception =
-        assertThrows(
-            StatusRuntimeException.class,
-            () -> validator.validateCreateRequest(request, requestContext));
-    assertEquals(
-        "INVALID_ARGUMENT: API labels list cannot be empty when specified", exception.getMessage());
+    // Empty environment_ids and empty api_ids means all environments and all APIs - allowed
+    assertDoesNotThrow(() -> validator.validateCreateRequest(request, requestContext));
   }
 
   @Test
