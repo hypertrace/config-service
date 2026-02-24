@@ -2,6 +2,7 @@ package ai.traceable.fraud.datamodel.event.kind;
 
 import ai.traceable.fraud.datamodel.event.kind.aggregationfunction.AggregationFunctionServiceImpl;
 import ai.traceable.fraud.datamodel.event.kind.eventkind.EventKindServiceImpl;
+import ai.traceable.fraud.datamodel.event.kind.operator.OperatorServiceImpl;
 import ai.traceable.fraud.datamodel.event.kind.transformationfunction.TransformationFunctionServiceImpl;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -25,6 +26,7 @@ public class EventKindConfigServiceFactory {
     return List.of(
         injector.getInstance(EventKindServiceImpl.class),
         injector.getInstance(TransformationFunctionServiceImpl.class),
+        injector.getInstance(OperatorServiceImpl.class),
         injector.getInstance(AggregationFunctionServiceImpl.class));
   }
 }

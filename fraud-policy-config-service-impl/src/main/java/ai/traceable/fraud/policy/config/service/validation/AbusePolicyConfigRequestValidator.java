@@ -3,6 +3,7 @@ package ai.traceable.fraud.policy.config.service.validation;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
 import ai.traceable.fraud.datamodel.event.kind.v1.AggregationFunctionType;
+import ai.traceable.fraud.datamodel.event.kind.v1.OperatorType;
 import ai.traceable.fraud.policy.config.service.v1.AbusePolicyData;
 import ai.traceable.fraud.policy.config.service.v1.CreateAbusePolicyRequest;
 import ai.traceable.fraud.policy.config.service.v1.UpdateAbusePolicyRequest;
@@ -291,9 +292,9 @@ public class AbusePolicyConfigRequestValidator {
           .withDescription("Relational filter derived entity ID is required")
           .asRuntimeException(requestContext.buildTrailers());
     }
-    if (filter.getOperatorId().isEmpty()) {
+    if (filter.getOperator() == OperatorType.OPERATOR_TYPE_UNSPECIFIED) {
       throw Status.INVALID_ARGUMENT
-          .withDescription("Relational filter operator ID is required")
+          .withDescription("Relational filter operator is required")
           .asRuntimeException(requestContext.buildTrailers());
     }
   }

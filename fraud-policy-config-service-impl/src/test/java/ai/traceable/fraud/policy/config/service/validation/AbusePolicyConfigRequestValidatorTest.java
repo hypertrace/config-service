@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.fraud.datamodel.event.kind.v1.AggregationFunctionType;
+import ai.traceable.fraud.datamodel.event.kind.v1.OperatorType;
 import ai.traceable.fraud.policy.config.service.v1.AbuseActionConfig;
 import ai.traceable.fraud.policy.config.service.v1.AbuseActionType;
 import ai.traceable.fraud.policy.config.service.v1.AbuseAggregationConfig;
@@ -453,7 +454,7 @@ class AbusePolicyConfigRequestValidatorTest {
                 AbusePolicyDetectionFilter.newBuilder()
                     .setRelationalFilter(
                         AbusePolicyRelationalFilter.newBuilder()
-                            .setOperatorId("system_defined_operator_string_equals")
+                            .setOperator(OperatorType.OPERATOR_TYPE_STRING_EQUALS)
                             .build())
                     .build())
             .build();
@@ -491,7 +492,7 @@ class AbusePolicyConfigRequestValidatorTest {
             StatusRuntimeException.class,
             () -> validator.validateCreateRequest(request, requestContext));
     assertEquals(
-        "INVALID_ARGUMENT: Relational filter operator ID is required", exception.getMessage());
+        "INVALID_ARGUMENT: Relational filter operator is required", exception.getMessage());
   }
 
   @Test
@@ -503,7 +504,7 @@ class AbusePolicyConfigRequestValidatorTest {
                     .setRelationalFilter(
                         AbusePolicyRelationalFilter.newBuilder()
                             .setDerivedEntityId("some_entity")
-                            .setOperatorId("system_defined_operator_string_equals")
+                            .setOperator(OperatorType.OPERATOR_TYPE_STRING_EQUALS)
                             .setLiteralValues(
                                 AbusePolicyLiteralValues.newBuilder()
                                     .addValues(

@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package ai.traceable.fraud.datamodel.event.kind.v1;
+
+import "ai/traceable/fraud/datamodel/event/kind/v1/complex_data_model_event_kind.proto";
+import "ai/traceable/fraud/datamodel/event/kind/v1/transformation_function.proto";
+import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
+
+option java_multiple_files = true;
+
+// Operator definition (system-defined only)
+message Operator {
+  // Type of operator
+  OperatorType operator_type = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Type of operator"];
+
+  // Display name for UI (e.g., "=", "!=", "contains")
+  string display_name = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Display name shown in UI"];
+
+  // Description of what this operator does
+  string description = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Description of what this operator does"];
+
+  // List of kinds this operator accepts as input
+  // Operators are valid for these kinds AND all their descendants
+  repeated ComplexDataModelEventKind input_kinds = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_skip) = true];
+
+  // Output kind - what type does this operator produce?
+  ComplexDataModelEventKind output_kind = 5 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Output kind produced by this operator"];
+
+  // Operator parameters (besides the input value)
+  repeated FunctionParameter parameters = 6 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Operator parameters (besides the input value)"];
+}
+
+enum OperatorType {
+  OPERATOR_TYPE_UNSPECIFIED = 0;
+  OPERATOR_TYPE_STRING_EQUALS = 1;
+  OPERATOR_TYPE_STRING_NOT_EQUALS = 2;
+  OPERATOR_TYPE_NUMERIC_EQUALS = 3;
+  OPERATOR_TYPE_NUMERIC_NOT_EQUALS = 4;
+  OPERATOR_TYPE_BOOLEAN_EQUALS = 5;
+  OPERATOR_TYPE_LESS_THAN = 6;
+  OPERATOR_TYPE_LESS_THAN_OR_EQUALS = 7;
+  OPERATOR_TYPE_GREATER_THAN = 8;
+  OPERATOR_TYPE_GREATER_THAN_OR_EQUALS = 9;
+  OPERATOR_TYPE_CONTAINS = 10;
+  OPERATOR_TYPE_NOT_CONTAINS = 11;
+  OPERATOR_TYPE_STARTS_WITH = 12;
+  OPERATOR_TYPE_ENDS_WITH = 13;
+  OPERATOR_TYPE_MATCHES_REGEX = 14;
+}

@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package ai.traceable.fraud.datamodel.event.kind.v1;
+
+import "ai/traceable/fraud/datamodel/event/kind/v1/complex_data_model_event_kind.proto";
+import "ai/traceable/fraud/datamodel/event/kind/v1/operator.proto";
+import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
+import "ai/traceable/graphql/autogen/schema/annotations/method/v1/graphql_method_options.proto";
+
+option java_multiple_files = true;
+
+// Service for managing Operators
+service OperatorService {
+  rpc GetOperators(GetOperatorsRequest) returns (GetOperatorsResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "List all available operators for filtering event kind values";
+  }
+}
+
+// Request to list operators
+message GetOperatorsRequest {
+  OperatorFilter filter = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Filter criteria for operators"];
+}
+
+message OperatorFilter {
+  repeated ComplexDataModelEventKind compatible_with_kinds = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Filter operators compatible with these input event kinds"];
+}
+
+message GetOperatorsResponse {
+  repeated OperatorsByKind operator_mappings = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of kind to operators mappings"];
+}
+
+// Mapping of a kind to its applicable operators
+message OperatorsByKind {
+  ComplexDataModelEventKind kind = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "The event kind"];
+  repeated Operator operators = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of operators applicable to this kind"];
+}

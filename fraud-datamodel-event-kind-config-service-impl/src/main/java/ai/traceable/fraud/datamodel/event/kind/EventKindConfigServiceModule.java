@@ -7,6 +7,9 @@ import ai.traceable.fraud.datamodel.event.kind.eventkind.DefaultEventKindProvide
 import ai.traceable.fraud.datamodel.event.kind.eventkind.EventKindHierarchyResolver;
 import ai.traceable.fraud.datamodel.event.kind.eventkind.EventKindProvider;
 import ai.traceable.fraud.datamodel.event.kind.eventkind.EventKindServiceImpl;
+import ai.traceable.fraud.datamodel.event.kind.operator.DefaultOperatorProvider;
+import ai.traceable.fraud.datamodel.event.kind.operator.OperatorProvider;
+import ai.traceable.fraud.datamodel.event.kind.operator.OperatorServiceImpl;
 import ai.traceable.fraud.datamodel.event.kind.transformationfunction.DefaultTransformationFunctionProvider;
 import ai.traceable.fraud.datamodel.event.kind.transformationfunction.TransformationFunctionProvider;
 import ai.traceable.fraud.datamodel.event.kind.transformationfunction.TransformationFunctionServiceImpl;
@@ -21,11 +24,13 @@ public class EventKindConfigServiceModule extends AbstractModule {
     bind(EventKindProvider.class).to(DefaultEventKindProvider.class);
     bind(EventKindHierarchyResolver.class);
     bind(TransformationFunctionProvider.class).to(DefaultTransformationFunctionProvider.class);
+    bind(OperatorProvider.class).to(DefaultOperatorProvider.class);
     bind(AggregationFunctionProvider.class).to(DefaultAggregationFunctionProvider.class);
 
     // Bind service implementations
     bind(EventKindServiceImpl.class);
     bind(TransformationFunctionServiceImpl.class);
+    bind(OperatorServiceImpl.class);
     bind(AggregationFunctionServiceImpl.class);
   }
 }

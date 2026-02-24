@@ -3,6 +3,7 @@ syntax = "proto3";
 package ai.traceable.fraud.policy.config.service.v1;
 
 import "ai/traceable/fraud/datamodel/event/kind/v1/aggregation_function.proto";
+import "ai/traceable/fraud/datamodel/event/kind/v1/operator.proto";
 import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/struct.proto";
@@ -211,9 +212,9 @@ message AbusePolicyRelationalFilter {
   // Derived entity ID (LHS) - the event kind is known from the derivation config
   string derived_entity_id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Required. Derived entity ID to filter on"];
 
-  // Operator ID referencing common operators (e.g., "system_defined_operator_string_equals")
+  // Operator type referencing common operators
   // Allowed operators depend on the event kind of the derived entity
-  string operator_id = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Required. Operator ID from common operators"];
+  ai.traceable.fraud.datamodel.event.kind.v1.OperatorType operator = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Required. Operator type from common operators"];
 
   // RHS value(s) for the operator
   oneof operand_value {

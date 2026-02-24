@@ -10,6 +10,7 @@ import static org.mockito.quality.Strictness.LENIENT;
 import ai.traceable.config.proto.utils.FieldMaskUtils;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.fraud.datamodel.event.kind.v1.AggregationFunctionType;
+import ai.traceable.fraud.datamodel.event.kind.v1.OperatorType;
 import ai.traceable.fraud.policy.config.service.store.AbusePolicyConfigStore;
 import ai.traceable.fraud.policy.config.service.store.AbusePolicyConfigStoreManager;
 import ai.traceable.fraud.policy.config.service.store.ApiAccessAnomalyConfigStore;
@@ -617,7 +618,7 @@ class FraudPolicyConfigServiceImplTest {
                             ai.traceable.fraud.policy.config.service.v1.AbusePolicyRelationalFilter
                                 .newBuilder()
                                 .setDerivedEntityId("status_code")
-                                .setOperatorId("system_defined_operator_string_equals")
+                                .setOperator(OperatorType.OPERATOR_TYPE_STRING_EQUALS)
                                 .setLiteralValues(
                                     ai.traceable.fraud.policy.config.service.v1
                                         .AbusePolicyLiteralValues.newBuilder()

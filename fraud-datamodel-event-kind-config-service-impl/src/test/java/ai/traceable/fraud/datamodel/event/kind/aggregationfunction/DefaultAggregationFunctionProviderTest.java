@@ -10,7 +10,16 @@ import ai.traceable.fraud.datamodel.event.kind.v1.AggregationFunction;
 import ai.traceable.fraud.datamodel.event.kind.v1.AggregationFunctionType;
 import ai.traceable.fraud.datamodel.event.kind.v1.AggregationFunctionsByKind;
 import ai.traceable.fraud.datamodel.event.kind.v1.ComplexDataModelEventKind;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.protobuf.util.JsonFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -116,5 +125,49 @@ class DefaultAggregationFunctionProviderTest {
     assertTrue(
         numericFunctionTypes.contains(AggregationFunctionType.AGGREGATION_FUNCTION_TYPE_SUM),
         "Must have SUM function");
+  }
+
+  @Test
+  void yamlFunctionsHaveExactOneToOneMappingWithEnum() throws Exception {
+    // Load functions from YAML (same way the provider does)
+    ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
+    ObjectMapper jsonMapper = new ObjectMapper();
+    JsonFormat.Parser jsonParser = JsonFormat.parser().ignoringUnknownFields();
+
+    JsonNode root =
+        yamlMapper.readValue(
+            getClass().getClassLoader().getResourceAsStream("aggregation_functions.yaml"),
+            JsonNode.class);
+    JsonNode functionsNode = root.get("functions");
+
+    List<AggregationFunctionType> yamlFunctionTypes = new ArrayList<>();
+    for (JsonNode funcNode : functionsNode) {
+      String json = jsonMapper.writeValueAsString(funcNode);
+      AggregationFunction.Builder builder = AggregationFunction.newBuilder();
+      jsonParser.merge(json, builder);
+      yamlFunctionTypes.add(builder.getFunctionType());
+    }
+
+    // All valid enum values (excluding UNSPECIFIED and UNRECOGNIZED)
+    Set<AggregationFunctionType> allEnumValues =
+        Arrays.stream(AggregationFunctionType.values())
+            .filter(t -> t != AggregationFunctionType.AGGREGATION_FUNCTION_TYPE_UNSPECIFIED)
+            .filter(t -> t != AggregationFunctionType.UNRECOGNIZED)
+            .collect(Collectors.toSet());
+
+    // Every enum value must have exactly one YAML entry
+    Map<AggregationFunctionType, Long> yamlTypeCounts =
+        yamlFunctionTypes.stream()
+            .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+
+    for (AggregationFunctionType enumValue : allEnumValues) {
+      assertTrue(
+          yamlTypeCounts.containsKey(enumValue),
+          "Enum value " + enumValue + " is missing from aggregation_functions.yaml");
+      assertEquals(
+          1L,
+          yamlTypeCounts.get(enumValue),
+          "Enum value " + enumValue + " has duplicate entries in aggregation_functions.yaml");
+    }
   }
 }
