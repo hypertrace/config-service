@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.4.4973=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.4983=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.config.service:api-attribute-override-service-api:0.37.1296=runtimeClasspath,testRuntimeClasspath
 ai.traceable.config.service:data-classification-config-service-api:0.37.1296=runtimeClasspath,testRuntimeClasspath
 ai.traceable.config.service:iprange-config-service-api:0.37.1296=runtimeClasspath,testRuntimeClasspath
@@ -25,7 +25,7 @@ ai.traceable.platform-gateway:xml-utils:0.8.135=runtimeClasspath,testRuntimeClas
 ai.traceable.platform:actor-service-api:0.2.187=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform:anomaly-decision-engine-api:6.0.20=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:api-inspection-api:4.0.80=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform:api-naming-constants:6.0.154=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform:api-naming-constants:6.0.155=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:conditions-matcher:4.0.80=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:config-providers:4.0.80=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform:coraza-waf-service-api:0.3.49=runtimeClasspath,testRuntimeClasspath
@@ -43,6 +43,8 @@ ai.traceable.protection.rules:api-protection-rules:0.1.128=runtimeClasspath,test
 ai.traceable.protection.rules:protection-rules-common:0.1.128=runtimeClasspath,testRuntimeClasspath
 ai.traceable.protection.rules:web-application-protection-rules:0.1.128=runtimeClasspath,testRuntimeClasspath
 ai.traceable.protection:api-protection-engine-config:0.1.131=runtimeClasspath,testRuntimeClasspath
+ai.traceable.protection:condition-expression-processor:0.1.131=runtimeClasspath,testRuntimeClasspath
+ai.traceable.protection:custom-signature-protection-engine-config:0.1.131=runtimeClasspath,testRuntimeClasspath
 ai.traceable.protection:data-parser:0.1.131=runtimeClasspath,testRuntimeClasspath
 ai.traceable.protection:protection-processing-common:0.1.131=runtimeClasspath,testRuntimeClasspath
 ai.traceable.protection:secrules-processor:0.1.131=runtimeClasspath,testRuntimeClasspath

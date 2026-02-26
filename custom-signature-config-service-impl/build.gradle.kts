@@ -38,6 +38,10 @@ dependencies {
   implementation(commonLibs.jackson.core)
   implementation(commonLibs.jackson.databind)
   implementation(commonLibs.commons.io)
+  implementation(commonLibs.traceable.protection.engine.config.customsignature)
+  implementation(commonLibs.traceable.protection.engine.processor.secrules)
+  implementation(commonLibs.traceable.protection.engine.processor.conditionexpression)
+  implementation(commonLibs.traceable.protection.engine.processing.common)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)
