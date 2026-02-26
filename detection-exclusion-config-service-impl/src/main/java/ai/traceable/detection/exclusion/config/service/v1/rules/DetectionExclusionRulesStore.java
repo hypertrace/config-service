@@ -346,7 +346,7 @@ public class DetectionExclusionRulesStore
           ssrfFixedRules.values().stream()
               .map(DetectionExclusionRuleRecord::getRule)
               .collect(Collectors.toList());
-      upsertObjects(context, fixedRulesToUpsert);
+      upsertObjects(context.withUserTrackingSuppressed(), fixedRulesToUpsert);
       SSRF_FIXED_TENANTS.add(context.buildInternalContextualKey());
     } catch (Exception e) {
       LOGGER.error(

@@ -22,6 +22,7 @@ public class MaliciousSourcesMigrationManagerImpl implements MaliciousSourcesMig
 
   @Override
   public void migrateFromChangeLog1IfApplicable(RequestContext requestContext) {
+    requestContext = requestContext.withUserTrackingSuppressed();
     if (config.isChangeLog1MigrationDisabled()) {
       return;
     }

@@ -1,6 +1,6 @@
 package ai.traceable.audit.utils;
 
-import static ai.traceable.audit.utils.AuditContextualObjectUtils.UNKNOWN_EMAIL;
+import static ai.traceable.audit.utils.AuditFilterUtils.UNKNOWN_EMAIL;
 import static java.util.Objects.nonNull;
 
 import com.typesafe.config.Config;

@@ -22,6 +22,7 @@ public class RegionRulesMigrationManagerImpl implements RegionRulesMigrationMana
 
   @Override
   public void migrateFromChangeLog1IfApplicable(RequestContext requestContext) {
+    requestContext = requestContext.withUserTrackingSuppressed();
     if (config.isChangeLog1MigrationDisabled()) {
       return;
     }

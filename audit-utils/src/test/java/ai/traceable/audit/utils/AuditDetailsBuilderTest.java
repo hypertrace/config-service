@@ -175,7 +175,8 @@ class AuditDetailsBuilderTest {
           ContextualObjectImpl.<String>builder()
               .context("id")
               .data("data")
-              .lastUserUpdateTimestamp(lastUserUpdateTimestamp)
+              .lastUpdatedTimestamp(lastUserUpdateTimestamp)
+              .lastUserUpdateTimestamp(null)
               .lastUserUpdateEmail(null)
               .build();
 
@@ -185,6 +186,31 @@ class AuditDetailsBuilderTest {
       assertEquals(
           lastUserUpdateTimestamp.getEpochSecond(),
           result.getLastUserUpdateDetails().getUpdatedAt().getSeconds());
+    }
+
+    @Test
+    void shouldFallbackWhenLastUserUpdateTimestampIsPresentButEmailIsPlaceholder() {
+      Instant lastUserUpdateTimestamp = Instant.now();
+      Instant lastUpdatedTimestamp = Instant.now().minusSeconds(100);
+      String lastUpdateEmail = "system@example.com";
+
+      ContextualConfigObject<String> contextual =
+          ContextualObjectImpl.<String>builder()
+              .context("id")
+              .data("data")
+              .lastUserUpdateTimestamp(lastUserUpdateTimestamp)
+              .lastUserUpdateEmail("Unknown")
+              .lastUpdatedTimestamp(lastUpdatedTimestamp)
+              .lastUpdateEmail(lastUpdateEmail)
+              .build();
+
+      AuditDetails result = buildAuditDetails(contextual, userVisibleEmailConfig);
+
+      assertTrue(result.hasLastUserUpdateDetails());
+      assertEquals(
+          lastUpdatedTimestamp.getEpochSecond(),
+          result.getLastUserUpdateDetails().getUpdatedAt().getSeconds());
+      assertEquals(lastUpdateEmail, result.getLastUserUpdateDetails().getUpdatedBy());
     }
 
     @Test

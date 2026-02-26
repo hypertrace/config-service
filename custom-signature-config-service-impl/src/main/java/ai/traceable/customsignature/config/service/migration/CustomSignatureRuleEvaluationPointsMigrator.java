@@ -57,6 +57,7 @@ public class CustomSignatureRuleEvaluationPointsMigrator {
   }
 
   public void migrateRules(RequestContext requestContext) {
+    requestContext = requestContext.withUserTrackingSuppressed();
     customSignatureRulesManager
         .getCustomSignatureRules(requestContext, GetRulesFilter.getDefaultInstance())
         .forEach(this::migrateRule);
@@ -102,7 +103,7 @@ public class CustomSignatureRuleEvaluationPointsMigrator {
 
       CustomSignatureRule migratedRule = ruleBuilder.build();
       customSignatureRulesManager.updateCustomSignatureRule(
-          RequestContext.CURRENT.get(), migratedRule);
+          RequestContext.CURRENT.get().withUserTrackingSuppressed(), migratedRule);
     }
   }
 

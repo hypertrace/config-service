@@ -62,6 +62,7 @@ public class CustomSignatureRuleMigrationManager {
   }
 
   public void migrateCustomSignatureRules(RequestContext requestContext) {
+    requestContext = requestContext.withUserTrackingSuppressed();
     migrateRuleEvaluationPoints(requestContext);
     migrateRuleCategory(requestContext);
     migrateAllowRulesPlatformExclusion(requestContext);

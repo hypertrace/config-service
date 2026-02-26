@@ -2,8 +2,10 @@ package ai.traceable.audit.utils;
 
 import ai.traceable.config.commons.v1.AuditFilter;
 import ai.traceable.config.commons.v1.TimestampRange;
+import com.google.common.base.Strings;
 import com.google.protobuf.Timestamp;
 import java.time.Instant;
+import javax.annotation.Nullable;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.tuple.Pair;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
@@ -11,10 +13,17 @@ import org.hypertrace.config.objectstore.ContextualConfigObject;
 @UtilityClass
 public class AuditFilterUtils {
 
+  public static final String UNKNOWN_EMAIL = "Unknown";
+
+  static boolean isNullOrPlaceHolderEmail(@Nullable String email) {
+    return Strings.isNullOrEmpty(email) || UNKNOWN_EMAIL.equalsIgnoreCase(email);
+  }
+
   static Pair<Instant, String> getLastUserUpdateDetails(
       ContextualConfigObject<?> contextual, UserVisibleEmailConfig config) {
     if (contextual.getLastUserUpdateTimestamp() != null
-        && contextual.getLastUserUpdateTimestamp().getEpochSecond() > 0) {
+        && contextual.getLastUserUpdateTimestamp().getEpochSecond() > 0
+        && !isNullOrPlaceHolderEmail(contextual.getLastUserUpdateEmail())) {
       return Pair.of(
           contextual.getLastUserUpdateTimestamp(),
           config.maskEmailIfNotVisible(contextual.getLastUserUpdateEmail()));

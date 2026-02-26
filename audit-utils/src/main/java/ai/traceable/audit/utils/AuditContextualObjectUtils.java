@@ -1,6 +1,7 @@
 package ai.traceable.audit.utils;
 
-import com.google.common.base.Strings;
+import static ai.traceable.audit.utils.AuditFilterUtils.isNullOrPlaceHolderEmail;
+
 import java.time.Instant;
 import javax.annotation.Nullable;
 import lombok.experimental.UtilityClass;
@@ -12,7 +13,6 @@ import org.hypertrace.config.objectstore.ContextualConfigObject;
 public class AuditContextualObjectUtils {
 
   public static final String TRACEABLE = "Traceable";
-  public static final String UNKNOWN_EMAIL = "Unknown";
 
   public <T> ContextualConfigObject<T> contextualObjectWithDefaultTraceableAuditInfo(
       T data, String id) {
@@ -38,8 +38,7 @@ public class AuditContextualObjectUtils {
 
     String resolvedLastUserUpdateEmail = persistedRule.getLastUserUpdateEmail();
     Instant resolvedLastUserUpdateTimestamp = persistedRule.getLastUserUpdateTimestamp();
-    if (Strings.isNullOrEmpty(persistedRule.getLastUserUpdateEmail())
-        || persistedRule.getLastUserUpdateEmail().equalsIgnoreCase(UNKNOWN_EMAIL)) {
+    if (isNullOrPlaceHolderEmail(persistedRule.getLastUserUpdateEmail())) {
       resolvedLastUserUpdateEmail = defaultRule.getLastUserUpdateEmail();
       resolvedLastUserUpdateTimestamp = defaultRule.getLastUserUpdateTimestamp();
     }
