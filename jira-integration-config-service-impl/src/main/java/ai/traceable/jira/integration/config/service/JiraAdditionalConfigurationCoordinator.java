@@ -212,15 +212,17 @@ class JiraAdditionalConfigurationCoordinator {
 
     String templateId = null;
     List<TraceableEntityType> entityTypes = null;
+    String prefix = null;
     if (request.hasFilter()) {
       GetJiraTemplatesFilter filter = request.getFilter();
       templateId = filter.hasTemplateId() ? filter.getTemplateId() : null;
       entityTypes = !filter.getEntityTypesList().isEmpty() ? filter.getEntityTypesList() : null;
+      prefix = filter.hasPrefix() ? filter.getPrefix() : null;
     }
 
     List<JiraTemplate> templates =
         this.jiraAdditionalConfigurationStore.getJiraTemplates(
-            requestContext, templateId, entityTypes);
+            requestContext, templateId, entityTypes, prefix);
 
     return GetJiraTemplatesResponse.newBuilder().addAllJiraTemplates(templates).build();
   }

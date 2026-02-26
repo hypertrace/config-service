@@ -110,7 +110,10 @@ class JiraAdditionalConfigurationStore
   }
 
   List<JiraTemplate> getJiraTemplates(
-      RequestContext requestContext, String templateId, List<TraceableEntityType> entityTypes) {
+      RequestContext requestContext,
+      String templateId,
+      List<TraceableEntityType> entityTypes,
+      String prefix) {
     List<Function<JiraTemplate, Boolean>> filters = new ArrayList<>();
 
     if (templateId != null && !templateId.isEmpty()) {
@@ -118,7 +121,12 @@ class JiraAdditionalConfigurationStore
     }
 
     if (entityTypes != null && !entityTypes.isEmpty()) {
-      filters.add(template -> entityTypes.contains(template.getEntityType()));
+      List<TraceableEntityType> normalizedEntityTypes = normalizeEntityTypes(entityTypes);
+      filters.add(template -> normalizedEntityTypes.contains(template.getEntityType()));
+    }
+
+    if (prefix != null && !prefix.isEmpty()) {
+      filters.add(template -> template.getJiraTemplateDetails().getName().startsWith(prefix));
     }
 
     return this.getAllConfigData(requestContext).stream()
@@ -128,5 +136,18 @@ class JiraAdditionalConfigurationStore
         .filter(
             template -> filters.stream().allMatch(filterFunction -> filterFunction.apply(template)))
         .collect(Collectors.toList());
+  }
+
+  private List<TraceableEntityType> normalizeEntityTypes(List<TraceableEntityType> entityTypes) {
+    List<TraceableEntityType> expandedTypes = new ArrayList<>();
+    for (TraceableEntityType entityType : entityTypes) {
+      expandedTypes.add(entityType);
+      if (entityType == TraceableEntityType.TRACEABLE_ENTITY_TYPE_AST_VULNERABILITY
+          || entityType == TraceableEntityType.TRACEABLE_ENTITY_TYPE_VULNERABILITY) {
+        expandedTypes.add(TraceableEntityType.TRACEABLE_ENTITY_TYPE_AST_VULNERABILITY);
+        expandedTypes.add(TraceableEntityType.TRACEABLE_ENTITY_TYPE_VULNERABILITY);
+      }
+    }
+    return expandedTypes.stream().distinct().collect(Collectors.toList());
   }
 }

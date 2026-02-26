@@ -1066,19 +1066,19 @@ class JiraIntegrationConfigServiceImplTest {
             .getFieldTemplates(0)
             .getFieldKey());
 
-    // Get templates by entity type
+    // Get templates by entity type - THREAT_ACTIVITY (no mapping involved)
     GetJiraTemplatesRequest getByEntityTypeRequest =
         GetJiraTemplatesRequest.newBuilder()
             .setFilter(
                 GetJiraTemplatesFilter.newBuilder()
-                    .addEntityTypes(TraceableEntityType.TRACEABLE_ENTITY_TYPE_AST_VULNERABILITY)
+                    .addEntityTypes(TraceableEntityType.TRACEABLE_ENTITY_TYPE_THREAT_ACTIVITY)
                     .build())
             .build();
     GetJiraTemplatesResponse getByEntityTypeResponse =
         stub.getJiraTemplates(getByEntityTypeRequest);
     assertEquals(1, getByEntityTypeResponse.getJiraTemplatesCount());
     assertEquals(
-        TraceableEntityType.TRACEABLE_ENTITY_TYPE_AST_VULNERABILITY,
+        TraceableEntityType.TRACEABLE_ENTITY_TYPE_THREAT_ACTIVITY,
         getByEntityTypeResponse.getJiraTemplates(0).getEntityType());
     assertEquals(
         1,
@@ -1087,7 +1087,7 @@ class JiraIntegrationConfigServiceImplTest {
             .getJiraTemplateDetails()
             .getFieldTemplatesCount());
     assertEquals(
-        TraceableField.TRACEABLE_FIELD_VULNERABILITY_SEVERITY,
+        TraceableField.TRACEABLE_FIELD_THREAT_ACTIVITY_SEVERITY,
         getByEntityTypeResponse
             .getJiraTemplates(0)
             .getJiraTemplateDetails()
@@ -1095,6 +1095,7 @@ class JiraIntegrationConfigServiceImplTest {
             .getTraceableField());
 
     // Get templates by multiple entity types
+    // AST_VULNERABILITY maps to VULNERABILITY, so this should return all 3 templates
     GetJiraTemplatesRequest getByMultipleEntityTypesRequest =
         GetJiraTemplatesRequest.newBuilder()
             .setFilter(
@@ -1105,7 +1106,228 @@ class JiraIntegrationConfigServiceImplTest {
             .build();
     GetJiraTemplatesResponse getByMultipleEntityTypesResponse =
         stub.getJiraTemplates(getByMultipleEntityTypesRequest);
-    assertEquals(2, getByMultipleEntityTypesResponse.getJiraTemplatesCount());
+    // Should return all 3: template1 (AST_VULNERABILITY), template2 (THREAT_ACTIVITY), template3
+    // (VULNERABILITY)
+    assertEquals(3, getByMultipleEntityTypesResponse.getJiraTemplatesCount());
+
+    // Test AST_VULNERABILITY mapping: requesting AST_VULNERABILITY should also return VULNERABILITY
+    // templates
+    GetJiraTemplatesRequest getAstVulnMappingRequest =
+        GetJiraTemplatesRequest.newBuilder()
+            .setFilter(
+                GetJiraTemplatesFilter.newBuilder()
+                    .addEntityTypes(TraceableEntityType.TRACEABLE_ENTITY_TYPE_AST_VULNERABILITY)
+                    .build())
+            .build();
+    GetJiraTemplatesResponse getAstVulnMappingResponse =
+        stub.getJiraTemplates(getAstVulnMappingRequest);
+    assertEquals(2, getAstVulnMappingResponse.getJiraTemplatesCount());
+    assertTrue(
+        getAstVulnMappingResponse.getJiraTemplatesList().stream()
+            .anyMatch(t -> t.getTemplateId().equals(template1.getTemplateId())));
+    assertTrue(
+        getAstVulnMappingResponse.getJiraTemplatesList().stream()
+            .anyMatch(t -> t.getTemplateId().equals(template3.getTemplateId())));
+
+    GetJiraTemplatesRequest getVulnRequest =
+        GetJiraTemplatesRequest.newBuilder()
+            .setFilter(
+                GetJiraTemplatesFilter.newBuilder()
+                    .addEntityTypes(TraceableEntityType.TRACEABLE_ENTITY_TYPE_VULNERABILITY)
+                    .build())
+            .build();
+    GetJiraTemplatesResponse getVulnResponse = stub.getJiraTemplates(getVulnRequest);
+    assertEquals(2, getVulnResponse.getJiraTemplatesCount());
+    assertTrue(
+        getVulnResponse.getJiraTemplatesList().stream()
+            .anyMatch(t -> t.getTemplateId().equals(template1.getTemplateId())));
+    assertTrue(
+        getVulnResponse.getJiraTemplatesList().stream()
+            .anyMatch(t -> t.getTemplateId().equals(template3.getTemplateId())));
+
+    GetJiraTemplatesRequest getBothVulnTypesRequest =
+        GetJiraTemplatesRequest.newBuilder()
+            .setFilter(
+                GetJiraTemplatesFilter.newBuilder()
+                    .addEntityTypes(TraceableEntityType.TRACEABLE_ENTITY_TYPE_VULNERABILITY)
+                    .addEntityTypes(TraceableEntityType.TRACEABLE_ENTITY_TYPE_AST_VULNERABILITY)
+                    .build())
+            .build();
+    GetJiraTemplatesResponse getBothVulnTypesResponse =
+        stub.getJiraTemplates(getBothVulnTypesRequest);
+    assertEquals(2, getBothVulnTypesResponse.getJiraTemplatesCount());
+  }
+
+  @Test
+  @Tag("useMockUpsert")
+  @Tag("useMockGetAll")
+  void getJiraTemplatesByPrefixTest() {
+    RequestContext requestContext = RequestContext.forTenantId(TENANT_ID);
+    JiraIntegration jiraIntegration1 = dummyJiraIntegration(1, "env1");
+    jiraIntegrationStore.upsertObject(requestContext, jiraIntegration1);
+
+    // Add templates with different name prefixes
+    AddJiraTemplateRequest addRequest1 =
+        AddJiraTemplateRequest.newBuilder()
+            .setIntegrationId(jiraIntegration1.getId())
+            .setProjectId(PROJECT_ID)
+            .setIssueType(ISSUE_TYPE)
+            .setSupportedEntityType(TraceableEntityType.TRACEABLE_ENTITY_TYPE_VULNERABILITY)
+            .setJiraTemplateDetails(
+                JiraTemplateDetails.newBuilder()
+                    .setName("Vulnerability Template")
+                    .setMarkdownFormatValue(MARKDOWN_VULNERABILITY_DETAILS)
+                    .build())
+            .build();
+    JiraTemplate template1 = stub.addJiraTemplate(addRequest1).getJiraTemplate();
+
+    AddJiraTemplateRequest addRequest2 =
+        AddJiraTemplateRequest.newBuilder()
+            .setIntegrationId(jiraIntegration1.getId())
+            .setProjectId(PROJECT_ID)
+            .setIssueType(ISSUE_TYPE_BUG)
+            .setSupportedEntityType(TraceableEntityType.TRACEABLE_ENTITY_TYPE_AST_VULNERABILITY)
+            .setJiraTemplateDetails(
+                JiraTemplateDetails.newBuilder()
+                    .setName("Vulnerability Report")
+                    .setMarkdownFormatValue("## AST Vulnerability")
+                    .build())
+            .build();
+    JiraTemplate template2 = stub.addJiraTemplate(addRequest2).getJiraTemplate();
+
+    AddJiraTemplateRequest addRequest3 =
+        AddJiraTemplateRequest.newBuilder()
+            .setIntegrationId(jiraIntegration1.getId())
+            .setProjectId(PROJECT_ID_2)
+            .setIssueType(ISSUE_TYPE)
+            .setSupportedEntityType(TraceableEntityType.TRACEABLE_ENTITY_TYPE_THREAT_ACTIVITY)
+            .setJiraTemplateDetails(
+                JiraTemplateDetails.newBuilder()
+                    .setName("Threat Activity Template")
+                    .setMarkdownFormatValue("## Threat Activity")
+                    .build())
+            .build();
+    JiraTemplate template3 = stub.addJiraTemplate(addRequest3).getJiraTemplate();
+
+    // Get all templates (no filter)
+    GetJiraTemplatesRequest getAllRequest = GetJiraTemplatesRequest.newBuilder().build();
+    GetJiraTemplatesResponse getAllResponse = stub.getJiraTemplates(getAllRequest);
+    assertEquals(3, getAllResponse.getJiraTemplatesCount());
+
+    // Get templates by prefix "Vulnerability"
+    GetJiraTemplatesRequest getByPrefixRequest =
+        GetJiraTemplatesRequest.newBuilder()
+            .setFilter(GetJiraTemplatesFilter.newBuilder().setPrefix("Vulnerability").build())
+            .build();
+    GetJiraTemplatesResponse getByPrefixResponse = stub.getJiraTemplates(getByPrefixRequest);
+    assertEquals(2, getByPrefixResponse.getJiraTemplatesCount());
+    assertTrue(
+        getByPrefixResponse.getJiraTemplatesList().stream()
+            .allMatch(t -> t.getJiraTemplateDetails().getName().startsWith("Vulnerability")));
+
+    // Get templates by prefix "Threat"
+    GetJiraTemplatesRequest getByThreatPrefixRequest =
+        GetJiraTemplatesRequest.newBuilder()
+            .setFilter(GetJiraTemplatesFilter.newBuilder().setPrefix("Threat").build())
+            .build();
+    GetJiraTemplatesResponse getByThreatPrefixResponse =
+        stub.getJiraTemplates(getByThreatPrefixRequest);
+    assertEquals(1, getByThreatPrefixResponse.getJiraTemplatesCount());
+    assertEquals(
+        "Threat Activity Template",
+        getByThreatPrefixResponse.getJiraTemplates(0).getJiraTemplateDetails().getName());
+
+    // Get templates by non-matching prefix
+    GetJiraTemplatesRequest getNonMatchingPrefixRequest =
+        GetJiraTemplatesRequest.newBuilder()
+            .setFilter(GetJiraTemplatesFilter.newBuilder().setPrefix("NonExistent").build())
+            .build();
+    GetJiraTemplatesResponse getNonMatchingPrefixResponse =
+        stub.getJiraTemplates(getNonMatchingPrefixRequest);
+    assertEquals(0, getNonMatchingPrefixResponse.getJiraTemplatesCount());
+
+    // Get templates by prefix combined with entity type filter
+    // Since VULNERABILITY and AST_VULNERABILITY are merged, this should return both templates
+    GetJiraTemplatesRequest getCombinedFilterRequest =
+        GetJiraTemplatesRequest.newBuilder()
+            .setFilter(
+                GetJiraTemplatesFilter.newBuilder()
+                    .setPrefix("Vulnerability")
+                    .addEntityTypes(TraceableEntityType.TRACEABLE_ENTITY_TYPE_VULNERABILITY)
+                    .build())
+            .build();
+    GetJiraTemplatesResponse getCombinedFilterResponse =
+        stub.getJiraTemplates(getCombinedFilterRequest);
+    assertEquals(2, getCombinedFilterResponse.getJiraTemplatesCount());
+    assertTrue(
+        getCombinedFilterResponse.getJiraTemplatesList().stream()
+            .allMatch(t -> t.getJiraTemplateDetails().getName().startsWith("Vulnerability")));
+    assertTrue(
+        getCombinedFilterResponse.getJiraTemplatesList().stream()
+            .anyMatch(t -> t.getTemplateId().equals(template1.getTemplateId())));
+    assertTrue(
+        getCombinedFilterResponse.getJiraTemplatesList().stream()
+            .anyMatch(t -> t.getTemplateId().equals(template2.getTemplateId())));
+  }
+
+  @Test
+  @Tag("useMockUpsert")
+  @Tag("useMockGetAll")
+  void getJiraTemplatesWithAstVulnerabilityMappingTest() {
+    RequestContext requestContext = RequestContext.forTenantId(TENANT_ID);
+    JiraIntegration jiraIntegration1 = dummyJiraIntegration(1, "env1");
+    jiraIntegrationStore.upsertObject(requestContext, jiraIntegration1);
+
+    // Add a template with VULNERABILITY entity type
+    AddJiraTemplateRequest addRequest =
+        AddJiraTemplateRequest.newBuilder()
+            .setIntegrationId(jiraIntegration1.getId())
+            .setProjectId(PROJECT_ID)
+            .setIssueType(ISSUE_TYPE)
+            .setSupportedEntityType(TraceableEntityType.TRACEABLE_ENTITY_TYPE_VULNERABILITY)
+            .setJiraTemplateDetails(
+                JiraTemplateDetails.newBuilder()
+                    .setName(TEMPLATE_NAME_VULNERABILITY)
+                    .setMarkdownFormatValue(MARKDOWN_VULNERABILITY_DETAILS)
+                    .build())
+            .build();
+    JiraTemplate vulnerabilityTemplate = stub.addJiraTemplate(addRequest).getJiraTemplate();
+
+    // Request templates with AST_VULNERABILITY entity type
+    GetJiraTemplatesRequest getByAstVulnRequest =
+        GetJiraTemplatesRequest.newBuilder()
+            .setFilter(
+                GetJiraTemplatesFilter.newBuilder()
+                    .addEntityTypes(TraceableEntityType.TRACEABLE_ENTITY_TYPE_AST_VULNERABILITY)
+                    .build())
+            .build();
+    GetJiraTemplatesResponse getByAstVulnResponse = stub.getJiraTemplates(getByAstVulnRequest);
+
+    // Should return the VULNERABILITY template
+    assertEquals(1, getByAstVulnResponse.getJiraTemplatesCount());
+    assertEquals(
+        vulnerabilityTemplate.getTemplateId(),
+        getByAstVulnResponse.getJiraTemplates(0).getTemplateId());
+    assertEquals(
+        TraceableEntityType.TRACEABLE_ENTITY_TYPE_VULNERABILITY,
+        getByAstVulnResponse.getJiraTemplates(0).getEntityType());
+
+    // Request with both VULNERABILITY and AST_VULNERABILITY should return same template once
+    GetJiraTemplatesRequest getBothTypesRequest =
+        GetJiraTemplatesRequest.newBuilder()
+            .setFilter(
+                GetJiraTemplatesFilter.newBuilder()
+                    .addEntityTypes(TraceableEntityType.TRACEABLE_ENTITY_TYPE_VULNERABILITY)
+                    .addEntityTypes(TraceableEntityType.TRACEABLE_ENTITY_TYPE_AST_VULNERABILITY)
+                    .build())
+            .build();
+    GetJiraTemplatesResponse getBothTypesResponse = stub.getJiraTemplates(getBothTypesRequest);
+
+    // Should still return only 1 template (not duplicated)
+    assertEquals(1, getBothTypesResponse.getJiraTemplatesCount());
+    assertEquals(
+        vulnerabilityTemplate.getTemplateId(),
+        getBothTypesResponse.getJiraTemplates(0).getTemplateId());
   }
 
   private JiraIntegration dummyJiraIntegration(int sr, String... environmentId) {

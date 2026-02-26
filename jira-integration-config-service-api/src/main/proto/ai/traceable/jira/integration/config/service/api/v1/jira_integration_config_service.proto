@@ -97,6 +97,7 @@ message GetJiraTemplatesRequest {
 message GetJiraTemplatesFilter {
   optional string template_id = 1;
   repeated TraceableEntityType entity_types = 2;
+  optional string prefix = 3;
 }
 
 message GetJiraTemplatesResponse {
