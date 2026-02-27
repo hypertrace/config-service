@@ -384,7 +384,23 @@ public class SpanProcessingConfigRequestValidator {
   private void validateRateLimitConfig(RateLimitConfig rateLimitConfig) {
     this.validateRateLimit(rateLimitConfig.getTraceLimitGlobal());
     this.validateRateLimit(rateLimitConfig.getTraceLimitPerEndpoint());
-    this.validateRateLimitStrategy(rateLimitConfig.getRateLimitStrategy());
+    boolean hasRateLimitStrategy =
+        rateLimitConfig.getRateLimitStrategy() != RateLimitStrategy.RATE_LIMIT_STRATEGY_UNSPECIFIED;
+    boolean hasSpanLimitStrategy =
+        rateLimitConfig.getSpanLimitStrategy()
+            != SpanLimitingStrategy.SPAN_LIMITING_STRATEGY_UNSPECIFIED;
+    if (!hasRateLimitStrategy && !hasSpanLimitStrategy) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              "At least one of rate_limit_strategy or span_limit_strategy must be specified")
+          .asRuntimeException();
+    }
+    if (hasRateLimitStrategy) {
+      this.validateRateLimitStrategy(rateLimitConfig.getRateLimitStrategy());
+    }
+    if (hasSpanLimitStrategy) {
+      this.validateSpanLimitingStrategy(rateLimitConfig.getSpanLimitStrategy());
+    }
   }
 
   private void validateRateLimit(RateLimit rateLimit) {

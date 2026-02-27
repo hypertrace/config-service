@@ -331,7 +331,7 @@ class SpanProcessingConfigRequestValidatorTest {
     when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
 
     assertInvalidArgStatusContaining(
-        "Unexpected rate limit strategy",
+        "At least one of rate_limit_strategy or span_limit_strategy must be specified",
         () ->
             validator.validateOrThrow(
                 mockRequestContext,

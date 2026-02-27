@@ -568,6 +568,7 @@ class SpanProcessingConfigServiceImplTest {
             .setApiEndpointCacheDuration(
                 Duration.newBuilder().setSeconds(100).setNanos(100).build())
             .setRateLimitStrategy(RATE_LIMIT_STRATEGY_BARESPAN)
+            .setSpanLimitStrategy(SpanLimitingStrategy.SPAN_LIMITING_STRATEGY_BARESPAN)
             .build(),
         updatedFirstSamplingConfig.getSamplingConfigInfo().getRateLimitConfig());
 

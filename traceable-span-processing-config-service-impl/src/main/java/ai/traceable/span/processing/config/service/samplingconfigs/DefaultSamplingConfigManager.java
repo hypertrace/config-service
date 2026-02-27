@@ -5,10 +5,13 @@ import ai.traceable.span.processing.config.service.store.SamplingConfigsConfigSt
 import ai.traceable.span.processing.config.service.v1.CreateSamplingConfigRequest;
 import ai.traceable.span.processing.config.service.v1.DeleteSamplingConfigRequest;
 import ai.traceable.span.processing.config.service.v1.PercentageLimitConfig;
+import ai.traceable.span.processing.config.service.v1.RateLimitConfig;
+import ai.traceable.span.processing.config.service.v1.RateLimitStrategy;
 import ai.traceable.span.processing.config.service.v1.SamplingConfig;
 import ai.traceable.span.processing.config.service.v1.SamplingConfigDetails;
 import ai.traceable.span.processing.config.service.v1.SamplingConfigInfo;
 import ai.traceable.span.processing.config.service.v1.SamplingConfigMetadata;
+import ai.traceable.span.processing.config.service.v1.SpanLimitingStrategy;
 import ai.traceable.span.processing.config.service.v1.UpdateSamplingConfig;
 import ai.traceable.span.processing.config.service.v1.UpdateSamplingConfigRequest;
 import com.google.inject.Inject;
@@ -46,7 +49,8 @@ public class DefaultSamplingConfigManager implements SamplingConfigManager {
       RequestContext requestContext, CreateSamplingConfigRequest createSamplingConfigRequest) {
     // TODO: need to handle priorities
     SamplingConfigInfo samplingConfigInfo =
-        truncatePercentage(createSamplingConfigRequest.getSamplingConfigInfo());
+        syncRateLimitStrategies(
+            truncatePercentage(createSamplingConfigRequest.getSamplingConfigInfo()));
     SamplingConfig newSamplingConfig =
         SamplingConfig.newBuilder()
             .setId(UUID.randomUUID().toString())
@@ -108,7 +112,8 @@ public class DefaultSamplingConfigManager implements SamplingConfigManager {
     SamplingConfigInfo.Builder samplingConfigInfoBuilder =
         SamplingConfigInfo.newBuilder(existingSamplingConfig.getSamplingConfigInfo());
     if (updateSamplingConfig.hasRateLimitConfig()) {
-      samplingConfigInfoBuilder.setRateLimitConfig(updateSamplingConfig.getRateLimitConfig());
+      samplingConfigInfoBuilder.setRateLimitConfig(
+          syncRateLimitStrategies(updateSamplingConfig.getRateLimitConfig()));
     }
     if (updateSamplingConfig.hasFilter()) {
       samplingConfigInfoBuilder.setFilter(updateSamplingConfig.getFilter());
@@ -135,5 +140,56 @@ public class DefaultSamplingConfigManager implements SamplingConfigManager {
             .setScale(2, RoundingMode.DOWN)
             .floatValue();
     return config.toBuilder().setAllowedPercentage(truncated).build();
+  }
+
+  private SamplingConfigInfo syncRateLimitStrategies(SamplingConfigInfo samplingConfigInfo) {
+    if (!samplingConfigInfo.hasRateLimitConfig()) {
+      return samplingConfigInfo;
+    }
+    return samplingConfigInfo.toBuilder()
+        .setRateLimitConfig(syncRateLimitStrategies(samplingConfigInfo.getRateLimitConfig()))
+        .build();
+  }
+
+  private RateLimitConfig syncRateLimitStrategies(RateLimitConfig rateLimitConfig) {
+    RateLimitStrategy rateLimitStrategy = rateLimitConfig.getRateLimitStrategy();
+    SpanLimitingStrategy spanLimitStrategy = rateLimitConfig.getSpanLimitStrategy();
+
+    boolean hasRateLimitStrategy =
+        rateLimitStrategy != RateLimitStrategy.RATE_LIMIT_STRATEGY_UNSPECIFIED;
+    boolean hasSpanLimitStrategy =
+        spanLimitStrategy != SpanLimitingStrategy.SPAN_LIMITING_STRATEGY_UNSPECIFIED;
+
+    RateLimitConfig.Builder builder = rateLimitConfig.toBuilder();
+
+    if (hasRateLimitStrategy && !hasSpanLimitStrategy) {
+      builder.setSpanLimitStrategy(toSpanLimitingStrategy(rateLimitStrategy));
+    } else if (hasSpanLimitStrategy && !hasRateLimitStrategy) {
+      builder.setRateLimitStrategy(toRateLimitStrategy(spanLimitStrategy));
+    }
+
+    return builder.build();
+  }
+
+  private SpanLimitingStrategy toSpanLimitingStrategy(RateLimitStrategy rateLimitStrategy) {
+    switch (rateLimitStrategy) {
+      case RATE_LIMIT_STRATEGY_DROP:
+        return SpanLimitingStrategy.SPAN_LIMITING_STRATEGY_DROP;
+      case RATE_LIMIT_STRATEGY_BARESPAN:
+        return SpanLimitingStrategy.SPAN_LIMITING_STRATEGY_BARESPAN;
+      default:
+        return SpanLimitingStrategy.SPAN_LIMITING_STRATEGY_UNSPECIFIED;
+    }
+  }
+
+  private RateLimitStrategy toRateLimitStrategy(SpanLimitingStrategy spanLimitingStrategy) {
+    switch (spanLimitingStrategy) {
+      case SPAN_LIMITING_STRATEGY_DROP:
+        return RateLimitStrategy.RATE_LIMIT_STRATEGY_DROP;
+      case SPAN_LIMITING_STRATEGY_BARESPAN:
+        return RateLimitStrategy.RATE_LIMIT_STRATEGY_BARESPAN;
+      default:
+        return RateLimitStrategy.RATE_LIMIT_STRATEGY_UNSPECIFIED;
+    }
   }
 }
