@@ -19,6 +19,7 @@ message EventDerivationConfigDetails {
   }
 
   ai.traceable.fraud.datamodel.event.kind.v1.TransformationPipeline pipeline = 5 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Transformation pipeline to apply after extraction"];
+  string name = 6 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Name of the derivation rule"];
 }
 
 // Scope groups optional, combinable scope filters. All set fields are ANDed together.

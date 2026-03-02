@@ -180,7 +180,8 @@ class EntityDerivationConfigRequestValidatorTest {
         .setEventKind(ComplexDataModelEventKind.newBuilder().setKindId("system_event_kind_string"))
         .setSpanProjection(
             SpanProjection.newBuilder()
-                .addEventDerivationConfigs(EventDerivationConfigDetails.newBuilder()))
+                .addEventDerivationConfigs(
+                    EventDerivationConfigDetails.newBuilder().setName("Test Derivation Rule")))
         .build();
   }
 }
