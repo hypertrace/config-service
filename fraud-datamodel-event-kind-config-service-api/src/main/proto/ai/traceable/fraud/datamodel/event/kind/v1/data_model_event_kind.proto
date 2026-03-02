@@ -6,6 +6,17 @@ import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_o
 
 option java_multiple_files = true;
 
+// Storage data type for Pinot/Trino table columns
+enum DataType {
+  DATA_TYPE_UNSPECIFIED = 0;
+  DATA_TYPE_INT = 1;
+  DATA_TYPE_LONG = 2;
+  DATA_TYPE_DOUBLE = 3;
+  DATA_TYPE_BOOL = 4;
+  DATA_TYPE_STRING = 5;
+  DATA_TYPE_TIMESTAMP = 6;
+}
+
 // Represents a primitive data kind in the hierarchical type system
 // Examples: string, email, ip_address, integer, etc.
 message DataModelEventKind {
@@ -23,6 +34,9 @@ message DataModelEventKind {
 
   // Validation rule - used for validating data at creation/ingestion
   Validation validation = 5 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Validation rule for data of this kind"];
+
+  // Storage data type for Pinot/Trino table columns
+  DataType data_type = 6 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_skip) = true];
 }
 
 // Validation rule for a data kind

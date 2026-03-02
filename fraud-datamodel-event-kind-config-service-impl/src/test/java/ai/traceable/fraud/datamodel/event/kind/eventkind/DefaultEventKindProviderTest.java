@@ -1,7 +1,10 @@
 package ai.traceable.fraud.datamodel.event.kind.eventkind;
 
+import static ai.traceable.fraud.datamodel.event.kind.v1.DataType.DATA_TYPE_UNSPECIFIED;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -77,6 +80,19 @@ class DefaultEventKindProviderTest {
         provider.getEventKinds(EventKindFilter.getDefaultInstance());
     List<DataModelEventKind> systemKinds = provider.getEventKinds(filter);
 
-    assertTrue(allKinds.size() == systemKinds.size(), "All kinds should be system-defined");
+    assertEquals(allKinds.size(), systemKinds.size(), "All kinds should be system-defined");
+  }
+
+  @Test
+  void allEventKindsHaveDataType() {
+    List<DataModelEventKind> kinds = provider.getEventKinds(EventKindFilter.getDefaultInstance());
+
+    for (DataModelEventKind kind : kinds) {
+      assertNotNull(kind.getDataType(), "Event kind should have data_type set: " + kind.getId());
+      assertNotEquals(
+          DATA_TYPE_UNSPECIFIED,
+          kind.getDataType(),
+          "Event kind data_type should not be UNSPECIFIED: " + kind.getId());
+    }
   }
 }

@@ -31,6 +31,7 @@ message EntityDerivationConfigData {
   oneof value_source {
     SpanProjection span_projection = 8 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Extract value directly from API request/response data"];
     ParentDerivation parent_derivation = 9 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Derive value from a parent entity"];
+    PrepopulatedSpanAttribute prepopulated_span_attribute = 10 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Prepopulated span attribute"];
   }
 }
 
@@ -44,6 +45,8 @@ message ParentDerivation {
   string parent_entity_derivation_id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Parent entity derivation config ID (Required)"];
   ai.traceable.fraud.datamodel.event.kind.v1.TransformationPipeline pipeline = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Transformation applied on the extracted value from parent"];
 }
+
+message PrepopulatedSpanAttribute {}
 
 enum EntityCategory {
   ENTITY_CATEGORY_UNSPECIFIED = 0;

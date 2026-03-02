@@ -6,17 +6,20 @@ kinds:
   - id: "system_event_kind_value"
     display_name: "Value"
     description: "Base type for all values"
+    data_type: "DATA_TYPE_STRING"
 
   # String hierarchy
   - id: "system_event_kind_string"
     display_name: "String"
     description: "Text-based values that support string operations"
     parent_kind_id: "system_event_kind_value"
+    data_type: "DATA_TYPE_STRING"
 
   - id: "system_event_kind_email"
     display_name: "Email Address"
     description: "Email address format"
     parent_kind_id: "system_event_kind_string"
+    data_type: "DATA_TYPE_STRING"
     validation:
       validation_regex: "^[\\w.-]+@[\\w.-]+\\.\\w+$"
 
@@ -24,6 +27,7 @@ kinds:
     display_name: "Phone Number"
     description: "Phone number format"
     parent_kind_id: "system_event_kind_string"
+    data_type: "DATA_TYPE_STRING"
     validation:
       validation_regex: "^\\+?[0-9]{10,15}$"
 
@@ -31,6 +35,7 @@ kinds:
     display_name: "Credit Card"
     description: "Credit card number"
     parent_kind_id: "system_event_kind_string"
+    data_type: "DATA_TYPE_STRING"
     validation:
       validation_regex: "^[0-9]{13,19}$"
 
@@ -39,11 +44,13 @@ kinds:
     display_name: "Numeric"
     description: "Numeric values"
     parent_kind_id: "system_event_kind_value"
+    data_type: "DATA_TYPE_DOUBLE"
 
   - id: "system_event_kind_integer"
     display_name: "Integer"
     description: "Whole number"
     parent_kind_id: "system_event_kind_numeric"
+    data_type: "DATA_TYPE_LONG"
     validation:
       validation_regex: "^-?[0-9]+$"
 
@@ -51,6 +58,7 @@ kinds:
     display_name: "Float"
     description: "Decimal number"
     parent_kind_id: "system_event_kind_numeric"
+    data_type: "DATA_TYPE_DOUBLE"
     validation:
       validation_regex: "^-?[0-9]*\\.?[0-9]+$"
 
@@ -59,11 +67,13 @@ kinds:
     display_name: "Network Identifier"
     description: "Network-related identifiers"
     parent_kind_id: "system_event_kind_value"
+    data_type: "DATA_TYPE_STRING"
 
   - id: "system_event_kind_ip_address"
     display_name: "IP Address"
     description: "IPv4 or IPv6 address"
     parent_kind_id: "system_event_kind_network_identifier"
+    data_type: "DATA_TYPE_STRING"
     validation:
       validation_regex: "^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$|^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$"
 
@@ -71,6 +81,7 @@ kinds:
     display_name: "MAC Address"
     description: "Hardware MAC address"
     parent_kind_id: "system_event_kind_network_identifier"
+    data_type: "DATA_TYPE_STRING"
     validation:
       validation_regex: "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$"
 
@@ -79,6 +90,7 @@ kinds:
     display_name: "Boolean"
     description: "True or false value"
     parent_kind_id: "system_event_kind_value"
+    data_type: "DATA_TYPE_BOOL"
     validation:
       validation_regex: "^(true|false|TRUE|FALSE|1|0)$"
 
@@ -87,3 +99,4 @@ kinds:
     display_name: "Timestamp"
     description: "Date/time value"
     parent_kind_id: "system_event_kind_value"
+    data_type: "DATA_TYPE_TIMESTAMP"
