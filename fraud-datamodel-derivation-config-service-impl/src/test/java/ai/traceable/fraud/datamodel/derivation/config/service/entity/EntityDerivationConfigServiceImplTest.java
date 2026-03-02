@@ -27,6 +27,7 @@ import io.grpc.StatusRuntimeException;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
+import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.AfterEach;
@@ -49,14 +50,8 @@ class EntityDerivationConfigServiceImplTest {
         ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
 
     ConfigChangeEventGenerator eventGenerator = Mockito.mock(ConfigChangeEventGenerator.class);
-    EntityDerivationConfigStore store =
-        new EntityDerivationConfigStore(genericStub, eventGenerator);
-    EntityDerivationConfigRequestValidator validator = new EntityDerivationConfigRequestValidator();
-    EntityDerivationConfigStoreManager storeManager =
-        new EntityDerivationConfigStoreManager(store, uuidGenerator);
-
     EntityDerivationConfigServiceImpl service =
-        new EntityDerivationConfigServiceImpl(storeManager, validator);
+        getEntityDerivationConfigService(genericStub, eventGenerator, uuidGenerator);
 
     this.mockGenericConfigService.addService(service).start();
 
@@ -64,6 +59,25 @@ class EntityDerivationConfigServiceImplTest {
         EntityDerivationConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel())
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  private static EntityDerivationConfigServiceImpl getEntityDerivationConfigService(
+      ConfigServiceBlockingStub genericStub,
+      ConfigChangeEventGenerator eventGenerator,
+      UuidGenerator uuidGenerator) {
+    EntityDerivationConfigStore store =
+        new EntityDerivationConfigStore(genericStub, eventGenerator);
+    DefaultEntityDerivationProvider defaultEntityDerivationProvider =
+        new DefaultEntityDerivationProvider();
+    EntityDerivationConfigRequestValidator validator =
+        new EntityDerivationConfigRequestValidator(defaultEntityDerivationProvider);
+    EntityDerivationConfigStoreManager storeManager =
+        new EntityDerivationConfigStoreManager(
+            store, uuidGenerator, defaultEntityDerivationProvider);
+
+    EntityDerivationConfigServiceImpl service =
+        new EntityDerivationConfigServiceImpl(storeManager, validator);
+    return service;
   }
 
   @AfterEach
@@ -163,7 +177,11 @@ class EntityDerivationConfigServiceImplTest {
         RequestContext.forTenantId("test-tenant")
             .call(() -> serviceStub.getEntityDerivationConfigSummaries(request));
 
-    assertEquals(1, response.getSummariesCount());
+    // Should include user-created entity plus all default entities
+    assertTrue(response.getSummariesCount() > 0);
+    assertTrue(
+        response.getSummariesList().stream()
+            .anyMatch(s -> s.getDisplayName().equals("Entity One")));
   }
 
   @Test
@@ -185,7 +203,11 @@ class EntityDerivationConfigServiceImplTest {
         RequestContext.forTenantId("test-tenant")
             .call(() -> serviceStub.getEntityDerivationConfigs(request));
 
-    assertEquals(1, response.getEntityDerivationConfigsCount());
+    // Should include user-created entity plus all default entities
+    assertTrue(response.getEntityDerivationConfigsCount() > 0);
+    assertTrue(
+        response.getEntityDerivationConfigsList().stream()
+            .anyMatch(e -> e.getData().getDisplayName().equals("Test Entity")));
   }
 
   @Test

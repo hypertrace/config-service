@@ -15,6 +15,8 @@ dependencies {
   implementation(commonLibs.guice7)
   implementation(commonLibs.slf4j2.api)
   implementation(commonLibs.protobuf.javautil)
+  implementation(commonLibs.jackson.databind)
+  implementation(commonLibs.jackson.yaml)
 
   implementation(localLibs.hypertrace.configservice.validation)
   implementation(localLibs.hypertrace.configservice.api)

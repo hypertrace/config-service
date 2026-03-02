@@ -5,12 +5,22 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateReques
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.CreateEntityDerivationConfigRequest;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.DeleteEntityDerivationConfigRequest;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityCategory;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfig;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfigData;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.UpdateEntityDerivationConfigRequest;
 import io.grpc.Status;
+import jakarta.inject.Inject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class EntityDerivationConfigRequestValidator {
+
+  private final DefaultEntityDerivationProvider defaultEntityDerivationProvider;
+
+  @Inject
+  public EntityDerivationConfigRequestValidator(
+      DefaultEntityDerivationProvider defaultEntityDerivationProvider) {
+    this.defaultEntityDerivationProvider = defaultEntityDerivationProvider;
+  }
 
   public void validateRequestContext(RequestContext requestContext) {
     validateRequestContextOrThrow(requestContext);
@@ -50,6 +60,8 @@ public class EntityDerivationConfigRequestValidator {
           .asRuntimeException(requestContext.buildTrailers());
     }
 
+    validateSystemEntityUpdate(request.getId(), requestContext);
+    validateMandatoryEntityUpdate(request, requestContext);
     validateEntityDerivationConfigData(request.getData(), requestContext);
   }
 
@@ -62,6 +74,9 @@ public class EntityDerivationConfigRequestValidator {
           .withDescription("Entity derivation config ID is required for deletion")
           .asRuntimeException(requestContext.buildTrailers());
     }
+
+    validateSystemEntityDeletion(request.getEntityDerivationConfigId(), requestContext);
+    validateMandatoryEntityDeletion(request.getEntityDerivationConfigId(), requestContext);
   }
 
   private void validateEntityDerivationConfigData(
@@ -140,6 +155,65 @@ public class EntityDerivationConfigRequestValidator {
     if (data.getParentDerivation().getParentEntityDerivationId().isEmpty()) {
       throw Status.INVALID_ARGUMENT
           .withDescription("Parent entity derivation ID is required for parent derivation")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+  }
+
+  private void validateMandatoryEntityDeletion(String entityId, RequestContext requestContext) {
+    validateDefaultEntityByCategory(
+        entityId,
+        EntityCategory.ENTITY_CATEGORY_MANDATORY,
+        "Cannot delete mandatory entity",
+        requestContext);
+  }
+
+  private void validateMandatoryEntityUpdate(
+      UpdateEntityDerivationConfigRequest request, RequestContext requestContext) {
+    EntityDerivationConfig defaultEntity =
+        defaultEntityDerivationProvider.getDefaultEntity(request.getId());
+    if (defaultEntity != null
+        && defaultEntity.getData().getCategory() == EntityCategory.ENTITY_CATEGORY_MANDATORY) {
+      if (request.getData().getCategory() != EntityCategory.ENTITY_CATEGORY_MANDATORY) {
+        throw Status.PERMISSION_DENIED
+            .withDescription(
+                "Cannot change category of mandatory entity: "
+                    + defaultEntity.getData().getDisplayName()
+                    + " (ID: "
+                    + request.getId()
+                    + ")")
+            .asRuntimeException(requestContext.buildTrailers());
+      }
+    }
+  }
+
+  private void validateSystemEntityDeletion(String entityId, RequestContext requestContext) {
+    validateDefaultEntityByCategory(
+        entityId,
+        EntityCategory.ENTITY_CATEGORY_SYSTEM,
+        "Cannot delete system entity",
+        requestContext);
+  }
+
+  private void validateSystemEntityUpdate(String entityId, RequestContext requestContext) {
+    validateDefaultEntityByCategory(
+        entityId,
+        EntityCategory.ENTITY_CATEGORY_SYSTEM,
+        "Cannot update system entity",
+        requestContext);
+  }
+
+  private void validateDefaultEntityByCategory(
+      String entityId, EntityCategory category, String errorPrefix, RequestContext requestContext) {
+    EntityDerivationConfig defaultEntity =
+        defaultEntityDerivationProvider.getDefaultEntity(entityId);
+    if (defaultEntity != null && defaultEntity.getData().getCategory() == category) {
+      String message =
+          errorPrefix + ": " + defaultEntity.getData().getDisplayName() + " (ID: " + entityId + ")";
+      if (category == EntityCategory.ENTITY_CATEGORY_SYSTEM) {
+        message += ". System entities are read-only.";
+      }
+      throw Status.PERMISSION_DENIED
+          .withDescription(message)
           .asRuntimeException(requestContext.buildTrailers());
     }
   }

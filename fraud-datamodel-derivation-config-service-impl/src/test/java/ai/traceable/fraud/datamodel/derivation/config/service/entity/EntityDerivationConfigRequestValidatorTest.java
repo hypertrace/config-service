@@ -24,7 +24,9 @@ class EntityDerivationConfigRequestValidatorTest {
 
   @BeforeEach
   void setUp() {
-    validator = new EntityDerivationConfigRequestValidator();
+    DefaultEntityDerivationProvider defaultEntityDerivationProvider =
+        new DefaultEntityDerivationProvider();
+    validator = new EntityDerivationConfigRequestValidator(defaultEntityDerivationProvider);
     requestContext = RequestContext.forTenantId("test-tenant");
   }
 

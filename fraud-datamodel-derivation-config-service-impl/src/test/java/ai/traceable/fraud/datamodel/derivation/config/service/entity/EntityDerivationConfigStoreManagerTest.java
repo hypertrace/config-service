@@ -35,6 +35,7 @@ class EntityDerivationConfigStoreManagerTest {
 
   @Mock private EntityDerivationConfigStore store;
   @Mock private UuidGenerator uuidGenerator;
+  @Mock private DefaultEntityDerivationProvider defaultEntityDerivationProvider;
   @Mock private ContextualConfigObject<EntityDerivationConfig> contextualConfigObject;
 
   private EntityDerivationConfigStoreManager manager;
@@ -42,7 +43,9 @@ class EntityDerivationConfigStoreManagerTest {
 
   @BeforeEach
   void setUp() {
-    manager = new EntityDerivationConfigStoreManager(store, uuidGenerator);
+    manager =
+        new EntityDerivationConfigStoreManager(
+            store, uuidGenerator, defaultEntityDerivationProvider);
     requestContext = RequestContext.forTenantId("test-tenant");
   }
 

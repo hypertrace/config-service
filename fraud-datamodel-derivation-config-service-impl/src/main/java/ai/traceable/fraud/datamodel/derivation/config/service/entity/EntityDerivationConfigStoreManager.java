@@ -16,7 +16,10 @@ import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.UpdateEn
 import io.grpc.Status;
 import io.grpc.StatusException;
 import jakarta.inject.Inject;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -25,12 +28,16 @@ public class EntityDerivationConfigStoreManager {
 
   private final EntityDerivationConfigStore entityDerivationConfigStore;
   private final UuidGenerator uuidGenerator;
+  private final DefaultEntityDerivationProvider defaultEntityDerivationProvider;
 
   @Inject
   public EntityDerivationConfigStoreManager(
-      EntityDerivationConfigStore entityDerivationConfigStore, UuidGenerator uuidGenerator) {
+      EntityDerivationConfigStore entityDerivationConfigStore,
+      UuidGenerator uuidGenerator,
+      DefaultEntityDerivationProvider defaultEntityDerivationProvider) {
     this.entityDerivationConfigStore = entityDerivationConfigStore;
     this.uuidGenerator = uuidGenerator;
+    this.defaultEntityDerivationProvider = defaultEntityDerivationProvider;
   }
 
   public CreateEntityDerivationConfigResponse createEntityDerivationConfig(
@@ -77,13 +84,16 @@ public class EntityDerivationConfigStoreManager {
 
   public GetEntityDerivationConfigSummariesResponse getEntityDerivationConfigSummaries(
       RequestContext requestContext, GetEntityDerivationConfigSummariesRequest request) {
-    List<EntityDerivationConfig> configs =
-        entityDerivationConfigStore.getAllConfigData(
-            requestContext,
-            GetEntityDerivationConfigsRequest.newBuilder().setFilter(request.getFilter()).build());
+    GetEntityDerivationConfigsRequest configsRequest =
+        GetEntityDerivationConfigsRequest.newBuilder().setFilter(request.getFilter()).build();
+    List<EntityDerivationConfig> userConfigs =
+        entityDerivationConfigStore.getAllConfigData(requestContext, configsRequest);
+
+    List<EntityDerivationConfig> allConfigs =
+        mergeDefaultsWithUserConfigs(userConfigs, configsRequest);
 
     List<EntityDerivationConfigSummary> summaries =
-        configs.stream()
+        allConfigs.stream()
             .map(
                 config ->
                     EntityDerivationConfigSummary.newBuilder()
@@ -100,10 +110,11 @@ public class EntityDerivationConfigStoreManager {
 
   public GetEntityDerivationConfigsResponse getEntityDerivationConfigs(
       RequestContext requestContext, GetEntityDerivationConfigsRequest request) {
-    List<EntityDerivationConfig> configs =
+    List<EntityDerivationConfig> userConfigs =
         entityDerivationConfigStore.getAllConfigData(requestContext, request);
+    List<EntityDerivationConfig> allConfigs = mergeDefaultsWithUserConfigs(userConfigs, request);
     return GetEntityDerivationConfigsResponse.newBuilder()
-        .addAllEntityDerivationConfigs(configs)
+        .addAllEntityDerivationConfigs(allConfigs)
         .build();
   }
 
@@ -138,6 +149,10 @@ public class EntityDerivationConfigStoreManager {
 
   private EntityDerivationConfig fetchExistingEntityDerivationConfigOrThrow(
       String id, RequestContext requestContext) throws StatusException {
+    EntityDerivationConfig defaultEntity = defaultEntityDerivationProvider.getDefaultEntity(id);
+    if (defaultEntity != null) {
+      return defaultEntity;
+    }
     return entityDerivationConfigStore
         .getData(requestContext, id)
         .orElseThrow(
@@ -145,5 +160,24 @@ public class EntityDerivationConfigStoreManager {
                 Status.NOT_FOUND
                     .withDescription("No entity derivation config found with id=" + id)
                     .asException());
+  }
+
+  private List<EntityDerivationConfig> mergeDefaultsWithUserConfigs(
+      List<EntityDerivationConfig> userConfigs, GetEntityDerivationConfigsRequest request) {
+    List<EntityDerivationConfig> defaultConfigs =
+        defaultEntityDerivationProvider.getDefaultEntityDerivations();
+
+    // If specific IDs are requested, filter defaults to only include those IDs
+    if (request.getIdsCount() > 0) {
+      Set<String> requestedIds = new HashSet<>(request.getIdsList());
+      defaultConfigs =
+          defaultConfigs.stream()
+              .filter(config -> requestedIds.contains(config.getId()))
+              .collect(Collectors.toUnmodifiableList());
+    }
+
+    List<EntityDerivationConfig> result = new ArrayList<>(defaultConfigs);
+    result.addAll(userConfigs);
+    return result;
   }
 }

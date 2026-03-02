@@ -1,0 +1,47 @@
+# Mandatory User Context Entities
+# These entities capture derived user context that requires transformation or enrichment
+# They are automatically available and cannot be deleted
+
+entities:
+  # ============================================================================
+  # Authentication and Authorization
+  # ============================================================================
+
+  - id: "mandatory_entity_jwt_payload"
+    column_name: "jwt_payload"
+    data:
+      display_name: "JWT Payload"
+      description: "Decoded JWT payload from Authorization Bearer token"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_MANDATORY
+      event_kind:
+        event_kind_id: "system_event_kind_string"
+      span_projection:
+        event_derivation_configs:
+          - scope:
+              environment_scope:
+                environments: []
+            disabled: false
+            span_extraction:
+              location:
+                location_type: EXTRACTION_LOCATION_TYPE_REQUEST_HEADER
+                key: "Authorization"
+                key_match_type: KEY_MATCH_TYPE_EXACT
+            pipeline:
+              transformation_pipeline:
+                - transformation_function_id: "system_defined_function_replace"
+                  parameters:
+                    - name: "pattern"
+                      value: "Bearer "
+                    - name: "replacement"
+                      value: ""
+                - transformation_function_id: "system_defined_function_split"
+                  parameters:
+                    - name: "delimiter"
+                      value: "."
+                - transformation_function_id: "system_defined_function_get"
+                  parameters:
+                    - name: "index"
+                      value: "1"
+                - transformation_function_id: "system_defined_function_base64_decode"

@@ -1,0 +1,563 @@
+# Prepopulated Span Attributes - System-Defined Entities
+# These attributes are automatically available from span data and cannot be modified or deleted
+
+entities:
+  # ============================================================================
+  # Core Span Identifiers
+  # ============================================================================
+  
+  - id: "system_entity_customer_id"
+    column_name: "customer_id"
+    data:
+      display_name: "Customer ID"
+      description: "Unique identifier for the customer/tenant"
+      disabled: false
+      internal: true
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_string"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_type_id"
+    column_name: "type_id"
+    data:
+      display_name: "Type ID"
+      description: "Identifier for the span type"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_string"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_span_id"
+    column_name: "span_id"
+    data:
+      display_name: "Span ID"
+      description: "Unique identifier for the span"
+      disabled: false
+      internal: true
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_string"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_span_kind"
+    column_name: "span_kind"
+    data:
+      display_name: "Span Kind"
+      description: "Type of span (e.g., CLIENT, SERVER, PRODUCER, CONSUMER)"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_string"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_parent_span_id"
+    column_name: "parent_span_id"
+    data:
+      display_name: "Parent Span ID"
+      description: "Identifier of the parent span in the trace"
+      disabled: false
+      internal: true
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_string"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_trace_id"
+    column_name: "trace_id"
+    data:
+      display_name: "Trace ID"
+      description: "Unique identifier for the distributed trace"
+      disabled: false
+      internal: true
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_string"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_span_id_index"
+    column_name: "span_id_index"
+    data:
+      display_name: "Span ID Index"
+      description: "Index position of the span within the trace"
+      disabled: false
+      internal: true
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_integer"
+      prepopulated_span_attribute: {}
+
+  # ============================================================================
+  # Service and API Identifiers
+  # ============================================================================
+
+  - id: "system_entity_service_id"
+    column_name: "service_id"
+    data:
+      display_name: "Service ID"
+      description: "Unique identifier for the service"
+      disabled: false
+      internal: true
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_string"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_service_name"
+    column_name: "service_name"
+    data:
+      display_name: "Service Name"
+      description: "Human-readable name of the service"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_string"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_api_id"
+    column_name: "api_id"
+    data:
+      display_name: "API ID"
+      description: "Unique identifier for the API endpoint"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_string"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_api_name"
+    column_name: "api_name"
+    data:
+      display_name: "API Name"
+      description: "Human-readable name of the API endpoint"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_string"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_environment"
+    column_name: "environment"
+    data:
+      display_name: "Environment"
+      description: "Deployment environment (e.g., production, staging, development)"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_string"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_status_code"
+    column_name: "status_code"
+    data:
+      display_name: "Status Code"
+      description: "HTTP status code of the response"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_integer"
+      prepopulated_span_attribute: {}
+
+  # ============================================================================
+  # User Agent Attributes
+  # ============================================================================
+
+  - id: "system_entity_client_type"
+    column_name: "client_type"
+    data:
+      display_name: "Client Type"
+      description: "Type of client making the request"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_string"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_user_agent_device"
+    column_name: "user_agent_device"
+    data:
+      display_name: "User Agent Device"
+      description: "Device type from user agent (e.g., mobile, desktop, tablet)"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_string"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_user_agent_os"
+    column_name: "user_agent_os"
+    data:
+      display_name: "User Agent OS"
+      description: "Operating system from user agent"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_string"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_user_agent_family"
+    column_name: "user_agent_family"
+    data:
+      display_name: "User Agent Family"
+      description: "Browser family from user agent (e.g., Chrome, Firefox, Safari)"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_string"
+      prepopulated_span_attribute: {}
+
+  # ============================================================================
+  # User Geolocation Attributes
+  # ============================================================================
+
+  - id: "system_entity_user_country"
+    column_name: "user_country"
+    data:
+      display_name: "User Country"
+      description: "Country name of the user based on IP geolocation"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_string"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_user_country_iso_code"
+    column_name: "user_country_iso_code"
+    data:
+      display_name: "User Country ISO Code"
+      description: "ISO country code of the user"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_string"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_user_state"
+    column_name: "user_state"
+    data:
+      display_name: "User State"
+      description: "State/province of the user based on IP geolocation"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_string"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_user_city"
+    column_name: "user_city"
+    data:
+      display_name: "User City"
+      description: "City of the user based on IP geolocation"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_string"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_user_latitude"
+    column_name: "user_latitude"
+    data:
+      display_name: "User Latitude"
+      description: "Latitude coordinate of the user location"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_float"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_user_longitude"
+    column_name: "user_longitude"
+    data:
+      display_name: "User Longitude"
+      description: "Longitude coordinate of the user location"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_float"
+      prepopulated_span_attribute: {}
+
+  # ============================================================================
+  # IP Address and Related Attributes
+  # ============================================================================
+
+  - id: "system_entity_ip_address"
+    column_name: "ip_address"
+    data:
+      display_name: "IP Address"
+      description: "Client IP address"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_ip_address"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_session_id"
+    column_name: "session_id"
+    data:
+      display_name: "Session ID"
+      description: "User session identifier"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_string"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_ip_is_proxy"
+    column_name: "ip_is_proxy"
+    data:
+      display_name: "IP Is Proxy"
+      description: "Indicates if the IP address is a proxy"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_boolean"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_ip_is_vpn"
+    column_name: "ip_is_vpn"
+    data:
+      display_name: "IP Is VPN"
+      description: "Indicates if the IP address is from a VPN"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_boolean"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_ip_is_tor"
+    column_name: "ip_is_tor"
+    data:
+      display_name: "IP Is Tor"
+      description: "Indicates if the IP address is a Tor exit node"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_boolean"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_ip_is_bot"
+    column_name: "ip_is_bot"
+    data:
+      display_name: "IP Is Bot"
+      description: "Indicates if the IP address is associated with bot traffic"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_boolean"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_ip_reputation_score"
+    column_name: "ip_reputation_score"
+    data:
+      display_name: "IP Reputation Score"
+      description: "Numerical reputation score for the IP address"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_integer"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_ip_reputation_level"
+    column_name: "ip_reputation_level"
+    data:
+      display_name: "IP Reputation Level"
+      description: "Categorical reputation level for the IP address (e.g., low, medium, high)"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_string"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_ip_abuse_velocity"
+    column_name: "ip_abuse_velocity"
+    data:
+      display_name: "IP Abuse Velocity"
+      description: "Rate of abuse activity from the IP address"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_string"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_ip_connection_type"
+    column_name: "ip_connection_type"
+    data:
+      display_name: "IP Connection Type"
+      description: "Type of internet connection (e.g., residential, corporate, mobile)"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_string"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_ip_asn"
+    column_name: "ip_asn"
+    data:
+      display_name: "IP ASN"
+      description: "Autonomous System Number for the IP address"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_string"
+      prepopulated_span_attribute: {}
+
+  # ============================================================================
+  # Request Attributes
+  # ============================================================================
+
+  - id: "system_entity_request_method"
+    column_name: "request_method"
+    data:
+      display_name: "Request Method"
+      description: "HTTP method of the request (e.g., GET, POST, PUT, DELETE)"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_string"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_request_body_type"
+    column_name: "request_body_type"
+    data:
+      display_name: "Request Body Type"
+      description: "Content type of the request body (e.g., application/json, text/xml)"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_string"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_host_header"
+    column_name: "host_header"
+    data:
+      display_name: "Host Header"
+      description: "Host header value from the HTTP request"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_string"
+      prepopulated_span_attribute: {}
+
+  # ============================================================================
+  # User Identity Attributes
+  # ============================================================================
+
+  - id: "system_entity_user_identifier"
+    column_name: "user_identifier"
+    data:
+      display_name: "User Identifier"
+      description: "Unique identifier for the authenticated user"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_string"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_user_role"
+    column_name: "user_role"
+    data:
+      display_name: "User Role"
+      description: "Primary role of the authenticated user"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_string"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_user_scope"
+    column_name: "user_scope"
+    data:
+      display_name: "User Scope"
+      description: "Authorization scope for the user"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_string"
+      prepopulated_span_attribute: {}
+
+  # ============================================================================
+  # Event and Display Attributes
+  # ============================================================================
+
+  - id: "system_entity_event_name"
+    column_name: "event_name"
+    data:
+      display_name: "Event Name"
+      description: "Name of the event or action"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_string"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_display_entity_name"
+    column_name: "display_entity_name"
+    data:
+      display_name: "Display Entity Name"
+      description: "Human-readable name for the entity"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_string"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_display_span_name"
+    column_name: "display_span_name"
+    data:
+      display_name: "Display Span Name"
+      description: "Human-readable name for the span"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_string"
+      prepopulated_span_attribute: {}
+
+  - id: "system_entity_start_time_millis"
+    column_name: "start_time_millis"
+    data:
+      display_name: "Start Time"
+      description: "Timestamp when the span started (in milliseconds since epoch)"
+      disabled: false
+      internal: false
+      category: ENTITY_CATEGORY_SYSTEM
+      event_kind:
+        event_kind_id: "system_event_kind_timestamp"
+      prepopulated_span_attribute: {}

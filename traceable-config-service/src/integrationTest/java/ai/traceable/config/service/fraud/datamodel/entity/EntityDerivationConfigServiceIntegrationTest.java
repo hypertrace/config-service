@@ -14,6 +14,7 @@ import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDe
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfigData;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfigFilter;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfigServiceGrpc;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfigSummary;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EventDerivationConfigDetails;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.GetEntityDerivationConfigSummariesRequest;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.GetEntityDerivationConfigSummariesResponse;
@@ -87,11 +88,15 @@ public class EntityDerivationConfigServiceIntegrationTest
         RequestContext.forTenantId(TENANT_ID)
             .call(() -> serviceStub.getEntityDerivationConfigSummaries(summariesRequest));
 
-    assertEquals(1, summariesResponse.getSummariesCount());
-    assertEquals(config.getId(), summariesResponse.getSummaries(0).getId());
-    assertEquals("Updated Email", summariesResponse.getSummaries(0).getDisplayName());
-    assertEquals(
-        "system_event_kind_string", summariesResponse.getSummaries(0).getEventKind().getKindId());
+    // Should include user-created entity plus all default entities
+    assertTrue(summariesResponse.getSummariesCount() > 0);
+    EntityDerivationConfigSummary updatedEmailSummary =
+        summariesResponse.getSummariesList().stream()
+            .filter(s -> s.getId().equals(config.getId()))
+            .findFirst()
+            .orElseThrow();
+    assertEquals("Updated Email", updatedEmailSummary.getDisplayName());
+    assertEquals("system_event_kind_string", updatedEmailSummary.getEventKind().getKindId());
 
     // Get Configs
     GetEntityDerivationConfigsRequest getRequest =
@@ -103,8 +108,11 @@ public class EntityDerivationConfigServiceIntegrationTest
         RequestContext.forTenantId(TENANT_ID)
             .call(() -> serviceStub.getEntityDerivationConfigs(getRequest));
 
-    assertEquals(1, getResponse.getEntityDerivationConfigsCount());
-    assertEquals(config.getId(), getResponse.getEntityDerivationConfigs(0).getId());
+    // Should include user-created entity plus all default entities
+    assertTrue(getResponse.getEntityDerivationConfigsCount() > 0);
+    assertTrue(
+        getResponse.getEntityDerivationConfigsList().stream()
+            .anyMatch(e -> e.getId().equals(config.getId())));
 
     // Get by ID
     GetEntityDerivationConfigsRequest getByIdRequest =
@@ -117,7 +125,9 @@ public class EntityDerivationConfigServiceIntegrationTest
         RequestContext.forTenantId(TENANT_ID)
             .call(() -> serviceStub.getEntityDerivationConfigs(getByIdRequest));
 
+    // When filtering by specific ID, should return exactly that entity
     assertEquals(1, getByIdResponse.getEntityDerivationConfigsCount());
+    assertEquals(config.getId(), getByIdResponse.getEntityDerivationConfigs(0).getId());
 
     // Delete
     DeleteEntityDerivationConfigRequest deleteRequest =
@@ -128,12 +138,16 @@ public class EntityDerivationConfigServiceIntegrationTest
     RequestContext.forTenantId(TENANT_ID)
         .call(() -> serviceStub.deleteEntityDerivationConfig(deleteRequest));
 
-    // Verify deleted
+    // Verify deleted - should only have default entities, not the user-created one
     GetEntityDerivationConfigsResponse afterDeleteResponse =
         RequestContext.forTenantId(TENANT_ID)
             .call(() -> serviceStub.getEntityDerivationConfigs(getRequest));
 
-    assertEquals(0, afterDeleteResponse.getEntityDerivationConfigsCount());
+    assertTrue(
+        afterDeleteResponse.getEntityDerivationConfigsCount() > 0); // Still has default entities
+    assertFalse(
+        afterDeleteResponse.getEntityDerivationConfigsList().stream()
+            .anyMatch(e -> e.getId().equals(config.getId()))); // But not the deleted one
   }
 
   @Test
@@ -185,9 +199,11 @@ public class EntityDerivationConfigServiceIntegrationTest
         RequestContext.forTenantId(TENANT_ID)
             .call(() -> serviceStub.getEntityDerivationConfigs(request));
 
-    assertEquals(1, response.getEntityDerivationConfigsCount());
-    assertEquals(
-        "Enabled Entity", response.getEntityDerivationConfigs(0).getData().getDisplayName());
+    // Should include user-created enabled entity plus all default entities (which are not disabled)
+    assertTrue(response.getEntityDerivationConfigsCount() > 0);
+    assertTrue(
+        response.getEntityDerivationConfigsList().stream()
+            .anyMatch(e -> e.getData().getDisplayName().equals("Enabled Entity")));
   }
 
   private EntityDerivationConfigData createValidConfigData(String displayName) {
