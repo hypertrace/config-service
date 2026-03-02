@@ -16,6 +16,7 @@ import ai.traceable.api.spec.config.service.v1.GetApiSpecsRequest;
 import ai.traceable.api.spec.config.service.v1.StringList;
 import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.span.processing.config.service.store.ApiNamingRulesConfigStore;
+import ai.traceable.span.processing.config.service.store.ApiNamingRulesResult;
 import ai.traceable.span.processing.config.service.utils.ApiNamingRuleIdGenerator;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRule;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRuleConfig;
@@ -29,6 +30,7 @@ import ai.traceable.span.processing.config.service.v1.CreateApiNamingRulesReques
 import ai.traceable.span.processing.config.service.v1.DeleteApiNamingRuleRequest;
 import ai.traceable.span.processing.config.service.v1.DeleteApiNamingRulesRequest;
 import ai.traceable.span.processing.config.service.v1.GenAiBasedConfig;
+import ai.traceable.span.processing.config.service.v1.GetApiNamingRulesRequest;
 import ai.traceable.span.processing.config.service.v1.UpdateApiNamingRule;
 import ai.traceable.span.processing.config.service.v1.UpdateApiNamingRuleRequest;
 import ai.traceable.span.processing.config.service.v1.UpdateApiNamingRulesRequest;
@@ -73,6 +75,17 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
   public List<ApiNamingRuleDetails> getApiNamingRuleDetails(
       RequestContext requestContext, ApiNamingRulesFilter apiNamingRulesFilter) {
     return apiNamingRulesConfigStore.getRuleDetails(requestContext, apiNamingRulesFilter);
+  }
+
+  @Override
+  public ApiNamingRulesResult getApiNamingRuleDetailsWithPaginationAndOptionalTotal(
+      RequestContext requestContext, GetApiNamingRulesRequest request) {
+    return apiNamingRulesConfigStore.getRuleDetailsWithPaginationAndOptionalTotal(
+        requestContext,
+        request.getApiNamingRulesFilter(),
+        request.getSortByList(),
+        request.getPagination(),
+        request.getIncludeTotal());
   }
 
   @Override

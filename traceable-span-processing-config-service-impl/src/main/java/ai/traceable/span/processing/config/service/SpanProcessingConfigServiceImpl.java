@@ -367,12 +367,16 @@ public class SpanProcessingConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
 
-      responseObserver.onNext(
-          GetApiNamingRulesResponse.newBuilder()
-              .addAllRuleDetails(
-                  apiNamingRulesManager.getApiNamingRuleDetails(
-                      requestContext, request.getApiNamingRulesFilter()))
-              .build());
+      ai.traceable.span.processing.config.service.store.ApiNamingRulesResult apiNamingRulesResult =
+          apiNamingRulesManager.getApiNamingRuleDetailsWithPaginationAndOptionalTotal(
+              requestContext, request);
+
+      GetApiNamingRulesResponse.Builder responseBuilder = GetApiNamingRulesResponse.newBuilder();
+      responseBuilder.addAllRuleDetails(apiNamingRulesResult.getRuleDetails());
+      if (request.getIncludeTotal()) {
+        responseBuilder.setTotalCount(apiNamingRulesResult.getTotalCount());
+      }
+      responseObserver.onNext(responseBuilder.build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Unable to get api naming rules for request: {}", request, e);

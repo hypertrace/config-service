@@ -213,10 +213,14 @@ message GetAllApiNamingRulesResponse {
 
 message GetApiNamingRulesRequest {
   ApiNamingRulesFilter api_naming_rules_filter = 1;
+  repeated ApiNamingRuleSortBy sort_by = 2;
+  ApiNamingRulePagination pagination = 3;
+  bool include_total = 4;
 }
 
 message GetApiNamingRulesResponse {
   repeated ApiNamingRuleDetails rule_details = 1;
+  optional int64 total_count = 2;
 }
 
 message UpdateApiNamingRuleRequest {
@@ -347,6 +351,34 @@ message JobMetadata {
 message ApiNamingRuleMetadata {
   google.protobuf.Timestamp creation_timestamp = 1;
   google.protobuf.Timestamp last_updated_timestamp = 2;
+}
+
+message ApiNamingRuleSortBy {
+  ApiNamingRuleSelection selection = 1;
+  ApiNamingRuleSortOrder sort_order = 2;
+}
+
+message ApiNamingRuleSelection {
+  oneof field {
+    ApiNamingRuleSortableField sortable_field = 1;
+  }
+}
+
+enum ApiNamingRuleSortableField {
+  API_NAMING_RULE_SORTABLE_FIELD_UNSPECIFIED = 0;
+  API_NAMING_RULE_SORTABLE_FIELD_CREATION_TIMESTAMP = 1;
+  API_NAMING_RULE_SORTABLE_FIELD_ID = 2;
+}
+
+message ApiNamingRulePagination {
+  int32 limit = 1;
+  int32 offset = 2;
+}
+
+enum ApiNamingRuleSortOrder {
+  API_NAMING_RULE_SORT_ORDER_UNSPECIFIED = 0;
+  API_NAMING_RULE_SORT_ORDER_ASC = 1;
+  API_NAMING_RULE_SORT_ORDER_DESC = 2;
 }
 
 message GetServiceNamingRulesRequest {
