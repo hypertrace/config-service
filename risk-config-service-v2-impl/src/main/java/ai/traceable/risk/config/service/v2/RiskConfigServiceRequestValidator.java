@@ -17,12 +17,21 @@ public class RiskConfigServiceRequestValidator {
           .asRuntimeException();
     }
     validateEnvironmentScopeOrThrow(riskConfigScope);
+    validateEntityTypeScopeOrThrow(riskConfigScope);
   }
 
   private void validateEnvironmentScopeOrThrow(RiskConfigScope riskConfigScope) {
     if (riskConfigScope.hasEnvironmentScope()) {
       validateNonDefaultPresenceOrThrow(
           riskConfigScope.getEnvironmentScope(), EnvironmentScope.ENVIRONMENT_ID_FIELD_NUMBER);
+    }
+  }
+
+  private void validateEntityTypeScopeOrThrow(RiskConfigScope riskConfigScope) {
+    if (EntityType.UNRECOGNIZED.equals(riskConfigScope.getEntityType())) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Unrecognized value for entity_type in risk_config_scope")
+          .asRuntimeException();
     }
   }
 

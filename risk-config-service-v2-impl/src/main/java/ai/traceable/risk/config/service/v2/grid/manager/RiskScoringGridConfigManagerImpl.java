@@ -99,14 +99,19 @@ public class RiskScoringGridConfigManagerImpl implements RiskScoringGridConfigMa
 
   private RiskScoringGridConfigValues buildMergedGlobalAndDefaultConfigValues(
       RequestContext requestContext, RiskConfigScope riskConfigScope) {
-    RiskScoringGridConfigValues fetchedGlobalConfig =
+    RiskScoringGridConfigValues fetchedGlobalConfigForEntityType =
         configStore
             .getData(
                 requestContext,
-                configIdGenerator.generateId(ID_NAME, RiskConfigScope.getDefaultInstance()))
+                configIdGenerator.generateId(
+                    ID_NAME,
+                    RiskConfigScope.newBuilder()
+                        .setEntityType(riskConfigScope.getEntityType())
+                        .build()))
             .orElse(RiskScoringGridConfigValues.getDefaultInstance());
     RiskScoringGridConfigValues mergedGlobalAndDefaultConfig =
-        riskConfigBuilder.mergeConfigs(fetchedGlobalConfig, defaultRiskScoringGridConfigValues);
+        riskConfigBuilder.mergeConfigs(
+            fetchedGlobalConfigForEntityType, defaultRiskScoringGridConfigValues);
     return RiskScoringGridConfigValues.newBuilder()
         .setRiskConfigScope(riskConfigScope)
         .addAllRiskScoringGridCells(mergedGlobalAndDefaultConfig.getRiskScoringGridCellsList())

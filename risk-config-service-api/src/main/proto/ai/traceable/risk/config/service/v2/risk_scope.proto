@@ -8,8 +8,15 @@ message RiskConfigScope {
   oneof scope { // default is customer scope (all environments)
     EnvironmentScope environment_scope = 1;
   }
+  EntityType entity_type = 2;
 }
 
 message EnvironmentScope {
   string environment_id = 1;
+}
+
+enum EntityType {
+  ENTITY_TYPE_UNSPECIFIED = 0;
+  ENTITY_TYPE_API = 1;
+  ENTITY_TYPE_MCP_TOOL = 2;
 }

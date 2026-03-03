@@ -3,7 +3,9 @@ package ai.traceable.risk.config.service.v2.factors;
 import static ai.traceable.risk.config.service.v2.StringOperator.STRING_OPERATOR_EQUALS;
 import static ai.traceable.risk.config.service.v2.factors.MockFactorConfigsData.buildRiskFactorWithoutScope;
 import static ai.traceable.risk.config.service.v2.factors.MockFactorConfigsData.getDefaultRiskContributorConfigs;
+import static ai.traceable.risk.config.service.v2.scope.MockScopeData.getApiEntityTypeAndEnvironmentScope;
 import static ai.traceable.risk.config.service.v2.scope.MockScopeData.getEnvironmentBasedScope;
+import static ai.traceable.risk.config.service.v2.scope.MockScopeData.getMcpToolEntityTypeScope;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -38,6 +40,7 @@ import ai.traceable.risk.config.service.v2.factors.manager.RiskFactorConfigsMana
 import io.grpc.StatusRuntimeException;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -46,7 +49,7 @@ import org.hypertrace.label.config.service.v1.LabelData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class RiskFactorConfigsManagerTest {
+class RiskFactorConfigsManagerTest {
   private RiskContributorConfigs defaultRiskContributorConfigs;
   private RiskFactorConfigsManager configsManager;
 
@@ -58,7 +61,7 @@ public class RiskFactorConfigsManagerTest {
   private IdentifiedObjectStore<RiskFactorConfig> factorConfigStore;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     defaultRiskContributorConfigs = getDefaultRiskContributorConfigs();
     RiskConfigIdGenerator configIdGenerator = new RiskConfigIdGenerator(new UuidGenerator());
     LabelsConfigProvider labelsConfigProvider = mock(LabelsConfigProvider.class);
@@ -100,7 +103,7 @@ public class RiskFactorConfigsManagerTest {
   }
 
   @Test
-  public void testGetUpdateDeleteRiskContributorConfigs() {
+  void testGetUpdateDeleteRiskContributorConfigs() {
     RequestContext requestContext = RequestContext.forTenantId("tenant");
 
     RiskContributorConfigs fetchedRiskContributorConfigs =
@@ -477,5 +480,144 @@ public class RiskFactorConfigsManagerTest {
                 requestContext,
                 List.of(updateDetailsForLabelWithNewElementNotInLabelStore),
                 environmentRiskConfigScope));
+  }
+
+  @Test
+  void testGetFactorConfigsWithEntityTypeScope() {
+    // Given
+    RequestContext requestContext = RequestContext.forTenantId("tenant");
+    RiskConfigScope entityTypeScope = getMcpToolEntityTypeScope();
+    // When
+    RiskContributorConfigs fetchedConfigs =
+        configsManager.getRiskContributorConfigs(requestContext, entityTypeScope);
+    // Then
+    assertEquals(
+        defaultRiskContributorConfigs.getRiskFactorsCount(), fetchedConfigs.getRiskFactorsCount());
+  }
+
+  @Test
+  void testUpdateFactorConfigsWithEntityTypeScope() {
+    // Given
+    RequestContext requestContext = RequestContext.forTenantId("tenant");
+    RiskConfigScope entityTypeScope = getMcpToolEntityTypeScope();
+    RiskFactorConfigUpdateDetails updateDetails =
+        RiskFactorConfigUpdateDetails.newBuilder()
+            .setRiskFactorCategory(
+                RiskFactorCategory.RISK_FACTOR_CATEGORY_EASE_OF_RESOURCE_DISCOVERY)
+            .setDisabled(true)
+            .build();
+    // When
+    RiskContributorConfigs updatedConfigs =
+        configsManager.updateRiskContributorConfigs(
+            requestContext, List.of(updateDetails), entityTypeScope);
+    // Then
+    var matchingFactors =
+        updatedConfigs.getRiskFactorsList().stream()
+            .filter(
+                rf ->
+                    rf.getRiskFactorConfig()
+                        .getRiskFactorCategory()
+                        .equals(RiskFactorCategory.RISK_FACTOR_CATEGORY_EASE_OF_RESOURCE_DISCOVERY))
+            .collect(Collectors.toList());
+    assertEquals(1, matchingFactors.size());
+    assertTrue(matchingFactors.get(0).getRiskFactorConfig().getDisabled());
+  }
+
+  @Test
+  void testResetFactorConfigsWithEntityTypeScope() {
+    // Given
+    RequestContext requestContext = RequestContext.forTenantId("tenant");
+    RiskConfigScope entityTypeScope = getMcpToolEntityTypeScope();
+    RiskFactorConfigUpdateDetails updateDetails =
+        RiskFactorConfigUpdateDetails.newBuilder()
+            .setRiskFactorCategory(
+                RiskFactorCategory.RISK_FACTOR_CATEGORY_EASE_OF_RESOURCE_DISCOVERY)
+            .setDisabled(true)
+            .build();
+    configsManager.updateRiskContributorConfigs(
+        requestContext, List.of(updateDetails), entityTypeScope);
+    // When
+    configsManager.resetRiskContributorConfigs(
+        requestContext,
+        List.of(RiskFactorCategory.RISK_FACTOR_CATEGORY_EASE_OF_RESOURCE_DISCOVERY),
+        entityTypeScope);
+    // Then
+    var matchingFactors =
+        configsManager
+            .getRiskContributorConfigs(requestContext, entityTypeScope)
+            .getRiskFactorsList()
+            .stream()
+            .filter(
+                rf ->
+                    rf.getRiskFactorConfig()
+                        .getRiskFactorCategory()
+                        .equals(RiskFactorCategory.RISK_FACTOR_CATEGORY_EASE_OF_RESOURCE_DISCOVERY))
+            .collect(Collectors.toList());
+    assertEquals(1, matchingFactors.size());
+    assertFalse(matchingFactors.get(0).getRiskFactorConfig().getDisabled());
+  }
+
+  @Test
+  void testApiEntityTypeScopeReadsSameDataAsLegacyScope() {
+    // Given
+    RequestContext requestContext = RequestContext.forTenantId("tenant");
+    RiskConfigScope legacyScope = getEnvironmentBasedScope();
+    RiskConfigScope apiScope = getApiEntityTypeAndEnvironmentScope();
+    RiskFactorConfigUpdateDetails updateDetails =
+        RiskFactorConfigUpdateDetails.newBuilder()
+            .setRiskFactorCategory(
+                RiskFactorCategory.RISK_FACTOR_CATEGORY_EASE_OF_RESOURCE_DISCOVERY)
+            .setDisabled(true)
+            .build();
+    configsManager.updateRiskContributorConfigs(
+        requestContext, List.of(updateDetails), legacyScope);
+    // When
+    RiskContributorConfigs configsViaApiScope =
+        configsManager.getRiskContributorConfigs(requestContext, apiScope);
+    // Then
+    var matchingFactors =
+        configsViaApiScope.getRiskFactorsList().stream()
+            .filter(
+                rf ->
+                    rf.getRiskFactorConfig()
+                        .getRiskFactorCategory()
+                        .equals(RiskFactorCategory.RISK_FACTOR_CATEGORY_EASE_OF_RESOURCE_DISCOVERY))
+            .collect(Collectors.toList());
+    assertEquals(1, matchingFactors.size());
+    assertTrue(matchingFactors.get(0).getRiskFactorConfig().getDisabled());
+  }
+
+  @Test
+  void testApiEntityTypeScopeDeletesSameDataAsLegacyScope() {
+    // Given
+    RequestContext requestContext = RequestContext.forTenantId("tenant");
+    RiskConfigScope legacyScope = getEnvironmentBasedScope();
+    RiskConfigScope apiScope = getApiEntityTypeAndEnvironmentScope();
+    RiskFactorConfigUpdateDetails updateDetails =
+        RiskFactorConfigUpdateDetails.newBuilder()
+            .setRiskFactorCategory(
+                RiskFactorCategory.RISK_FACTOR_CATEGORY_EASE_OF_RESOURCE_DISCOVERY)
+            .setDisabled(true)
+            .build();
+    configsManager.updateRiskContributorConfigs(
+        requestContext, List.of(updateDetails), legacyScope);
+    // When
+    configsManager.resetRiskContributorConfigs(
+        requestContext,
+        List.of(RiskFactorCategory.RISK_FACTOR_CATEGORY_EASE_OF_RESOURCE_DISCOVERY),
+        apiScope);
+    RiskContributorConfigs afterReset =
+        configsManager.getRiskContributorConfigs(requestContext, apiScope);
+    // Then
+    var matchingFactors =
+        afterReset.getRiskFactorsList().stream()
+            .filter(
+                rf ->
+                    rf.getRiskFactorConfig()
+                        .getRiskFactorCategory()
+                        .equals(RiskFactorCategory.RISK_FACTOR_CATEGORY_EASE_OF_RESOURCE_DISCOVERY))
+            .collect(Collectors.toList());
+    assertEquals(1, matchingFactors.size());
+    assertFalse(matchingFactors.get(0).getRiskFactorConfig().getDisabled());
   }
 }

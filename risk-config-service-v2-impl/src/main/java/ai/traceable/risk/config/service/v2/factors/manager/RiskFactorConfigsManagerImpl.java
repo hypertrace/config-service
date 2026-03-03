@@ -189,14 +189,14 @@ public class RiskFactorConfigsManagerImpl implements RiskFactorConfigsManager {
 
   public Collection<RiskFactor> buildMergedGlobalAndDefaultRiskFactors(
       RequestContext requestContext, RiskConfigScope riskConfigScope) {
-    Collection<RiskFactor> globalRiskFactors =
+    Collection<RiskFactor> globalRiskFactorsForEntityType =
         getRiskFactors(
             requestContext,
             defaultRiskContributorConfigs.getRiskFactorsList(),
-            RiskConfigScope.getDefaultInstance());
+            RiskConfigScope.newBuilder().setEntityType(riskConfigScope.getEntityType()).build());
     Collection<RiskFactor> mergedGlobalAndDefaultFactors =
         riskFactorListBuilder.mergeDefaultFactors(
-            globalRiskFactors, defaultRiskContributorConfigs.getRiskFactorsList());
+            globalRiskFactorsForEntityType, defaultRiskContributorConfigs.getRiskFactorsList());
     return mergedGlobalAndDefaultFactors.stream()
         .map(
             riskFactor ->

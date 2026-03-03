@@ -1,8 +1,10 @@
 package ai.traceable.risk.config.service.v2.grid;
 
 import static ai.traceable.risk.config.service.v2.grid.MockGridConfigsData.getDefaultGridConfig;
+import static ai.traceable.risk.config.service.v2.scope.MockScopeData.getApiEntityTypeAndEnvironmentScope;
 import static ai.traceable.risk.config.service.v2.scope.MockScopeData.getEnvironmentBasedScope;
 import static ai.traceable.risk.config.service.v2.scope.MockScopeData.getGlobalRiskConfigScope;
+import static ai.traceable.risk.config.service.v2.scope.MockScopeData.getMcpToolEntityTypeScope;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -28,7 +30,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class RiskScoringGridConfigManagerTest {
+class RiskScoringGridConfigManagerTest {
   private RiskScoringGridConfigValues defaultRiskScoringGridConfigValues;
   private RiskScoringGridConfigManager riskScoringGridConfigManager;
   private RiskConfigScope environmentRiskConfigScope;
@@ -40,7 +42,7 @@ public class RiskScoringGridConfigManagerTest {
       new RiskScoringGridConfigComparatorImpl();
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     defaultRiskScoringGridConfigValues = getDefaultGridConfig();
     environmentRiskConfigScope = getEnvironmentBasedScope();
     globalRiskConfigScope = getGlobalRiskConfigScope();
@@ -59,7 +61,7 @@ public class RiskScoringGridConfigManagerTest {
   }
 
   @Test
-  public void testGetUpdateDeleteRiskScoringGridConfig() {
+  void testGetUpdateDeleteRiskScoringGridConfig() {
     RequestContext requestContext = RequestContext.forTenantId("tenant");
 
     RiskScoringGridConfig defaultRiskScoringGridConfig =
@@ -140,6 +142,113 @@ public class RiskScoringGridConfigManagerTest {
         riskScoringGridConfigManager.updateRiskScoringGridConfig(
             requestContext, environmentRiskConfigScope, Collections.emptyList());
     assertEquals(previousUpdateConfig, currentUpdatedConfig);
+  }
+
+  @Test
+  void testGetGridConfigWithEntityTypeScope() {
+    // Given
+    RequestContext requestContext = RequestContext.forTenantId("tenant");
+    RiskConfigScope mcpToolScope = getMcpToolEntityTypeScope();
+    // When
+    RiskScoringGridConfig config =
+        riskScoringGridConfigManager.getRiskScoringGridConfig(requestContext, mcpToolScope);
+    // Then
+    assertTrue(config.getIsDefault());
+    assertEquals(
+        buildScopedConfigValues(defaultRiskScoringGridConfigValues, mcpToolScope),
+        config.getRiskScoringGridConfigValues());
+  }
+
+  @Test
+  void testUpdateGridConfigWithEntityTypeScope() {
+    // Given
+    RequestContext requestContext = RequestContext.forTenantId("tenant");
+    RiskConfigScope mcpToolScope = getMcpToolEntityTypeScope();
+    List<RiskScoringGridCell> updateGridCells =
+        Collections.singletonList(
+            RiskScoringGridCell.newBuilder()
+                .setLikelihoodScoreCategory(RiskScoreCategory.RISK_SCORE_CATEGORY_LOW)
+                .setImpactScoreCategory(RiskScoreCategory.RISK_SCORE_CATEGORY_LOW)
+                .setScore(3)
+                .build());
+    // When
+    RiskScoringGridConfig updatedConfig =
+        riskScoringGridConfigManager.updateRiskScoringGridConfig(
+            requestContext, mcpToolScope, updateGridCells);
+    // Then
+    assertFalse(updatedConfig.getIsDefault());
+    assertEquals(4, updatedConfig.getRiskScoringGridConfigValues().getRiskScoringGridCellsCount());
+  }
+
+  @Test
+  void testResetGridConfigWithEntityTypeScope() {
+    // Given
+    RequestContext requestContext = RequestContext.forTenantId("tenant");
+    RiskConfigScope mcpToolScope = getMcpToolEntityTypeScope();
+    List<RiskScoringGridCell> updateGridCells =
+        Collections.singletonList(
+            RiskScoringGridCell.newBuilder()
+                .setLikelihoodScoreCategory(RiskScoreCategory.RISK_SCORE_CATEGORY_LOW)
+                .setImpactScoreCategory(RiskScoreCategory.RISK_SCORE_CATEGORY_LOW)
+                .setScore(3)
+                .build());
+    riskScoringGridConfigManager.updateRiskScoringGridConfig(
+        requestContext, mcpToolScope, updateGridCells);
+    // When
+    RiskScoringGridConfig resetConfig =
+        riskScoringGridConfigManager.resetRiskScoringGridConfig(requestContext, mcpToolScope);
+    // Then
+    assertTrue(resetConfig.getIsDefault());
+    assertEquals(
+        buildScopedConfigValues(defaultRiskScoringGridConfigValues, mcpToolScope),
+        resetConfig.getRiskScoringGridConfigValues());
+  }
+
+  @Test
+  void testApiEntityTypeScopeReadsSameDataAsLegacyScope() {
+    // Given
+    RequestContext requestContext = RequestContext.forTenantId("tenant");
+    RiskConfigScope legacyScope = getEnvironmentBasedScope();
+    RiskConfigScope apiScope = getApiEntityTypeAndEnvironmentScope();
+    List<RiskScoringGridCell> updateGridCells =
+        Collections.singletonList(
+            RiskScoringGridCell.newBuilder()
+                .setLikelihoodScoreCategory(RiskScoreCategory.RISK_SCORE_CATEGORY_LOW)
+                .setImpactScoreCategory(RiskScoreCategory.RISK_SCORE_CATEGORY_LOW)
+                .setScore(3)
+                .build());
+    riskScoringGridConfigManager.updateRiskScoringGridConfig(
+        requestContext, legacyScope, updateGridCells);
+    // When
+    RiskScoringGridConfig configViaApiScope =
+        riskScoringGridConfigManager.getRiskScoringGridConfig(requestContext, apiScope);
+    // Then
+    assertFalse(configViaApiScope.getIsDefault());
+    assertEquals(
+        4, configViaApiScope.getRiskScoringGridConfigValues().getRiskScoringGridCellsCount());
+  }
+
+  @Test
+  void testApiEntityTypeScopeDeletesSameDataAsLegacyScope() {
+    // Given
+    RequestContext requestContext = RequestContext.forTenantId("tenant");
+    RiskConfigScope legacyScope = getEnvironmentBasedScope();
+    RiskConfigScope apiScope = getApiEntityTypeAndEnvironmentScope();
+    List<RiskScoringGridCell> updateGridCells =
+        Collections.singletonList(
+            RiskScoringGridCell.newBuilder()
+                .setLikelihoodScoreCategory(RiskScoreCategory.RISK_SCORE_CATEGORY_LOW)
+                .setImpactScoreCategory(RiskScoreCategory.RISK_SCORE_CATEGORY_LOW)
+                .setScore(3)
+                .build());
+    riskScoringGridConfigManager.updateRiskScoringGridConfig(
+        requestContext, legacyScope, updateGridCells);
+    // When
+    riskScoringGridConfigManager.resetRiskScoringGridConfig(requestContext, apiScope);
+    RiskScoringGridConfig afterReset =
+        riskScoringGridConfigManager.getRiskScoringGridConfig(requestContext, apiScope);
+    // Then
+    assertTrue(afterReset.getIsDefault());
   }
 
   private RiskScoringGridConfigValues buildScopedConfigValues(
