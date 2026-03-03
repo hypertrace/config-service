@@ -16,7 +16,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_MANDATORY
       event_kind:
-        event_kind_id: "system_event_kind_string"
+        kind_id: "system_event_kind_string"
       span_projection:
         event_derivation_configs:
           - scope:

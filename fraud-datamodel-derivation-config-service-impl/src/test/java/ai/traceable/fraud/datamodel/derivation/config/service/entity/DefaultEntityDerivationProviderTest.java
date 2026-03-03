@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityCategory;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfig;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -143,5 +144,21 @@ class DefaultEntityDerivationProviderTest {
     assertEquals(EntityCategory.ENTITY_CATEGORY_SYSTEM, apiId.getData().getCategory());
     assertEquals("API ID", apiId.getData().getDisplayName());
     assertEquals("api_id", apiId.getColumnName());
+  }
+
+  @Test
+  void allEntitiesHaveValidEventKind() {
+    List<EntityDerivationConfig> entities = provider.getDefaultEntityDerivations();
+    List<String> entitiesWithoutKind =
+        entities.stream()
+            .filter(
+                e ->
+                    !e.getData().hasEventKind() || e.getData().getEventKind().getKindId().isEmpty())
+            .map(e -> e.getId() + " (" + e.getData().getDisplayName() + ")")
+            .collect(Collectors.toUnmodifiableList());
+
+    assertTrue(
+        entitiesWithoutKind.isEmpty(),
+        "Entities missing event kind: " + String.join(", ", entitiesWithoutKind));
   }
 }

@@ -15,7 +15,7 @@ entities:
       internal: true
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_string"
+        kind_id: "system_event_kind_string"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_type_id"
@@ -24,10 +24,10 @@ entities:
       display_name: "Type ID"
       description: "Identifier for the span type"
       disabled: false
-      internal: false
+      internal: true
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_string"
+        kind_id: "system_event_kind_string"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_span_id"
@@ -39,19 +39,19 @@ entities:
       internal: true
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_string"
+        kind_id: "system_event_kind_string"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_span_kind"
     column_name: "span_kind"
     data:
       display_name: "Span Kind"
-      description: "Type of span (e.g., CLIENT, SERVER, PRODUCER, CONSUMER)"
+      description: "Type of span (e.g., CLIENT, SERVER)"
       disabled: false
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_string"
+        kind_id: "system_event_kind_string"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_parent_span_id"
@@ -63,7 +63,7 @@ entities:
       internal: true
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_string"
+        kind_id: "system_event_kind_string"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_trace_id"
@@ -75,7 +75,7 @@ entities:
       internal: true
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_string"
+        kind_id: "system_event_kind_string"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_span_id_index"
@@ -87,7 +87,7 @@ entities:
       internal: true
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_integer"
+        kind_id: "system_event_kind_integer"
       prepopulated_span_attribute: {}
 
   # ============================================================================
@@ -103,7 +103,7 @@ entities:
       internal: true
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_string"
+        kind_id: "system_event_kind_string"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_service_name"
@@ -115,7 +115,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_string"
+        kind_id: "system_event_kind_string"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_api_id"
@@ -124,10 +124,10 @@ entities:
       display_name: "API ID"
       description: "Unique identifier for the API endpoint"
       disabled: false
-      internal: false
+      internal: true
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_string"
+        kind_id: "system_event_kind_string"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_api_name"
@@ -139,7 +139,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_string"
+        kind_id: "system_event_kind_string"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_environment"
@@ -151,7 +151,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_string"
+        kind_id: "system_event_kind_string"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_status_code"
@@ -163,7 +163,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_integer"
+        kind_id: "system_event_kind_integer"
       prepopulated_span_attribute: {}
 
   # ============================================================================
@@ -179,7 +179,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_string"
+        kind_id: "system_event_kind_string"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_user_agent_device"
@@ -191,7 +191,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_string"
+        kind_id: "system_event_kind_string"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_user_agent_os"
@@ -203,7 +203,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_string"
+        kind_id: "system_event_kind_string"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_user_agent_family"
@@ -215,7 +215,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_string"
+        kind_id: "system_event_kind_string"
       prepopulated_span_attribute: {}
 
   # ============================================================================
@@ -231,7 +231,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_string"
+        kind_id: "system_event_kind_string"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_user_country_iso_code"
@@ -243,7 +243,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_string"
+        kind_id: "system_event_kind_string"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_user_state"
@@ -255,7 +255,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_string"
+        kind_id: "system_event_kind_string"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_user_city"
@@ -267,7 +267,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_string"
+        kind_id: "system_event_kind_string"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_user_latitude"
@@ -279,7 +279,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_float"
+        kind_id: "system_event_kind_float"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_user_longitude"
@@ -291,7 +291,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_float"
+        kind_id: "system_event_kind_float"
       prepopulated_span_attribute: {}
 
   # ============================================================================
@@ -307,7 +307,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_ip_address"
+        kind_id: "system_event_kind_ip_address"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_session_id"
@@ -319,7 +319,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_string"
+        kind_id: "system_event_kind_string"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_ip_is_proxy"
@@ -331,7 +331,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_boolean"
+        kind_id: "system_event_kind_boolean"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_ip_is_vpn"
@@ -343,7 +343,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_boolean"
+        kind_id: "system_event_kind_boolean"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_ip_is_tor"
@@ -355,7 +355,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_boolean"
+        kind_id: "system_event_kind_boolean"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_ip_is_bot"
@@ -367,7 +367,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_boolean"
+        kind_id: "system_event_kind_boolean"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_ip_reputation_score"
@@ -379,7 +379,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_integer"
+        kind_id: "system_event_kind_integer"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_ip_reputation_level"
@@ -391,7 +391,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_string"
+        kind_id: "system_event_kind_string"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_ip_abuse_velocity"
@@ -403,7 +403,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_string"
+        kind_id: "system_event_kind_string"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_ip_connection_type"
@@ -415,7 +415,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_string"
+        kind_id: "system_event_kind_string"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_ip_asn"
@@ -427,7 +427,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_string"
+        kind_id: "system_event_kind_string"
       prepopulated_span_attribute: {}
 
   # ============================================================================
@@ -443,7 +443,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_string"
+        kind_id: "system_event_kind_string"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_request_body_type"
@@ -455,7 +455,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_string"
+        kind_id: "system_event_kind_string"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_host_header"
@@ -467,7 +467,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_string"
+        kind_id: "system_event_kind_string"
       prepopulated_span_attribute: {}
 
   # ============================================================================
@@ -483,7 +483,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_string"
+        kind_id: "system_event_kind_string"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_user_role"
@@ -495,7 +495,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_string"
+        kind_id: "system_event_kind_string"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_user_scope"
@@ -507,7 +507,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_string"
+        kind_id: "system_event_kind_string"
       prepopulated_span_attribute: {}
 
   # ============================================================================
@@ -523,7 +523,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_string"
+        kind_id: "system_event_kind_string"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_display_entity_name"
@@ -535,7 +535,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_string"
+        kind_id: "system_event_kind_string"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_display_span_name"
@@ -547,7 +547,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_string"
+        kind_id: "system_event_kind_string"
       prepopulated_span_attribute: {}
 
   - id: "system_entity_start_time_millis"
@@ -559,5 +559,5 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        event_kind_id: "system_event_kind_timestamp"
+        kind_id: "system_event_kind_timestamp"
       prepopulated_span_attribute: {}
