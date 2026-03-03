@@ -1,7 +1,6 @@
 package ai.traceable.fraud.datamodel.derivation.config.service.entity;
 
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfig;
-import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfigFilter;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.GetEntityDerivationConfigsRequest;
 import com.google.protobuf.Value;
 import jakarta.inject.Inject;
@@ -65,16 +64,9 @@ public class EntityDerivationConfigStore
   @Override
   protected Optional<EntityDerivationConfig> filterConfigData(
       EntityDerivationConfig data, GetEntityDerivationConfigsRequest request) {
-    if (!request.hasFilter()) {
-      return Optional.of(data);
-    }
-
-    EntityDerivationConfigFilter filter = request.getFilter();
-
-    return Optional.of(data)
-        .filter(config -> filterByDisabled(config, filter))
-        .filter(config -> filterByInternal(config, filter))
-        .filter(config -> filterByIds(config, request));
+    return EntityDerivationConfigFilterUtil.applyEntityFilter(data, request)
+        ? Optional.of(data)
+        : Optional.empty();
   }
 
   @Override
@@ -84,33 +76,5 @@ public class EntityDerivationConfigStore
     return configs.stream()
         .filter(config -> filterConfigData(config, request).isPresent())
         .collect(Collectors.toUnmodifiableList());
-  }
-
-  private boolean filterByDisabled(
-      EntityDerivationConfig config, EntityDerivationConfigFilter filter) {
-    // If include_disabled is not set or false, filter out disabled configs
-    if (!filter.hasIncludeDisabled() || !filter.getIncludeDisabled()) {
-      return !config.getData().getDisabled();
-    }
-    return true;
-  }
-
-  private boolean filterByInternal(
-      EntityDerivationConfig config, EntityDerivationConfigFilter filter) {
-    // If include_internal is not set or false, filter out internal configs
-    if (!filter.hasIncludeInternal() || !filter.getIncludeInternal()) {
-      return !config.getData().getInternal();
-    }
-    return true;
-  }
-
-  private boolean filterByIds(
-      EntityDerivationConfig config, GetEntityDerivationConfigsRequest request) {
-    // If ids list is empty, include all configs
-    if (request.getIdsCount() == 0) {
-      return true;
-    }
-    // Otherwise, only include if ID is in the list
-    return request.getIdsList().contains(config.getId());
   }
 }

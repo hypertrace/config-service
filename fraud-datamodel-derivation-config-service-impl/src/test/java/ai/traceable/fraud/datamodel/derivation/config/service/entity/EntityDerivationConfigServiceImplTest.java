@@ -246,6 +246,44 @@ class EntityDerivationConfigServiceImplTest {
     assertTrue(exception.getMessage().contains("No entity derivation config found"));
   }
 
+  @Test
+  void testFilterExcludesInternalEntities() {
+    GetEntityDerivationConfigSummariesRequest request =
+        GetEntityDerivationConfigSummariesRequest.newBuilder()
+            .setFilter(EntityDerivationConfigFilter.newBuilder().setIncludeInternal(false).build())
+            .build();
+
+    GetEntityDerivationConfigSummariesResponse response =
+        RequestContext.forTenantId("test-tenant")
+            .call(() -> serviceStub.getEntityDerivationConfigSummaries(request));
+
+    assertFalse(
+        response.getSummariesList().stream()
+            .anyMatch(s -> s.getId().equals("system_entity_customer_id")));
+    assertFalse(
+        response.getSummariesList().stream()
+            .anyMatch(s -> s.getId().equals("system_entity_span_id")));
+  }
+
+  @Test
+  void testFilterIncludesInternalEntities() {
+    GetEntityDerivationConfigSummariesRequest request =
+        GetEntityDerivationConfigSummariesRequest.newBuilder()
+            .setFilter(EntityDerivationConfigFilter.newBuilder().setIncludeInternal(true).build())
+            .build();
+
+    GetEntityDerivationConfigSummariesResponse response =
+        RequestContext.forTenantId("test-tenant")
+            .call(() -> serviceStub.getEntityDerivationConfigSummaries(request));
+
+    assertTrue(
+        response.getSummariesList().stream()
+            .anyMatch(s -> s.getId().equals("system_entity_customer_id")));
+    assertTrue(
+        response.getSummariesList().stream()
+            .anyMatch(s -> s.getId().equals("system_entity_span_id")));
+  }
+
   private EntityDerivationConfigData createValidConfigData(String displayName) {
     return EntityDerivationConfigData.newBuilder()
         .setDisplayName(displayName)

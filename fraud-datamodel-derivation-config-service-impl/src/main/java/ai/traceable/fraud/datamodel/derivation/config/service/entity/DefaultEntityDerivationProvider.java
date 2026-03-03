@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -17,7 +18,7 @@ public class DefaultEntityDerivationProvider {
   private static final String MANDATORY_ENTITIES_FILE = "mandatory_user_context_entities.yaml";
   private static final String PREPOPULATED_ATTRIBUTES_FILE = "prepopulated_span_attributes.yaml";
 
-  private final List<EntityDerivationConfig> defaultEntityDerivations;
+  @Getter private final List<EntityDerivationConfig> defaultEntityDerivations;
   private final Map<String, EntityDerivationConfig> defaultEntityDerivationsById;
 
   @Inject
@@ -30,10 +31,6 @@ public class DefaultEntityDerivationProvider {
     this.defaultEntityDerivationsById =
         defaultEntityDerivations.stream()
             .collect(Collectors.toUnmodifiableMap(EntityDerivationConfig::getId, config -> config));
-  }
-
-  public List<EntityDerivationConfig> getDefaultEntityDerivations() {
-    return defaultEntityDerivations;
   }
 
   public boolean isDefaultEntity(String id) {

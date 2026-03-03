@@ -45,6 +45,7 @@ message EntityDerivationConfigSummary {
   string id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Entity derivation config ID"];
   string display_name = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Display name"];
   ai.traceable.fraud.datamodel.event.kind.v1.ComplexDataModelEventKind event_kind = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Data type of the derived value"];
+  string description = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Description"];
 }
 
 message EntityDerivationConfigFilter {

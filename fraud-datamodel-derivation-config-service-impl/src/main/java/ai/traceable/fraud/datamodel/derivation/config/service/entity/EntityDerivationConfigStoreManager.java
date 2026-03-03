@@ -17,9 +17,7 @@ import io.grpc.Status;
 import io.grpc.StatusException;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -100,6 +98,7 @@ public class EntityDerivationConfigStoreManager {
                         .setId(config.getId())
                         .setDisplayName(config.getData().getDisplayName())
                         .setEventKind(config.getData().getEventKind())
+                        .setDescription(config.getData().getDescription())
                         .build())
             .collect(Collectors.toList());
 
@@ -147,13 +146,13 @@ public class EntityDerivationConfigStoreManager {
     return configObject.getData();
   }
 
-  private EntityDerivationConfig fetchExistingEntityDerivationConfigOrThrow(
-      String id, RequestContext requestContext) throws StatusException {
+  private void fetchExistingEntityDerivationConfigOrThrow(String id, RequestContext requestContext)
+      throws StatusException {
     EntityDerivationConfig defaultEntity = defaultEntityDerivationProvider.getDefaultEntity(id);
     if (defaultEntity != null) {
-      return defaultEntity;
+      return;
     }
-    return entityDerivationConfigStore
+    entityDerivationConfigStore
         .getData(requestContext, id)
         .orElseThrow(
             () ->
@@ -167,16 +166,12 @@ public class EntityDerivationConfigStoreManager {
     List<EntityDerivationConfig> defaultConfigs =
         defaultEntityDerivationProvider.getDefaultEntityDerivations();
 
-    // If specific IDs are requested, filter defaults to only include those IDs
-    if (request.getIdsCount() > 0) {
-      Set<String> requestedIds = new HashSet<>(request.getIdsList());
-      defaultConfigs =
-          defaultConfigs.stream()
-              .filter(config -> requestedIds.contains(config.getId()))
-              .collect(Collectors.toUnmodifiableList());
-    }
+    List<EntityDerivationConfig> filteredDefaults =
+        defaultConfigs.stream()
+            .filter(config -> EntityDerivationConfigFilterUtil.applyEntityFilter(config, request))
+            .collect(Collectors.toUnmodifiableList());
 
-    List<EntityDerivationConfig> result = new ArrayList<>(defaultConfigs);
+    List<EntityDerivationConfig> result = new ArrayList<>(filteredDefaults);
     result.addAll(userConfigs);
     return result;
   }
