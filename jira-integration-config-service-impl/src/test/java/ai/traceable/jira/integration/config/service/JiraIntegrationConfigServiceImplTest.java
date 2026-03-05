@@ -98,7 +98,8 @@ class JiraIntegrationConfigServiceImplTest {
     mockGenericConfigService
         .addService(
             new JiraIntegrationConfigServiceImpl(
-                new JiraIntegrationConfigServiceValidator(jiraIntegrationStore),
+                new JiraIntegrationConfigServiceValidator(
+                    jiraIntegrationStore, jiraAdditionalConfigurationStore),
                 new JiraIntegrationCoordinator(
                     jiraIntegrationStore,
                     new JiraAdditionalConfigurationCoordinator(jiraAdditionalConfigurationStore),

@@ -21,8 +21,12 @@ import ai.traceable.jira.integration.config.service.api.v1.JiraFieldConfiguratio
 import ai.traceable.jira.integration.config.service.api.v1.JiraIntegration;
 import ai.traceable.jira.integration.config.service.api.v1.JiraIntegrationDetails;
 import ai.traceable.jira.integration.config.service.api.v1.JiraIntegrationFilter;
+import ai.traceable.jira.integration.config.service.api.v1.JiraProjectIssueConfiguration;
+import ai.traceable.jira.integration.config.service.api.v1.JiraProjectIssueConfigurationDetails;
 import ai.traceable.jira.integration.config.service.api.v1.JiraStatusMapping;
 import ai.traceable.jira.integration.config.service.api.v1.JiraStatusMappingConfiguration;
+import ai.traceable.jira.integration.config.service.api.v1.JiraTemplate;
+import ai.traceable.jira.integration.config.service.api.v1.JiraTemplateDetails;
 import ai.traceable.jira.integration.config.service.api.v1.Scope;
 import ai.traceable.jira.integration.config.service.api.v1.StringList;
 import ai.traceable.jira.integration.config.service.api.v1.TraceableEntityStatus;
@@ -43,6 +47,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class JiraIntegrationConfigServiceValidatorTest {
   @Mock JiraIntegrationStore jiraIntegrationStore;
+  @Mock JiraAdditionalConfigurationStore jiraAdditionalConfigurationStore;
   @InjectMocks JiraIntegrationConfigServiceValidator validator;
   private final String TENANT_ID = "tenant-id";
   private final String TEXT = "text";
@@ -519,6 +524,34 @@ class JiraIntegrationConfigServiceValidatorTest {
             .build();
     Assertions.assertDoesNotThrow(
         () -> validator.validateAddJiraTemplate(request5, requestContext1));
+
+    // Should fail due to non unique name of template
+    when(jiraAdditionalConfigurationStore.getAllConfigData(requestContext1))
+        .thenReturn(
+            List.of(
+                JiraProjectIssueConfiguration.newBuilder()
+                    .setJiraProjectIssueConfigurationDetails(
+                        JiraProjectIssueConfigurationDetails.newBuilder()
+                            .addJiraTemplate(
+                                JiraTemplate.newBuilder()
+                                    .setJiraTemplateDetails(
+                                        JiraTemplateDetails.newBuilder().setName(TEXT).build()))
+                            .build())
+                    .build()));
+    AddJiraTemplateRequest request6 =
+        request.toBuilder()
+            .setIntegrationId(INTEGRATION_ID)
+            .setProjectId(PROJECT_ID)
+            .setIssueType(ISSUE_TYPE)
+            .setSupportedEntityType(TraceableEntityType.TRACEABLE_ENTITY_TYPE_AST_VULNERABILITY)
+            .setJiraTemplateDetails(
+                ai.traceable.jira.integration.config.service.api.v1.JiraTemplateDetails.newBuilder()
+                    .setName(TEXT)
+                    .build())
+            .build();
+    Assertions.assertThrows(
+        StatusRuntimeException.class,
+        () -> validator.validateAddJiraTemplate(request6, requestContext1));
   }
 
   @Test
@@ -537,7 +570,8 @@ class JiraIntegrationConfigServiceValidatorTest {
         StatusRuntimeException.class,
         () -> validator.validateUpdateJiraTemplate(request, requestContext1));
 
-    // Should pass with template_id set
+    // Should pass with template_id set and unique name
+    when(jiraAdditionalConfigurationStore.getAllConfigData(requestContext1)).thenReturn(List.of());
     UpdateJiraTemplateRequest request1 =
         request.toBuilder()
             .setTemplateId("template_id")
@@ -548,6 +582,57 @@ class JiraIntegrationConfigServiceValidatorTest {
             .build();
     Assertions.assertDoesNotThrow(
         () -> validator.validateUpdateJiraTemplate(request1, requestContext1));
+
+    // Should fail due to non unique name of template (different template has same name)
+    when(jiraAdditionalConfigurationStore.getAllConfigData(requestContext1))
+        .thenReturn(
+            List.of(
+                JiraProjectIssueConfiguration.newBuilder()
+                    .setJiraProjectIssueConfigurationDetails(
+                        JiraProjectIssueConfigurationDetails.newBuilder()
+                            .addJiraTemplate(
+                                JiraTemplate.newBuilder()
+                                    .setTemplateId("different_template_id")
+                                    .setJiraTemplateDetails(
+                                        JiraTemplateDetails.newBuilder().setName(TEXT).build()))
+                            .build())
+                    .build()));
+    UpdateJiraTemplateRequest request2 =
+        request.toBuilder()
+            .setTemplateId("template_id")
+            .setJiraTemplateDetails(
+                ai.traceable.jira.integration.config.service.api.v1.JiraTemplateDetails.newBuilder()
+                    .setName(TEXT)
+                    .build())
+            .build();
+    Assertions.assertThrows(
+        StatusRuntimeException.class,
+        () -> validator.validateUpdateJiraTemplate(request2, requestContext1));
+
+    // Should pass when updating template with same name (same template_id)
+    when(jiraAdditionalConfigurationStore.getAllConfigData(requestContext1))
+        .thenReturn(
+            List.of(
+                JiraProjectIssueConfiguration.newBuilder()
+                    .setJiraProjectIssueConfigurationDetails(
+                        JiraProjectIssueConfigurationDetails.newBuilder()
+                            .addJiraTemplate(
+                                JiraTemplate.newBuilder()
+                                    .setTemplateId("template_id")
+                                    .setJiraTemplateDetails(
+                                        JiraTemplateDetails.newBuilder().setName(TEXT).build()))
+                            .build())
+                    .build()));
+    UpdateJiraTemplateRequest request3 =
+        request.toBuilder()
+            .setTemplateId("template_id")
+            .setJiraTemplateDetails(
+                ai.traceable.jira.integration.config.service.api.v1.JiraTemplateDetails.newBuilder()
+                    .setName(TEXT)
+                    .build())
+            .build();
+    Assertions.assertDoesNotThrow(
+        () -> validator.validateUpdateJiraTemplate(request3, requestContext1));
   }
 
   @Test

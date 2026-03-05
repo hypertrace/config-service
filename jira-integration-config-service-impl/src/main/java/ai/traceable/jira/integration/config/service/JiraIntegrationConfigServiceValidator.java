@@ -45,6 +45,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 @AllArgsConstructor(onConstructor_ = {@Inject})
 public class JiraIntegrationConfigServiceValidator {
   private final JiraIntegrationStore jiraIntegrationStore;
+  private final JiraAdditionalConfigurationStore jiraAdditionalConfigurationStore;
 
   public void validateCreateJiraIntegration(
       CreateJiraIntegrationRequest request, RequestContext requestContext) {
@@ -78,6 +79,7 @@ public class JiraIntegrationConfigServiceValidator {
     validateNonDefaultPresenceOrThrow(request, AddJiraTemplateRequest.PROJECT_ID_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
         request, AddJiraTemplateRequest.SUPPORTED_ENTITY_TYPE_FIELD_NUMBER);
+    validateUniqueTemplateNameOrThrow(requestContext, request.getJiraTemplateDetails().getName());
     this.validateJiraTemplateDetails(request.getJiraTemplateDetails());
   }
 
@@ -85,6 +87,8 @@ public class JiraIntegrationConfigServiceValidator {
       UpdateJiraTemplateRequest request, RequestContext requestContext) {
     validateRequestContextOrThrow(requestContext);
     validateNonDefaultPresenceOrThrow(request, UpdateJiraTemplateRequest.TEMPLATE_ID_FIELD_NUMBER);
+    validateUniqueTemplateNameOrThrow(
+        requestContext, request.getJiraTemplateDetails().getName(), request.getTemplateId());
     // For update, we don't have entity type in request, so skip entity type validation
     this.validateJiraTemplateDetails(request.getJiraTemplateDetails());
   }
@@ -400,6 +404,47 @@ public class JiraIntegrationConfigServiceValidator {
     }
   }
 
+  private void validateUniqueTemplateNameOrThrow(
+      RequestContext requestContext, String templateName) {
+    if (jiraAdditionalConfigurationStore.getAllConfigData(requestContext).stream()
+        .flatMap(
+            configuration ->
+                configuration
+                    .getJiraProjectIssueConfigurationDetails()
+                    .getJiraTemplateList()
+                    .stream())
+        .anyMatch(
+            jiraTemplates ->
+                jiraTemplates.getJiraTemplateDetails().getName().equals(templateName))) {
+      throw ContextualStatusExceptionBuilder.from(
+              Status.ALREADY_EXISTS.withDescription(
+                  "There is already an existing jira template with the same name"))
+          .useStatusDescriptionAsExternalMessage()
+          .buildRuntimeException();
+    }
+  }
+
+  private void validateUniqueTemplateNameOrThrow(
+      RequestContext requestContext, String templateName, String templateId) {
+    if (jiraAdditionalConfigurationStore.getAllConfigData(requestContext).stream()
+        .flatMap(
+            configuration ->
+                configuration
+                    .getJiraProjectIssueConfigurationDetails()
+                    .getJiraTemplateList()
+                    .stream())
+        .filter(jiraTemplate -> !templateId.equals(jiraTemplate.getTemplateId()))
+        .anyMatch(
+            jiraTemplates ->
+                jiraTemplates.getJiraTemplateDetails().getName().equals(templateName))) {
+      throw ContextualStatusExceptionBuilder.from(
+              Status.ALREADY_EXISTS.withDescription(
+                  "There is already an existing jira template with the same name"))
+          .useStatusDescriptionAsExternalMessage()
+          .buildRuntimeException();
+    }
+  }
+
   private void validateUniqueNameOrThrow(
       RequestContext requestContext, String name, String jiraIntegrationId) {
     if (jiraIntegrationStore.getAllConfigData(requestContext).stream()
@@ -412,7 +457,7 @@ public class JiraIntegrationConfigServiceValidator {
   private StatusRuntimeException getDuplicateNameStatusRuntimeException() {
     return ContextualStatusExceptionBuilder.from(
             Status.ALREADY_EXISTS.withDescription(
-                "Already an existing jira integration with the same name"))
+                "There is already an existing jira integration with the same name"))
         .useStatusDescriptionAsExternalMessage()
         .buildRuntimeException();
   }
