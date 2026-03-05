@@ -285,11 +285,15 @@ public class ApiNamingRulesConfigStore
   }
 
   private Optional<Filter> buildDisabledFilter(ApiNamingRulesFilter filterInput) {
-    if (filterInput.hasDisabled() && filterInput.getDisabled()) {
-      return Optional.of(
-          buildEqualsFilter(DISABLED, Value.newBuilder().setBoolValue(true).build()));
+    if (filterInput.hasDisabled()) {
+      if (filterInput.getDisabled()) {
+        return Optional.of(
+            buildEqualsFilter(DISABLED, Value.newBuilder().setBoolValue(true).build()));
+      } else {
+        return Optional.of(buildNotExistsFilter(DISABLED));
+      }
     }
-    return Optional.of(buildNotExistsFilter(DISABLED));
+    return Optional.empty();
   }
 
   private Filter buildRuleConfigTypesFilter(List<ApiNamingRuleConfigType> ruleConfigTypes) {
