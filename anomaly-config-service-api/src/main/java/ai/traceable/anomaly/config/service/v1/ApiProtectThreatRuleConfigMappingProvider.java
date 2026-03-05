@@ -77,6 +77,7 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
       "use_learnt_model_for_param_type_info_missing";
   private static final String USE_LEARNT_MODEL_FOR_MISSING_RESPONSE_CODE =
       "use_learnt_model_for_missing_response_code";
+
   // rule-id
   public static final String JWT_THREAT_TYPE_ID = "jwt";
   public static final String GQLA_THREAT_TYPE_ID = "gqla";
@@ -978,7 +979,8 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
             enabledForInternalIpsConfigMetadata,
             primaryApiModelTypeConfigMetadata,
             secondaryApiModelTypeConfigMetadata,
-            useLearntModelForParamTypeInfoMissingConfigMetadata));
+            useLearntModelForParamTypeInfoMissingConfigMetadata,
+            paramRegexToIgnoreConfigMetadata));
 
     // schemaValidation_uresc mapping
     threatRuleIdToConfigMetadataMapping.put(
@@ -995,7 +997,6 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
     threatRuleIdToConfigMetadataMapping.put(
         SCHEMA_VALIDATION_UREQP_SUB_RULE_ID,
         List.of(
-            severeRegexStrings,
             modsecurityEnabledConfigMetadata,
             enabledForInternalIpsConfigMetadata,
             thresholdFamiliesExcluded,
@@ -1021,7 +1022,6 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
         SCHEMA_VALIDATION_RESIE_SUB_RULE_ID,
         List.of(
             noAnomalyStrings,
-            modsecurityEnabledConfigMetadata,
             enabledForInternalIpsConfigMetadata,
             thresholdFamiliesExcluded,
             primaryApiModelTypeConfigMetadata,
@@ -1033,7 +1033,6 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
         SCHEMA_VALIDATION_RESPTVE_SUB_RULE_ID,
         List.of(
             noAnomalyStrings,
-            modsecurityEnabledConfigMetadata,
             enabledForInternalIpsConfigMetadata,
             primaryApiModelTypeConfigMetadata,
             secondaryApiModelTypeConfigMetadata,
@@ -1046,7 +1045,6 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
         List.of(
             minPercentSeenConfigMetadata,
             severeRegexStrings,
-            modsecurityEnabledConfigMetadata,
             enabledForInternalIpsConfigMetadata,
             thresholdFamiliesExcluded,
             primaryApiModelTypeConfigMetadata,
@@ -1057,8 +1055,6 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
     threatRuleIdToConfigMetadataMapping.put(
         SCHEMA_VALIDATION_URESP_SUB_RULE_ID,
         List.of(
-            severeRegexStrings,
-            modsecurityEnabledConfigMetadata,
             enabledForInternalIpsConfigMetadata,
             thresholdFamiliesExcluded,
             primaryApiModelTypeConfigMetadata,
