@@ -5,7 +5,7 @@ import ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDete
 import ai.traceable.anomaly.config.service.global.status.GlobalAnomalyConfigStatusManager;
 import ai.traceable.anomaly.config.service.v1.apiprotect.GetApiProtectEvaluationConfigContextRequest;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
-import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
+import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatusChange;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
 import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
@@ -140,7 +140,7 @@ public class ApiProtectConfigContextCacheProvider extends ApiProtectConfigContex
 
   private void handleConfigChangeEvent(ConfigChangeEventKey key, ConfigChangeEventValue value) {
     if (!key.getConfigType().equals(ScopedAnomalyDetectionConfig.class.getName())
-        && !key.getConfigType().equals(ScopedAnomalyConfigStatus.class.getName())) {
+        && !key.getConfigType().equals(ScopedAnomalyConfigStatusChange.class.getName())) {
       return;
     }
     switch (value.getEventCase()) {

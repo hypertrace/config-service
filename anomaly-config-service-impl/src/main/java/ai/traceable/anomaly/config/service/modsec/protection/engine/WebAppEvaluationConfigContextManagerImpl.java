@@ -27,6 +27,7 @@ import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetecti
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.global.GlobalModsecConfig;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
+import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.modsec.GetWebAppEvaluationConfigContextRequest;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
@@ -741,7 +742,7 @@ public class WebAppEvaluationConfigContextManagerImpl
    */
   private void updateCacheBasedOnEvent(ConfigChangeEventKey key, ConfigChangeEventValue value) {
     if (!key.getConfigType().equals(ScopedAnomalyDetectionConfig.class.getName())
-        && !key.getConfigType().equals(ScopedAnomalyConfigStatus.class.getName())) {
+        && !key.getConfigType().equals(ScopedAnomalyConfigStatusChange.class.getName())) {
       return;
     }
 
