@@ -4,9 +4,10 @@ import ai.traceable.fraud.datamodel.event.kind.v1.GetTransformationFunctionsRequ
 import ai.traceable.fraud.datamodel.event.kind.v1.GetTransformationFunctionsResponse;
 import ai.traceable.fraud.datamodel.event.kind.v1.TransformationFunctionFilter;
 import ai.traceable.fraud.datamodel.event.kind.v1.TransformationFunctionServiceGrpc.TransformationFunctionServiceImplBase;
-import io.grpc.Status;
+import ai.traceable.fraud.datamodel.event.kind.v1.TransformationFunctionsByKind;
 import io.grpc.stub.StreamObserver;
 import jakarta.inject.Inject;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 /** gRPC service implementation for TransformationFunctionService. */
@@ -30,21 +31,17 @@ public class TransformationFunctionServiceImpl extends TransformationFunctionSer
               ? request.getFilter()
               : TransformationFunctionFilter.getDefaultInstance();
 
+      List<TransformationFunctionsByKind> functionMappings;
       if (filter.getCompatibleWithKindsCount() == 0) {
-        responseObserver.onError(
-            Status.INVALID_ARGUMENT
-                .withDescription("At least 1 compatible_with_kinds must be provided")
-                .asRuntimeException());
-        return;
+        functionMappings = provider.getAllFunctions();
+      } else {
+        functionMappings = provider.getFunctionsByKinds(filter.getCompatibleWithKindsList());
       }
 
-      GetTransformationFunctionsResponse response =
+      responseObserver.onNext(
           GetTransformationFunctionsResponse.newBuilder()
-              .addAllFunctionMappings(
-                  provider.getFunctionsByKinds(filter.getCompatibleWithKindsList()))
-              .build();
-
-      responseObserver.onNext(response);
+              .addAllFunctionMappings(functionMappings)
+              .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Failed to get transformation functions for request: {}", request, e);

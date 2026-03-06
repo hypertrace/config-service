@@ -61,6 +61,16 @@ class DefaultTransformationFunctionProviderTest {
   }
 
   @Test
+  void getAllFunctions_returnsNonEmptyResult() {
+    List<TransformationFunctionsByKind> result = provider.getAllFunctions();
+
+    assertFalse(result.isEmpty(), "Should return all function mappings");
+    assertTrue(
+        result.stream().allMatch(m -> !m.getFunctionsList().isEmpty()),
+        "Each mapping should have at least one function");
+  }
+
+  @Test
   void getFunctionsByKinds_functionsDoNotContainOperators() {
     List<TransformationFunctionsByKind> functions =
         provider.getFunctionsByKinds(List.of(STRING_KIND));

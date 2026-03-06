@@ -18,4 +18,11 @@ public interface TransformationFunctionProvider {
    */
   List<TransformationFunctionsByKind> getFunctionsByKinds(
       List<ComplexDataModelEventKind> requestedKinds);
+
+  /**
+   * Gets all transformation functions grouped by their input kinds.
+   *
+   * @return list of kind-to-functions mappings for all available functions
+   */
+  List<TransformationFunctionsByKind> getAllFunctions();
 }

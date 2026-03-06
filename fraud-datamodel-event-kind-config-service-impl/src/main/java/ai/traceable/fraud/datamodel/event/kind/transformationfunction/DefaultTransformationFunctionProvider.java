@@ -12,7 +12,9 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -55,6 +57,24 @@ public class DefaultTransformationFunctionProvider implements TransformationFunc
     }
 
     return result;
+  }
+
+  @Override
+  public List<TransformationFunctionsByKind> getAllFunctions() {
+    Map<ComplexDataModelEventKind, List<TransformationFunction>> byKind = new HashMap<>();
+    for (TransformationFunction func : transformationFunctions) {
+      for (ComplexDataModelEventKind inputKind : func.getInputKindsList()) {
+        byKind.computeIfAbsent(inputKind, k -> new ArrayList<>()).add(func);
+      }
+    }
+    return byKind.entrySet().stream()
+        .map(
+            e ->
+                TransformationFunctionsByKind.newBuilder()
+                    .setKind(e.getKey())
+                    .addAllFunctions(e.getValue())
+                    .build())
+        .collect(Collectors.toList());
   }
 
   private boolean isCompatibleWithKind(
