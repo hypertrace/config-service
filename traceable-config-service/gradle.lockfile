@@ -2,10 +2,10 @@
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
 ai.traceable.accesscontrol:grpc-access-control-policy:0.5.16=integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
-ai.traceable.bom:traceable-bom:0.4.5109=compileClasspath,integrationTestCompileClasspath,integrationTestRuntimeClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.5113=compileClasspath,integrationTestCompileClasspath,integrationTestRuntimeClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-future-client:0.7.69=integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.7.69=integrationTestCompileClasspath,integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
-ai.traceable.iam.v2:iam-service-api-v2:0.16.164=integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
+ai.traceable.iam.v2:iam-service-api-v2:0.16.166=integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
 ai.traceable.license.metering.service:license-metering-service-api:0.1.81=integrationTestCompileClasspath,integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:api-utils:0.8.139=integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:cache-provider:0.8.139=integrationTestCompileClasspath,integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
