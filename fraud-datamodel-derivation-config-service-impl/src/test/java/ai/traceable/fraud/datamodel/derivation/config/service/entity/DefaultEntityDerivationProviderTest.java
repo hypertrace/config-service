@@ -113,21 +113,6 @@ class DefaultEntityDerivationProviderTest {
   }
 
   @Test
-  void jwtEntity_hasTransformationPipeline() {
-    EntityDerivationConfig jwt = provider.getDefaultEntity("mandatory_entity_jwt_payload");
-    assertNotNull(jwt);
-    assertTrue(jwt.getData().hasSpanProjection());
-    assertTrue(jwt.getData().getSpanProjection().getEventDerivationConfigsCount() > 0);
-    assertTrue(
-        jwt.getData()
-                .getSpanProjection()
-                .getEventDerivationConfigs(0)
-                .getPipeline()
-                .getTransformationPipelineCount()
-            > 0);
-  }
-
-  @Test
   void systemEntity_hasPrepopulatedAttribute() {
     EntityDerivationConfig spanId = provider.getDefaultEntity("system_entity_span_id");
     assertNotNull(spanId);
@@ -160,5 +145,44 @@ class DefaultEntityDerivationProviderTest {
     assertTrue(
         entitiesWithoutKind.isEmpty(),
         "Entities missing event kind: " + String.join(", ", entitiesWithoutKind));
+  }
+
+  @Test
+  void jwtEntity_transformationPipelineIsParsedCorrectly() {
+    EntityDerivationConfig jwt = provider.getDefaultEntity("mandatory_entity_jwt_payload");
+    assertNotNull(jwt);
+    assertTrue(jwt.getData().hasSpanProjection());
+    assertTrue(jwt.getData().getSpanProjection().getEventDerivationConfigsCount() > 0);
+
+    var pipeline = jwt.getData().getSpanProjection().getEventDerivationConfigs(0).getPipeline();
+    assertEquals(4, pipeline.getTransformationPipelineCount());
+
+    // Verify first function: replace
+    var replaceFunc = pipeline.getTransformationPipeline(0);
+    assertEquals("system_defined_function_replace", replaceFunc.getFunctionId());
+    assertEquals(2, replaceFunc.getParameterValuesCount());
+    assertTrue(replaceFunc.getParameterValuesMap().containsKey("pattern"));
+    assertTrue(replaceFunc.getParameterValuesMap().containsKey("replacement"));
+    assertEquals("Bearer ", replaceFunc.getParameterValuesMap().get("pattern").getStringValue());
+    assertEquals("", replaceFunc.getParameterValuesMap().get("replacement").getStringValue());
+
+    // Verify second function: split
+    var splitFunc = pipeline.getTransformationPipeline(1);
+    assertEquals("system_defined_function_split", splitFunc.getFunctionId());
+    assertEquals(1, splitFunc.getParameterValuesCount());
+    assertTrue(splitFunc.getParameterValuesMap().containsKey("delimiter"));
+    assertEquals(".", splitFunc.getParameterValuesMap().get("delimiter").getStringValue());
+
+    // Verify third function: get
+    var getFunc = pipeline.getTransformationPipeline(2);
+    assertEquals("system_defined_function_get", getFunc.getFunctionId());
+    assertEquals(1, getFunc.getParameterValuesCount());
+    assertTrue(getFunc.getParameterValuesMap().containsKey("index"));
+    assertEquals(1.0, getFunc.getParameterValuesMap().get("index").getNumberValue(), 0.001);
+
+    // Verify fourth function: base64_decode (no parameters)
+    var decodeFunc = pipeline.getTransformationPipeline(3);
+    assertEquals("system_defined_function_base64_decode", decodeFunc.getFunctionId());
+    assertEquals(0, decodeFunc.getParameterValuesCount());
   }
 }
