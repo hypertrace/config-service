@@ -2,7 +2,7 @@
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
 ai.traceable.accesscontrol:grpc-access-control-policy:0.5.16=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.bom:traceable-bom:0.4.5113=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.5116=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-future-client:0.7.69=runtimeClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.7.69=runtimeClasspath,testRuntimeClasspath
 ai.traceable.iam.v2:iam-service-api-v2:0.16.166=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
@@ -40,11 +40,11 @@ ai.traceable.platform:trace-data-parser:4.0.93=runtimeClasspath,testRuntimeClass
 ai.traceable.platform:trace-enricher-api:5.0.112=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:trace-enricher-constants:5.0.112=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:view-generation-api:1.0.173=runtimeClasspath,testRuntimeClasspath
-ai.traceable.protection.rules:ai-application-protection-rules:0.1.128=runtimeClasspath,testRuntimeClasspath
-ai.traceable.protection.rules:api-protection-rules:0.1.128=runtimeClasspath,testRuntimeClasspath
-ai.traceable.protection.rules:protection-filtering-rules:0.1.128=runtimeClasspath,testRuntimeClasspath
-ai.traceable.protection.rules:protection-rules-common:0.1.128=runtimeClasspath,testRuntimeClasspath
-ai.traceable.protection.rules:web-application-protection-rules:0.1.128=runtimeClasspath,testRuntimeClasspath
+ai.traceable.protection.rules:ai-application-protection-rules:0.1.130=runtimeClasspath,testRuntimeClasspath
+ai.traceable.protection.rules:api-protection-rules:0.1.130=runtimeClasspath,testRuntimeClasspath
+ai.traceable.protection.rules:protection-filtering-rules:0.1.130=runtimeClasspath,testRuntimeClasspath
+ai.traceable.protection.rules:protection-rules-common:0.1.130=runtimeClasspath,testRuntimeClasspath
+ai.traceable.protection.rules:web-application-protection-rules:0.1.130=runtimeClasspath,testRuntimeClasspath
 ai.traceable.protection:api-protection-engine-config:0.1.139=runtimeClasspath,testRuntimeClasspath
 ai.traceable.protection:condition-expression-processor:0.1.139=runtimeClasspath,testRuntimeClasspath
 ai.traceable.protection:custom-signature-protection-engine-config:0.1.139=runtimeClasspath,testRuntimeClasspath
