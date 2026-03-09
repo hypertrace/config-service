@@ -17,6 +17,8 @@ public class DefaultEntityDerivationProvider {
 
   private static final String MANDATORY_ENTITIES_FILE = "mandatory_user_context_entities.yaml";
   private static final String PREPOPULATED_ATTRIBUTES_FILE = "prepopulated_span_attributes.yaml";
+  private static final String RECOMMENDED_ENTITIES_FILE =
+      "recommended_fraud_detection_entities.yaml";
 
   @Getter private final List<EntityDerivationConfig> defaultEntityDerivations;
   private final Map<String, EntityDerivationConfig> defaultEntityDerivationsById;
@@ -26,6 +28,7 @@ public class DefaultEntityDerivationProvider {
     List<EntityDerivationConfig> allDefaults = new ArrayList<>();
     allDefaults.addAll(loadEntities(MANDATORY_ENTITIES_FILE));
     allDefaults.addAll(loadEntities(PREPOPULATED_ATTRIBUTES_FILE));
+    allDefaults.addAll(loadEntities(RECOMMENDED_ENTITIES_FILE));
 
     this.defaultEntityDerivations = Collections.unmodifiableList(allDefaults);
     this.defaultEntityDerivationsById =

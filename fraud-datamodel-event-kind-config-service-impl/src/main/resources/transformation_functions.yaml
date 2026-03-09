@@ -238,6 +238,48 @@ functions:
       kind_id: "system_event_kind_string"
     jexl_template: "${input}.split('@')[1]"
 
+  # JSON functions
+  # - id: "system_defined_function_parse_json"
+  #   display_name: "parseJson"
+  #   description: "Parses a JSON string into a map object for field extraction"
+  #   input_kinds:
+  #     - kind_id: "system_event_kind_string"
+  #   output_kind:
+  #     string_map_of:
+  #       kind_id: "system_event_kind_value"
+  #   jexl_template: "traceable:parseJson(${input})"
+
+  # - id: "system_defined_function_get_entry"
+  #   display_name: "getEntry"
+  #   description: "Gets a value from a map by key name"
+  #   # Input: MAP<string, T>
+  #   input_kinds:
+  #     - string_map_of:
+  #         type_parameter_ref: "T"
+  #   # Output: T (preserves value type)
+  #   output_kind:
+  #     type_parameter_ref: "T"
+  #   jexl_template: "${input}['${key}']"
+  #   parameters:
+  #     - name: "key"
+  #       description: "Key name to extract from the map"
+  #       type: PARAMETER_TYPE_STRING
+  #       required: true
+
+  - id: "system_defined_function_json_path"
+    display_name: "getJsonPath"
+    description: "Extracts a value from a JSON string using a JSON path expression (e.g., $.transaction.details.accountId)"
+    input_kinds:
+      - kind_id: "system_event_kind_string"
+    output_kind:
+      kind_id: "system_event_kind_string"
+    jexl_template: "traceable:getJsonPathValue(${input}, '${path}')"
+    parameters:
+      - name: "path"
+        description: "JSON path expression (e.g., $.transaction.[].details.accountId)"
+        type: PARAMETER_TYPE_STRING
+        required: true
+
   # Encoding functions
   - id: "system_defined_function_base64_encode"
     display_name: "base64Encode"

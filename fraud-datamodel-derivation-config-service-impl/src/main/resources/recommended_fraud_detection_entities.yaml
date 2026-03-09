@@ -1,0 +1,70 @@
+# Recommended Entities for Fraud Detection and Rate Limiting
+# These entities are disabled by default and must be explicitly enabled by users
+# They extract sensitive data from request/response bodies for security monitoring
+
+entities:
+  - id: "recommended_entity_email_address"
+    column_name: "email_address"
+    data:
+      display_name: "Email Address"
+      description: "Email address extracted from request body for rate limiting and fraud detection"
+      disabled: true
+      internal: false
+      category: ENTITY_CATEGORY_RECOMMENDED
+      event_kind:
+        kind_id: "system_event_kind_email"
+      span_projection:
+        event_derivation_configs:
+          - scope:
+              environment_scope:
+                environments: []
+            disabled: false
+            span_extraction:
+              location:
+                location_type: EXTRACTION_LOCATION_TYPE_REQUEST_BODY
+                key: "$..email, $..[?(@=~/(?i)(e)?mail[\\s\\-_]?(addr(ess)?)?|e?mail/)]"
+                key_match_type: KEY_MATCH_TYPE_REGEX
+
+  - id: "recommended_entity_credit_card_number"
+    column_name: "credit_card_number"
+    data:
+      display_name: "Credit Card Number"
+      description: "Credit card number for monitoring card testing attacks and fraud patterns"
+      disabled: true
+      internal: false
+      category: ENTITY_CATEGORY_RECOMMENDED
+      event_kind:
+        kind_id: "system_event_kind_credit_card"
+      span_projection:
+        event_derivation_configs:
+          - scope:
+              environment_scope:
+                environments: []
+            disabled: false
+            span_extraction:
+              location:
+                location_type: EXTRACTION_LOCATION_TYPE_REQUEST_BODY
+                key: "$..card_number, $..cardNumber, $..[?(@=~/(?i)(credit)?[\\s_\\-]?card[\\s_\\-]?(number|num|no)/)]"
+                key_match_type: KEY_MATCH_TYPE_REGEX
+
+  - id: "recommended_entity_bank_account_number"
+    column_name: "bank_account_number"
+    data:
+      display_name: "Bank Account Number"
+      description: "Bank account number for ACH fraud detection and monitoring"
+      disabled: true
+      internal: false
+      category: ENTITY_CATEGORY_RECOMMENDED
+      event_kind:
+        kind_id: "system_event_kind_string"
+      span_projection:
+        event_derivation_configs:
+          - scope:
+              environment_scope:
+                environments: []
+            disabled: false
+            span_extraction:
+              location:
+                location_type: EXTRACTION_LOCATION_TYPE_REQUEST_BODY
+                key: "$..account_number, $..accountNumber, $..iban, $..[?(@=~/(?i)(bank[\\s\\-_]?)?account[\\s\\-_]?(number|num|no)/)]"
+                key_match_type: KEY_MATCH_TYPE_REGEX

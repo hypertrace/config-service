@@ -11,18 +11,28 @@ import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.CreateEn
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.CreateEntityDerivationConfigResponse;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.DeleteEntityDerivationConfigRequest;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityCategory;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfig;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfigData;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfigFilter;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfigServiceGrpc;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EnvironmentScope;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EventDerivationConfigDetails;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.ExtractionLocation;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.ExtractionLocationType;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.GetEntityDerivationConfigSummariesRequest;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.GetEntityDerivationConfigSummariesResponse;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.GetEntityDerivationConfigsRequest;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.GetEntityDerivationConfigsResponse;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.KeyMatchType;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.Scope;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.SpanBasedExtraction;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.SpanProjection;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.UpdateEntityDerivationConfigRequest;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.UpdateEntityDerivationConfigResponse;
 import ai.traceable.fraud.datamodel.event.kind.v1.ComplexDataModelEventKind;
+import ai.traceable.fraud.datamodel.event.kind.v1.TransformationFunctionInvocation;
+import ai.traceable.fraud.datamodel.event.kind.v1.TransformationPipeline;
+import com.google.protobuf.Value;
 import io.grpc.StatusRuntimeException;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
@@ -282,6 +292,210 @@ class EntityDerivationConfigServiceImplTest {
     assertTrue(
         response.getSummariesList().stream()
             .anyMatch(s -> s.getId().equals("system_entity_span_id")));
+  }
+
+  @Test
+  void testCustomerCanOverrideRecommendedEntity() {
+    // Create a custom entity with same ID as recommended entity to override it
+    CreateEntityDerivationConfigRequest createRequest =
+        CreateEntityDerivationConfigRequest.newBuilder()
+            .setData(
+                EntityDerivationConfigData.newBuilder()
+                    .setDisplayName("Custom Email Override")
+                    .setCategory(EntityCategory.ENTITY_CATEGORY_CUSTOM)
+                    .setDisabled(false)
+                    .setEventKind(
+                        ComplexDataModelEventKind.newBuilder().setKindId("system_event_kind_email"))
+                    .setSpanProjection(
+                        SpanProjection.newBuilder()
+                            .addEventDerivationConfigs(
+                                EventDerivationConfigDetails.newBuilder()
+                                    .setName("Custom Email Extraction")))
+                    .build())
+            .build();
+
+    CreateEntityDerivationConfigResponse createResponse =
+        RequestContext.forTenantId("test-tenant")
+            .call(() -> serviceStub.createEntityDerivationConfig(createRequest));
+
+    // Override the recommended entity by updating with same ID
+    String recommendedEntityId = "recommended_entity_email_address";
+    UpdateEntityDerivationConfigRequest updateRequest =
+        UpdateEntityDerivationConfigRequest.newBuilder()
+            .setId(recommendedEntityId)
+            .setData(
+                EntityDerivationConfigData.newBuilder()
+                    .setDisplayName("Customer Enabled Email")
+                    .setCategory(EntityCategory.ENTITY_CATEGORY_RECOMMENDED)
+                    .setDisabled(false)
+                    .setEventKind(
+                        ComplexDataModelEventKind.newBuilder().setKindId("system_event_kind_email"))
+                    .setSpanProjection(
+                        SpanProjection.newBuilder()
+                            .addEventDerivationConfigs(
+                                EventDerivationConfigDetails.newBuilder()
+                                    .setName("Customer Email Rule")))
+                    .build())
+            .build();
+
+    // This should create/override the recommended entity in MongoDB
+    RequestContext.forTenantId("test-tenant")
+        .call(() -> serviceStub.updateEntityDerivationConfig(updateRequest));
+
+    // Verify the overridden entity is returned with customer's modifications
+    GetEntityDerivationConfigsRequest getRequest =
+        GetEntityDerivationConfigsRequest.newBuilder()
+            .addIds(recommendedEntityId)
+            .setFilter(EntityDerivationConfigFilter.newBuilder().setIncludeDisabled(false).build())
+            .build();
+
+    GetEntityDerivationConfigsResponse response =
+        RequestContext.forTenantId("test-tenant")
+            .call(() -> serviceStub.getEntityDerivationConfigs(getRequest));
+
+    assertEquals(1, response.getEntityDerivationConfigsCount());
+    EntityDerivationConfig overriddenEntity = response.getEntityDerivationConfigs(0);
+    assertEquals(recommendedEntityId, overriddenEntity.getId());
+    assertEquals("Customer Enabled Email", overriddenEntity.getData().getDisplayName());
+    assertFalse(overriddenEntity.getData().getDisabled());
+  }
+
+  @Test
+  void testComplexBodyExtractionWithParseJsonPipeline() {
+    // Span extraction with nested key path
+    CreateEntityDerivationConfigRequest createRequest =
+        CreateEntityDerivationConfigRequest.newBuilder()
+            .setData(
+                EntityDerivationConfigData.newBuilder()
+                    .setDisplayName("Account ID from Transaction")
+                    .setCategory(EntityCategory.ENTITY_CATEGORY_CUSTOM)
+                    .setEventKind(
+                        ComplexDataModelEventKind.newBuilder()
+                            .setKindId("system_event_kind_string"))
+                    .setSpanProjection(
+                        SpanProjection.newBuilder()
+                            .addEventDerivationConfigs(
+                                EventDerivationConfigDetails.newBuilder()
+                                    .setName("Extract Account ID from Response")
+                                    .setScope(
+                                        Scope.newBuilder()
+                                            .setEnvironmentScope(EnvironmentScope.newBuilder()))
+                                    .setSpanExtraction(
+                                        SpanBasedExtraction.newBuilder()
+                                            .setLocation(
+                                                ExtractionLocation.newBuilder()
+                                                    .setLocationType(
+                                                        ExtractionLocationType
+                                                            .EXTRACTION_LOCATION_TYPE_RESPONSE_BODY)
+                                                    .setKey("transactionDetails.accountId")
+                                                    .setKeyMatchType(
+                                                        KeyMatchType.KEY_MATCH_TYPE_EXACT))))))
+            .build();
+
+    CreateEntityDerivationConfigResponse createResponse =
+        RequestContext.forTenantId("test-tenant")
+            .call(() -> serviceStub.createEntityDerivationConfig(createRequest));
+    assertNotNull(createResponse.getEntityDerivationConfig().getId());
+
+    // Verify round-trip: fetch and check span extraction
+    GetEntityDerivationConfigsResponse getResponse =
+        RequestContext.forTenantId("test-tenant")
+            .call(
+                () ->
+                    serviceStub.getEntityDerivationConfigs(
+                        GetEntityDerivationConfigsRequest.newBuilder()
+                            .addIds(createResponse.getEntityDerivationConfig().getId())
+                            .build()));
+
+    assertEquals(1, getResponse.getEntityDerivationConfigsCount());
+    EntityDerivationConfig config = getResponse.getEntityDerivationConfigs(0);
+    assertEquals("Account ID from Transaction", config.getData().getDisplayName());
+
+    EventDerivationConfigDetails details =
+        config.getData().getSpanProjection().getEventDerivationConfigs(0);
+    assertEquals(
+        ExtractionLocationType.EXTRACTION_LOCATION_TYPE_RESPONSE_BODY,
+        details.getSpanExtraction().getLocation().getLocationType());
+    assertEquals(
+        "transactionDetails.accountId", details.getSpanExtraction().getLocation().getKey());
+    assertEquals(
+        KeyMatchType.KEY_MATCH_TYPE_EXACT,
+        details.getSpanExtraction().getLocation().getKeyMatchType());
+  }
+
+  @Test
+  void testJsonPathExtractionPipeline() {
+    // traceable:getJsonPathValue($s.response_body, '$.transaction.details.accountId')
+    CreateEntityDerivationConfigRequest createRequest =
+        CreateEntityDerivationConfigRequest.newBuilder()
+            .setData(
+                EntityDerivationConfigData.newBuilder()
+                    .setDisplayName("Account ID via JsonPath")
+                    .setCategory(EntityCategory.ENTITY_CATEGORY_CUSTOM)
+                    .setEventKind(
+                        ComplexDataModelEventKind.newBuilder()
+                            .setKindId("system_event_kind_string"))
+                    .setSpanProjection(
+                        SpanProjection.newBuilder()
+                            .addEventDerivationConfigs(
+                                EventDerivationConfigDetails.newBuilder()
+                                    .setName("Extract Account ID via JsonPath")
+                                    .setScope(
+                                        Scope.newBuilder()
+                                            .setEnvironmentScope(EnvironmentScope.newBuilder()))
+                                    .setSpanExtraction(
+                                        SpanBasedExtraction.newBuilder()
+                                            .setLocation(
+                                                ExtractionLocation.newBuilder()
+                                                    .setLocationType(
+                                                        ExtractionLocationType
+                                                            .EXTRACTION_LOCATION_TYPE_RESPONSE_BODY)))
+                                    .setPipeline(
+                                        TransformationPipeline.newBuilder()
+                                            .addTransformationPipeline(
+                                                TransformationFunctionInvocation.newBuilder()
+                                                    .setFunctionId(
+                                                        "system_defined_function_json_path")
+                                                    .putParameterValues(
+                                                        "path",
+                                                        Value.newBuilder()
+                                                            .setStringValue(
+                                                                "$.transaction.details.accountId")
+                                                            .build()))))))
+            .build();
+
+    CreateEntityDerivationConfigResponse createResponse =
+        RequestContext.forTenantId("test-tenant")
+            .call(() -> serviceStub.createEntityDerivationConfig(createRequest));
+    assertNotNull(createResponse.getEntityDerivationConfig().getId());
+
+    GetEntityDerivationConfigsResponse getResponse =
+        RequestContext.forTenantId("test-tenant")
+            .call(
+                () ->
+                    serviceStub.getEntityDerivationConfigs(
+                        GetEntityDerivationConfigsRequest.newBuilder()
+                            .addIds(createResponse.getEntityDerivationConfig().getId())
+                            .build()));
+
+    assertEquals(1, getResponse.getEntityDerivationConfigsCount());
+    EntityDerivationConfig config = getResponse.getEntityDerivationConfigs(0);
+    assertEquals("Account ID via JsonPath", config.getData().getDisplayName());
+
+    EventDerivationConfigDetails details =
+        config.getData().getSpanProjection().getEventDerivationConfigs(0);
+    assertEquals(1, details.getPipeline().getTransformationPipelineCount());
+    assertEquals(
+        "system_defined_function_json_path",
+        details.getPipeline().getTransformationPipeline(0).getFunctionId());
+    assertEquals(
+        "$.transaction.details.accountId",
+        details
+            .getPipeline()
+            .getTransformationPipeline(0)
+            .getParameterValuesMap()
+            .get("path")
+            .getStringValue());
   }
 
   private EntityDerivationConfigData createValidConfigData(String displayName) {

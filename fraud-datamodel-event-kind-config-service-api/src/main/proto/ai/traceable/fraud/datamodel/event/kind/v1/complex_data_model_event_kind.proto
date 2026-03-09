@@ -6,7 +6,7 @@ import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_o
 
 option java_multiple_files = true;
 
-// Complex data model event kind - represents a primitive kind, array of types, or template parameter
+// Complex data model event kind - represents a primitive kind, array of types, map, or template parameter
 // Used by transformation functions to define input/output types
 message ComplexDataModelEventKind {
   oneof type {
@@ -18,5 +18,8 @@ message ComplexDataModelEventKind {
 
     // References a declared type parameter by name (for generic functions like get<T>)
     string type_parameter_ref = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_skip) = true];
+
+    // String-keyed map with typed values (e.g., MAP<string, value> for parsed JSON objects)
+    ComplexDataModelEventKind string_map_of = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "String-keyed map with values of a specific type"];
   }
 }

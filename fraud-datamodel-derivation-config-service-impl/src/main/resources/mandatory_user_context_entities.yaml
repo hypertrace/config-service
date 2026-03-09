@@ -30,18 +30,14 @@ entities:
                 key_match_type: KEY_MATCH_TYPE_EXACT
             pipeline:
               transformation_pipeline:
-                - transformation_function_id: "system_defined_function_replace"
-                  parameters:
-                    - name: "pattern"
-                      value: "Bearer "
-                    - name: "replacement"
-                      value: ""
-                - transformation_function_id: "system_defined_function_split"
-                  parameters:
-                    - name: "delimiter"
-                      value: "."
-                - transformation_function_id: "system_defined_function_get"
-                  parameters:
-                    - name: "index"
-                      value: "1"
-                - transformation_function_id: "system_defined_function_base64_decode"
+                - function_id: "system_defined_function_replace"
+                  parameter_values:
+                    pattern: "Bearer "
+                    replacement: ""
+                - function_id: "system_defined_function_split"
+                  parameter_values:
+                    delimiter: "."
+                - function_id: "system_defined_function_get"
+                  parameter_values:
+                    index: "1"
+                - function_id: "system_defined_function_base64_decode"

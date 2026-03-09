@@ -18,6 +18,7 @@ import io.grpc.StatusException;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -135,7 +136,7 @@ public class EntityDerivationConfigStoreManager {
     return displayName
         .trim()
         .toLowerCase()
-        .replaceAll("\\s+", "_") // Replace spaces with underscores
+        .replaceAll("[\\s\\-]+", "_") // Replace spaces and hyphens with underscores
         .replaceAll("[^a-z0-9_]", "") // Keep only alphanumeric and underscores
         .replaceAll("_+", "_") // Replace multiple underscores with single
         .replaceAll("^_+|_+$", ""); // Remove leading/trailing underscores
@@ -166,13 +167,20 @@ public class EntityDerivationConfigStoreManager {
     List<EntityDerivationConfig> defaultConfigs =
         defaultEntityDerivationProvider.getDefaultEntityDerivations();
 
+    // Build set of user config IDs for quick lookup
+    Set<String> userConfigIds =
+        userConfigs.stream().map(EntityDerivationConfig::getId).collect(Collectors.toSet());
+
+    // Filter defaults: apply filters AND exclude any that have been overridden by user configs
     List<EntityDerivationConfig> filteredDefaults =
         defaultConfigs.stream()
             .filter(config -> EntityDerivationConfigFilterUtil.applyEntityFilter(config, request))
-            .collect(Collectors.toUnmodifiableList());
+            .filter(config -> !userConfigIds.contains(config.getId()))
+            .collect(Collectors.toList());
 
-    List<EntityDerivationConfig> result = new ArrayList<>(filteredDefaults);
-    result.addAll(userConfigs);
+    // User configs take precedence - add them first, then non-overridden defaults
+    List<EntityDerivationConfig> result = new ArrayList<>(userConfigs);
+    result.addAll(filteredDefaults);
     return result;
   }
 }
