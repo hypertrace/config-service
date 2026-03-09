@@ -32,12 +32,16 @@ entities:
               transformation_pipeline:
                 - function_id: "system_defined_function_replace"
                   parameter_values:
-                    pattern: "Bearer "
-                    replacement: ""
+                    pattern:
+                      string_value: "Bearer "
+                    replacement:
+                      string_value: ""
                 - function_id: "system_defined_function_split"
                   parameter_values:
-                    delimiter: "."
+                    delimiter:
+                      string_value: "."
                 - function_id: "system_defined_function_get"
                   parameter_values:
-                    index: "1"
+                    index:
+                      string_value: "1"
                 - function_id: "system_defined_function_base64_decode"
