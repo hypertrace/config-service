@@ -34,6 +34,7 @@ message WafIntegrationDetails {
   }
   WafIntegrationScope waf_integration_scope = 7;
   repeated WafIntegrationTarget integration_targets = 20; //leaving numbers for oneof
+  optional bool enabled = 21;
 }
 
 message WafIntegrationTarget {
@@ -72,6 +73,7 @@ message UpdatedWafIntegrationDetails {
   }
   WafIntegrationScope waf_integration_scope = 7;
   repeated WafIntegrationTarget integration_targets = 20;
+  optional bool enabled = 21;
 }
 
 message UpdatedCloudflareIntegrationParams {
