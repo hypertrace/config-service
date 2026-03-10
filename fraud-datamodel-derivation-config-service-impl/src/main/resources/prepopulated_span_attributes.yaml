@@ -48,7 +48,7 @@ entities:
       display_name: "Span Kind"
       description: "Type of span (e.g., CLIENT, SERVER)"
       disabled: false
-      internal: false
+      internal: true
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
         kind_id: "system_event_kind_string"
@@ -112,7 +112,7 @@ entities:
       display_name: "Service Name"
       description: "Human-readable name of the service"
       disabled: false
-      internal: false
+      internal: true
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
         kind_id: "system_event_kind_string"
@@ -136,7 +136,7 @@ entities:
       display_name: "API Name"
       description: "Human-readable name of the API endpoint"
       disabled: false
-      internal: false
+      internal: true
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
         kind_id: "system_event_kind_string"
@@ -148,7 +148,7 @@ entities:
       display_name: "Environment"
       description: "Deployment environment (e.g., production, staging, development)"
       disabled: false
-      internal: false
+      internal: true
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
         kind_id: "system_event_kind_string"
@@ -440,7 +440,7 @@ entities:
       display_name: "Request Method"
       description: "HTTP method of the request (e.g., GET, POST, PUT, DELETE)"
       disabled: false
-      internal: false
+      internal: true
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
         kind_id: "system_event_kind_string"
@@ -452,7 +452,7 @@ entities:
       display_name: "Request Body Type"
       description: "Content type of the request body (e.g., application/json, text/xml)"
       disabled: false
-      internal: false
+      internal: true
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
         kind_id: "system_event_kind_string"
@@ -464,7 +464,7 @@ entities:
       display_name: "Host Header"
       description: "Host header value from the HTTP request"
       disabled: false
-      internal: false
+      internal: true
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
         kind_id: "system_event_kind_string"
@@ -492,7 +492,7 @@ entities:
       display_name: "User Role"
       description: "Primary role of the authenticated user"
       disabled: false
-      internal: false
+      internal: true
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
         kind_id: "system_event_kind_string"
@@ -504,7 +504,7 @@ entities:
       display_name: "User Scope"
       description: "Authorization scope for the user"
       disabled: false
-      internal: false
+      internal: true
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
         kind_id: "system_event_kind_string"
@@ -520,7 +520,7 @@ entities:
       display_name: "Event Name"
       description: "Name of the event or action"
       disabled: false
-      internal: false
+      internal: true
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
         kind_id: "system_event_kind_string"
@@ -532,7 +532,7 @@ entities:
       display_name: "Display Entity Name"
       description: "Human-readable name for the entity"
       disabled: false
-      internal: false
+      internal: true
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
         kind_id: "system_event_kind_string"
@@ -544,7 +544,7 @@ entities:
       display_name: "Display Span Name"
       description: "Human-readable name for the span"
       disabled: false
-      internal: false
+      internal: true
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
         kind_id: "system_event_kind_string"
@@ -556,7 +556,7 @@ entities:
       display_name: "Start Time"
       description: "Timestamp when the span started (in milliseconds since epoch)"
       disabled: false
-      internal: false
+      internal: true
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
         kind_id: "system_event_kind_timestamp"

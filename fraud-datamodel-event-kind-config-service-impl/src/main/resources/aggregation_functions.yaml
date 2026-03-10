@@ -41,9 +41,3 @@ functions:
     input_kinds:
       - kind_id: "system_event_kind_numeric"
       - kind_id: "system_event_kind_timestamp"
-
-  - function_type: AGGREGATION_FUNCTION_TYPE_COALESCE
-    display_name: "COALESCE"
-    description: "Removes non-null values"
-    input_kinds:
-      - kind_id: "system_event_kind_value"
