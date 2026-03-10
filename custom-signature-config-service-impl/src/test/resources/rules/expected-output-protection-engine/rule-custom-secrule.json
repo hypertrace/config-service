@@ -1,0 +1,26 @@
+{
+  "rule_contexts": [{
+    "scope_context": {
+      "scopes": []
+    },
+    "rule_configs": [{
+      "id": "rule-id",
+      "name": "rule-name",
+      "description": "",
+      "rule_definition_group": {
+        "operator": "LOGICAL_OPERATOR_AND",
+        "rule_definitions": [{
+          "custom_signature_sec_rule": {
+            "sec_rule_evaluation_identifier": "custom_sec_rule",
+            "sec_rule": "*sanitised-rule*"
+          }
+        }]
+      },
+      "processor_details": {
+        "modsec_rule_processor": {
+          "directives_type": "MODSEC_JNI_RULE_DIRECTIVES_TYPE_BASIC"
+        }
+      }
+    }]
+  }]
+}

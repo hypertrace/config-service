@@ -1,0 +1,22 @@
+{
+  "id": "rule-id",
+  "name": "rule-name",
+  "definition": {
+    "clauseGroup": {
+      "clauseOperator": "CLAUSE_OPERATOR_AND",
+      "clauses": [{
+        "matchExpression": {
+          "matchKey": "MATCH_KEY_QUERY_PARAMS_COUNT",
+          "matchOperator": "MATCH_OPERATOR_NOT_EQUAL",
+          "value": 5,
+          "matchCategory": "MATCH_CATEGORY_REQUEST"
+        }
+      }]
+    }
+  },
+  "effect": {
+    "eventType": "EVENT_TYPE_DETECTION_AND_BLOCKING",
+    "eventSeverity": "EVENT_SEVERITY_MEDIUM",
+    "ruleEvaluationPoints": ["RULE_EVALUATION_POINT_EDGE"]
+  }
+}

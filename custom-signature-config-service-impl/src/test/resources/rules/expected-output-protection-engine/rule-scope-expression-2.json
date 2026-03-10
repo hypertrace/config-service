@@ -1,0 +1,43 @@
+{
+  "rule_contexts": [{
+    "scope_context": {
+      "scopes": []
+    },
+    "rule_configs": [{
+      "id": "rule-id",
+      "name": "rule-name",
+      "description": "",
+      "rule_definition_group": {
+        "operator": "LOGICAL_OPERATOR_AND",
+        "rule_definitions": [{
+          "custom_signature_condition_expression": {
+            "condition_expression_evaluation_identifier": "scope_path",
+            "condition_expression": {
+              "negate_expression": {
+                "leaf_match_condition_expression": {
+                  "emit_matched_attribute": false,
+                  "unary_key_match_condition": {
+                    "key_condition": {
+                      "key_metadata": {
+                        "fully_qualified_key_prefix": "request.url"
+                      },
+                      "key_match_operation": {
+                        "string_match_operation": {
+                          "string_operator": {
+                            "string_operator": "STRING_MATCH_OPERATOR_LIKE",
+                            "ignore_case": false
+                          },
+                          "string_value": "/api/path/.*"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }]
+      }
+    }]
+  }]
+}

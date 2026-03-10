@@ -1,0 +1,39 @@
+{
+  "rule_contexts": [{
+    "scope_context": {
+      "scopes": []
+    },
+    "rule_configs": [{
+      "id": "rule-id",
+      "name": "rule-name",
+      "description": "",
+      "rule_definition_group": {
+        "operator": "LOGICAL_OPERATOR_AND",
+        "rule_definitions": [{
+          "custom_signature_condition_expression": {
+            "condition_expression_evaluation_identifier": "aggregation",
+            "condition_expression": {
+              "leaf_match_condition_expression": {
+                "emit_matched_attribute": false,
+                "aggregation_match_condition": {
+                  "lhs_operand": {
+                    "key_condition": {
+                      "key_metadata": {
+                        "fully_qualified_key_prefix": "request.query_param"
+                      }
+                    },
+                    "key_aggregation_operator": "AGGREGATION_OPERATOR_COUNT"
+                  },
+                  "rhs_number_match_operation": {
+                    "number_operator": "NUMBER_MATCH_OPERATOR_NOT_EQ",
+                    "number_value": 5.0
+                  }
+                }
+              }
+            }
+          }
+        }]
+      }
+    }]
+  }]
+}

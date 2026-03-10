@@ -1,0 +1,64 @@
+{
+  "rule_contexts": [{
+    "scope_context": {
+      "scopes": []
+    },
+    "rule_configs": [{
+      "id": "rule-id",
+      "name": "rule-name",
+      "description": "",
+      "rule_definition_group": {
+        "operator": "LOGICAL_OPERATOR_AND",
+        "rule_definitions": [{
+          "custom_signature_condition_expression": {
+            "condition_expression_evaluation_identifier": "lhs_rhs_aggregation",
+            "condition_expression": {
+              "leaf_match_condition_expression": {
+                "emit_matched_attribute": false,
+                "aggregation_match_condition": {
+                  "lhs_operand": {
+                    "key_condition": {
+                      "key_metadata": {
+                        "fully_qualified_key_prefix": "request.header"
+                      },
+                      "key_match_operation": {
+                        "string_match_operation": {
+                          "string_operator": {
+                            "string_operator": "STRING_MATCH_OPERATOR_NOT_EQ",
+                            "ignore_case": false
+                          },
+                          "string_value": "5.0"
+                        }
+                      }
+                    },
+                    "key_aggregation_operator": "AGGREGATION_OPERATOR_COUNT"
+                  },
+                  "rhs_aggregation_match_operation": {
+                    "operand": {
+                      "key_condition": {
+                        "key_metadata": {
+                          "fully_qualified_key_prefix": "request.header"
+                        },
+                        "key_match_operation": {
+                          "string_match_operation": {
+                            "string_operator": {
+                              "string_operator": "STRING_MATCH_OPERATOR_NOT_EQ",
+                              "ignore_case": false
+                            },
+                            "string_value": "10.0"
+                          }
+                        }
+                      },
+                      "key_aggregation_operator": "AGGREGATION_OPERATOR_COUNT"
+                    },
+                    "number_operator": "NUMBER_MATCH_OPERATOR_EQ"
+                  }
+                }
+              }
+            }
+          }
+        }]
+      }
+    }]
+  }]
+}

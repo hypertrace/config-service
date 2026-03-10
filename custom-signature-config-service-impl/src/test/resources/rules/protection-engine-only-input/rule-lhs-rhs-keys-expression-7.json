@@ -1,0 +1,31 @@
+{
+  "id": "rule-id",
+  "name": "rule-name",
+  "definition": {
+    "clauseGroup": {
+      "clauseOperator": "CLAUSE_OPERATOR_AND",
+      "clauses": [{
+        "lhsRhsKeysExpression": {
+          "lhsKeyExpression": {
+            "matchKey": "MATCH_KEY_HEADERS_COUNT",
+            "matchOperator": "MATCH_OPERATOR_NOT_EQUAL",
+            "value": 5,
+            "matchCategory": "MATCH_CATEGORY_REQUEST"
+          },
+          "rhsKeyExpression": {
+            "matchKey": "MATCH_KEY_HEADERS_COUNT",
+            "matchOperator": "MATCH_OPERATOR_NOT_EQUAL",
+            "value": 10,
+            "matchCategory": "MATCH_CATEGORY_REQUEST"
+          },
+          "matchOperator": "MATCH_OPERATOR_EQUALS"
+        }
+      }]
+    }
+  },
+  "effect": {
+    "eventType": "EVENT_TYPE_DETECTION_AND_BLOCKING",
+    "eventSeverity": "EVENT_SEVERITY_MEDIUM",
+    "ruleEvaluationPoints": ["RULE_EVALUATION_POINT_EDGE"]
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "id": "rule-id",
+  "name": "rule-name",
+  "definition": {
+    "clauseGroup": {
+      "clauseOperator": "CLAUSE_OPERATOR_AND",
+      "clauses": [{
+        "scopeExpression": {
+          "entityScope": {
+            "entityType": "ENTITY_TYPE_API",
+            "entityIds": ["api-id-1", "api-id-2"]
+          },
+          "exclude": true
+        }
+      }]
+    }
+  },
+  "effect": {
+    "eventType": "EVENT_TYPE_DETECTION_AND_BLOCKING",
+    "eventSeverity": "EVENT_SEVERITY_MEDIUM",
+    "ruleEvaluationPoints": ["RULE_EVALUATION_POINT_EDGE"]
+  }
+}

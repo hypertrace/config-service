@@ -4,6 +4,7 @@ import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.customsignature.config.service.modsec.ModsecRulesManagerModule;
 import ai.traceable.customsignature.config.service.rules.RulesManagerModule;
+import ai.traceable.customsignature.config.service.rules.converter.evaluator.EvaluatorConverterModule;
 import ai.traceable.customsignature.config.service.rules.converter.expression.ExpressionConverterModule;
 import ai.traceable.entity.fetcher.cache.CachedServiceMappingProviderModule;
 import com.google.inject.AbstractModule;
@@ -47,6 +48,7 @@ class CustomSignatureConfigServiceModule extends AbstractModule {
     install(new RulesManagerModule());
     install(new ModsecRulesManagerModule());
     install(new ExpressionConverterModule());
+    install(new EvaluatorConverterModule());
     install(
         new CachedServiceMappingProviderModule(
             grpcChannelRegistry, config, CACHED_SERVICE_MAPPING_NAME));

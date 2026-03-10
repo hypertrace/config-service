@@ -1,0 +1,44 @@
+{
+  "rule_contexts": [{
+    "scope_context": {
+      "scopes": []
+    },
+    "rule_configs": [{
+      "id": "rule-id",
+      "name": "rule-name",
+      "description": "",
+      "rule_definition_group": {
+        "operator": "LOGICAL_OPERATOR_AND",
+        "rule_definitions": [{
+          "custom_signature_condition_expression": {
+            "condition_expression_evaluation_identifier": "ip_connection_type",
+            "condition_expression": {
+              "negate_expression": {
+                "leaf_match_condition_expression": {
+                  "emit_matched_attribute": false,
+                  "unary_key_match_condition": {
+                    "key_condition": {
+                      "key_metadata": {
+                        "fully_qualified_key_prefix": "ip.ip_connection_type"
+                      },
+                      "key_match_operation": {
+                        "string_list_match_operation": {
+                          "string_operator": {
+                            "string_operator": "STRING_MATCH_OPERATOR_EQ",
+                            "ignore_case": false
+                          },
+                          "multi_match_operator": "MULTI_MATCH_OPERATOR_ANY",
+                          "string_values": ["IP_CONNECTION_TYPE_RESIDENTIAL", "IP_CONNECTION_TYPE_DATA_CENTER"]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }]
+      }
+    }]
+  }]
+}

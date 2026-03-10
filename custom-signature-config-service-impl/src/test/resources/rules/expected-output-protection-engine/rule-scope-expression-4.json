@@ -1,0 +1,48 @@
+{
+  "rule_contexts": [
+    {
+      "scope_context": {},
+      "rule_configs": [
+        {
+          "id": "rule-id",
+          "name": "rule-name",
+          "rule_definition_group": {
+            "operator": "LOGICAL_OPERATOR_AND",
+            "rule_definitions": [
+              {
+                "custom_signature_condition_expression": {
+                  "condition_expression_evaluation_identifier": "scope",
+                  "condition_expression": {
+                    "negate_expression": {
+                      "leaf_match_condition_expression": {
+                        "unary_key_match_condition": {
+                          "key_condition": {
+                            "key_metadata": {
+                              "fully_qualified_key_prefix": "request.scope.api.id"
+                            },
+                            "key_match_operation": {
+                              "string_list_match_operation": {
+                                "string_operator": {
+                                  "string_operator": "STRING_MATCH_OPERATOR_EQ"
+                                },
+                                "multi_match_operator": "MULTI_MATCH_OPERATOR_ANY",
+                                "string_values": [
+                                  "api-id-1",
+                                  "api-id-2"
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,113 @@
+{
+  "rule_contexts": [
+    {
+      "scope_context": {},
+      "rule_configs": [
+        {
+          "id": "rule-id",
+          "name": "rule-name",
+          "rule_definition_group": {
+            "operator": "LOGICAL_OPERATOR_AND",
+            "rule_definitions": [
+              {
+                "custom_signature_rule_definition_group": {
+                  "operator": "LOGICAL_OPERATOR_OR",
+                  "rule_definitions": [
+                    {
+                      "custom_signature_condition_expression": {
+                        "condition_expression": {
+                          "negate_expression": {
+                            "leaf_match_condition_expression": {
+                              "key_value_match_condition": {
+                                "lhs_key_operand": {
+                                  "key_metadata": {
+                                    "fully_qualified_key_prefix": "request.custom"
+                                  },
+                                  "key_match_operation": {
+                                    "string_match_operation": {
+                                      "string_operator": {
+                                        "string_operator": "STRING_MATCH_OPERATOR_EQ"
+                                      },
+                                      "string_value": "enduser.id"
+                                    }
+                                  }
+                                },
+                                "rhs_value_match_operation": {
+                                  "string_list_match_operation": {
+                                    "string_operator": {
+                                      "string_operator": "STRING_MATCH_OPERATOR_CONTAINS"
+                                    },
+                                    "multi_match_operator": "MULTI_MATCH_OPERATOR_ANY",
+                                    "string_values": [
+                                      "gmail.com",
+                                      "yahoo.com"
+                                    ]
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "custom_signature_condition_expression": {
+                        "condition_expression": {
+                          "leaf_match_condition_expression": {
+                            "unary_key_match_condition": {
+                              "key_condition": {
+                                "key_metadata": {
+                                  "fully_qualified_key_prefix": "ip.ip_abuse_velocity"
+                                },
+                                "key_match_operation": {
+                                  "string_list_match_operation": {
+                                    "string_operator": {
+                                      "string_operator": "STRING_MATCH_OPERATOR_EQ"
+                                    },
+                                    "multi_match_operator": "MULTI_MATCH_OPERATOR_ANY",
+                                    "string_values": [
+                                      "SCORE_CATEGORY_STANDARD_MEDIUM",
+                                      "SCORE_CATEGORY_STANDARD_HIGH"
+                                    ]
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "custom_signature_condition_expression": {
+                  "condition_expression": {
+                    "leaf_match_condition_expression": {
+                      "unary_key_match_condition": {
+                        "key_condition": {
+                          "key_metadata": {
+                            "fully_qualified_key_prefix": "request.method"
+                          },
+                          "key_match_operation": {
+                            "string_match_operation": {
+                              "string_operator": {
+                                "string_operator": "STRING_MATCH_OPERATOR_NOT_EQ",
+                                "ignore_case": true
+                              },
+                              "string_value": "GET"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
