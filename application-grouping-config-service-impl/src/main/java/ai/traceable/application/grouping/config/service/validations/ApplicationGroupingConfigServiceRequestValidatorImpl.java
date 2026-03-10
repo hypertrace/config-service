@@ -101,10 +101,20 @@ public class ApplicationGroupingConfigServiceRequestValidatorImpl
     validateStringField(requestContext, request.getId(), "ID", MAX_ID_LENGTH);
     validateApplicationGroupingRuleConfigInfo(
         requestContext, request.getApplicationGroupingRuleConfigInfo());
+    validateIsNotDynamic(requestContext, request.getApplicationGroupingRuleConfigInfo());
     validateUniqueRuleName(
         requestContext,
         request.getApplicationGroupingRuleConfigInfo().getRuleName(),
         request.getId());
+  }
+
+  private void validateIsNotDynamic(
+      RequestContext requestContext, ApplicationGroupingRuleConfigInfo configInfo) {
+    if (configInfo.getGroupName().hasDynamic()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Dynamic rules cannot be updated")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
   }
 
   private void validateApplicationGroupingRuleConfigInfo(
