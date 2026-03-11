@@ -126,7 +126,7 @@ jobs:
           files: ./**/build/test-results/**/*.xml
 
   integration-test:
-    runs-on: self-hosted-x64-medium
+    runs-on: self-hosted-x64-large
     steps:
       # Set fetch-depth: 0 to fetch commit history and tags for use in version calculation
       - name: Check out code
