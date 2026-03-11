@@ -140,6 +140,7 @@ message GlobalModsecConfigChange {
   optional bool enabled_for_exit_spans = 6;
   ModsecEvaluationEngineConfig modsec_evaluation_engine_config = 7;
   RuleVersionDataChange rule_version_data_change = 8;
+  optional bool enabled_detection_for_non_head_entry_spans = 9;
 }
 
 message GlobalModsecConfig {
@@ -151,6 +152,7 @@ message GlobalModsecConfig {
   bool enabled_for_exit_spans = 6;
   ModsecEvaluationEngineConfig modsec_evaluation_engine_config = 7;
   RuleVersionData rule_version_data = 8;
+  bool enabled_detection_for_non_head_entry_spans = 9;
 }
 
 message GlobalApiConfigChange {
@@ -158,6 +160,7 @@ message GlobalApiConfigChange {
   ApiDefaultConfigsType default_configs_type = 2;
   optional bool enabled_for_exit_spans = 3;
   RuleVersionDataChange rule_version_data_change = 4;
+  optional bool enabled_detection_for_non_head_entry_spans = 5;
 }
 
 message GlobalApiConfig {
@@ -165,6 +168,7 @@ message GlobalApiConfig {
   ApiDefaultConfigsType default_configs_type = 2;
   bool enabled_for_exit_spans = 3;
   RuleVersionData rule_version_data = 4;
+  bool enabled_detection_for_non_head_entry_spans = 5;
 }
 
 message GlobalGenAiConfigChange {

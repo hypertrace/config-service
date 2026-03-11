@@ -536,6 +536,7 @@ message CustomSignatureAnomalyConfig {
   CustomModsecRuleVersion modsec_rule_version = 1;
   // this flag overrides the global config flag enabled_for_exit_spans
   optional bool exit_span_evaluation_enabled = 2;
+  optional bool enabled_detection_for_non_head_entry_spans = 3;
 }
 
 message RateLimitAnomalyConfig {}
@@ -546,7 +547,9 @@ message SafeCrsAnomalyConfig {}
 
 message InAgentVulnerableLibraryConfig {}
 
-message MaliciousSourcesAnomalyConfig {}
+message MaliciousSourcesAnomalyConfig {
+  optional bool enabled_detection_for_non_head_entry_spans = 1;
+}
 
 message ApiProtectAnomalyConfig {}
 
