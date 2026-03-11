@@ -219,6 +219,7 @@ message CustomRulesAnomalyDetectionConfig {
   message MaliciousSourcesRulesAnomalyConfig {
     EmailDomainAnomalyConfig email_domain = 1;
     IpTypeAnomalyConfig ip_type = 2;
+    optional bool enabled_detection_for_non_head_entry_spans = 3;
   }
 
   message EmailDomainAnomalyConfig {
@@ -548,7 +549,7 @@ message SafeCrsAnomalyConfig {}
 message InAgentVulnerableLibraryConfig {}
 
 message MaliciousSourcesAnomalyConfig {
-  optional bool enabled_detection_for_non_head_entry_spans = 1;
+  optional bool enabled_detection_for_non_head_entry_spans = 1 [deprecated = true];
 }
 
 message ApiProtectAnomalyConfig {}
