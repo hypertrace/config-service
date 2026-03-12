@@ -34,11 +34,13 @@ import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.validator.routines.DomainValidator;
+import org.apache.commons.validator.routines.InetAddressValidator;
 
 @Slf4j
 @AllArgsConstructor(onConstructor_ = {@Inject})
 public class CloudEdgeDeploymentValidator {
   private static final DomainValidator DOMAIN_VALIDATOR = DomainValidator.getInstance(false);
+  private static final InetAddressValidator IP_VALIDATOR = InetAddressValidator.getInstance();
 
   private final SharedConfigMetadataRegistry sharedConfigMetadataRegistry;
   private final StateTransitionsRegistry stateTransitionsRegistry;
@@ -91,6 +93,18 @@ public class CloudEdgeDeploymentValidator {
       if (DeploymentMode.DEPLOYMENT_MODE_UNSPECIFIED
           == request.getCloudEdgeDeployedOutputConfig().getDeploymentMode()) {
         return Status.INVALID_ARGUMENT.withDescription("Deployment mode must be specified");
+      }
+
+      String primaryIp = request.getCloudEdgeDeployedOutputConfig().getPrimaryIpAddr();
+      String secondaryIp = request.getCloudEdgeDeployedOutputConfig().getSecondaryIpAddr();
+
+      if (!primaryIp.isEmpty() && !validateIpAddress(primaryIp)) {
+        return Status.INVALID_ARGUMENT.withDescription("Invalid primary IP address: " + primaryIp);
+      }
+
+      if (!secondaryIp.isEmpty() && !validateIpAddress(secondaryIp)) {
+        return Status.INVALID_ARGUMENT.withDescription(
+            "Invalid secondary IP address: " + secondaryIp);
       }
     }
 
@@ -308,5 +322,9 @@ public class CloudEdgeDeploymentValidator {
           .withDescription("Invalid domain format: " + domain)
           .asRuntimeException();
     }
+  }
+
+  private boolean validateIpAddress(String ip) {
+    return IP_VALIDATOR.isValid(ip);
   }
 }

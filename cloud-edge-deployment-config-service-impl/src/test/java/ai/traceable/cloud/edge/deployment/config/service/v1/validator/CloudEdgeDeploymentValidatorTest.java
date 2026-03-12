@@ -13,9 +13,14 @@ import com.google.protobuf.Value;
 import io.grpc.Status;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -667,5 +672,284 @@ class CloudEdgeDeploymentValidatorTest {
     // Validate and verify
     Status validStatus = validator.validate(validRequest);
     assertTrue(validStatus.isOk());
+  }
+
+  // ========== Parameterized Tests for IP Address Validation ==========
+
+  static Stream<Arguments> provideValidIpAddresses() {
+    return Stream.of(
+        Arguments.of("192.168.1.1", "Standard IPv4"),
+        Arguments.of("10.0.0.1", "Private IPv4"),
+        Arguments.of("172.16.0.1", "Private IPv4 range"),
+        Arguments.of("255.255.255.255", "Max IPv4"),
+        Arguments.of("0.0.0.0", "Min IPv4"),
+        Arguments.of("8.8.8.8", "Google DNS"),
+        Arguments.of("127.0.0.1", "Localhost"),
+        Arguments.of("2001:0db8:85a3:0000:0000:8a2e:0370:7334", "Full IPv6"),
+        Arguments.of("2001:db8::8a2e:370:7334", "Compressed IPv6"),
+        Arguments.of("::1", "IPv6 loopback"),
+        Arguments.of("::", "IPv6 unspecified"),
+        Arguments.of("fe80::1", "IPv6 link-local"));
+  }
+
+  @ParameterizedTest(name = "{1}: {0}")
+  @MethodSource("provideValidIpAddresses")
+  void testValidateIpAddresses_ValidPrimaryIp(String ip, String description) {
+    UpdateCloudEdgeDeploymentConfigRequest request =
+        UpdateCloudEdgeDeploymentConfigRequest.newBuilder()
+            .setId("test-id")
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setDeploymentMode(DeploymentMode.DEPLOYMENT_MODE_MONITORING_ONLY)
+                    .setPrimaryIpAddr(ip)
+                    .build())
+            .setConfigPermission(
+                ConfigPermission.newBuilder()
+                    .setRead(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+                    .setWrite(ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE)
+                    .build())
+            .build();
+
+    Status status = validator.validate(request);
+    assertTrue(status.isOk(), description + " should be valid for primary IP: " + ip);
+  }
+
+  @ParameterizedTest(name = "{1}: {0}")
+  @MethodSource("provideValidIpAddresses")
+  void testValidateIpAddresses_ValidSecondaryIp(String ip, String description) {
+    UpdateCloudEdgeDeploymentConfigRequest request =
+        UpdateCloudEdgeDeploymentConfigRequest.newBuilder()
+            .setId("test-id")
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setDeploymentMode(DeploymentMode.DEPLOYMENT_MODE_MONITORING_ONLY)
+                    .setSecondaryIpAddr(ip)
+                    .build())
+            .setConfigPermission(
+                ConfigPermission.newBuilder()
+                    .setRead(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+                    .setWrite(ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE)
+                    .build())
+            .build();
+
+    Status status = validator.validate(request);
+    assertTrue(status.isOk(), description + " should be valid for secondary IP: " + ip);
+  }
+
+  static Stream<Arguments> provideInvalidIpAddresses() {
+    return Stream.of(
+        Arguments.of("256.1.1.1", "IPv4 octet > 255"),
+        Arguments.of("192.168.1", "IPv4 incomplete"),
+        Arguments.of("192.168.1.1.1", "IPv4 too many octets"),
+        Arguments.of("192.168.-1.1", "IPv4 negative octet"),
+        Arguments.of("abc.def.ghi.jkl", "Non-numeric IPv4"),
+        Arguments.of("192.168.1.999", "IPv4 octet > 255"),
+        Arguments.of("not-an-ip", "Invalid string"),
+        Arguments.of("192.168.1.1/24", "CIDR notation"),
+        Arguments.of("gggg::1", "Invalid IPv6"),
+        Arguments.of("::gggg", "Invalid IPv6 suffix"),
+        Arguments.of("2001:db8:::1", "Too many colons in IPv6"));
+  }
+
+  @ParameterizedTest(name = "{1}: {0}")
+  @MethodSource("provideInvalidIpAddresses")
+  void testValidateIpAddresses_InvalidPrimaryIp(String ip, String description) {
+    UpdateCloudEdgeDeploymentConfigRequest request =
+        UpdateCloudEdgeDeploymentConfigRequest.newBuilder()
+            .setId("test-id")
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setDeploymentMode(DeploymentMode.DEPLOYMENT_MODE_MONITORING_ONLY)
+                    .setPrimaryIpAddr(ip)
+                    .build())
+            .setConfigPermission(
+                ConfigPermission.newBuilder()
+                    .setRead(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+                    .setWrite(ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE)
+                    .build())
+            .build();
+
+    Status status = validator.validate(request);
+    assertFalse(status.isOk(), description + " should be invalid for primary IP: " + ip);
+    assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
+    assertTrue(
+        status.getDescription().contains("Invalid primary IP address"),
+        "Error message should mention primary IP");
+  }
+
+  @ParameterizedTest(name = "{1}: {0}")
+  @MethodSource("provideInvalidIpAddresses")
+  void testValidateIpAddresses_InvalidSecondaryIp(String ip, String description) {
+    UpdateCloudEdgeDeploymentConfigRequest request =
+        UpdateCloudEdgeDeploymentConfigRequest.newBuilder()
+            .setId("test-id")
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setDeploymentMode(DeploymentMode.DEPLOYMENT_MODE_MONITORING_ONLY)
+                    .setSecondaryIpAddr(ip)
+                    .build())
+            .setConfigPermission(
+                ConfigPermission.newBuilder()
+                    .setRead(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+                    .setWrite(ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE)
+                    .build())
+            .build();
+
+    Status status = validator.validate(request);
+    assertFalse(status.isOk(), description + " should be invalid for secondary IP: " + ip);
+    assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
+    assertTrue(
+        status.getDescription().contains("Invalid secondary IP address"),
+        "Error message should mention secondary IP");
+  }
+
+  @Test
+  void testValidateIpAddresses_EmptyPrimaryIp_ShouldPass() {
+    UpdateCloudEdgeDeploymentConfigRequest request =
+        UpdateCloudEdgeDeploymentConfigRequest.newBuilder()
+            .setId("test-id")
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setDeploymentMode(DeploymentMode.DEPLOYMENT_MODE_MONITORING_ONLY)
+                    .setPrimaryIpAddr("")
+                    .build())
+            .setConfigPermission(
+                ConfigPermission.newBuilder()
+                    .setRead(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+                    .setWrite(ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE)
+                    .build())
+            .build();
+
+    Status status = validator.validate(request);
+    assertTrue(status.isOk(), "Empty primary IP should pass validation");
+  }
+
+  @Test
+  void testValidateIpAddresses_EmptySecondaryIp_ShouldPass() {
+    UpdateCloudEdgeDeploymentConfigRequest request =
+        UpdateCloudEdgeDeploymentConfigRequest.newBuilder()
+            .setId("test-id")
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setDeploymentMode(DeploymentMode.DEPLOYMENT_MODE_MONITORING_ONLY)
+                    .setSecondaryIpAddr("")
+                    .build())
+            .setConfigPermission(
+                ConfigPermission.newBuilder()
+                    .setRead(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+                    .setWrite(ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE)
+                    .build())
+            .build();
+
+    Status status = validator.validate(request);
+    assertTrue(status.isOk(), "Empty secondary IP should pass validation");
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "192.168.1.1, 192.168.1.2, Both valid IPv4",
+    "2001:db8::1, 2001:db8::2, Both valid IPv6",
+    "192.168.1.1, 2001:db8::1, Mixed IPv4 and IPv6",
+    "10.0.0.1, 172.16.0.1, Different private ranges"
+  })
+  void testValidateIpAddresses_BothIpsValid(
+      String primaryIp, String secondaryIp, String description) {
+    UpdateCloudEdgeDeploymentConfigRequest request =
+        UpdateCloudEdgeDeploymentConfigRequest.newBuilder()
+            .setId("test-id")
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setDeploymentMode(DeploymentMode.DEPLOYMENT_MODE_MONITORING_ONLY)
+                    .setPrimaryIpAddr(primaryIp)
+                    .setSecondaryIpAddr(secondaryIp)
+                    .build())
+            .setConfigPermission(
+                ConfigPermission.newBuilder()
+                    .setRead(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+                    .setWrite(ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE)
+                    .build())
+            .build();
+
+    Status status = validator.validate(request);
+    assertTrue(status.isOk(), description + " should be valid");
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "256.1.1.1, 192.168.1.2, Invalid primary IP",
+    "192.168.1.1, 256.1.1.1, Invalid secondary IP",
+    "invalid-ip, 192.168.1.2, Invalid primary IP format",
+    "192.168.1.1, invalid-ip, Invalid secondary IP format",
+    "256.1.1.1, 256.1.1.2, Both IPs invalid"
+  })
+  void testValidateIpAddresses_InvalidIpCombinations(
+      String primaryIp, String secondaryIp, String description) {
+    UpdateCloudEdgeDeploymentConfigRequest request =
+        UpdateCloudEdgeDeploymentConfigRequest.newBuilder()
+            .setId("test-id")
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setDeploymentMode(DeploymentMode.DEPLOYMENT_MODE_MONITORING_ONLY)
+                    .setPrimaryIpAddr(primaryIp)
+                    .setSecondaryIpAddr(secondaryIp)
+                    .build())
+            .setConfigPermission(
+                ConfigPermission.newBuilder()
+                    .setRead(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+                    .setWrite(ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE)
+                    .build())
+            .build();
+
+    Status status = validator.validate(request);
+    assertFalse(status.isOk(), description + " should fail validation");
+    assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
+  }
+
+  @Test
+  void testValidateIpAddresses_NoIpAddressesProvided_ShouldPass() {
+    UpdateCloudEdgeDeploymentConfigRequest request =
+        UpdateCloudEdgeDeploymentConfigRequest.newBuilder()
+            .setId("test-id")
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setDeploymentMode(DeploymentMode.DEPLOYMENT_MODE_MONITORING_ONLY)
+                    .build())
+            .setConfigPermission(
+                ConfigPermission.newBuilder()
+                    .setRead(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+                    .setWrite(ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE)
+                    .build())
+            .build();
+
+    Status status = validator.validate(request);
+    assertTrue(status.isOk(), "No IP addresses should pass validation");
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "'', 192.168.1.2, Empty primary with valid secondary",
+    "192.168.1.1, '', Valid primary with empty secondary",
+    "'', '', Both IPs empty"
+  })
+  void testValidateIpAddresses_EmptyIpCombinations(
+      String primaryIp, String secondaryIp, String description) {
+    UpdateCloudEdgeDeploymentConfigRequest request =
+        UpdateCloudEdgeDeploymentConfigRequest.newBuilder()
+            .setId("test-id")
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setDeploymentMode(DeploymentMode.DEPLOYMENT_MODE_MONITORING_ONLY)
+                    .setPrimaryIpAddr(primaryIp)
+                    .setSecondaryIpAddr(secondaryIp)
+                    .build())
+            .setConfigPermission(
+                ConfigPermission.newBuilder()
+                    .setRead(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+                    .setWrite(ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE)
+                    .build())
+            .build();
+
+    Status status = validator.validate(request);
+    assertTrue(status.isOk(), description + " should pass validation");
   }
 }

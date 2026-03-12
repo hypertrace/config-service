@@ -26,6 +26,8 @@ message CloudEdgeDeploymentOutputConfig {
   DeploymentStatus status = 4;
   string comment = 5;
   DeploymentMode deployment_mode = 6;
+  string primary_ip_addr = 7;
+  string secondary_ip_addr = 8;
 }
 
 message CloudEdgeDeploymentConfigWithActions {
