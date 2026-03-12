@@ -15,11 +15,16 @@ import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDe
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfigFilter;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfigServiceGrpc;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfigSummary;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EnvironmentScope;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EventDerivationConfigDetails;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.ExtractionLocation;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.ExtractionLocationType;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.GetEntityDerivationConfigSummariesRequest;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.GetEntityDerivationConfigSummariesResponse;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.GetEntityDerivationConfigsRequest;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.GetEntityDerivationConfigsResponse;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.Scope;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.SpanBasedExtraction;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.SpanProjection;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.UpdateEntityDerivationConfigRequest;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.UpdateEntityDerivationConfigResponse;
@@ -214,7 +219,19 @@ public class EntityDerivationConfigServiceIntegrationTest
         .setSpanProjection(
             SpanProjection.newBuilder()
                 .addEventDerivationConfigs(
-                    EventDerivationConfigDetails.newBuilder().setName("Test Derivation Rule")))
+                    EventDerivationConfigDetails.newBuilder()
+                        .setName("Test Derivation Rule")
+                        .setScope(
+                            Scope.newBuilder()
+                                .setEnvironmentScope(EnvironmentScope.getDefaultInstance()))
+                        .setSpanExtraction(
+                            SpanBasedExtraction.newBuilder()
+                                .setLocation(
+                                    ExtractionLocation.newBuilder()
+                                        .setLocationType(
+                                            ExtractionLocationType
+                                                .EXTRACTION_LOCATION_TYPE_REQUEST_HEADER)
+                                        .setKey("X-Test-Header")))))
         .build();
   }
 }

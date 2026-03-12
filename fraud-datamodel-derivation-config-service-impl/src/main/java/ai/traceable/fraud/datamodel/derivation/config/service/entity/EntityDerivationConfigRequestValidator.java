@@ -7,19 +7,30 @@ import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.DeleteEn
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityCategory;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfig;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfigData;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EventDerivationConfigDetails;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.ParentDerivation;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.Scope;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.SpanProjection;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.UpdateEntityDerivationConfigRequest;
+import ai.traceable.fraud.datamodel.event.kind.v1.ComplexDataModelEventKind;
+import ai.traceable.fraud.datamodel.event.kind.v1.FraudDataModelEventKindRegistry;
+import ai.traceable.fraud.datamodel.event.kind.v1.TransformationPipeline;
 import io.grpc.Status;
 import jakarta.inject.Inject;
+import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class EntityDerivationConfigRequestValidator {
 
   private final DefaultEntityDerivationProvider defaultEntityDerivationProvider;
+  private final FraudDataModelEventKindRegistry fraudDataModelEventKindRegistry;
 
   @Inject
   public EntityDerivationConfigRequestValidator(
-      DefaultEntityDerivationProvider defaultEntityDerivationProvider) {
+      DefaultEntityDerivationProvider defaultEntityDerivationProvider,
+      FraudDataModelEventKindRegistry fraudDataModelEventKindRegistry) {
     this.defaultEntityDerivationProvider = defaultEntityDerivationProvider;
+    this.fraudDataModelEventKindRegistry = fraudDataModelEventKindRegistry;
   }
 
   public void validateRequestContext(RequestContext requestContext) {
@@ -32,7 +43,9 @@ public class EntityDerivationConfigRequestValidator {
   }
 
   public void validateCreateRequest(
-      CreateEntityDerivationConfigRequest request, RequestContext requestContext) {
+      CreateEntityDerivationConfigRequest request,
+      Optional<ComplexDataModelEventKind> parentEventKind,
+      RequestContext requestContext) {
     validateRequestContext(requestContext);
 
     if (!request.hasData()) {
@@ -41,11 +54,13 @@ public class EntityDerivationConfigRequestValidator {
           .asRuntimeException(requestContext.buildTrailers());
     }
 
-    validateEntityDerivationConfigData(request.getData(), requestContext);
+    validateEntityDerivationConfigData(request.getData(), parentEventKind, requestContext);
   }
 
   public void validateUpdateRequest(
-      UpdateEntityDerivationConfigRequest request, RequestContext requestContext) {
+      UpdateEntityDerivationConfigRequest request,
+      Optional<ComplexDataModelEventKind> parentEventKind,
+      RequestContext requestContext) {
     validateRequestContext(requestContext);
 
     if (request.getId().isEmpty()) {
@@ -62,7 +77,7 @@ public class EntityDerivationConfigRequestValidator {
 
     validateSystemEntityUpdate(request.getId(), requestContext);
     validateMandatoryEntityUpdate(request, requestContext);
-    validateEntityDerivationConfigData(request.getData(), requestContext);
+    validateEntityDerivationConfigData(request.getData(), parentEventKind, requestContext);
   }
 
   public void validateDeleteRequest(
@@ -80,11 +95,13 @@ public class EntityDerivationConfigRequestValidator {
   }
 
   private void validateEntityDerivationConfigData(
-      EntityDerivationConfigData data, RequestContext requestContext) {
+      EntityDerivationConfigData data,
+      Optional<ComplexDataModelEventKind> parentEventKind,
+      RequestContext requestContext) {
     validateDisplayName(data, requestContext);
     validateCategory(data, requestContext);
     validateEventKind(data, requestContext);
-    validateValueSource(data, requestContext);
+    validateValueSource(data, parentEventKind, requestContext);
   }
 
   private void validateDisplayName(EntityDerivationConfigData data, RequestContext requestContext) {
@@ -111,7 +128,10 @@ public class EntityDerivationConfigRequestValidator {
     }
   }
 
-  private void validateValueSource(EntityDerivationConfigData data, RequestContext requestContext) {
+  private void validateValueSource(
+      EntityDerivationConfigData data,
+      Optional<ComplexDataModelEventKind> parentEventKind,
+      RequestContext requestContext) {
     boolean hasSpanProjection = data.hasSpanProjection();
     boolean hasParentDerivation = data.hasParentDerivation();
 
@@ -137,26 +157,164 @@ public class EntityDerivationConfigRequestValidator {
 
     // Validate parent_derivation if present
     if (hasParentDerivation) {
-      validateParentDerivation(data, requestContext);
+      validateParentDerivation(data, parentEventKind, requestContext);
     }
   }
 
   private void validateSpanProjection(
       EntityDerivationConfigData data, RequestContext requestContext) {
-    if (data.getSpanProjection().getEventDerivationConfigsCount() == 0) {
+    SpanProjection spanProjection = data.getSpanProjection();
+    if (spanProjection.getEventDerivationConfigsCount() == 0) {
       throw Status.INVALID_ARGUMENT
           .withDescription("Span projection must contain at least one event derivation config")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+
+    ComplexDataModelEventKind entityEventKind = data.getEventKind();
+    int index = 0;
+    for (EventDerivationConfigDetails details : spanProjection.getEventDerivationConfigsList()) {
+      validateEventDerivationConfigDetails(details, entityEventKind, index++, requestContext);
+    }
+  }
+
+  private void validateEventDerivationConfigDetails(
+      EventDerivationConfigDetails details,
+      ComplexDataModelEventKind entityEventKind,
+      int index,
+      RequestContext requestContext) {
+    String prefix = "Event derivation config[" + index + "]: ";
+
+    validateEventDerivationScope(details, prefix, requestContext);
+    validateEventDerivationExtraction(details, prefix, requestContext);
+    validateEventDerivationPipeline(details, entityEventKind, prefix, requestContext);
+  }
+
+  private void validateEventDerivationScope(
+      EventDerivationConfigDetails details, String prefix, RequestContext requestContext) {
+    if (!details.hasScope()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(prefix + "Scope is required")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+
+    Scope scope = details.getScope();
+    if (!scope.hasEnvironmentScope()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(prefix + "Environment scope is required")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+  }
+
+  private void validateEventDerivationExtraction(
+      EventDerivationConfigDetails details, String prefix, RequestContext requestContext) {
+    boolean hasSpanExtraction = details.hasSpanExtraction();
+    boolean hasJexlExpression =
+        details.hasJexlExpression() && !details.getJexlExpression().isEmpty();
+
+    if (!hasSpanExtraction && !hasJexlExpression) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              prefix + "Extraction method is required (span_extraction or jexl_expression)")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+  }
+
+  private void validateEventDerivationPipeline(
+      EventDerivationConfigDetails details,
+      ComplexDataModelEventKind entityEventKind,
+      String prefix,
+      RequestContext requestContext) {
+    if (!details.hasPipeline() || details.getPipeline().getTransformationPipelineCount() == 0) {
+      return;
+    }
+
+    TransformationPipeline pipeline = details.getPipeline();
+    ComplexDataModelEventKind spanExtractionKind =
+        ComplexDataModelEventKind.newBuilder().setKindId("system_event_kind_string").build();
+
+    try {
+      ComplexDataModelEventKind outputKind =
+          fraudDataModelEventKindRegistry.validateTransformationPipeline(
+              spanExtractionKind, pipeline);
+
+      if (!fraudDataModelEventKindRegistry.isKindCompatible(outputKind, entityEventKind)) {
+        throw Status.INVALID_ARGUMENT
+            .withDescription(
+                prefix
+                    + String.format(
+                        "Pipeline output type '%s' incompatible with entity type '%s'",
+                        formatKind(outputKind), formatKind(entityEventKind)))
+            .asRuntimeException(requestContext.buildTrailers());
+      }
+    } catch (IllegalArgumentException e) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(prefix + e.getMessage())
           .asRuntimeException(requestContext.buildTrailers());
     }
   }
 
   private void validateParentDerivation(
-      EntityDerivationConfigData data, RequestContext requestContext) {
-    if (data.getParentDerivation().getParentEntityDerivationId().isEmpty()) {
+      EntityDerivationConfigData data,
+      Optional<ComplexDataModelEventKind> parentEventKind,
+      RequestContext requestContext) {
+    ParentDerivation parentDerivation = data.getParentDerivation();
+    String parentId = parentDerivation.getParentEntityDerivationId();
+    if (parentId.isEmpty()) {
       throw Status.INVALID_ARGUMENT
           .withDescription("Parent entity derivation ID is required for parent derivation")
           .asRuntimeException(requestContext.buildTrailers());
     }
+
+    if (parentEventKind.isEmpty()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Parent entity derivation config not found: " + parentId)
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+
+    ComplexDataModelEventKind parentKind = parentEventKind.get();
+    ComplexDataModelEventKind childKind = data.getEventKind();
+    TransformationPipeline pipeline =
+        parentDerivation.hasPipeline() ? parentDerivation.getPipeline() : null;
+
+    validateParentChildTypeCompatibility(parentKind, childKind, pipeline, requestContext);
+  }
+
+  private void validateParentChildTypeCompatibility(
+      ComplexDataModelEventKind parentKind,
+      ComplexDataModelEventKind childKind,
+      TransformationPipeline pipeline,
+      RequestContext requestContext) {
+    ComplexDataModelEventKind effectiveParentKind = parentKind;
+
+    if (pipeline != null && pipeline.getTransformationPipelineCount() > 0) {
+      try {
+        effectiveParentKind =
+            fraudDataModelEventKindRegistry.validateTransformationPipeline(parentKind, pipeline);
+      } catch (IllegalArgumentException e) {
+        throw Status.INVALID_ARGUMENT
+            .withDescription(e.getMessage())
+            .asRuntimeException(requestContext.buildTrailers());
+      }
+    }
+
+    if (!fraudDataModelEventKindRegistry.isKindCompatible(effectiveParentKind, childKind)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              String.format(
+                  "Parent entity type '%s' incompatible with declared type '%s'",
+                  formatKind(effectiveParentKind), formatKind(childKind)))
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+  }
+
+  private String formatKind(ComplexDataModelEventKind kind) {
+    if (kind.hasKindId()) {
+      return kind.getKindId();
+    }
+    if (kind.hasArrayOf()) {
+      return "array<" + formatKind(kind.getArrayOf()) + ">";
+    }
+    return kind.toString();
   }
 
   private void validateMandatoryEntityDeletion(String entityId, RequestContext requestContext) {

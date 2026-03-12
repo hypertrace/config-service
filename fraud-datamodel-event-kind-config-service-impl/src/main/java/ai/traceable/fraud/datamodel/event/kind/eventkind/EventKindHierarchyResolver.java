@@ -2,12 +2,14 @@ package ai.traceable.fraud.datamodel.event.kind.eventkind;
 
 import ai.traceable.fraud.datamodel.event.kind.v1.ComplexDataModelEventKind;
 import ai.traceable.fraud.datamodel.event.kind.v1.DataModelEventKind;
+import ai.traceable.fraud.datamodel.event.kind.v1.DataType;
 import ai.traceable.fraud.datamodel.event.kind.v1.EventKindFilter;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -20,25 +22,29 @@ import java.util.Set;
 @Singleton
 public class EventKindHierarchyResolver {
 
-  // Maps kind ID to its ancestors (parent, grandparent, etc.)
   private final Map<String, Set<String>> kindToAncestors;
+  private final Map<String, DataType> kindToDataType;
 
   @Inject
   public EventKindHierarchyResolver(EventKindProvider eventKindProvider) {
-    this.kindToAncestors = buildHierarchy(eventKindProvider);
-  }
-
-  private Map<String, Set<String>> buildHierarchy(EventKindProvider eventKindProvider) {
-    // First pass: collect parent relationships
     Map<String, String> kindToParent = new HashMap<>();
+    Map<String, DataType> dataTypes = new HashMap<>();
+
     for (DataModelEventKind kind :
         eventKindProvider.getEventKinds(EventKindFilter.getDefaultInstance())) {
       if (!kind.getParentKindId().isEmpty()) {
         kindToParent.put(kind.getId(), kind.getParentKindId());
       }
+      if (kind.getDataType() != DataType.DATA_TYPE_UNSPECIFIED) {
+        dataTypes.put(kind.getId(), kind.getDataType());
+      }
     }
 
-    // Second pass: compute ancestors for each kind
+    this.kindToAncestors = buildAncestors(kindToParent);
+    this.kindToDataType = dataTypes;
+  }
+
+  private Map<String, Set<String>> buildAncestors(Map<String, String> kindToParent) {
     Map<String, Set<String>> result = new HashMap<>();
     for (String kindId : kindToParent.keySet()) {
       Set<String> ancestors = new HashSet<>();
@@ -50,6 +56,10 @@ public class EventKindHierarchyResolver {
       result.put(kindId, ancestors);
     }
     return result;
+  }
+
+  public Optional<DataType> getDataType(String kindId) {
+    return Optional.ofNullable(kindToDataType.get(kindId));
   }
 
   /**

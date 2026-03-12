@@ -30,6 +30,7 @@ import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.SpanProj
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.UpdateEntityDerivationConfigRequest;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.UpdateEntityDerivationConfigResponse;
 import ai.traceable.fraud.datamodel.event.kind.v1.ComplexDataModelEventKind;
+import ai.traceable.fraud.datamodel.event.kind.v1.FraudDataModelEventKindRegistry;
 import ai.traceable.fraud.datamodel.event.kind.v1.TransformationFunctionInvocation;
 import ai.traceable.fraud.datamodel.event.kind.v1.TransformationPipeline;
 import com.google.protobuf.Value;
@@ -79,8 +80,13 @@ class EntityDerivationConfigServiceImplTest {
         new EntityDerivationConfigStore(genericStub, eventGenerator);
     DefaultEntityDerivationProvider defaultEntityDerivationProvider =
         new DefaultEntityDerivationProvider();
+    FraudDataModelEventKindRegistry fraudDataModelEventKindRegistry =
+        Mockito.mock(FraudDataModelEventKindRegistry.class);
+    Mockito.when(fraudDataModelEventKindRegistry.isKindCompatible(Mockito.any(), Mockito.any()))
+        .thenReturn(true);
     EntityDerivationConfigRequestValidator validator =
-        new EntityDerivationConfigRequestValidator(defaultEntityDerivationProvider);
+        new EntityDerivationConfigRequestValidator(
+            defaultEntityDerivationProvider, fraudDataModelEventKindRegistry);
     EntityDerivationConfigStoreManager storeManager =
         new EntityDerivationConfigStoreManager(
             store, uuidGenerator, defaultEntityDerivationProvider);
@@ -310,8 +316,18 @@ class EntityDerivationConfigServiceImplTest {
                         SpanProjection.newBuilder()
                             .addEventDerivationConfigs(
                                 EventDerivationConfigDetails.newBuilder()
-                                    .setName("Custom Email Extraction")))
-                    .build())
+                                    .setName("Custom Email Extraction")
+                                    .setScope(
+                                        Scope.newBuilder()
+                                            .setEnvironmentScope(EnvironmentScope.newBuilder()))
+                                    .setSpanExtraction(
+                                        SpanBasedExtraction.newBuilder()
+                                            .setLocation(
+                                                ExtractionLocation.newBuilder()
+                                                    .setLocationType(
+                                                        ExtractionLocationType
+                                                            .EXTRACTION_LOCATION_TYPE_REQUEST_HEADER)
+                                                    .setKey("X-Email"))))))
             .build();
 
     CreateEntityDerivationConfigResponse createResponse =
@@ -334,8 +350,18 @@ class EntityDerivationConfigServiceImplTest {
                         SpanProjection.newBuilder()
                             .addEventDerivationConfigs(
                                 EventDerivationConfigDetails.newBuilder()
-                                    .setName("Customer Email Rule")))
-                    .build())
+                                    .setName("Customer Email Rule")
+                                    .setScope(
+                                        Scope.newBuilder()
+                                            .setEnvironmentScope(EnvironmentScope.newBuilder()))
+                                    .setSpanExtraction(
+                                        SpanBasedExtraction.newBuilder()
+                                            .setLocation(
+                                                ExtractionLocation.newBuilder()
+                                                    .setLocationType(
+                                                        ExtractionLocationType
+                                                            .EXTRACTION_LOCATION_TYPE_REQUEST_HEADER)
+                                                    .setKey("X-Email"))))))
             .build();
 
     // This should create/override the recommended entity in MongoDB
@@ -506,7 +532,18 @@ class EntityDerivationConfigServiceImplTest {
         .setSpanProjection(
             SpanProjection.newBuilder()
                 .addEventDerivationConfigs(
-                    EventDerivationConfigDetails.newBuilder().setName("Test Derivation Rule")))
+                    EventDerivationConfigDetails.newBuilder()
+                        .setName("Test Derivation Rule")
+                        .setScope(
+                            Scope.newBuilder().setEnvironmentScope(EnvironmentScope.newBuilder()))
+                        .setSpanExtraction(
+                            SpanBasedExtraction.newBuilder()
+                                .setLocation(
+                                    ExtractionLocation.newBuilder()
+                                        .setLocationType(
+                                            ExtractionLocationType
+                                                .EXTRACTION_LOCATION_TYPE_REQUEST_HEADER)
+                                        .setKey("X-User-Id")))))
         .build();
   }
 }

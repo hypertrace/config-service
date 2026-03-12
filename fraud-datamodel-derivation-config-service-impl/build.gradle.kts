@@ -12,6 +12,8 @@ dependencies {
   implementation(projects.configProtoUtils)
   implementation(projects.configUtils)
   implementation(projects.fraudDatamodelDerivationConfigServiceApi)
+  implementation(projects.fraudDatamodelEventKindConfigServiceApi)
+  implementation(projects.fraudDatamodelEventKindConfigServiceImpl)
   implementation(commonLibs.guice7)
   implementation(commonLibs.slf4j2.api)
   implementation(commonLibs.protobuf.javautil)

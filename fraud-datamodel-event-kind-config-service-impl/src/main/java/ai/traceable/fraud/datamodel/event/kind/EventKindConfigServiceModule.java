@@ -13,6 +13,7 @@ import ai.traceable.fraud.datamodel.event.kind.operator.OperatorServiceImpl;
 import ai.traceable.fraud.datamodel.event.kind.transformationfunction.DefaultTransformationFunctionProvider;
 import ai.traceable.fraud.datamodel.event.kind.transformationfunction.TransformationFunctionProvider;
 import ai.traceable.fraud.datamodel.event.kind.transformationfunction.TransformationFunctionServiceImpl;
+import ai.traceable.fraud.datamodel.event.kind.v1.FraudDataModelEventKindRegistry;
 import com.google.inject.AbstractModule;
 
 /** Guice module for Event Kind Config Services. */
@@ -26,6 +27,9 @@ public class EventKindConfigServiceModule extends AbstractModule {
     bind(TransformationFunctionProvider.class).to(DefaultTransformationFunctionProvider.class);
     bind(OperatorProvider.class).to(DefaultOperatorProvider.class);
     bind(AggregationFunctionProvider.class).to(DefaultAggregationFunctionProvider.class);
+
+    // Bind registry for cross-service validation
+    bind(FraudDataModelEventKindRegistry.class).to(DefaultFraudDataModelEventKindRegistry.class);
 
     // Bind service implementations
     bind(EventKindServiceImpl.class);

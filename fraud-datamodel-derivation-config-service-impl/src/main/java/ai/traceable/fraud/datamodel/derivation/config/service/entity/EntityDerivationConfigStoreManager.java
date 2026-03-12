@@ -13,11 +13,13 @@ import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.GetEntit
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.GetEntityDerivationConfigsResponse;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.UpdateEntityDerivationConfigRequest;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.UpdateEntityDerivationConfigResponse;
+import ai.traceable.fraud.datamodel.event.kind.v1.ComplexDataModelEventKind;
 import io.grpc.Status;
 import io.grpc.StatusException;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
@@ -126,6 +128,18 @@ public class EntityDerivationConfigStoreManager {
 
     entityDerivationConfigStore.deleteObject(requestContext, request.getEntityDerivationConfigId());
     return DeleteEntityDerivationConfigResponse.getDefaultInstance();
+  }
+
+  public Optional<ComplexDataModelEventKind> resolveParentEventKind(
+      String parentId, RequestContext requestContext) {
+    EntityDerivationConfig defaultEntity =
+        defaultEntityDerivationProvider.getDefaultEntity(parentId);
+    if (defaultEntity != null) {
+      return Optional.of(defaultEntity.getData().getEventKind());
+    }
+    return entityDerivationConfigStore
+        .getData(requestContext, parentId)
+        .map(config -> config.getData().getEventKind());
   }
 
   /**

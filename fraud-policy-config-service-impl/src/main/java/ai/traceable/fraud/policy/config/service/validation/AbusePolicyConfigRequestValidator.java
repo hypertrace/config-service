@@ -2,18 +2,39 @@ package ai.traceable.fraud.policy.config.service.validation;
 
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfig;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfigServiceGrpc.EntityDerivationConfigServiceBlockingStub;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.GetEntityDerivationConfigsRequest;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.GetEntityDerivationConfigsResponse;
 import ai.traceable.fraud.datamodel.event.kind.v1.AggregationFunctionType;
+import ai.traceable.fraud.datamodel.event.kind.v1.ComplexDataModelEventKind;
+import ai.traceable.fraud.datamodel.event.kind.v1.FraudDataModelEventKindRegistry;
 import ai.traceable.fraud.datamodel.event.kind.v1.OperatorType;
 import ai.traceable.fraud.policy.config.service.v1.AbusePolicyData;
+import ai.traceable.fraud.policy.config.service.v1.AbusePolicyLiteralValues;
 import ai.traceable.fraud.policy.config.service.v1.CreateAbusePolicyRequest;
 import ai.traceable.fraud.policy.config.service.v1.UpdateAbusePolicyRequest;
 import com.cronutils.model.CronType;
 import com.cronutils.model.definition.CronDefinitionBuilder;
 import com.cronutils.parser.CronParser;
+import com.google.protobuf.Value;
 import io.grpc.Status;
+import jakarta.inject.Inject;
+import java.util.List;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class AbusePolicyConfigRequestValidator {
+
+  private final FraudDataModelEventKindRegistry fraudDataModelEventKindRegistry;
+  private final EntityDerivationConfigServiceBlockingStub entityDerivationConfigServiceStub;
+
+  @Inject
+  public AbusePolicyConfigRequestValidator(
+      FraudDataModelEventKindRegistry fraudDataModelEventKindRegistry,
+      EntityDerivationConfigServiceBlockingStub entityDerivationConfigServiceStub) {
+    this.fraudDataModelEventKindRegistry = fraudDataModelEventKindRegistry;
+    this.entityDerivationConfigServiceStub = entityDerivationConfigServiceStub;
+  }
 
   public void validateRequestContext(RequestContext requestContext) {
     validateRequestContextOrThrow(requestContext);
@@ -154,18 +175,26 @@ public class AbusePolicyConfigRequestValidator {
       RequestContext requestContext) {
 
     // Validate aggregation function type
-    if (template.getAggregation().getAggregationFunction()
-        == AggregationFunctionType.AGGREGATION_FUNCTION_TYPE_UNSPECIFIED) {
+    AggregationFunctionType aggregationFunction =
+        template.getAggregation().getAggregationFunction();
+    if (aggregationFunction == AggregationFunctionType.AGGREGATION_FUNCTION_TYPE_UNSPECIFIED) {
       throw Status.INVALID_ARGUMENT
           .withDescription("Aggregation function must be specified")
           .asRuntimeException(requestContext.buildTrailers());
     }
 
-    if (template.getAggregation().getDerivedEntityId().isEmpty()) {
+    String aggregationEntityId = template.getAggregation().getDerivedEntityId();
+    if (aggregationEntityId.isEmpty()) {
       throw Status.INVALID_ARGUMENT
           .withDescription("Derived entity ID is required for aggregation")
           .asRuntimeException(requestContext.buildTrailers());
     }
+
+    // Validate aggregation entity exists and aggregation function is compatible
+    ComplexDataModelEventKind aggregationEntityKind =
+        validateDerivedEntityExists(aggregationEntityId, requestContext);
+    validateAggregationCompatibility(
+        aggregationEntityId, aggregationFunction, aggregationEntityKind, requestContext);
 
     // Validate group by if present
     if (template.hasGroupBy() && template.getGroupBy().getDerivedEntityId().isEmpty()) {
@@ -174,14 +203,16 @@ public class AbusePolicyConfigRequestValidator {
           .asRuntimeException(requestContext.buildTrailers());
     }
 
+    // Validate group by entity exists if present
+    if (template.hasGroupBy() && !template.getGroupBy().getDerivedEntityId().isEmpty()) {
+      validateDerivedEntityExists(template.getGroupBy().getDerivedEntityId(), requestContext);
+    }
+
     // Aggregation and group by must not use the same derived entity
     if (template.hasGroupBy()
         && !template.getGroupBy().getDerivedEntityId().isEmpty()
-        && !template.getAggregation().getDerivedEntityId().isEmpty()
-        && template
-            .getAggregation()
-            .getDerivedEntityId()
-            .equals(template.getGroupBy().getDerivedEntityId())) {
+        && !aggregationEntityId.isEmpty()
+        && aggregationEntityId.equals(template.getGroupBy().getDerivedEntityId())) {
       throw Status.INVALID_ARGUMENT
           .withDescription("Aggregation and group by must not use the same derived entity ID")
           .asRuntimeException(requestContext.buildTrailers());
@@ -243,11 +274,6 @@ public class AbusePolicyConfigRequestValidator {
             .withDescription("Logical filter operator must be specified")
             .asRuntimeException(requestContext.buildTrailers());
       }
-      if (logicalFilter.getOperandsCount() < 2) {
-        throw Status.INVALID_ARGUMENT
-            .withDescription("Logical filter must have at least 2 operands")
-            .asRuntimeException(requestContext.buildTrailers());
-      }
       for (ai.traceable.fraud.policy.config.service.v1.AbusePolicyDetectionFilter operand :
           logicalFilter.getOperandsList()) {
         validateDetectionFilter(operand, requestContext);
@@ -262,7 +288,8 @@ public class AbusePolicyConfigRequestValidator {
   private void validateRelationalFilter(
       ai.traceable.fraud.policy.config.service.v1.AbusePolicyRelationalFilter filter,
       RequestContext requestContext) {
-    if (filter.getDerivedEntityId().isEmpty()) {
+    String derivedEntityId = filter.getDerivedEntityId();
+    if (derivedEntityId.isEmpty()) {
       throw Status.INVALID_ARGUMENT
           .withDescription("Relational filter derived entity ID is required")
           .asRuntimeException(requestContext.buildTrailers());
@@ -272,6 +299,93 @@ public class AbusePolicyConfigRequestValidator {
           .withDescription("Relational filter operator is required")
           .asRuntimeException(requestContext.buildTrailers());
     }
+
+    ComplexDataModelEventKind entityKind =
+        validateDerivedEntityExists(derivedEntityId, requestContext);
+
+    validateOperatorCompatibility(
+        derivedEntityId, filter.getOperator(), entityKind, requestContext);
+
+    if (filter.hasLiteralValues()) {
+      validateLiteralValues(derivedEntityId, filter.getLiteralValues(), entityKind, requestContext);
+    }
+  }
+
+  private ComplexDataModelEventKind validateDerivedEntityExists(
+      String derivedEntityId, RequestContext requestContext) {
+    GetEntityDerivationConfigsRequest request =
+        GetEntityDerivationConfigsRequest.newBuilder().addIds(derivedEntityId).build();
+
+    GetEntityDerivationConfigsResponse response =
+        requestContext.call(
+            () -> entityDerivationConfigServiceStub.getEntityDerivationConfigs(request));
+
+    List<EntityDerivationConfig> configs = response.getEntityDerivationConfigsList();
+    if (configs.isEmpty()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Derived entity not found: " + derivedEntityId)
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+
+    return configs.get(0).getData().getEventKind();
+  }
+
+  private void validateOperatorCompatibility(
+      String derivedEntityId,
+      OperatorType operator,
+      ComplexDataModelEventKind entityKind,
+      RequestContext requestContext) {
+    if (!fraudDataModelEventKindRegistry.isOperatorCompatibleWithKind(operator, entityKind)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              String.format(
+                  "Operator %s not compatible with entity type '%s' (entity: %s)",
+                  operator, formatKind(entityKind), derivedEntityId))
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+  }
+
+  private void validateLiteralValues(
+      String derivedEntityId,
+      AbusePolicyLiteralValues literalValues,
+      ComplexDataModelEventKind entityKind,
+      RequestContext requestContext) {
+    for (Value value : literalValues.getValuesList()) {
+      if (!fraudDataModelEventKindRegistry.isLiteralValueCompatible(entityKind, value)) {
+        throw Status.INVALID_ARGUMENT
+            .withDescription(
+                String.format(
+                    "Literal value type mismatch for entity '%s': expected %s compatible value",
+                    derivedEntityId, formatKind(entityKind)))
+            .asRuntimeException(requestContext.buildTrailers());
+      }
+    }
+  }
+
+  private void validateAggregationCompatibility(
+      String derivedEntityId,
+      AggregationFunctionType functionType,
+      ComplexDataModelEventKind entityKind,
+      RequestContext requestContext) {
+    if (!fraudDataModelEventKindRegistry.isAggregationFunctionCompatibleWithKind(
+        functionType, entityKind)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              String.format(
+                  "Aggregation function %s not compatible with entity type '%s' (entity: %s)",
+                  functionType, formatKind(entityKind), derivedEntityId))
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+  }
+
+  private String formatKind(ComplexDataModelEventKind kind) {
+    if (kind.hasKindId()) {
+      return kind.getKindId();
+    }
+    if (kind.hasArrayOf()) {
+      return "array<" + formatKind(kind.getArrayOf()) + ">";
+    }
+    return kind.toString();
   }
 
   private void validatePredefinedTemplate(

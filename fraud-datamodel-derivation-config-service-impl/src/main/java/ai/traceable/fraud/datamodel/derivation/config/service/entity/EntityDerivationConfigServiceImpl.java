@@ -4,6 +4,7 @@ import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.CreateEn
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.CreateEntityDerivationConfigResponse;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.DeleteEntityDerivationConfigRequest;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.DeleteEntityDerivationConfigResponse;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfigData;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfigServiceGrpc;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.GetEntityDerivationConfigSummariesRequest;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.GetEntityDerivationConfigSummariesResponse;
@@ -11,9 +12,11 @@ import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.GetEntit
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.GetEntityDerivationConfigsResponse;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.UpdateEntityDerivationConfigRequest;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.UpdateEntityDerivationConfigResponse;
+import ai.traceable.fraud.datamodel.event.kind.v1.ComplexDataModelEventKind;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import jakarta.inject.Inject;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -38,7 +41,7 @@ public class EntityDerivationConfigServiceImpl
       StreamObserver<CreateEntityDerivationConfigResponse> responseObserver) {
     RequestContext ctx = RequestContext.CURRENT.get();
     try {
-      validator.validateCreateRequest(request, ctx);
+      validator.validateCreateRequest(request, resolveParentEventKind(request.getData(), ctx), ctx);
       responseObserver.onNext(storeManager.createEntityDerivationConfig(ctx, request));
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -58,7 +61,7 @@ public class EntityDerivationConfigServiceImpl
       StreamObserver<UpdateEntityDerivationConfigResponse> responseObserver) {
     RequestContext ctx = RequestContext.CURRENT.get();
     try {
-      validator.validateUpdateRequest(request, ctx);
+      validator.validateUpdateRequest(request, resolveParentEventKind(request.getData(), ctx), ctx);
       responseObserver.onNext(storeManager.updateEntityDerivationConfig(ctx, request));
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -130,6 +133,16 @@ public class EntityDerivationConfigServiceImpl
           decoratedException);
       responseObserver.onError(decoratedException);
     }
+  }
+
+  private Optional<ComplexDataModelEventKind> resolveParentEventKind(
+      EntityDerivationConfigData data, RequestContext ctx) {
+    if (!data.hasParentDerivation()
+        || data.getParentDerivation().getParentEntityDerivationId().isEmpty()) {
+      return Optional.empty();
+    }
+    String parentId = data.getParentDerivation().getParentEntityDerivationId();
+    return storeManager.resolveParentEventKind(parentId, ctx);
   }
 
   private Exception decorateException(RequestContext requestContext, Exception exception) {

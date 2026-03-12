@@ -1,6 +1,7 @@
 package ai.traceable.fraud.datamodel.derivation.config.service.entity;
 
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.fraud.datamodel.event.kind.EventKindConfigServiceModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.typesafe.config.Config;
@@ -24,6 +25,7 @@ public class EntityDerivationConfigServiceModule extends AbstractModule {
 
   @Override
   protected void configure() {
+    install(new EventKindConfigServiceModule());
     bind(ConfigChangeEventGenerator.class).toInstance(changeEventGenerator);
     bind(BindableService.class).to(EntityDerivationConfigServiceImpl.class);
     bind(Config.class).toInstance(config);

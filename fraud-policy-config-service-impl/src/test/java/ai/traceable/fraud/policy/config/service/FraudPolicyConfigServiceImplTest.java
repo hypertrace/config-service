@@ -4,12 +4,19 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.mockito.quality.Strictness.LENIENT;
 
 import ai.traceable.config.proto.utils.FieldMaskUtils;
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfig;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfigData;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfigServiceGrpc.EntityDerivationConfigServiceBlockingStub;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.GetEntityDerivationConfigsResponse;
 import ai.traceable.fraud.datamodel.event.kind.v1.AggregationFunctionType;
+import ai.traceable.fraud.datamodel.event.kind.v1.ComplexDataModelEventKind;
+import ai.traceable.fraud.datamodel.event.kind.v1.FraudDataModelEventKindRegistry;
 import ai.traceable.fraud.datamodel.event.kind.v1.OperatorType;
 import ai.traceable.fraud.policy.config.service.store.AbusePolicyConfigStore;
 import ai.traceable.fraud.policy.config.service.store.AbusePolicyConfigStoreManager;
@@ -78,6 +85,8 @@ class FraudPolicyConfigServiceImplTest {
   private MockGenericConfigService mockGenericConfigService;
   @Mock private ConfigChangeEventGenerator eventGenerator;
   @Mock private UuidGenerator uuidGenerator;
+  @Mock private FraudDataModelEventKindRegistry fraudDataModelEventKindRegistry;
+  @Mock private EntityDerivationConfigServiceBlockingStub entityDerivationConfigServiceStub;
 
   @BeforeEach
   void setUp(TestInfo testInfo) {
@@ -106,6 +115,23 @@ class FraudPolicyConfigServiceImplTest {
     this.abusePolicyConfigStoreManager =
         new AbusePolicyConfigStoreManager(
             new AbusePolicyConfigStore(genericStub, eventGenerator), uuidGenerator);
+
+    ComplexDataModelEventKind stringKind =
+        ComplexDataModelEventKind.newBuilder().setKindId("system_event_kind_string").build();
+    GetEntityDerivationConfigsResponse response =
+        GetEntityDerivationConfigsResponse.newBuilder()
+            .addEntityDerivationConfigs(
+                EntityDerivationConfig.newBuilder()
+                    .setId("test-entity")
+                    .setData(EntityDerivationConfigData.newBuilder().setEventKind(stringKind)))
+            .build();
+    when(entityDerivationConfigServiceStub.getEntityDerivationConfigs(any())).thenReturn(response);
+    when(fraudDataModelEventKindRegistry.isOperatorCompatibleWithKind(any(), any()))
+        .thenReturn(true);
+    when(fraudDataModelEventKindRegistry.isAggregationFunctionCompatibleWithKind(any(), any()))
+        .thenReturn(true);
+    when(fraudDataModelEventKindRegistry.isLiteralValueCompatible(any(), any())).thenReturn(true);
+
     this.mockGenericConfigService
         .addService(
             new FraudPolicyConfigServiceImpl(
@@ -114,7 +140,8 @@ class FraudPolicyConfigServiceImplTest {
                 apiAccessAnomalyConfigStoreManager,
                 new ApiAccessAnomalyConfigServiceRequestValidator(),
                 abusePolicyConfigStoreManager,
-                new AbusePolicyConfigRequestValidator()))
+                new AbusePolicyConfigRequestValidator(
+                    fraudDataModelEventKindRegistry, entityDerivationConfigServiceStub)))
         .start();
 
     this.fraudPolicyConfigServiceBlockingStub =

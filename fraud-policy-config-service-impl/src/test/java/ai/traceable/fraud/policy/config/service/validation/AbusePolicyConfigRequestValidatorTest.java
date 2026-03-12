@@ -4,8 +4,16 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfig;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfigData;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfigServiceGrpc.EntityDerivationConfigServiceBlockingStub;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.GetEntityDerivationConfigsResponse;
 import ai.traceable.fraud.datamodel.event.kind.v1.AggregationFunctionType;
+import ai.traceable.fraud.datamodel.event.kind.v1.ComplexDataModelEventKind;
+import ai.traceable.fraud.datamodel.event.kind.v1.FraudDataModelEventKindRegistry;
 import ai.traceable.fraud.datamodel.event.kind.v1.OperatorType;
 import ai.traceable.fraud.policy.config.service.v1.AbuseActionConfig;
 import ai.traceable.fraud.policy.config.service.v1.AbuseActionType;
@@ -34,16 +42,44 @@ import io.grpc.StatusRuntimeException;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class AbusePolicyConfigRequestValidatorTest {
+
+  @Mock private FraudDataModelEventKindRegistry fraudDataModelEventKindRegistry;
+  @Mock private EntityDerivationConfigServiceBlockingStub entityDerivationConfigServiceStub;
 
   private AbusePolicyConfigRequestValidator validator;
   private RequestContext requestContext;
 
   @BeforeEach
   void setUp() {
-    validator = new AbusePolicyConfigRequestValidator();
+    validator =
+        new AbusePolicyConfigRequestValidator(
+            fraudDataModelEventKindRegistry, entityDerivationConfigServiceStub);
     requestContext = RequestContext.forTenantId("test-tenant");
+
+    ComplexDataModelEventKind stringKind =
+        ComplexDataModelEventKind.newBuilder().setKindId("system_event_kind_string").build();
+    GetEntityDerivationConfigsResponse response =
+        GetEntityDerivationConfigsResponse.newBuilder()
+            .addEntityDerivationConfigs(
+                EntityDerivationConfig.newBuilder()
+                    .setId("test-entity")
+                    .setData(EntityDerivationConfigData.newBuilder().setEventKind(stringKind)))
+            .build();
+    when(entityDerivationConfigServiceStub.getEntityDerivationConfigs(any())).thenReturn(response);
+    when(fraudDataModelEventKindRegistry.isOperatorCompatibleWithKind(any(), any()))
+        .thenReturn(true);
+    when(fraudDataModelEventKindRegistry.isAggregationFunctionCompatibleWithKind(any(), any()))
+        .thenReturn(true);
+    when(fraudDataModelEventKindRegistry.isLiteralValueCompatible(any(), any())).thenReturn(true);
   }
 
   @Test

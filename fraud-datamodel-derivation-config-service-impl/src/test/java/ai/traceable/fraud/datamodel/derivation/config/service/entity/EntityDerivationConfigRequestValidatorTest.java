@@ -3,21 +3,37 @@ package ai.traceable.fraud.datamodel.derivation.config.service.entity;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.CreateEntityDerivationConfigRequest;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.DeleteEntityDerivationConfigRequest;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityCategory;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfigData;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EnvironmentScope;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EventDerivationConfigDetails;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.ExtractionLocation;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.ExtractionLocationType;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.ParentDerivation;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.Scope;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.SpanBasedExtraction;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.SpanProjection;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.UpdateEntityDerivationConfigRequest;
 import ai.traceable.fraud.datamodel.event.kind.v1.ComplexDataModelEventKind;
+import ai.traceable.fraud.datamodel.event.kind.v1.FraudDataModelEventKindRegistry;
 import io.grpc.StatusRuntimeException;
+import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class EntityDerivationConfigRequestValidatorTest {
+
+  @Mock private FraudDataModelEventKindRegistry fraudDataModelEventKindRegistry;
 
   private EntityDerivationConfigRequestValidator validator;
   private RequestContext requestContext;
@@ -26,7 +42,9 @@ class EntityDerivationConfigRequestValidatorTest {
   void setUp() {
     DefaultEntityDerivationProvider defaultEntityDerivationProvider =
         new DefaultEntityDerivationProvider();
-    validator = new EntityDerivationConfigRequestValidator(defaultEntityDerivationProvider);
+    validator =
+        new EntityDerivationConfigRequestValidator(
+            defaultEntityDerivationProvider, fraudDataModelEventKindRegistry);
     requestContext = RequestContext.forTenantId("test-tenant");
   }
 
@@ -35,7 +53,8 @@ class EntityDerivationConfigRequestValidatorTest {
     CreateEntityDerivationConfigRequest request =
         CreateEntityDerivationConfigRequest.newBuilder().setData(createValidConfigData()).build();
 
-    assertDoesNotThrow(() -> validator.validateCreateRequest(request, requestContext));
+    assertDoesNotThrow(
+        () -> validator.validateCreateRequest(request, Optional.empty(), requestContext));
   }
 
   @Test
@@ -46,7 +65,7 @@ class EntityDerivationConfigRequestValidatorTest {
     StatusRuntimeException exception =
         assertThrows(
             StatusRuntimeException.class,
-            () -> validator.validateCreateRequest(request, requestContext));
+            () -> validator.validateCreateRequest(request, Optional.empty(), requestContext));
     assertEquals(
         "INVALID_ARGUMENT: Entity derivation configuration data is required",
         exception.getMessage());
@@ -60,7 +79,8 @@ class EntityDerivationConfigRequestValidatorTest {
             .setData(createValidConfigData())
             .build();
 
-    assertDoesNotThrow(() -> validator.validateUpdateRequest(request, requestContext));
+    assertDoesNotThrow(
+        () -> validator.validateUpdateRequest(request, Optional.empty(), requestContext));
   }
 
   @Test
@@ -71,7 +91,7 @@ class EntityDerivationConfigRequestValidatorTest {
     StatusRuntimeException exception =
         assertThrows(
             StatusRuntimeException.class,
-            () -> validator.validateUpdateRequest(request, requestContext));
+            () -> validator.validateUpdateRequest(request, Optional.empty(), requestContext));
     assertEquals(
         "INVALID_ARGUMENT: Entity derivation config ID is required for update",
         exception.getMessage());
@@ -111,7 +131,9 @@ class EntityDerivationConfigRequestValidatorTest {
     StatusRuntimeException exception =
         assertThrows(
             StatusRuntimeException.class,
-            () -> validator.validateCreateRequest(requestWithEmptyDisplayName, requestContext));
+            () ->
+                validator.validateCreateRequest(
+                    requestWithEmptyDisplayName, Optional.empty(), requestContext));
     assertEquals("INVALID_ARGUMENT: Display name is required", exception.getMessage());
 
     CreateEntityDerivationConfigRequest requestWithUnspecifiedCategory =
@@ -125,7 +147,9 @@ class EntityDerivationConfigRequestValidatorTest {
     exception =
         assertThrows(
             StatusRuntimeException.class,
-            () -> validator.validateCreateRequest(requestWithUnspecifiedCategory, requestContext));
+            () ->
+                validator.validateCreateRequest(
+                    requestWithUnspecifiedCategory, Optional.empty(), requestContext));
     assertEquals("INVALID_ARGUMENT: Entity category must be specified", exception.getMessage());
   }
 
@@ -147,6 +171,7 @@ class EntityDerivationConfigRequestValidatorTest {
                     CreateEntityDerivationConfigRequest.newBuilder()
                         .setData(dataWithNoValueSource)
                         .build(),
+                    Optional.empty(),
                     requestContext));
     assertEquals(
         "INVALID_ARGUMENT: Value source is required: exactly one of span_projection or parent_derivation must be set",
@@ -169,9 +194,152 @@ class EntityDerivationConfigRequestValidatorTest {
                     CreateEntityDerivationConfigRequest.newBuilder()
                         .setData(dataWithEmptySpanProjection)
                         .build(),
+                    Optional.empty(),
                     requestContext));
     assertEquals(
         "INVALID_ARGUMENT: Span projection must contain at least one event derivation config",
+        exception.getMessage());
+  }
+
+  @Test
+  void testValidateCreateRequest_ParentDerivationWithValidParent_Success() {
+    when(fraudDataModelEventKindRegistry.isKindCompatible(any(), any())).thenReturn(true);
+
+    EntityDerivationConfigData dataWithParentDerivation =
+        EntityDerivationConfigData.newBuilder()
+            .setDisplayName("Derived Entity")
+            .setCategory(EntityCategory.ENTITY_CATEGORY_CUSTOM)
+            .setEventKind(
+                ComplexDataModelEventKind.newBuilder().setKindId("system_event_kind_string"))
+            .setParentDerivation(
+                ParentDerivation.newBuilder().setParentEntityDerivationId("parent-entity-id"))
+            .build();
+
+    CreateEntityDerivationConfigRequest request =
+        CreateEntityDerivationConfigRequest.newBuilder().setData(dataWithParentDerivation).build();
+
+    ComplexDataModelEventKind parentEventKind =
+        ComplexDataModelEventKind.newBuilder().setKindId("system_event_kind_string").build();
+
+    assertDoesNotThrow(
+        () ->
+            validator.validateCreateRequest(request, Optional.of(parentEventKind), requestContext));
+  }
+
+  @Test
+  void testValidateCreateRequest_ParentDerivationWithIncompatibleType_ThrowsError() {
+    when(fraudDataModelEventKindRegistry.isKindCompatible(any(), any())).thenReturn(false);
+
+    EntityDerivationConfigData dataWithParentDerivation =
+        EntityDerivationConfigData.newBuilder()
+            .setDisplayName("Derived Entity")
+            .setCategory(EntityCategory.ENTITY_CATEGORY_CUSTOM)
+            .setEventKind(
+                ComplexDataModelEventKind.newBuilder().setKindId("system_event_kind_long"))
+            .setParentDerivation(
+                ParentDerivation.newBuilder().setParentEntityDerivationId("parent-entity-id"))
+            .build();
+
+    CreateEntityDerivationConfigRequest request =
+        CreateEntityDerivationConfigRequest.newBuilder().setData(dataWithParentDerivation).build();
+
+    ComplexDataModelEventKind parentEventKind =
+        ComplexDataModelEventKind.newBuilder().setKindId("system_event_kind_string").build();
+
+    StatusRuntimeException exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () ->
+                validator.validateCreateRequest(
+                    request, Optional.of(parentEventKind), requestContext));
+    assertEquals(
+        "INVALID_ARGUMENT: Parent entity type 'system_event_kind_string' incompatible with declared type 'system_event_kind_long'",
+        exception.getMessage());
+  }
+
+  @Test
+  void testValidateCreateRequest_ParentDerivationWithNonExistentParent_ThrowsError() {
+    EntityDerivationConfigData dataWithParentDerivation =
+        EntityDerivationConfigData.newBuilder()
+            .setDisplayName("Derived Entity")
+            .setCategory(EntityCategory.ENTITY_CATEGORY_CUSTOM)
+            .setEventKind(
+                ComplexDataModelEventKind.newBuilder().setKindId("system_event_kind_string"))
+            .setParentDerivation(
+                ParentDerivation.newBuilder().setParentEntityDerivationId("non-existent-parent"))
+            .build();
+
+    CreateEntityDerivationConfigRequest request =
+        CreateEntityDerivationConfigRequest.newBuilder().setData(dataWithParentDerivation).build();
+
+    StatusRuntimeException exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> validator.validateCreateRequest(request, Optional.empty(), requestContext));
+    assertEquals(
+        "INVALID_ARGUMENT: Parent entity derivation config not found: non-existent-parent",
+        exception.getMessage());
+  }
+
+  @Test
+  void testValidateCreateRequest_SpanProjectionMissingScope_ThrowsError() {
+    EntityDerivationConfigData dataWithMissingScope =
+        EntityDerivationConfigData.newBuilder()
+            .setDisplayName("Test Entity")
+            .setCategory(EntityCategory.ENTITY_CATEGORY_CUSTOM)
+            .setEventKind(
+                ComplexDataModelEventKind.newBuilder().setKindId("system_event_kind_string"))
+            .setSpanProjection(
+                SpanProjection.newBuilder()
+                    .addEventDerivationConfigs(
+                        EventDerivationConfigDetails.newBuilder()
+                            .setSpanExtraction(
+                                SpanBasedExtraction.newBuilder()
+                                    .setLocation(
+                                        ExtractionLocation.newBuilder()
+                                            .setLocationType(
+                                                ExtractionLocationType
+                                                    .EXTRACTION_LOCATION_TYPE_REQUEST_HEADER)
+                                            .setKey("X-User-Id")))))
+            .build();
+
+    CreateEntityDerivationConfigRequest request =
+        CreateEntityDerivationConfigRequest.newBuilder().setData(dataWithMissingScope).build();
+
+    StatusRuntimeException exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> validator.validateCreateRequest(request, Optional.empty(), requestContext));
+    assertEquals(
+        "INVALID_ARGUMENT: Event derivation config[0]: Scope is required", exception.getMessage());
+  }
+
+  @Test
+  void testValidateCreateRequest_SpanProjectionMissingExtraction_ThrowsError() {
+    EntityDerivationConfigData dataWithMissingExtraction =
+        EntityDerivationConfigData.newBuilder()
+            .setDisplayName("Test Entity")
+            .setCategory(EntityCategory.ENTITY_CATEGORY_CUSTOM)
+            .setEventKind(
+                ComplexDataModelEventKind.newBuilder().setKindId("system_event_kind_string"))
+            .setSpanProjection(
+                SpanProjection.newBuilder()
+                    .addEventDerivationConfigs(
+                        EventDerivationConfigDetails.newBuilder()
+                            .setScope(
+                                Scope.newBuilder()
+                                    .setEnvironmentScope(EnvironmentScope.newBuilder()))))
+            .build();
+
+    CreateEntityDerivationConfigRequest request =
+        CreateEntityDerivationConfigRequest.newBuilder().setData(dataWithMissingExtraction).build();
+
+    StatusRuntimeException exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> validator.validateCreateRequest(request, Optional.empty(), requestContext));
+    assertEquals(
+        "INVALID_ARGUMENT: Event derivation config[0]: Extraction method is required (span_extraction or jexl_expression)",
         exception.getMessage());
   }
 
@@ -183,7 +351,18 @@ class EntityDerivationConfigRequestValidatorTest {
         .setSpanProjection(
             SpanProjection.newBuilder()
                 .addEventDerivationConfigs(
-                    EventDerivationConfigDetails.newBuilder().setName("Test Derivation Rule")))
+                    EventDerivationConfigDetails.newBuilder()
+                        .setName("Test Derivation Rule")
+                        .setScope(
+                            Scope.newBuilder().setEnvironmentScope(EnvironmentScope.newBuilder()))
+                        .setSpanExtraction(
+                            SpanBasedExtraction.newBuilder()
+                                .setLocation(
+                                    ExtractionLocation.newBuilder()
+                                        .setLocationType(
+                                            ExtractionLocationType
+                                                .EXTRACTION_LOCATION_TYPE_REQUEST_HEADER)
+                                        .setKey("X-User-Id")))))
         .build();
   }
 }
