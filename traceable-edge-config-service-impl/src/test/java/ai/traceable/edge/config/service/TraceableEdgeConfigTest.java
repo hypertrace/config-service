@@ -2,6 +2,7 @@ package ai.traceable.edge.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion;
 import ai.traceable.edge.config.service.config.TraceableEdgeConfig;
 import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.Config;
@@ -15,6 +16,9 @@ public class TraceableEdgeConfigTest {
     TraceableEdgeConfig config = new TraceableEdgeConfig(getTestConfig());
     assertEquals(30, config.getAgentPollingFrequency("CaptchaSiteKeyConfig").getSeconds());
     assertEquals(15, config.getAgentPollingFrequency("Random").getSeconds());
+    assertEquals(
+        CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_CORAZA_V3,
+        config.getCustomSignatureRuleVersion());
   }
 
   static Config getTestConfig() {

@@ -9,6 +9,7 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigRenderOptions;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -39,6 +40,16 @@ public class CustomSignatureConfigServiceConfig {
       "allowRulesPlatformExclusion." + MIGRATION_DISABLED_KEY;
   private static final String MARK_FOR_TESTING_INLINE_AGENT_MIGRATION_DISABLED_KEY =
       "markForTestingInlineAgent." + MIGRATION_DISABLED_KEY;
+
+  // Cache configuration constants
+  private static final String CACHE_MAX_SIZE_CONFIG = "configContextcache.maxSize";
+  private static final String CACHE_REFRESH_AFTER_WRITE_DURATION_CONFIG =
+      "configContextcache.refreshAfterWriteDuration";
+  private static final String CACHE_THREAD_POOL_SIZE_CONFIG = "configContextcache.threadPoolSize";
+
+  private static final long DEFAULT_CACHE_MAX_SIZE = 400;
+  private static final Duration DEFAULT_CACHE_REFRESH_AFTER_WRITE_DURATION = Duration.ofMinutes(5);
+  private static final int DEFAULT_CACHE_THREAD_POOL_SIZE = 4;
 
   @Getter private final boolean ruleEvaluationPointsMigrationDisabled;
   @Getter private final boolean ruleCategoryMigrationDisabled;
@@ -108,5 +119,24 @@ public class CustomSignatureConfigServiceConfig {
   @SneakyThrows
   private void mergeFromConfig(Config config, Message.Builder builder) {
     JSON_PARSER.merge(config.root().render(CONFIG_RENDER_CONCISE), builder);
+  }
+
+  // Cache configuration methods
+  public long getCustomSignatureConfigContextCacheMaxSize() {
+    return config.hasPath(CACHE_MAX_SIZE_CONFIG)
+        ? config.getLong(CACHE_MAX_SIZE_CONFIG)
+        : DEFAULT_CACHE_MAX_SIZE;
+  }
+
+  public Duration getCustomSignatureConfigContextCacheRefreshAfterWriteDuration() {
+    return config.hasPath(CACHE_REFRESH_AFTER_WRITE_DURATION_CONFIG)
+        ? Duration.parse(config.getString(CACHE_REFRESH_AFTER_WRITE_DURATION_CONFIG))
+        : DEFAULT_CACHE_REFRESH_AFTER_WRITE_DURATION;
+  }
+
+  public int getCustomSignatureConfigContextCacheThreadPoolSize() {
+    return config.hasPath(CACHE_THREAD_POOL_SIZE_CONFIG)
+        ? config.getInt(CACHE_THREAD_POOL_SIZE_CONFIG)
+        : DEFAULT_CACHE_THREAD_POOL_SIZE;
   }
 }

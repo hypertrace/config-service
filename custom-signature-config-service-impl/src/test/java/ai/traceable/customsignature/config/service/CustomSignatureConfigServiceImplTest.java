@@ -13,6 +13,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.customsignature.config.service.migration.CustomSignatureRuleMigrationManager;
 import ai.traceable.customsignature.config.service.modsec.ModsecRulesManager;
 import ai.traceable.customsignature.config.service.rules.RulesManager;
@@ -29,6 +30,8 @@ import ai.traceable.customsignature.config.service.v1.DeleteCustomSignatureRuleR
 import ai.traceable.customsignature.config.service.v1.DeleteCustomSignatureRuleResponse;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureEdgeDecisionRulesRequest;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureEdgeDecisionRulesResponse;
+import ai.traceable.customsignature.config.service.v1.GetCustomSignatureEvaluationConfigContextRequest;
+import ai.traceable.customsignature.config.service.v1.GetCustomSignatureEvaluationConfigContextResponse;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesRequest;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesResponse;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesRequest;
@@ -57,6 +60,7 @@ class CustomSignatureConfigServiceImplTest {
   private RulesManager rulesManager;
   private ModsecRulesManager modsecRulesManager;
   private CustomSignatureEdgeDecisionConverter edgeDecisionConverter;
+  private FeatureCachingClient featureCachingClient;
   private CustomSignatureConfigServiceImpl configService;
 
   @BeforeEach
@@ -65,6 +69,7 @@ class CustomSignatureConfigServiceImplTest {
     rulesManager = mock(RulesManager.class);
     modsecRulesManager = mock(ModsecRulesManager.class);
     edgeDecisionConverter = mock(CustomSignatureEdgeDecisionConverter.class);
+    featureCachingClient = mock(FeatureCachingClient.class);
     CustomSignatureRuleMigrationManager mockRuleMigrationManager =
         mock(CustomSignatureRuleMigrationManager.class);
     configService =
@@ -73,11 +78,37 @@ class CustomSignatureConfigServiceImplTest {
             rulesManager,
             modsecRulesManager,
             edgeDecisionConverter,
-            mockRuleMigrationManager);
+            mockRuleMigrationManager,
+            featureCachingClient);
     when(mockRuleMigrationManager.migrateCreateCustomSignatureRuleRequest(any()))
         .thenAnswer(invocation -> invocation.getArgument(0));
     when(mockRuleMigrationManager.migrateUpdateCustomSignatureRuleRequest(any()))
         .thenAnswer(invocation -> invocation.getArgument(0));
+  }
+
+  @Test
+  void testGetCustomSignatureEvaluationConfigContextFeatureFlagDisabled_ReturnsDefaultInstance() {
+    when(featureCachingClient.isProtectionEngineCustomSignatureEnabledForTenant(any()))
+        .thenReturn(false);
+    StreamObserver<GetCustomSignatureEvaluationConfigContextResponse> responseObserver =
+        mock(StreamObserver.class);
+    GetCustomSignatureEvaluationConfigContextRequest request =
+        GetCustomSignatureEvaluationConfigContextRequest.getDefaultInstance();
+
+    Runnable runnable =
+        () -> configService.getCustomSignatureEvaluationConfigContext(request, responseObserver);
+    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+    verify(responseObserver, times(1))
+        .onNext(
+            GetCustomSignatureEvaluationConfigContextResponse.newBuilder()
+                .setCustomSignatureEvaluationConfigContext(
+                    ai.traceable.protection.engine.config.customsignature.v1
+                        .CustomSignatureConfigContext.getDefaultInstance()
+                        .toByteString())
+                .build());
+    verify(responseObserver, times(1)).onCompleted();
+    verify(rulesManager, times(0)).getCustomSignatureEvaluationConfigContext(any(), any());
   }
 
   @Test

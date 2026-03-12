@@ -1,5 +1,6 @@
 package ai.traceable.edge.config.service.config;
 
+import ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion;
 import com.google.protobuf.Duration;
 import com.google.protobuf.util.JsonFormat;
 import com.typesafe.config.Config;
@@ -25,11 +26,16 @@ public class TraceableEdgeConfig {
   private static final String USERID_BLOCKING_CONFIGS_CONFIG_NAME = "userid.blocking.configs";
   private static final String GET_CONFIGS_THREAD_POOL_SIZE_CONFIG_NAME =
       "get.configs.thread.pool.size";
+  private static final String CUSTOM_SIGNATURE_RULE_VERSION_CONFIG_NAME =
+      "custom.signature.rule.version";
   private static final int DEFAULT_GET_CONFIGS_EXECUTOR_SERVICE_THREAD_POOL_SIZE = 10;
+  private static final CustomModsecRuleVersion DEFAULT_CUSTOM_SIGNATURE_RULE_VERSION =
+      CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3;
 
   private final Duration defaultAgentPollingFrequency;
   private final Map<String, EdgeConfigSupplierConfig> edgeConfigSupplierConfigs;
   private final int getConfigsThreadPoolSize;
+  private final CustomModsecRuleVersion customSignatureRuleVersion;
 
   @Inject
   public TraceableEdgeConfig(Config config) {
@@ -42,6 +48,7 @@ public class TraceableEdgeConfig {
         edgeConfig.hasPath(GET_CONFIGS_THREAD_POOL_SIZE_CONFIG_NAME)
             ? edgeConfig.getInt(GET_CONFIGS_THREAD_POOL_SIZE_CONFIG_NAME)
             : DEFAULT_GET_CONFIGS_EXECUTOR_SERVICE_THREAD_POOL_SIZE;
+    this.customSignatureRuleVersion = getCustomSignatureRuleVersion(edgeConfig);
   }
 
   public int getConfigsThreadPoolSize() {
@@ -56,6 +63,10 @@ public class TraceableEdgeConfig {
 
   public ClientConfig getClientConfig() {
     return ClientConfig.DEFAULT;
+  }
+
+  public CustomModsecRuleVersion getCustomSignatureRuleVersion() {
+    return customSignatureRuleVersion;
   }
 
   private Map<String, EdgeConfigSupplierConfig> extractEdgeConfigSupplierConfigs(Config config) {
@@ -78,5 +89,17 @@ public class TraceableEdgeConfig {
         .setSeconds(configDuration.getSeconds())
         .setNanos(configDuration.getNano())
         .build();
+  }
+
+  private CustomModsecRuleVersion getCustomSignatureRuleVersion(Config edgeConfig) {
+    if (!edgeConfig.hasPath(CUSTOM_SIGNATURE_RULE_VERSION_CONFIG_NAME)) {
+      return DEFAULT_CUSTOM_SIGNATURE_RULE_VERSION;
+    }
+    String configuredVersion = edgeConfig.getString(CUSTOM_SIGNATURE_RULE_VERSION_CONFIG_NAME);
+    try {
+      return CustomModsecRuleVersion.valueOf(configuredVersion);
+    } catch (IllegalArgumentException ignored) {
+      return DEFAULT_CUSTOM_SIGNATURE_RULE_VERSION;
+    }
   }
 }

@@ -12,6 +12,7 @@ option java_multiple_files = true;
 message GetCustomSignatureEvaluationConfigContextRequest {
   RuleEvaluationPoint rule_evaluation_point = 1;
   CustomModsecRuleVersion rule_version = 2;
+  EventType event_type = 3;
 }
 
 message GetCustomSignatureEvaluationConfigContextResponse {

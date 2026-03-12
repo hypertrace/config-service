@@ -203,7 +203,10 @@ public class CustomSignatureConfigContextConverter {
 
   private boolean hasCustomSecRule(ClauseGroup clauseGroup) {
     return clauseGroup.getClausesList().stream()
-        .anyMatch(clause -> clause.getClauseCase() == Clause.ClauseCase.CUSTOM_SEC_RULE);
+        .anyMatch(
+            clause ->
+                clause.getClauseCase() == Clause.ClauseCase.CUSTOM_SEC_RULE
+                    || (clause.hasClauseGroup() && hasCustomSecRule(clause.getClauseGroup())));
   }
 
   private LogicalOperator convertLogicalOperator(ClauseOperator clauseOperator) {

@@ -35,6 +35,7 @@ dependencies {
   implementation(localLibs.hypertrace.configservice.changeeventgenerator)
   implementation(localLibs.hypertrace.configservice.validation)
   implementation(commonLibs.traceable.traceenricher.constants)
+  implementation(commonLibs.hypertrace.kafkaStreams.eventListener)
   implementation(commonLibs.jackson.core)
   implementation(commonLibs.jackson.databind)
   implementation(commonLibs.commons.io)

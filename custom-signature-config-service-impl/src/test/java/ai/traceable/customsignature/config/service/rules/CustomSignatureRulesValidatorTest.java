@@ -25,6 +25,7 @@ import ai.traceable.customsignature.config.service.v1.EventSeverity;
 import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.ExpiryDetails;
 import ai.traceable.customsignature.config.service.v1.FieldValue;
+import ai.traceable.customsignature.config.service.v1.GetCustomSignatureEvaluationConfigContextRequest;
 import ai.traceable.customsignature.config.service.v1.HeaderInjection;
 import ai.traceable.customsignature.config.service.v1.IpAddressExpression;
 import ai.traceable.customsignature.config.service.v1.IpAddressExpressionType;
@@ -2178,5 +2179,125 @@ class CustomSignatureRulesValidatorTest {
       // If actualDescription is null, we skip the description check
       // This handles cases where validation throws exception without a description
     }
+  }
+
+  @org.junit.jupiter.api.Test
+  void
+      testValidateGetCustomSignatureEvaluationConfigContextRequestWithUnspecifiedEvaluationPoint() {
+    GetCustomSignatureEvaluationConfigContextRequest request =
+        GetCustomSignatureEvaluationConfigContextRequest.newBuilder()
+            .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_UNSPECIFIED)
+            .build();
+
+    assertInvalidArgument(
+        () -> rulesValidator.validate(request), "Rule evaluation point must be specified");
+  }
+
+  @Test
+  void testValidateGetCustomSignatureEvaluationConfigContextRequestWithUnspecifiedRuleVersion() {
+    GetCustomSignatureEvaluationConfigContextRequest request =
+        GetCustomSignatureEvaluationConfigContextRequest.newBuilder()
+            .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+            .setRuleVersion(
+                ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion
+                    .CUSTOM_MODSEC_RULE_VERSION_UNSPECIFIED)
+            .setEventType(EventType.EVENT_TYPE_ALLOW)
+            .build();
+
+    assertInvalidArgument(() -> rulesValidator.validate(request), "Rule version must be specified");
+  }
+
+  @Test
+  void testValidateGetCustomSignatureEvaluationConfigContextRequestWithValidRuleVersions() {
+    // Test with V3 rule version
+    GetCustomSignatureEvaluationConfigContextRequest v3Request =
+        GetCustomSignatureEvaluationConfigContextRequest.newBuilder()
+            .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+            .setRuleVersion(
+                ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion
+                    .CUSTOM_MODSEC_RULE_VERSION_V3)
+            .setEventType(EventType.EVENT_TYPE_ALLOW)
+            .build();
+
+    // Test with V3_SECARG_LIMITS rule version
+    GetCustomSignatureEvaluationConfigContextRequest v3SecArgRequest =
+        GetCustomSignatureEvaluationConfigContextRequest.newBuilder()
+            .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+            .setRuleVersion(
+                ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion
+                    .CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS)
+            .setEventType(EventType.EVENT_TYPE_ALLOW)
+            .build();
+
+    // Test with CORAZA_V3 rule version
+    GetCustomSignatureEvaluationConfigContextRequest corazaRequest =
+        GetCustomSignatureEvaluationConfigContextRequest.newBuilder()
+            .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+            .setRuleVersion(
+                ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion
+                    .CUSTOM_MODSEC_RULE_VERSION_CORAZA_V3)
+            .setEventType(EventType.EVENT_TYPE_ALLOW)
+            .build();
+
+    // All should validate successfully
+    assertDoesNotThrow(() -> rulesValidator.validate(v3Request));
+    assertDoesNotThrow(() -> rulesValidator.validate(v3SecArgRequest));
+    assertDoesNotThrow(() -> rulesValidator.validate(corazaRequest));
+  }
+
+  @Test
+  void testValidateGetCustomSignatureEvaluationConfigContextRequestWithUnspecifiedEventType() {
+    GetCustomSignatureEvaluationConfigContextRequest request =
+        GetCustomSignatureEvaluationConfigContextRequest.newBuilder()
+            .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+            .setRuleVersion(
+                ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion
+                    .CUSTOM_MODSEC_RULE_VERSION_V3)
+            .setEventType(EventType.EVENT_TYPE_UNSPECIFIED)
+            .build();
+
+    assertInvalidArgument(() -> rulesValidator.validate(request), "Event type must be specified");
+  }
+
+  @Test
+  void testValidateGetCustomSignatureEvaluationConfigContextRequestWithValidEventTypes() {
+    // Test with ALLOW event type
+    GetCustomSignatureEvaluationConfigContextRequest allowRequest =
+        GetCustomSignatureEvaluationConfigContextRequest.newBuilder()
+            .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+            .setRuleVersion(
+                ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion
+                    .CUSTOM_MODSEC_RULE_VERSION_V3)
+            .setEventType(EventType.EVENT_TYPE_ALLOW)
+            .build();
+
+    // Test with DETECTION_AND_BLOCKING event type
+    GetCustomSignatureEvaluationConfigContextRequest blockRequest =
+        GetCustomSignatureEvaluationConfigContextRequest.newBuilder()
+            .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+            .setRuleVersion(
+                ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion
+                    .CUSTOM_MODSEC_RULE_VERSION_V3)
+            .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
+            .build();
+
+    // All should validate successfully
+    assertDoesNotThrow(() -> rulesValidator.validate(allowRequest));
+    assertDoesNotThrow(() -> rulesValidator.validate(blockRequest));
+  }
+
+  @Test
+  void testValidateGetCustomSignatureEvaluationConfigContextRequestWithAllValidFields() {
+    GetCustomSignatureEvaluationConfigContextRequest request =
+        GetCustomSignatureEvaluationConfigContextRequest.newBuilder()
+            .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+            .setRuleVersion(
+                ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion
+                    .CUSTOM_MODSEC_RULE_VERSION_CORAZA_V3)
+            .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
+            .build();
+
+    // Should validate successfully
+    assertDoesNotThrow(() -> rulesValidator.validate(request));
   }
 }

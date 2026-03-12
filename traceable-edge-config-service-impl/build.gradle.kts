@@ -8,6 +8,7 @@ dependencies {
   implementation(projects.configUtils)
   implementation(projects.entityFetcherCache)
   implementation(projects.anomalyConfigServiceApi)
+  implementation(projects.customSignatureConfigServiceApi)
   implementation(projects.traceableEdgeConfigServiceApi)
   implementation(projects.cloudBotDeploymentConfigServiceApi)
   implementation(projects.traceableEdgeBotConfigServiceApi)
@@ -36,6 +37,7 @@ dependencies {
   implementation(localLibs.hypertrace.configservice.protoconverter)
   implementation(commonLibs.hypertrace.entitychangeevent.api)
   implementation(commonLibs.hypertrace.kafkaStreams.eventListener)
+  implementation(commonLibs.traceable.protection.engine.config.customsignature)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

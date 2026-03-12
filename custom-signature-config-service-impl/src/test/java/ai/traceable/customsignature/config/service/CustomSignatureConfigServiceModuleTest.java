@@ -7,8 +7,11 @@ import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import com.google.inject.Guice;
 import com.typesafe.config.Config;
 import io.grpc.Channel;
+import org.hypertrace.config.change.event.v1.ConfigChangeEventKey;
+import org.hypertrace.config.change.event.v1.ConfigChangeEventValue;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
+import org.hypertrace.core.kafka.event.listener.KafkaLiveEventListener;
 import org.junit.jupiter.api.Test;
 
 class CustomSignatureConfigServiceModuleTest {
@@ -20,6 +23,10 @@ class CustomSignatureConfigServiceModuleTest {
         mock(ConfigChangeEventGenerator.class);
     FeatureCachingClient featureCachingClient = mock(FeatureCachingClient.class);
     GrpcChannelRegistry mockGrpcChannelRegistry = mock(GrpcChannelRegistry.class);
+    KafkaLiveEventListener<ConfigChangeEventKey, ConfigChangeEventValue>
+        mockKafkaLiveEventListener =
+            (KafkaLiveEventListener<ConfigChangeEventKey, ConfigChangeEventValue>)
+                mock(KafkaLiveEventListener.class);
     assertDoesNotThrow(
         () ->
             Guice.createInjector(
@@ -28,7 +35,8 @@ class CustomSignatureConfigServiceModuleTest {
                         mockConfig,
                         mockConfigChangeEventGenerator,
                         featureCachingClient,
-                        mockGrpcChannelRegistry))
+                        mockGrpcChannelRegistry,
+                        mockKafkaLiveEventListener))
                 .getAllBindings());
   }
 }

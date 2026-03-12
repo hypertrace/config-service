@@ -6,6 +6,7 @@ import ai.traceable.edge.config.service.supplier.ApiProtectEvaluationConfigConte
 import ai.traceable.edge.config.service.supplier.CaptchaSiteKeyConfigSupplier;
 import ai.traceable.edge.config.service.supplier.ClientBotFingerprintPolicySupplier;
 import ai.traceable.edge.config.service.supplier.CloudBotDeploymentConfigSupplier;
+import ai.traceable.edge.config.service.supplier.CustomSignatureEvaluationConfigContextSupplier;
 import ai.traceable.edge.config.service.supplier.EdgeDecisionEngineConfigSupplier;
 import ai.traceable.edge.config.service.supplier.FlowConfigSupplier;
 import ai.traceable.edge.config.service.supplier.InvisibleCaptchaPolicySupplier;
@@ -55,6 +56,7 @@ public class TraceableEdgeConfigService
       FlowConfigSupplier flowConfigSupplier,
       WebAppEvaluationConfigContextSupplier webAppEvaluationConfigContextSupplier,
       ApiProtectEvaluationConfigContextSupplier apiProtectEvaluationConfigContextSupplier,
+      CustomSignatureEvaluationConfigContextSupplier customSignatureEvaluationConfigContextSupplier,
       PreDetectionFilteringConfigContextSupplier preDetectionFilteringConfigContextSupplier,
       PostDetectionFilteringConfigContextSupplier postDetectionFilteringConfigContextSupplier,
       ApiIdResolverConfigSupplier apiIdResolverConfigSupplier,
@@ -79,6 +81,9 @@ public class TraceableEdgeConfigService
     this.configSuppliersByType.put(
         apiProtectEvaluationConfigContextSupplier.getConfigType(),
         apiProtectEvaluationConfigContextSupplier);
+    this.configSuppliersByType.put(
+        customSignatureEvaluationConfigContextSupplier.getConfigType(),
+        customSignatureEvaluationConfigContextSupplier);
     this.configSuppliersByType.put(
         preDetectionFilteringConfigContextSupplier.getConfigType(),
         preDetectionFilteringConfigContextSupplier);

@@ -1,5 +1,6 @@
 package ai.traceable.customsignature.config.service;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.customsignature.config.service.migration.CustomSignatureRuleMigrationManager;
 import ai.traceable.customsignature.config.service.modsec.ModsecRulesManager;
 import ai.traceable.customsignature.config.service.rules.CustomSignatureRulesEdgeDecisionFilter;
@@ -19,6 +20,8 @@ import ai.traceable.customsignature.config.service.v1.DeleteCustomSignatureRuleR
 import ai.traceable.customsignature.config.service.v1.DeleteCustomSignatureRuleResponse;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureEdgeDecisionRulesRequest;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureEdgeDecisionRulesResponse;
+import ai.traceable.customsignature.config.service.v1.GetCustomSignatureEvaluationConfigContextRequest;
+import ai.traceable.customsignature.config.service.v1.GetCustomSignatureEvaluationConfigContextResponse;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesRequest;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesResponse;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesRequest;
@@ -26,6 +29,7 @@ import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesRes
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleResponse;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
+import ai.traceable.protection.engine.config.customsignature.v1.CustomSignatureConfigContext;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
@@ -45,6 +49,7 @@ public class CustomSignatureConfigServiceImpl
   private final ModsecRulesManager modsecRulesManager;
   private final CustomSignatureEdgeDecisionConverter edgeDecisionConverter;
   private final CustomSignatureRuleMigrationManager ruleMigrationManager;
+  private final FeatureCachingClient featureCachingClient;
 
   @Inject
   public CustomSignatureConfigServiceImpl(
@@ -52,12 +57,14 @@ public class CustomSignatureConfigServiceImpl
       RulesManager rulesManager,
       ModsecRulesManager modsecRulesManager,
       CustomSignatureEdgeDecisionConverter edgeDecisionConverter,
-      CustomSignatureRuleMigrationManager ruleMigrationManager) {
+      CustomSignatureRuleMigrationManager ruleMigrationManager,
+      FeatureCachingClient featureCachingClient) {
     this.rulesValidator = rulesValidator;
     this.rulesManager = rulesManager;
     this.modsecRulesManager = modsecRulesManager;
     this.edgeDecisionConverter = edgeDecisionConverter;
     this.ruleMigrationManager = ruleMigrationManager;
+    this.featureCachingClient = featureCachingClient;
   }
 
   private <T> boolean isInvalidRequest(
@@ -79,6 +86,38 @@ public class CustomSignatureConfigServiceImpl
   @FunctionalInterface
   private interface ValidationFunction<T> {
     void validate(T request);
+  }
+
+  @Override
+  public void getCustomSignatureEvaluationConfigContext(
+      GetCustomSignatureEvaluationConfigContextRequest request,
+      StreamObserver<GetCustomSignatureEvaluationConfigContextResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      rulesValidator.validate(request);
+
+      if (!featureCachingClient.isProtectionEngineCustomSignatureEnabledForTenant(requestContext)) {
+        responseObserver.onNext(
+            GetCustomSignatureEvaluationConfigContextResponse.getDefaultInstance());
+        responseObserver.onCompleted();
+        return;
+      }
+
+      CustomSignatureConfigContext configContext =
+          rulesManager.getCustomSignatureEvaluationConfigContext(requestContext, request);
+      GetCustomSignatureEvaluationConfigContextResponse response =
+          GetCustomSignatureEvaluationConfigContextResponse.newBuilder()
+              .setCustomSignatureEvaluationConfigContext(configContext.toByteString())
+              .build();
+      responseObserver.onNext(response);
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error(
+          "Failed during fetching Custom Signature Evaluation Config Context for request: {}",
+          requestContext,
+          e);
+      responseObserver.onError(e);
+    }
   }
 
   @Override
@@ -276,6 +315,12 @@ public class CustomSignatureConfigServiceImpl
           responseObserver,
           "Get Custom Signature Edge Decision Rules",
           rulesValidator::validate)) {
+        return;
+      }
+
+      if (featureCachingClient.isProtectionEngineCustomSignatureEnabledForTenant(context)) {
+        responseObserver.onNext(GetCustomSignatureEdgeDecisionRulesResponse.getDefaultInstance());
+        responseObserver.onCompleted();
         return;
       }
 

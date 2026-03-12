@@ -5,6 +5,7 @@ import ai.traceable.anomaly.config.service.v1.modsec.AnomalyModsecConfigServiceG
 import ai.traceable.cloud.bot.deployment.config.service.v1.CloudBotDeploymentConfigServiceGrpc;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CloudBotDeploymentConfigServiceGrpc.CloudBotDeploymentConfigServiceBlockingStub;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
+import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc;
 import ai.traceable.edge.bot.config.service.v1.BotConfigServiceGrpc;
 import ai.traceable.edge.config.service.config.TraceableEdgeConfig;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionConfigServiceGrpc;
@@ -118,6 +119,14 @@ public class TraceableEdgeConfigServiceModule extends AbstractModule {
   AnomalyApiProtectConfigServiceGrpc.AnomalyApiProtectConfigServiceBlockingStub
       providesAnomalyApiProtectConfigServiceStub(Channel channel) {
     return AnomalyApiProtectConfigServiceGrpc.newBlockingStub(channel)
+        .withCallCredentials(
+            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub
+      providesCustomSignatureConfigServiceStub(Channel channel) {
+    return CustomSignatureConfigServiceGrpc.newBlockingStub(channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

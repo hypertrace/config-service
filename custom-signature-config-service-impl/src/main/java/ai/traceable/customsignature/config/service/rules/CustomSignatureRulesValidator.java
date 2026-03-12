@@ -25,6 +25,7 @@ import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.ExpiryDetails;
 import ai.traceable.customsignature.config.service.v1.FieldValue;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureEdgeDecisionRulesRequest;
+import ai.traceable.customsignature.config.service.v1.GetCustomSignatureEvaluationConfigContextRequest;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesRequest;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesRequest;
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
@@ -59,6 +60,31 @@ public class CustomSignatureRulesValidator implements RulesValidator {
       ModsecRulesManager modsecRulesManager, ClauseGroupValidator clauseGroupValidator) {
     this.modsecRulesManager = modsecRulesManager;
     this.clauseGroupValidator = clauseGroupValidator;
+  }
+
+  @Override
+  public void validate(GetCustomSignatureEvaluationConfigContextRequest request) {
+    if (request.getRuleEvaluationPoint() == RuleEvaluationPoint.RULE_EVALUATION_POINT_UNSPECIFIED) {
+      throw ContextualStatusExceptionBuilder.from(Status.INVALID_ARGUMENT)
+          .withExternalMessage("Rule evaluation point must be specified")
+          .buildRuntimeException();
+    }
+
+    // Validate rule_version
+    if (request.getRuleVersion()
+        == ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion
+            .CUSTOM_MODSEC_RULE_VERSION_UNSPECIFIED) {
+      throw ContextualStatusExceptionBuilder.from(Status.INVALID_ARGUMENT)
+          .withExternalMessage("Rule version must be specified")
+          .buildRuntimeException();
+    }
+
+    // Validate event_type
+    if (request.getEventType() == EventType.EVENT_TYPE_UNSPECIFIED) {
+      throw ContextualStatusExceptionBuilder.from(Status.INVALID_ARGUMENT)
+          .withExternalMessage("Event type must be specified")
+          .buildRuntimeException();
+    }
   }
 
   @Override

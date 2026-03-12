@@ -4,7 +4,9 @@ import ai.traceable.customsignature.config.service.v1.BulkUpdateCustomSignatureR
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRuleRecord;
+import ai.traceable.customsignature.config.service.v1.GetCustomSignatureEvaluationConfigContextRequest;
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
+import ai.traceable.protection.engine.config.customsignature.v1.CustomSignatureConfigContext;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.List;
 import java.util.Optional;
@@ -32,6 +34,9 @@ public interface RulesManager {
 
   void bulkUpdateCustomSignatureRules(
       RequestContext requestContext, BulkUpdateCustomSignatureRulesRequest request);
+
+  CustomSignatureConfigContext getCustomSignatureEvaluationConfigContext(
+      RequestContext requestContext, GetCustomSignatureEvaluationConfigContextRequest request);
 
   default String generateRuleId() {
     return UUID.randomUUID().toString();

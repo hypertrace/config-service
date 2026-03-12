@@ -367,6 +367,10 @@ traceableConfigServiceConfig:
   customSignatureConfigService:
     modsecurity:
       ruleVersion: MODSEC_RULE_VERSION_V3
+    configContextcache:
+      maxSize: 400
+      refreshAfterWriteDuration: 5m
+      threadPoolSize: 4
     ruleEvaluationPoints:
       migrationDisabled: false
     ruleCategory:

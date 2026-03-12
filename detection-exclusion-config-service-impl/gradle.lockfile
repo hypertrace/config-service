@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.4.5133=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.5130=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.config.service:api-attribute-override-service-api:0.37.1330=runtimeClasspath,testRuntimeClasspath
 ai.traceable.config.service:data-classification-config-service-api:0.37.1330=runtimeClasspath,testRuntimeClasspath
 ai.traceable.config.service:iprange-config-service-api:0.37.1330=runtimeClasspath,testRuntimeClasspath
@@ -10,18 +10,18 @@ ai.traceable.config.service:rate-limiting-config-service-api:0.37.1330=runtimeCl
 ai.traceable.featureflag:feature-flag-future-client:0.7.69=runtimeClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.7.69=runtimeClasspath,testRuntimeClasspath
 ai.traceable.license.metering.service:license-metering-service-api:0.1.81=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:api-utils:0.8.140=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:cache-provider:0.8.140=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:computed-metrics-api:0.8.140=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:data-model:0.8.140=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:deep-data-store:0.8.140=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:event-invalidation-cache:0.8.140=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:event-stream:0.8.140=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:graphql-api-utils:0.8.140=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:ip-utils:0.8.140=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:traceable-raw-span-constants:0.8.140=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:training-evaluation-framework:0.8.140=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:xml-utils:0.8.140=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:api-utils:0.8.139=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:cache-provider:0.8.139=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:computed-metrics-api:0.8.139=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:data-model:0.8.139=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:deep-data-store:0.8.139=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:event-invalidation-cache:0.8.139=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:event-stream:0.8.139=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:graphql-api-utils:0.8.139=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:ip-utils:0.8.139=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:traceable-raw-span-constants:0.8.139=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:training-evaluation-framework:0.8.139=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:xml-utils:0.8.139=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:actor-service-api:0.2.187=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform:anomaly-decision-engine-api:6.0.22=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:api-inspection-api:4.0.97=runtimeClasspath,testRuntimeClasspath

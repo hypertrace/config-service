@@ -14,8 +14,11 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.audit.utils.UserVisibleEmailConfig;
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceConfig;
+import ai.traceable.customsignature.config.service.rules.provider.CustomSignatureConfigContextCacheProvider;
+import ai.traceable.customsignature.config.service.rules.provider.CustomSignatureConfigContextClientProvider;
 import ai.traceable.customsignature.config.service.v1.AttributeKeyValueExpression;
 import ai.traceable.customsignature.config.service.v1.Category;
 import ai.traceable.customsignature.config.service.v1.Clause;
@@ -60,6 +63,9 @@ class CustomSignatureRulesManagerTest {
   private CustomSignatureRuleConverter ruleConverter;
   private CustomSignatureRulesManager rulesManager;
   private RequestContext requestContext;
+  private FeatureCachingClient featureCachingClient;
+  private CustomSignatureConfigContextCacheProvider cacheProvider;
+  private CustomSignatureConfigContextClientProvider clientProvider;
   private static final CustomSignatureRule DEFAULT_CUSTOM_SIGNATURE_RULE =
       CustomSignatureRule.newBuilder()
           .setId("defaultRuleId")
@@ -101,13 +107,24 @@ class CustomSignatureRulesManagerTest {
             new UserVisibleEmailConfig(
                 ConfigFactory.parseString(
                     "generic.config.service.customer.visible.excluded.email.patterns: []")));
+    featureCachingClient = mock(FeatureCachingClient.class);
+    // Enable feature flag by default for existing tests
+    when(featureCachingClient.isProtectionEngineCustomSignatureEnabledForTenant(any()))
+        .thenReturn(true);
+
+    cacheProvider = mock(CustomSignatureConfigContextCacheProvider.class);
+    clientProvider = mock(CustomSignatureConfigContextClientProvider.class);
+
     CustomSignatureRulesStore rulesStore =
         new CustomSignatureRulesStore(
             configServiceBlockingStub,
             ruleConverter,
             mock(ConfigChangeEventGenerator.class),
             config);
-    this.rulesManager = spy(new CustomSignatureRulesManager(rulesStore, config));
+    this.rulesManager =
+        spy(
+            new CustomSignatureRulesManager(
+                rulesStore, config, cacheProvider, clientProvider, featureCachingClient));
     requestContext = RequestContext.forTenantId("default tenant");
     when(timestampConverter.convert(any()))
         .thenReturn(Timestamp.newBuilder().setSeconds(100).build());

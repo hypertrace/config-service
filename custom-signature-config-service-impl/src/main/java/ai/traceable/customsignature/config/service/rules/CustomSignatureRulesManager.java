@@ -2,7 +2,9 @@ package ai.traceable.customsignature.config.service.rules;
 
 import static ai.traceable.platform.utils.ip.IpAddressParsingUtils.parseRawIpRange;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceConfig;
+import ai.traceable.customsignature.config.service.rules.provider.CustomSignatureConfigContextProvider;
 import ai.traceable.customsignature.config.service.v1.BulkUpdateCustomSignatureRulesRequest;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
@@ -10,11 +12,16 @@ import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleR
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule.Builder;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRuleRecord;
+import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.ExpiryDetails;
+import ai.traceable.customsignature.config.service.v1.GetCustomSignatureEvaluationConfigContextRequest;
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import ai.traceable.customsignature.config.service.v1.IpAddressExpression;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
+import ai.traceable.customsignature.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.platform.utils.ip.IpAddressParsingUtils;
+import ai.traceable.protection.engine.config.customsignature.v1.CustomSignatureConfigContext;
+import com.google.inject.name.Named;
 import jakarta.inject.Inject;
 import java.time.Duration;
 import java.util.List;
@@ -29,12 +36,22 @@ public class CustomSignatureRulesManager implements RulesManager {
 
   private final CustomSignatureRulesStore rulesStore;
   private final List<CustomSignatureRule> defaultCustomSignatureRules;
+  private final CustomSignatureConfigContextProvider cacheProvider;
+  private final CustomSignatureConfigContextProvider recordsProvider;
 
   @Inject
   public CustomSignatureRulesManager(
-      CustomSignatureRulesStore rulesStore, CustomSignatureConfigServiceConfig config) {
+      CustomSignatureRulesStore rulesStore,
+      CustomSignatureConfigServiceConfig config,
+      @Named("CustomSignatureConfigContextCacheProvider")
+          CustomSignatureConfigContextProvider cacheProvider,
+      @Named("CustomSignatureConfigContextClientProvider")
+          CustomSignatureConfigContextProvider recordsProvider,
+      FeatureCachingClient featureCachingClient) {
     this.rulesStore = rulesStore;
     this.defaultCustomSignatureRules = config.getDefaultCustomSignatureRules();
+    this.cacheProvider = cacheProvider;
+    this.recordsProvider = recordsProvider;
   }
 
   @Override
@@ -128,6 +145,32 @@ public class CustomSignatureRulesManager implements RulesManager {
   private CustomSignatureRule applyBulkUpdates(
       CustomSignatureRule rule, BulkUpdateCustomSignatureRulesRequest request) {
     return rule.toBuilder().setDisabled(request.getDisabled()).build();
+  }
+
+  @Override
+  public CustomSignatureConfigContext getCustomSignatureEvaluationConfigContext(
+      RequestContext requestContext, GetCustomSignatureEvaluationConfigContextRequest request) {
+
+    if (request.getEventType() == EventType.EVENT_TYPE_UNSPECIFIED) {
+      log.warn(
+          "Received request with unspecified event type for tenant: {}. Returning empty config context.",
+          requestContext.getTenantId());
+      return CustomSignatureConfigContext.getDefaultInstance();
+    }
+
+    RuleEvaluationPoint ruleEvaluationPoint = request.getRuleEvaluationPoint();
+    switch (ruleEvaluationPoint) {
+      case RULE_EVALUATION_POINT_EDGE:
+        return cacheProvider.getCustomSignatureConfigContext(requestContext, request);
+      case RULE_EVALUATION_POINT_PLATFORM:
+        return recordsProvider.getCustomSignatureConfigContext(requestContext, request);
+      default:
+        log.warn(
+            "Unknown RuleEvaluationPoint: {}. Returning empty config context for requestContext: {}",
+            ruleEvaluationPoint,
+            requestContext);
+        return CustomSignatureConfigContext.getDefaultInstance();
+    }
   }
 
   private Optional<CustomSignatureRule> getCustomSignatureRule(

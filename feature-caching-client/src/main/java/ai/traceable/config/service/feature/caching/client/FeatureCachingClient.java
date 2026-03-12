@@ -49,6 +49,7 @@ public class FeatureCachingClient {
   private static final boolean DEFAULT_PROTECTION_ENGINE_API_PROTECTION_FLAG_VALUE = false;
   private static final boolean DEFAULT_PROTECTION_ENGINE_POST_DETECTION_FILTERING_FLAG_VALUE =
       false;
+  private static final boolean DEFAULT_PROTECTION_ENGINE_CUSTOM_SIGNATURE_FLAG_VALUE = false;
   private static final Set<String> DEFAULT_HIDDEN_DEFENSE_AI_FEATURES_VALUE =
       Collections.emptySet();
   private static final boolean DEFAULT_PROTECTION_BLOCKING_DUAL_EVALUATION_FLAG_VALUE = false;
@@ -80,6 +81,8 @@ public class FeatureCachingClient {
       "protection-engine.api-protection";
   private static final String PROTECTION_ENGINE_POST_DETECTION_FILTERING_FLAG =
       "protection-engine.post-detection-filtering";
+  private static final String PROTECTION_ENGINE_CUSTOM_SIGNATURE_FLAG =
+      "protection-engine.custom-signature-rules";
   private static final String HIDDEN_DEFENSE_AI_FEATURES =
       "graphql.security-settings.defense-ai.hidden";
   private static final String API_PROTECT_CONFIG_POLICIES_REVAMP_FLAG =
@@ -112,6 +115,7 @@ public class FeatureCachingClient {
           PROTECTION_ENGINE_WEBAPP_PROTECTION_FLAG,
           PROTECTION_ENGINE_API_PROTECTION_FLAG,
           PROTECTION_ENGINE_POST_DETECTION_FILTERING_FLAG,
+          PROTECTION_ENGINE_CUSTOM_SIGNATURE_FLAG,
           HIDDEN_DEFENSE_AI_FEATURES,
           PROTECTION_BLOCKING_DUAL_EVALUATION_FLAG);
   private final FeatureFlagServiceBlockingStub featureFlagStub;
@@ -470,6 +474,21 @@ public class FeatureCachingClient {
           "Failed to retrieve current feature flag value for Protection Engine Post Detection Filtering",
           exception);
       return DEFAULT_PROTECTION_ENGINE_POST_DETECTION_FILTERING_FLAG_VALUE;
+    }
+  }
+
+  public boolean isProtectionEngineCustomSignatureEnabledForTenant(RequestContext requestContext) {
+    try {
+      return requireNonNull(
+              this.featureFlagCache
+                  .get(requestContext.buildInternalContextualKey())
+                  .get(PROTECTION_ENGINE_CUSTOM_SIGNATURE_FLAG))
+          .getBoolean();
+    } catch (Exception exception) {
+      log.warn(
+          "Failed to retrieve current feature flag value for Protection Engine Custom Signature",
+          exception);
+      return DEFAULT_PROTECTION_ENGINE_CUSTOM_SIGNATURE_FLAG_VALUE;
     }
   }
 
