@@ -15,6 +15,8 @@ dependencies {
   implementation(projects.configUtils)
 
   implementation(commonLibs.traceable.platform.eventInvalidationCache)
+  implementation(commonLibs.traceable.protection.engine.processing.common)
+  implementation(commonLibs.traceable.protection.engine.core)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

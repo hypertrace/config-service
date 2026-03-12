@@ -20,6 +20,8 @@ dependencies {
   implementation(commonLibs.protobuf.javautil)
   implementation(commonLibs.traceable.protection.engine.config.webapp)
   implementation(commonLibs.traceable.protection.engine.config.apiprotect)
+  implementation(commonLibs.traceable.protection.engine.processing.common)
+  implementation(commonLibs.traceable.protection.engine.core)
   implementation(localLibs.hypertrace.configservice.changeeventgenerator)
 
   implementation(commonLibs.guice7)
