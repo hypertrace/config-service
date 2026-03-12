@@ -2,6 +2,7 @@ package ai.traceable.edge.config.service;
 
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.edge.config.service.config.TraceableEdgeConfig;
+import ai.traceable.edge.config.service.supplier.AiEndpointMetadataConfigSupplier;
 import ai.traceable.edge.config.service.supplier.ApiProtectEvaluationConfigContextSupplier;
 import ai.traceable.edge.config.service.supplier.CaptchaSiteKeyConfigSupplier;
 import ai.traceable.edge.config.service.supplier.ClientBotFingerprintPolicySupplier;
@@ -61,6 +62,7 @@ public class TraceableEdgeConfigService
       PostDetectionFilteringConfigContextSupplier postDetectionFilteringConfigContextSupplier,
       ApiIdResolverConfigSupplier apiIdResolverConfigSupplier,
       SecuritySchemeConfigSupplier securitySchemeConfigSupplier,
+      AiEndpointMetadataConfigSupplier aiEndpointMetadataConfigSupplier,
       TraceableEdgeConfig traceableEdgeConfig) {
     this.uuidGenerator = uuidGenerator;
     this.configSuppliersByType = new HashMap<>();
@@ -94,6 +96,8 @@ public class TraceableEdgeConfigService
         apiIdResolverConfigSupplier.getConfigType(), apiIdResolverConfigSupplier);
     this.configSuppliersByType.put(
         securitySchemeConfigSupplier.getConfigType(), securitySchemeConfigSupplier);
+    this.configSuppliersByType.put(
+        aiEndpointMetadataConfigSupplier.getConfigType(), aiEndpointMetadataConfigSupplier);
     // todo: use configSupplier to automatically instantiate the appropriate class.
     //    var configTypeSupplierConfigs = config.getConfigList(CONFIG_TYPES_CONFIG_NAME);
     //    for (var configTypeSupplierConfig : configTypeSupplierConfigs) {

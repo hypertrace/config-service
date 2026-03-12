@@ -80,4 +80,20 @@ public class EntityQueryServiceConfig {
   public String getApiServiceNameColumnName() {
     return this.attributesMapConfig.getString("api.serviceName");
   }
+
+  public String getIsGenAiEndpointColumnName() {
+    return this.attributesMapConfig.getString("api.isGenAi");
+  }
+
+  public String getApiAssociatedAiModelsColumnName() {
+    return this.attributesMapConfig.getString("api.associatedAiModels");
+  }
+
+  public String getApiAssociatedAiVendorsColumnName() {
+    return this.attributesMapConfig.getString("api.associatedAiVendors");
+  }
+
+  public String getApiPromptAttributeKeysColumnName() {
+    return this.attributesMapConfig.getString("api.promptAttributeKeys");
+  }
 }

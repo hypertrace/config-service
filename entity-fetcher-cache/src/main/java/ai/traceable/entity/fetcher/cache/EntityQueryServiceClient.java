@@ -2,8 +2,12 @@ package ai.traceable.entity.fetcher.cache;
 
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider.ApiIdentifierEntity;
 import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider.ServiceIdentifierEntity;
+import ai.traceable.entity.fetcher.cache.StreamingAiEndpointMetadataProvider.ApiAiEndpointMetadataDetails;
 import ai.traceable.entity.fetcher.cache.StreamingApiMappingProvider.HttpApiDetails;
 import ai.traceable.entity.fetcher.cache.config.EntityQueryServiceConfig;
+import ai.traceable.protection.data.context.v1.AiEndpointMetadata;
+import ai.traceable.protection.data.context.v1.PromptAttributeKey;
+import ai.traceable.protection.processing.common.v1.AttributeType;
 import com.google.common.collect.Streams;
 import com.google.inject.Inject;
 import java.util.Collections;
@@ -39,6 +43,17 @@ class EntityQueryServiceClient {
   private final EntityQueryServiceBlockingStub entityQueryServiceBlockingStub;
   private final long timeoutMillis;
 
+  private static final Map<String, AttributeType> ATTRIBUTE_TYPE_MAPPING =
+      Map.of(
+          "header",
+          AttributeType.ATTRIBUTE_TYPE_HEADER,
+          "cookie",
+          AttributeType.ATTRIBUTE_TYPE_COOKIE,
+          "query",
+          AttributeType.ATTRIBUTE_TYPE_QUERY_PARAM,
+          "body",
+          AttributeType.ATTRIBUTE_TYPE_BODY_PARAM);
+
   @Inject
   EntityQueryServiceClient(
       EntityQueryServiceConfig config,
@@ -60,6 +75,99 @@ class EntityQueryServiceClient {
     EntityQueryRequest serviceEntityQueryRequest =
         buildAllApiQueryRequest(serviceName, environment, ApiType.HTTP);
     return executeApiQueryRequest(requestContext, serviceName, serviceEntityQueryRequest);
+  }
+
+  public Stream<ApiAiEndpointMetadataDetails> getAllAiEndpointMetadata(
+      RequestContext requestContext, String serviceName, String environment) {
+    EntityQueryRequest queryRequest = buildAiEndpointMetadataQueryRequest(serviceName, environment);
+    return executeAiEndpointMetadataQueryRequest(requestContext, serviceName, queryRequest);
+  }
+
+  private Stream<ApiAiEndpointMetadataDetails> executeAiEndpointMetadataQueryRequest(
+      RequestContext requestContext, String serviceName, EntityQueryRequest queryRequest) {
+    Iterator<ResultSetChunk> resultSetChunkIterator =
+        requestContext.call(
+            () ->
+                entityQueryServiceBlockingStub
+                    .withDeadlineAfter(timeoutMillis, TimeUnit.MILLISECONDS)
+                    .execute(queryRequest));
+
+    if (!resultSetChunkIterator.hasNext()) {
+      return Stream.empty();
+    }
+
+    int selectionCount = queryRequest.getSelectionCount();
+    return Streams.stream(resultSetChunkIterator)
+        .map(ResultSetChunk::getRowList)
+        .flatMap(List::stream)
+        .filter(row -> hasExpectedColCount(row, selectionCount, requestContext, serviceName))
+        .map(
+            row -> {
+              String apiId = row.getColumn(0).getString();
+              AiEndpointMetadata.Builder builder =
+                  AiEndpointMetadata.newBuilder()
+                      .addAllAssociatedAiModels(row.getColumn(1).getStringArrayList())
+                      .addAllAssociatedAiVendors(row.getColumn(2).getStringArrayList())
+                      .addAllPromptAttributeKeys(
+                          parsePromptAttributeKeys(row.getColumn(3).getStringArrayList()));
+              return new ApiAiEndpointMetadataDetails(apiId, builder.build());
+            });
+  }
+
+  private List<PromptAttributeKey> parsePromptAttributeKeys(List<String> promptAttributeKeysRaw) {
+    return promptAttributeKeysRaw.stream()
+        .filter(raw -> raw != null && !raw.isEmpty())
+        .map(
+            raw -> {
+              // Format: http.request.{attributeType}[.{attributeKey}]
+              // e.g. http.request.header.x-prompt, http.request.body.prompt, http.request.body
+              String[] parts = raw.split("\\.", 4);
+              PromptAttributeKey.Builder builder = PromptAttributeKey.newBuilder();
+              if (parts.length >= 3) {
+                AttributeType attributeType = ATTRIBUTE_TYPE_MAPPING.get(parts[2]);
+                if (attributeType != null) {
+                  if (AttributeType.ATTRIBUTE_TYPE_BODY_PARAM.equals(attributeType)
+                      && parts.length == 3) {
+                    // For body type, if attribute key is not provided, we will consider the whole
+                    // body as the attribute value
+                    builder.setAttributeType(AttributeType.ATTRIBUTE_TYPE_BODY);
+                  } else {
+                    builder.setAttributeType(attributeType);
+                  }
+                }
+                if (parts.length >= 4) {
+                  builder.setAttributeKey(parts[3]);
+                }
+              }
+              return builder.build();
+            })
+        .collect(Collectors.toList());
+  }
+
+  private EntityQueryRequest buildAiEndpointMetadataQueryRequest(
+      String serviceName, String environment) {
+    EntityQueryRequest.Builder requestBuilder =
+        getInitializedApiQueryRequestBuilder(serviceName, environment, ApiType.HTTP);
+    Filter isGenAiEndpointFilter =
+        buildBooleanConstantEqualsFilter(
+            entityQueryServiceConfig.getIsGenAiEndpointColumnName(), true);
+    Filter finalFilter =
+        Filter.newBuilder()
+            .setOperator(Operator.AND)
+            .addChildFilter(isGenAiEndpointFilter)
+            .addChildFilter(requestBuilder.getFilter())
+            .build();
+    requestBuilder.setFilter(finalFilter);
+    return requestBuilder
+        .addSelection(
+            buildSelectionExpression(entityQueryServiceConfig.getApiAssociatedAiModelsColumnName()))
+        .addSelection(
+            buildSelectionExpression(
+                entityQueryServiceConfig.getApiAssociatedAiVendorsColumnName()))
+        .addSelection(
+            buildSelectionExpression(
+                entityQueryServiceConfig.getApiPromptAttributeKeysColumnName()))
+        .build();
   }
 
   private Stream<HttpApiDetails> executeApiQueryRequest(
@@ -443,6 +551,19 @@ class EntityQueryServiceClient {
                             Value.newBuilder()
                                 .setValueType(ValueType.STRING)
                                 .setString(stringLiteral))))
+        .build();
+  }
+
+  private Filter buildBooleanConstantEqualsFilter(String columnName, boolean boolValue) {
+    return Filter.newBuilder()
+        .setLhs(buildSelectionExpression(columnName))
+        .setOperator(Operator.EQ)
+        .setRhs(
+            Expression.newBuilder()
+                .setLiteral(
+                    LiteralConstant.newBuilder()
+                        .setValue(
+                            Value.newBuilder().setValueType(ValueType.BOOL).setBoolean(boolValue))))
         .build();
   }
 

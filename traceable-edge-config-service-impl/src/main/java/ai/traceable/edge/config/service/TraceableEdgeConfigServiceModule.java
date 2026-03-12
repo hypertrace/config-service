@@ -11,6 +11,7 @@ import ai.traceable.edge.config.service.config.TraceableEdgeConfig;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionConfigServiceGrpc;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionConfigServiceGrpc.EdgeDecisionConfigServiceBlockingStub;
 import ai.traceable.entity.fetcher.cache.CachedServiceMappingProviderModule;
+import ai.traceable.entity.fetcher.cache.StreamingAiEndpointMetadataProviderModule;
 import ai.traceable.entity.fetcher.cache.StreamingSecuritySchemeProviderModule;
 import ai.traceable.policy.config.service.v1.TraceablePolicyConfigServiceGrpc;
 import ai.traceable.policy.config.service.v1.TraceablePolicyConfigServiceGrpc.TraceablePolicyConfigServiceBlockingStub;
@@ -67,6 +68,7 @@ public class TraceableEdgeConfigServiceModule extends AbstractModule {
     install(
         new StreamingSecuritySchemeProviderModule(
             this.grpcChannelRegistry, this.config, this.kafkaLiveEventListener));
+    install(new StreamingAiEndpointMetadataProviderModule());
   }
 
   @Provides
