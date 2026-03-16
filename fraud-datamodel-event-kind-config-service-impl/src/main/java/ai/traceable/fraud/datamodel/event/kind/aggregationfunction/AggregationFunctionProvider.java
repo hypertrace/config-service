@@ -1,5 +1,6 @@
 package ai.traceable.fraud.datamodel.event.kind.aggregationfunction;
 
+import ai.traceable.fraud.datamodel.event.kind.v1.AggregationFunction;
 import ai.traceable.fraud.datamodel.event.kind.v1.AggregationFunctionsByKind;
 import ai.traceable.fraud.datamodel.event.kind.v1.ComplexDataModelEventKind;
 import java.util.List;
@@ -18,4 +19,11 @@ public interface AggregationFunctionProvider {
    */
   List<AggregationFunctionsByKind> getFunctionsByKinds(
       List<ComplexDataModelEventKind> requestedKinds);
+
+  /**
+   * Gets all aggregation functions without filtering by kind.
+   *
+   * @return list of all available aggregation functions
+   */
+  List<AggregationFunction> getAllFunctions();
 }

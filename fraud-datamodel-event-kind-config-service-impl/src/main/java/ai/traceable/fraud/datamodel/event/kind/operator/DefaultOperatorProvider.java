@@ -57,6 +57,11 @@ public class DefaultOperatorProvider implements OperatorProvider {
     return result;
   }
 
+  @Override
+  public List<Operator> getAllOperators() {
+    return operators;
+  }
+
   private boolean isCompatibleWithKind(Operator operator, ComplexDataModelEventKind requestedKind) {
     for (ComplexDataModelEventKind inputKind : operator.getInputKindsList()) {
       if (hierarchyResolver.isCompatible(inputKind, requestedKind)) {

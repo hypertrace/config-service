@@ -1,6 +1,7 @@
 package ai.traceable.fraud.datamodel.event.kind.operator;
 
 import ai.traceable.fraud.datamodel.event.kind.v1.ComplexDataModelEventKind;
+import ai.traceable.fraud.datamodel.event.kind.v1.Operator;
 import ai.traceable.fraud.datamodel.event.kind.v1.OperatorsByKind;
 import java.util.List;
 
@@ -14,4 +15,11 @@ public interface OperatorProvider {
    * @return list of kind-to-operators mappings
    */
   List<OperatorsByKind> getOperatorsByKinds(List<ComplexDataModelEventKind> requestedKinds);
+
+  /**
+   * Gets all operators without filtering by kind.
+   *
+   * @return list of all available operators
+   */
+  List<Operator> getAllOperators();
 }

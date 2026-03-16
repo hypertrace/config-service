@@ -33,10 +33,8 @@ class DefaultFraudDataModelEventKindRegistryTest {
   @BeforeEach
   void setUp() {
     when(transformationFunctionProvider.getAllFunctions()).thenReturn(List.of());
-    when(operatorProvider.getOperatorsByKinds(org.mockito.ArgumentMatchers.any()))
-        .thenReturn(List.of());
-    when(aggregationFunctionProvider.getFunctionsByKinds(org.mockito.ArgumentMatchers.any()))
-        .thenReturn(List.of());
+    when(operatorProvider.getAllOperators()).thenReturn(List.of());
+    when(aggregationFunctionProvider.getAllFunctions()).thenReturn(List.of());
 
     registry =
         new DefaultFraudDataModelEventKindRegistry(

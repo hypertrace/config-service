@@ -54,6 +54,11 @@ public class DefaultAggregationFunctionProvider implements AggregationFunctionPr
     return result;
   }
 
+  @Override
+  public List<AggregationFunction> getAllFunctions() {
+    return functions;
+  }
+
   private List<AggregationFunction> findFunctionsForKind(ComplexDataModelEventKind kind) {
     return functions.stream()
         .filter(func -> isCompatibleWithKind(func, kind))

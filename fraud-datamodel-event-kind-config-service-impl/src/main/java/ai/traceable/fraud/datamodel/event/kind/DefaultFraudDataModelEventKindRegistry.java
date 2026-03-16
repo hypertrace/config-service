@@ -6,13 +6,11 @@ import ai.traceable.fraud.datamodel.event.kind.operator.OperatorProvider;
 import ai.traceable.fraud.datamodel.event.kind.transformationfunction.TransformationFunctionProvider;
 import ai.traceable.fraud.datamodel.event.kind.v1.AggregationFunction;
 import ai.traceable.fraud.datamodel.event.kind.v1.AggregationFunctionType;
-import ai.traceable.fraud.datamodel.event.kind.v1.AggregationFunctionsByKind;
 import ai.traceable.fraud.datamodel.event.kind.v1.ComplexDataModelEventKind;
 import ai.traceable.fraud.datamodel.event.kind.v1.DataType;
 import ai.traceable.fraud.datamodel.event.kind.v1.FraudDataModelEventKindRegistry;
 import ai.traceable.fraud.datamodel.event.kind.v1.Operator;
 import ai.traceable.fraud.datamodel.event.kind.v1.OperatorType;
-import ai.traceable.fraud.datamodel.event.kind.v1.OperatorsByKind;
 import ai.traceable.fraud.datamodel.event.kind.v1.TransformationFunction;
 import ai.traceable.fraud.datamodel.event.kind.v1.TransformationFunctionInvocation;
 import ai.traceable.fraud.datamodel.event.kind.v1.TransformationFunctionsByKind;
@@ -22,7 +20,6 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.EnumMap;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -63,12 +60,8 @@ public class DefaultFraudDataModelEventKindRegistry implements FraudDataModelEve
 
   private Map<OperatorType, Operator> buildOperatorMap(OperatorProvider provider) {
     Map<OperatorType, Operator> result = new EnumMap<>(OperatorType.class);
-    ComplexDataModelEventKind anyKind =
-        ComplexDataModelEventKind.newBuilder().setKindId("system_event_kind_value").build();
-    for (OperatorsByKind byKind : provider.getOperatorsByKinds(List.of(anyKind))) {
-      for (Operator op : byKind.getOperatorsList()) {
-        result.put(op.getOperatorType(), op);
-      }
+    for (Operator op : provider.getAllOperators()) {
+      result.put(op.getOperatorType(), op);
     }
     return result;
   }
@@ -77,12 +70,8 @@ public class DefaultFraudDataModelEventKindRegistry implements FraudDataModelEve
       AggregationFunctionProvider provider) {
     Map<AggregationFunctionType, AggregationFunction> result =
         new EnumMap<>(AggregationFunctionType.class);
-    ComplexDataModelEventKind anyKind =
-        ComplexDataModelEventKind.newBuilder().setKindId("system_event_kind_value").build();
-    for (AggregationFunctionsByKind byKind : provider.getFunctionsByKinds(List.of(anyKind))) {
-      for (AggregationFunction func : byKind.getFunctionsList()) {
-        result.put(func.getFunctionType(), func);
-      }
+    for (AggregationFunction func : provider.getAllFunctions()) {
+      result.put(func.getFunctionType(), func);
     }
     return result;
   }
