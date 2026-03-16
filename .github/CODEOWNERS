@@ -22,7 +22,7 @@ fraud-datamodel-derivation-config-service-api/src @sunilgattupalle @avinashkollu
 fraud-policy-config-service-api/src @sunilgattupalle @avinashkolluru @abhishek-yadav-tracable @varsha-abhinandan @PrajwalKrishna @saxenakshitiz
 fraud-datamodel-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @vinaysrini @abhishek-yadav-tracable @varsha-abhinandan
 fraud-datamodel-derivation-config-service-impl/src @sunilgattupalle @avinashkolluru @vinaysrini @abhishek-yadav-tracable @varsha-abhinandan @PrajwalKrishna @saxenakshitiz
-fraud-policy-config-service-impl/src @sunilgattupalle @avinashkolluru @vinaysrini @abhishek-yadav-tracable @varsha-abhinandan @PrajwalKrishna @saxenakshitiz
+fraud-policy-config-service-impl/src @sunilgattupalle @avinashkolluru @vinaysrini @Adity-Deshmukh @varsha-abhinandan @PrajwalKrishna @saxenakshitiz
 traceable-policy-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini
 traceable-policy-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini
 traceable-datamodel-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini
@@ -85,8 +85,8 @@ local-processing-config-service-impl @shashank11p @tim-mwangi @varkey98
 data-obfuscation-config-service-api @shashank11p @tim-mwangi @varkey98
 data-obfuscation-config-service-impl @shashank11p @tim-mwangi @varkey98
 fraud-datamodel-event-kind-config-service-api  @PrajwalKrishna @varsha-abhinandan @saxenakshitiz
-fraud-datamodel-event-kind-config-service-impl @PrajwalKrishna @varsha-abhinandan @saxenakshitiz
-fraud-datamodel-event-kind-config-service-impl/src/main/resources @PrajwalKrishna @saxenakshitiz
+fraud-datamodel-event-kind-config-service-impl @PrajwalKrishna @varsha-abhinandan @saxenakshitiz @Adity-Deshmukh
+fraud-datamodel-event-kind-config-service-impl/src/main/resources @PrajwalKrishna @saxenakshitiz @Adity-Deshmukh
 application-grouping-config-service-api @suresh-prakash @singh-viikram @ohiduz
 application-grouping-config-service-impl @suresh-prakash @singh-viikram @ohiduz
 saved-filter-config-service-api @suresh-prakash @singh-viikram

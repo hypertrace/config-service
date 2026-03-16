@@ -233,6 +233,12 @@ public class AbusePolicyConfigRequestValidator {
           .asRuntimeException(requestContext.buildTrailers());
     }
 
+    if (template.getThreshold().getValue() < 0) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Threshold value must be non-negative")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+
     // Validate time window (required)
     if (!template.hasTimeWindow()) {
       throw Status.INVALID_ARGUMENT
@@ -246,9 +252,20 @@ public class AbusePolicyConfigRequestValidator {
           .asRuntimeException(requestContext.buildTrailers());
     }
 
-    if (template.getTimeWindow().getLookbackDuration().getSeconds() <= 0) {
+    long lookbackSeconds = template.getTimeWindow().getLookbackDuration().getSeconds();
+    if (lookbackSeconds <= 0) {
       throw Status.INVALID_ARGUMENT
           .withDescription("Lookback duration must be positive")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+
+    long maxLookbackSeconds = 86400; // 24 hours
+    if (lookbackSeconds > maxLookbackSeconds) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              String.format(
+                  "Lookback duration exceeds maximum allowed value of %d seconds (24 hours)",
+                  maxLookbackSeconds))
           .asRuntimeException(requestContext.buildTrailers());
     }
 
