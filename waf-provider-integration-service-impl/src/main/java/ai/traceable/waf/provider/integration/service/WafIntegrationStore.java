@@ -81,7 +81,11 @@ public class WafIntegrationStore
             wafIntegration ->
                 filterOnScope(
                     wafIntegration.getWafIntegrationDetails().getWafIntegrationScope(),
-                    filter.getWafIntegrationScope()));
+                    filter.getWafIntegrationScope()))
+        .filter(
+            wafIntegration ->
+                filterOnEnabledStatus(
+                    wafIntegration.getWafIntegrationDetails().getEnabled(), filter));
   }
 
   private boolean filterOnScope(
@@ -94,6 +98,12 @@ public class WafIntegrationStore
     List<String> filterEnvironmentIds =
         wafIntegrationFilterScope.getEnvironmentScope().getEnvironmentIdsList();
     return environmentIds.stream().anyMatch(filterEnvironmentIds::contains);
+  }
+
+  private boolean filterOnEnabledStatus(boolean enabled, GetWafIntegrationsFilter filter) {
+    // If enabled filter is not set, return all integrations
+    if (!filter.hasEnabled()) return true;
+    return enabled == filter.getEnabled();
   }
 
   private boolean checkWafIdPresence(String id, List<String> requiredIds) {

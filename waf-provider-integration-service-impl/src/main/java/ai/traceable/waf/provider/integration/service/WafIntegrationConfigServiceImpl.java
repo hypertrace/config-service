@@ -14,6 +14,7 @@ import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsResponse;
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationResponse;
 import ai.traceable.waf.integration.service.api.v1.WafIntegration;
+import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.WafProviderServiceGrpc.WafProviderServiceImplBase;
 import com.google.inject.Inject;
 import io.grpc.Status;
@@ -43,17 +44,23 @@ public class WafIntegrationConfigServiceImpl extends WafProviderServiceImplBase 
   public void createWafIntegration(
       CreateWafIntegrationRequest request,
       StreamObserver<CreateWafIntegrationResponse> responseStreamObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
     try {
-      RequestContext requestContext = RequestContext.CURRENT.get();
       List<WafIntegration> existingWafIntegrations =
           wafIntegrationStore.getAllConfigData(
               requestContext, GetWafIntegrationsFilter.newBuilder().build());
       wafIntegrationConfigRequestValidator.validateOrThrow(
           request, requestContext, existingWafIntegrations);
+
+      WafIntegrationDetails.Builder detailsBuilder = request.getWafIntegrationDetails().toBuilder();
+      if (!request.getWafIntegrationDetails().hasEnabled()) {
+        detailsBuilder.setEnabled(true);
+      }
+
       WafIntegration wafIntegration =
           WafIntegration.newBuilder()
               .setId(UUID.randomUUID().toString())
-              .setWafIntegrationDetails(request.getWafIntegrationDetails())
+              .setWafIntegrationDetails(detailsBuilder.build())
               .build();
       WafIntegration createdWafIntegration =
           wafIntegrationStore

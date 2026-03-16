@@ -52,6 +52,10 @@ public class WafIntegrationBuilderUtils {
         builder
             .setName(request.getUpdatedWafIntegrationDetails().getName())
             .setDescription(request.getUpdatedWafIntegrationDetails().getDescription());
+    if (request.getUpdatedWafIntegrationDetails().hasEnabled()) {
+      updatedWafIntegrationDetails.setEnabled(
+          request.getUpdatedWafIntegrationDetails().getEnabled());
+    }
     updateScope(updatedWafIntegrationDetails, request);
     return updateTargets(updatedWafIntegrationDetails, request);
   }
@@ -511,6 +515,13 @@ public class WafIntegrationBuilderUtils {
   }
 
   public static WafIntegration getBackwardCompatibleWafIntegration(WafIntegration wafIntegration) {
+    WafIntegrationDetails.Builder detailsBuilder =
+        wafIntegration.getWafIntegrationDetails().toBuilder();
+
+    if (!wafIntegration.getWafIntegrationDetails().hasEnabled()) {
+      detailsBuilder.setEnabled(true);
+    }
+
     switch (wafIntegration.getWafIntegrationDetails().getIntegrationParamsCase()) {
       case AWS_INTEGRATION_PARAMS:
         AwsIntegrationParams awsIntegrationParams =
@@ -531,20 +542,20 @@ public class WafIntegrationBuilderUtils {
         return WafIntegration.newBuilder()
             .setId(wafIntegration.getId())
             .setWafIntegrationDetails(
-                wafIntegration.getWafIntegrationDetails().toBuilder()
+                detailsBuilder
                     .setAwsIntegrationParams(convertedAwsIntegrationParamsBuilder.build())
                     .build())
             .build();
       case AKAMAI_INTEGRATION_PARAMS:
       case FORTINET_INTEGRATION_PARAMS:
-        return wafIntegration.toBuilder()
-            .setWafIntegrationDetails(
-                populateAllTargetsIfEmptyList(wafIntegration.getWafIntegrationDetails()))
+        return WafIntegration.newBuilder()
+            .setId(wafIntegration.getId())
+            .setWafIntegrationDetails(populateAllTargetsIfEmptyList(detailsBuilder.build()))
             .build();
       default:
-        return wafIntegration.toBuilder()
-            .setWafIntegrationDetails(
-                populateTargetsIfEmptyList(wafIntegration.getWafIntegrationDetails()))
+        return WafIntegration.newBuilder()
+            .setId(wafIntegration.getId())
+            .setWafIntegrationDetails(populateTargetsIfEmptyList(detailsBuilder.build()))
             .build();
     }
   }
@@ -720,6 +731,13 @@ public class WafIntegrationBuilderUtils {
       WafIntegration
           wafIntegration) { // this is for supporting waf integration, should be removed once all
     // services are updated
+    WafIntegrationDetails.Builder detailsBuilder =
+        wafIntegration.getWafIntegrationDetails().toBuilder();
+
+    if (!wafIntegration.getWafIntegrationDetails().hasEnabled()) {
+      detailsBuilder.setEnabled(true);
+    }
+
     switch (wafIntegration.getWafIntegrationDetails().getIntegrationParamsCase()) {
       case AWS_INTEGRATION_PARAMS:
         AwsIntegrationParams awsIntegrationParams =
@@ -735,8 +753,8 @@ public class WafIntegrationBuilderUtils {
         return WafIntegration.newBuilder()
             .setId(wafIntegration.getId())
             .setWafIntegrationDetails(
-                wafIntegration.getWafIntegrationDetails().toBuilder()
-                    .setAwsIntegrationParams(convertedAwsIntegrationParamsBuilder.build()))
+                detailsBuilder.setAwsIntegrationParams(
+                    convertedAwsIntegrationParamsBuilder.build()))
             .build();
       case AZURE_INTEGRATION_PARAMS:
         AzureIntegrationParams convertedAzureIntegrationParams =
@@ -746,7 +764,7 @@ public class WafIntegrationBuilderUtils {
             .setId(wafIntegration.getId())
             .setWafIntegrationDetails(
                 populateTargetsIfEmptyList(
-                    wafIntegration.getWafIntegrationDetails().toBuilder()
+                    detailsBuilder
                         .setAzureIntegrationParams(convertedAzureIntegrationParams)
                         .build()))
             .build();
@@ -754,14 +772,14 @@ public class WafIntegrationBuilderUtils {
       case IMPERVA_INTEGRATION_PARAMS:
       case FORTINET_INTEGRATION_PARAMS:
       case GCP_INTEGRATION_PARAMS:
-        return wafIntegration.toBuilder()
-            .setWafIntegrationDetails(
-                populateAllTargetsIfEmptyList(wafIntegration.getWafIntegrationDetails()))
+        return WafIntegration.newBuilder()
+            .setId(wafIntegration.getId())
+            .setWafIntegrationDetails(populateAllTargetsIfEmptyList(detailsBuilder.build()))
             .build();
       default:
-        return wafIntegration.toBuilder()
-            .setWafIntegrationDetails(
-                populateTargetsIfEmptyList(wafIntegration.getWafIntegrationDetails()))
+        return WafIntegration.newBuilder()
+            .setId(wafIntegration.getId())
+            .setWafIntegrationDetails(populateTargetsIfEmptyList(detailsBuilder.build()))
             .build();
     }
   }

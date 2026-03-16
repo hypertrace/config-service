@@ -134,6 +134,16 @@ public class WafIntegrationConfigRequestValidator {
       List<WafIntegration> existingWafIntegrations) {
     validateNonDefaultPresenceOrThrow(
         updateWafIntegrationDetails, UpdatedWafIntegrationDetails.NAME_FIELD_NUMBER);
+
+    // TODO: Once UI is updated to explicitly send the 'enabled' field in update requests, make it
+    // mandatory
+    // Currently, the field is optional for backward compatibility. The update operation preserves
+    // the existing
+    // enabled status if not explicitly provided. Once all clients are updated, uncomment the
+    // following line:
+    // validateNonDefaultPresenceOrThrow(updateWafIntegrationDetails,
+    // UpdatedWafIntegrationDetails.ENABLED_FIELD_NUMBER);
+
     validateUpdateIntegrationParams(id, updateWafIntegrationDetails, existingWafIntegrations);
     this.validateWafIntegrationScope(updateWafIntegrationDetails.getWafIntegrationScope());
   }
@@ -142,6 +152,16 @@ public class WafIntegrationConfigRequestValidator {
       WafIntegrationDetails wafIntegrationDetails, List<WafIntegration> existingWafIntegrations) {
     validateNonDefaultPresenceOrThrow(
         wafIntegrationDetails, WafIntegrationDetails.NAME_FIELD_NUMBER);
+
+    // TODO: Once UI is updated to explicitly send the 'enabled' field, make it mandatory here
+    // Currently, the field is optional for backward compatibility. New integrations default to
+    // enabled=true
+    // in WafIntegrationConfigServiceImpl. Once all clients (UI, API consumers) are updated to
+    // explicitly
+    // set this field, uncomment the following line to enforce it:
+    // validateNonDefaultPresenceOrThrow(wafIntegrationDetails,
+    // WafIntegrationDetails.ENABLED_FIELD_NUMBER);
+
     validateIntegrationParams(wafIntegrationDetails, existingWafIntegrations);
     this.validateWafIntegrationScope(wafIntegrationDetails.getWafIntegrationScope());
   }

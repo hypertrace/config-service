@@ -1,6 +1,7 @@
 package ai.traceable.waf.provider.integration.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -227,6 +228,7 @@ class WafIntegrationConfigServiceImplTest {
     return WafIntegrationDetails.newBuilder()
         .setName(name)
         .setDescription("des")
+        .setEnabled(true)
         .setWafIntegrationScope(wafConfigScope)
         .addIntegrationTargets(
             WafIntegrationTarget.newBuilder()
@@ -359,6 +361,7 @@ class WafIntegrationConfigServiceImplTest {
                 WafIntegrationDetails.newBuilder()
                     .setName("name")
                     .setDescription("des")
+                    .setEnabled(true)
                     .setWafIntegrationScope(wafConfigScope)
                     .addIntegrationTargets(
                         WafIntegrationTarget.newBuilder()
@@ -548,6 +551,7 @@ class WafIntegrationConfigServiceImplTest {
         WafIntegrationDetails.newBuilder()
             .setName("name3")
             .setDescription("des")
+            .setEnabled(true)
             .setWafIntegrationScope(wafConfigScope)
             .addIntegrationTargets(
                 WafIntegrationTarget.newBuilder()
@@ -593,6 +597,7 @@ class WafIntegrationConfigServiceImplTest {
         WafIntegrationDetails.newBuilder()
             .setName("name3")
             .setDescription("des")
+            .setEnabled(true)
             .setWafIntegrationScope(wafConfigScope)
             .addIntegrationTargets(
                 WafIntegrationTarget.newBuilder()
@@ -1628,6 +1633,7 @@ class WafIntegrationConfigServiceImplTest {
         return WafIntegrationDetails.newBuilder()
             .setName(name)
             .setDescription("des")
+            .setEnabled(true)
             .setAwsIntegrationParams(
                 AwsIntegrationParams.newBuilder()
                     .setWebIdentityAuthCredentials(
@@ -1722,6 +1728,7 @@ class WafIntegrationConfigServiceImplTest {
         return WafIntegrationDetails.newBuilder()
             .setName(name)
             .setDescription("des")
+            .setEnabled(true)
             .setWafIntegrationScope(wafConfigScope)
             .addIntegrationTargets(
                 WafIntegrationTarget.newBuilder()
@@ -1751,6 +1758,7 @@ class WafIntegrationConfigServiceImplTest {
         return WafIntegrationDetails.newBuilder()
             .setName(name)
             .setDescription("des")
+            .setEnabled(true)
             .setWafIntegrationScope(wafConfigScope)
             .addIntegrationTargets(
                 WafIntegrationTarget.newBuilder()
@@ -1780,6 +1788,7 @@ class WafIntegrationConfigServiceImplTest {
         return WafIntegrationDetails.newBuilder()
             .setName(name)
             .setDescription("des")
+            .setEnabled(true)
             .setWafIntegrationScope(wafConfigScope)
             .addIntegrationTargets(
                 WafIntegrationTarget.newBuilder()
@@ -1800,6 +1809,7 @@ class WafIntegrationConfigServiceImplTest {
         return WafIntegrationDetails.newBuilder()
             .setName(name)
             .setDescription("des")
+            .setEnabled(true)
             .setWafIntegrationScope(wafConfigScope)
             .addIntegrationTargets(
                 WafIntegrationTarget.newBuilder()
@@ -1830,6 +1840,7 @@ class WafIntegrationConfigServiceImplTest {
         return WafIntegrationDetails.newBuilder()
             .setName(name)
             .setDescription("des")
+            .setEnabled(true)
             .setWafIntegrationScope(wafConfigScope)
             .setGcpIntegrationParams(
                 GcpIntegrationParams.newBuilder()
@@ -1855,6 +1866,7 @@ class WafIntegrationConfigServiceImplTest {
         return WafIntegrationDetails.newBuilder()
             .setName(name)
             .setDescription("des")
+            .setEnabled(true)
             .setWafIntegrationScope(wafConfigScope)
             .setF5IntegrationParams(
                 F5IntegrationParams.newBuilder()
@@ -1876,6 +1888,7 @@ class WafIntegrationConfigServiceImplTest {
         return WafIntegrationDetails.newBuilder()
             .setName(name)
             .setDescription("des")
+            .setEnabled(true)
             .setWafIntegrationScope(wafConfigScope)
             .setAkamaiIntegrationParams(
                 AkamaiIntegrationParams.newBuilder()
@@ -1899,6 +1912,7 @@ class WafIntegrationConfigServiceImplTest {
         return WafIntegrationDetails.newBuilder()
             .setName(name)
             .setDescription("des")
+            .setEnabled(true)
             .setWafIntegrationScope(wafConfigScope)
             .setFortinetIntegrationParams(
                 FortinetIntegrationParams.newBuilder()
@@ -1923,6 +1937,7 @@ class WafIntegrationConfigServiceImplTest {
         return WafIntegrationDetails.newBuilder()
             .setName(name)
             .setDescription("des")
+            .setEnabled(true)
             .setWafIntegrationScope(wafConfigScope)
             .setBarracudaIntegrationParams(
                 BarracudaIntegrationParams.newBuilder()
@@ -1943,5 +1958,333 @@ class WafIntegrationConfigServiceImplTest {
       default:
         throw new RuntimeException();
     }
+  }
+
+  @Test
+  void createWafIntegrationWithEnabledTrueTest() {
+    // Test creating integration with enabled = true
+    WafIntegrationDetails details =
+        createWafIntegrationDetails(
+                "enabled-test", "email", IntegrationParamsCase.CLOUDFLARE_INTEGRATION_PARAMS)
+            .toBuilder()
+            .setEnabled(true)
+            .build();
+    CreateWafIntegrationRequest request =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(details).build();
+    CreateWafIntegrationResponse response =
+        wafProviderServiceBlockingStub.createWafIntegration(request);
+
+    assertTrue(response.getWafIntegration().getWafIntegrationDetails().getEnabled());
+  }
+
+  @Test
+  void createWafIntegrationWithEnabledFalseTest() {
+    WafIntegrationDetails details =
+        createWafIntegrationDetails(
+                "disabled-test", "email", IntegrationParamsCase.CLOUDFLARE_INTEGRATION_PARAMS)
+            .toBuilder()
+            .setEnabled(false)
+            .build();
+    CreateWafIntegrationRequest request =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(details).build();
+    CreateWafIntegrationResponse response =
+        wafProviderServiceBlockingStub.createWafIntegration(request);
+
+    // With optional bool, explicitly setting enabled=false should be respected
+    assertFalse(response.getWafIntegration().getWafIntegrationDetails().getEnabled());
+  }
+
+  @Test
+  void createWafIntegrationWithoutEnabledFieldTest() {
+    // Test backward compatibility: integration without enabled field should default to true
+    WafIntegrationDetails details =
+        createWafIntegrationDetails(
+            "no-enabled-field", "email", IntegrationParamsCase.CLOUDFLARE_INTEGRATION_PARAMS);
+    CreateWafIntegrationRequest request =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(details).build();
+    CreateWafIntegrationResponse response =
+        wafProviderServiceBlockingStub.createWafIntegration(request);
+
+    // Should default to enabled = true
+    assertTrue(response.getWafIntegration().getWafIntegrationDetails().getEnabled());
+  }
+
+  @Test
+  void updateWafIntegrationEnabledStatusTest() {
+    // Create an integration
+    WafIntegrationDetails details =
+        createWafIntegrationDetails(
+                "update-enabled-test", "email", IntegrationParamsCase.CLOUDFLARE_INTEGRATION_PARAMS)
+            .toBuilder()
+            .setEnabled(true)
+            .build();
+    CreateWafIntegrationRequest createRequest =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(details).build();
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(createRequest);
+    String integrationId = createResponse.getWafIntegration().getId();
+
+    // Update to disable it
+    UpdatedWafIntegrationDetails updatedDetails =
+        UpdatedWafIntegrationDetails.newBuilder()
+            .setName("update-enabled-test")
+            .setDescription("des")
+            .setWafIntegrationScope(wafConfigScope)
+            .addIntegrationTargets(
+                WafIntegrationTarget.newBuilder()
+                    .setRuleTarget(RuleType.RULE_TYPE_CUSTOM_SIGNATURE)
+                    .build())
+            .addIntegrationTargets(
+                WafIntegrationTarget.newBuilder()
+                    .setRuleTarget(RuleType.RULE_TYPE_IP_RANGE)
+                    .build())
+            .setUpdatedCloudflareIntegrationParams(
+                UpdatedCloudflareIntegrationParams.newBuilder()
+                    .setEmail("email")
+                    .setZone("zone")
+                    .setRulesetId("rulesetId")
+                    .build())
+            .setEnabled(false) // Disable the integration
+            .build();
+
+    UpdateWafIntegrationRequest updateRequest =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId(integrationId)
+            .setUpdatedWafIntegrationDetails(updatedDetails)
+            .build();
+    UpdateWafIntegrationResponse updateResponse =
+        wafProviderServiceBlockingStub.updateWafIntegration(updateRequest);
+
+    // Verify it's disabled
+    assertEquals(false, updateResponse.getWafIntegration().getWafIntegrationDetails().getEnabled());
+
+    // Re-enable it
+    UpdatedWafIntegrationDetails reenabledDetails =
+        updatedDetails.toBuilder().setEnabled(true).build();
+    UpdateWafIntegrationRequest reenableRequest =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId(integrationId)
+            .setUpdatedWafIntegrationDetails(reenabledDetails)
+            .build();
+    UpdateWafIntegrationResponse reenableResponse =
+        wafProviderServiceBlockingStub.updateWafIntegration(reenableRequest);
+
+    // Verify it's enabled again
+    assertTrue(reenableResponse.getWafIntegration().getWafIntegrationDetails().getEnabled());
+  }
+
+  @Test
+  void getWafIntegrationPreservesEnabledStatusTest() {
+    // Create an enabled integration
+    WafIntegrationDetails details =
+        createWafIntegrationDetails(
+                "get-enabled-test", "email", IntegrationParamsCase.AWS_INTEGRATION_PARAMS)
+            .toBuilder()
+            .setEnabled(true)
+            .build();
+    CreateWafIntegrationRequest createRequest =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(details).build();
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(createRequest);
+    String integrationId = createResponse.getWafIntegration().getId();
+
+    // Get the integration
+    GetWafIntegrationRequest getRequest =
+        GetWafIntegrationRequest.newBuilder().setId(integrationId).build();
+    GetWafIntegrationResponse getResponse =
+        wafProviderServiceBlockingStub.getWafIntegration(getRequest);
+
+    // Verify enabled status is preserved
+    assertTrue(getResponse.getWafIntegration().getWafIntegrationDetails().getEnabled());
+  }
+
+  @Test
+  void filterWafIntegrationsByEnabledStatusTest() {
+    // Create enabled integration
+    WafIntegrationDetails enabledDetails =
+        createWafIntegrationDetails(
+                "filter-enabled", "email", IntegrationParamsCase.CLOUDFLARE_INTEGRATION_PARAMS)
+            .toBuilder()
+            .setEnabled(true)
+            .build();
+    wafProviderServiceBlockingStub.createWafIntegration(
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(enabledDetails).build());
+
+    // Create another enabled integration and then disable it
+    WafIntegrationDetails toDisableDetails =
+        createWafIntegrationDetails(
+                "filter-disabled", "email2", IntegrationParamsCase.AWS_INTEGRATION_PARAMS)
+            .toBuilder()
+            .setEnabled(true)
+            .build();
+    CreateWafIntegrationResponse disabledResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(
+            CreateWafIntegrationRequest.newBuilder()
+                .setWafIntegrationDetails(toDisableDetails)
+                .build());
+
+    // Disable the second integration
+    UpdatedWafIntegrationDetails disabledUpdate =
+        UpdatedWafIntegrationDetails.newBuilder()
+            .setName("filter-disabled")
+            .setDescription("des")
+            .setWafIntegrationScope(wafConfigScope)
+            .addIntegrationTargets(
+                WafIntegrationTarget.newBuilder()
+                    .setRuleTarget(RuleType.RULE_TYPE_CUSTOM_SIGNATURE)
+                    .build())
+            .addIntegrationTargets(
+                WafIntegrationTarget.newBuilder()
+                    .setRuleTarget(RuleType.RULE_TYPE_IP_RANGE)
+                    .build())
+            .addIntegrationTargets(
+                WafIntegrationTarget.newBuilder().setRuleTarget(RuleType.RULE_TYPE_REGION).build())
+            .setUpdatedAwsIntegrationParams(
+                AwsIntegrationUpdateParams.newBuilder()
+                    .setAuthCredentials(
+                        AuthCredentials.newBuilder()
+                            .setAccessKeyId("id")
+                            .setEncryptionKeyId("key-id"))
+                    .setRuleGroupCapacity(300)
+                    .setSyncExistingBlockingData(true)
+                    .addResources(
+                        AwsResource.newBuilder().setArn("arn").setRegion("region").build())
+                    .setIntegrationActionType(IntegrationActionType.INTEGRATION_ACTION_TYPE_COUNT))
+            .setEnabled(false)
+            .build();
+    wafProviderServiceBlockingStub.updateWafIntegration(
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId(disabledResponse.getWafIntegration().getId())
+            .setUpdatedWafIntegrationDetails(disabledUpdate)
+            .build());
+
+    // Filter for enabled integrations only
+    GetWafIntegrationsFilter enabledFilter =
+        GetWafIntegrationsFilter.newBuilder().setEnabled(true).build();
+    GetWafIntegrationsRequest enabledRequest =
+        GetWafIntegrationsRequest.newBuilder().setFilter(enabledFilter).build();
+    GetWafIntegrationsResponse enabledFilterResponse =
+        wafProviderServiceBlockingStub.getWafIntegrations(enabledRequest);
+
+    // Should only return enabled integrations
+    assertTrue(
+        enabledFilterResponse.getWafIntegrationList().stream()
+            .allMatch(waf -> waf.getWafIntegrationDetails().getEnabled()));
+    assertTrue(
+        enabledFilterResponse.getWafIntegrationList().stream()
+            .anyMatch(waf -> waf.getWafIntegrationDetails().getName().equals("filter-enabled")));
+    assertTrue(
+        enabledFilterResponse.getWafIntegrationList().stream()
+            .noneMatch(waf -> waf.getWafIntegrationDetails().getName().equals("filter-disabled")));
+
+    // Filter for disabled integrations only
+    GetWafIntegrationsFilter disabledFilter =
+        GetWafIntegrationsFilter.newBuilder().setEnabled(false).build();
+    GetWafIntegrationsRequest disabledRequest =
+        GetWafIntegrationsRequest.newBuilder().setFilter(disabledFilter).build();
+    GetWafIntegrationsResponse disabledFilterResponse =
+        wafProviderServiceBlockingStub.getWafIntegrations(disabledRequest);
+
+    // Should only return disabled integrations
+    assertTrue(
+        disabledFilterResponse.getWafIntegrationList().stream()
+            .allMatch(waf -> !waf.getWafIntegrationDetails().getEnabled()));
+    assertTrue(
+        disabledFilterResponse.getWafIntegrationList().stream()
+            .anyMatch(waf -> waf.getWafIntegrationDetails().getName().equals("filter-disabled")));
+
+    // Filter without enabled field should return all
+    GetWafIntegrationsFilter noFilter = GetWafIntegrationsFilter.newBuilder().build();
+    GetWafIntegrationsRequest allRequest =
+        GetWafIntegrationsRequest.newBuilder().setFilter(noFilter).build();
+    GetWafIntegrationsResponse allResponse =
+        wafProviderServiceBlockingStub.getWafIntegrations(allRequest);
+
+    // Should return both enabled and disabled
+    assertTrue(allResponse.getWafIntegrationCount() >= 2);
+  }
+
+  @Test
+  void updateWithoutEnabledFieldPreservesExistingStatusTest() {
+    WafIntegrationDetails details =
+        createWafIntegrationDetails(
+                "update-preserve-test",
+                "email",
+                IntegrationParamsCase.CLOUDFLARE_INTEGRATION_PARAMS)
+            .toBuilder()
+            .setEnabled(false)
+            .build();
+    CreateWafIntegrationRequest createRequest =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(details).build();
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(createRequest);
+    String integrationId = createResponse.getWafIntegration().getId();
+
+    UpdatedWafIntegrationDetails updatedDetails =
+        UpdatedWafIntegrationDetails.newBuilder()
+            .setName("update-preserve-test-updated")
+            .setDescription("updated description")
+            .setWafIntegrationScope(wafConfigScope)
+            .addIntegrationTargets(
+                WafIntegrationTarget.newBuilder()
+                    .setRuleTarget(RuleType.RULE_TYPE_CUSTOM_SIGNATURE)
+                    .build())
+            .addIntegrationTargets(
+                WafIntegrationTarget.newBuilder()
+                    .setRuleTarget(RuleType.RULE_TYPE_IP_RANGE)
+                    .build())
+            .setUpdatedCloudflareIntegrationParams(
+                UpdatedCloudflareIntegrationParams.newBuilder()
+                    .setEmail("email")
+                    .setZone("zone")
+                    .setRulesetId("rulesetId")
+                    .build())
+            .build();
+
+    UpdateWafIntegrationRequest updateRequest =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId(integrationId)
+            .setUpdatedWafIntegrationDetails(updatedDetails)
+            .build();
+    UpdateWafIntegrationResponse updateResponse =
+        wafProviderServiceBlockingStub.updateWafIntegration(updateRequest);
+
+    assertFalse(updateResponse.getWafIntegration().getWafIntegrationDetails().getEnabled());
+  }
+
+  @Test
+  void getDisabledIntegrationStaysDisabledTest() {
+    WafIntegrationDetails details =
+        createWafIntegrationDetails(
+                "get-disabled-test", "email", IntegrationParamsCase.AWS_INTEGRATION_PARAMS)
+            .toBuilder()
+            .setEnabled(false)
+            .build();
+    CreateWafIntegrationRequest createRequest =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(details).build();
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(createRequest);
+    String integrationId = createResponse.getWafIntegration().getId();
+
+    GetWafIntegrationRequest getRequest =
+        GetWafIntegrationRequest.newBuilder().setId(integrationId).build();
+    GetWafIntegrationResponse getResponse =
+        wafProviderServiceBlockingStub.getWafIntegration(getRequest);
+
+    assertFalse(getResponse.getWafIntegration().getWafIntegrationDetails().getEnabled());
+  }
+
+  @Test
+  void backwardCompatibilityForExistingIntegrationsTest() {
+    WafIntegrationDetails oldDetails =
+        createWafIntegrationDetails(
+            "backward-compat", "email", IntegrationParamsCase.CLOUDFLARE_INTEGRATION_PARAMS);
+
+    CreateWafIntegrationRequest request =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(oldDetails).build();
+    CreateWafIntegrationResponse response =
+        wafProviderServiceBlockingStub.createWafIntegration(request);
+
+    assertTrue(response.getWafIntegration().getWafIntegrationDetails().getEnabled());
   }
 }
