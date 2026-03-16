@@ -11,6 +11,7 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
   private static final String MAX_DEPTH = "max_depth";
   private static final String MIN_PERCENT_SEEN = "min_percent_seen";
   private static final String EVALUATE_REQUEST_BODY_PARAMS = "evaluate_request_body_params";
+  private static final String EVALUATE_RESPONSE_BODY_PARAMS = "evaluate_response_body_params";
   private static final String ENABLED_FOR_INTERNAL_IPS = "enabled_for_internal_ips";
   private static final String THRESHOLDS_FAMILIES_EXCLUDED = "thresholds_families_excluded";
   private static final String SEVERE_REGEX_STRINGS = "severe_regex_strings";
@@ -204,6 +205,15 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
     ConfigMetadata evaluateRequestBodyParamsConfigMetadata =
         ConfigMetadata.newBuilder()
             .setKey(EVALUATE_REQUEST_BODY_PARAMS)
+            .setConfigValueMetadata(
+                ConfigValueMetadata.newBuilder()
+                    .setType(ConfigValueType.CONFIG_VALUE_TYPE_BOOL)
+                    .build())
+            .build();
+
+    ConfigMetadata evaluateResponseBodyParamsConfigMetadata =
+        ConfigMetadata.newBuilder()
+            .setKey(EVALUATE_RESPONSE_BODY_PARAMS)
             .setConfigValueMetadata(
                 ConfigValueMetadata.newBuilder()
                     .setType(ConfigValueType.CONFIG_VALUE_TYPE_BOOL)
@@ -1046,6 +1056,7 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
             minPercentSeenConfigMetadata,
             severeRegexStrings,
             enabledForInternalIpsConfigMetadata,
+            evaluateResponseBodyParamsConfigMetadata,
             thresholdFamiliesExcluded,
             primaryApiModelTypeConfigMetadata,
             secondaryApiModelTypeConfigMetadata,
