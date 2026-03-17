@@ -34,7 +34,7 @@ public abstract class RiskConfigBuilder<M extends Message> {
   }
 
   @SuppressWarnings("unchecked")
-  private M buildFromConfigFile(String filePath) {
+  public M buildFromConfigFile(String filePath) {
     M.Builder builder = getNewBuilder();
     try {
       JSON_PARSER.merge(loadConfigFile(filePath).root().render(CONFIG_RENDER_CONCISE), builder);

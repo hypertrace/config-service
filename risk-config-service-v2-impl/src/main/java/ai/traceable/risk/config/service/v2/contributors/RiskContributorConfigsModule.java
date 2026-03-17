@@ -1,5 +1,6 @@
 package ai.traceable.risk.config.service.v2.contributors;
 
+import ai.traceable.risk.config.service.v2.EntityType;
 import ai.traceable.risk.config.service.v2.RiskConfigBuilder;
 import ai.traceable.risk.config.service.v2.RiskContributorConfigs;
 import ai.traceable.risk.config.service.v2.contributors.builder.RiskContributorConfigBuilder;
@@ -7,6 +8,7 @@ import ai.traceable.risk.config.service.v2.contributors.validator.RiskContributo
 import ai.traceable.risk.config.service.v2.contributors.validator.RiskContributorConfigsValidatorImpl;
 import com.google.inject.AbstractModule;
 import com.google.inject.TypeLiteral;
+import java.util.Map;
 
 public class RiskContributorConfigsModule extends AbstractModule {
 
@@ -14,7 +16,8 @@ public class RiskContributorConfigsModule extends AbstractModule {
   protected void configure() {
     bind(new TypeLiteral<RiskConfigBuilder<RiskContributorConfigs>>() {})
         .to(RiskContributorConfigBuilder.class);
-    bind(RiskContributorConfigs.class).toProvider(DefaultRiskContributorConfigsProvider.class);
+    bind(new TypeLiteral<Map<EntityType, RiskContributorConfigs>>() {})
+        .toProvider(DefaultRiskContributorConfigsProvider.class);
     bind(RiskContributorConfigsValidator.class).to(RiskContributorConfigsValidatorImpl.class);
   }
 }

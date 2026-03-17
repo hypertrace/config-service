@@ -3,6 +3,7 @@ package ai.traceable.risk.config.service.v2.factors;
 import static ai.traceable.risk.config.service.v2.StringOperator.STRING_OPERATOR_EQUALS;
 import static ai.traceable.risk.config.service.v2.factors.MockFactorConfigsData.buildRiskFactorWithoutScope;
 import static ai.traceable.risk.config.service.v2.factors.MockFactorConfigsData.getDefaultRiskContributorConfigs;
+import static ai.traceable.risk.config.service.v2.factors.MockFactorConfigsData.getMcpToolDefaultRiskContributorConfigs;
 import static ai.traceable.risk.config.service.v2.scope.MockScopeData.getApiEntityTypeAndEnvironmentScope;
 import static ai.traceable.risk.config.service.v2.scope.MockScopeData.getEnvironmentBasedScope;
 import static ai.traceable.risk.config.service.v2.scope.MockScopeData.getMcpToolEntityTypeScope;
@@ -15,6 +16,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.risk.config.service.v2.EntityType;
 import ai.traceable.risk.config.service.v2.RiskConfigIdGenerator;
 import ai.traceable.risk.config.service.v2.RiskConfigScope;
 import ai.traceable.risk.config.service.v2.RiskContributorConfigs;
@@ -39,6 +41,7 @@ import ai.traceable.risk.config.service.v2.factors.manager.RiskFactorConfigsMana
 import ai.traceable.risk.config.service.v2.factors.manager.RiskFactorConfigsManagerImpl;
 import io.grpc.StatusRuntimeException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
@@ -75,13 +78,19 @@ class RiskFactorConfigsManagerTest {
         new MockFactorConfigsData.MockRiskFactorConfigStore(
             null, null, null, mock(ConfigChangeEventGenerator.class), configIdGenerator);
     environmentRiskConfigScope = getEnvironmentBasedScope();
+    Map<EntityType, RiskContributorConfigs> defaultConfigsMap =
+        Map.of(
+            EntityType.ENTITY_TYPE_API,
+            defaultRiskContributorConfigs,
+            EntityType.ENTITY_TYPE_MCP_TOOL,
+            getMcpToolDefaultRiskContributorConfigs());
     configsManager =
         new RiskFactorConfigsManagerImpl(
             factorConfigStore,
             new RiskFactorListBuilder(riskFactorConfigBuilder, factorConfigsComparator),
             riskFactorConfigBuilder,
             factorConfigsComparator,
-            defaultRiskContributorConfigs,
+            defaultConfigsMap,
             configIdGenerator);
   }
 
@@ -492,7 +501,8 @@ class RiskFactorConfigsManagerTest {
         configsManager.getRiskContributorConfigs(requestContext, entityTypeScope);
     // Then
     assertEquals(
-        defaultRiskContributorConfigs.getRiskFactorsCount(), fetchedConfigs.getRiskFactorsCount());
+        getMcpToolDefaultRiskContributorConfigs().getRiskFactorsCount(),
+        fetchedConfigs.getRiskFactorsCount());
   }
 
   @Test
@@ -502,8 +512,7 @@ class RiskFactorConfigsManagerTest {
     RiskConfigScope entityTypeScope = getMcpToolEntityTypeScope();
     RiskFactorConfigUpdateDetails updateDetails =
         RiskFactorConfigUpdateDetails.newBuilder()
-            .setRiskFactorCategory(
-                RiskFactorCategory.RISK_FACTOR_CATEGORY_EASE_OF_RESOURCE_DISCOVERY)
+            .setRiskFactorCategory(RiskFactorCategory.RISK_FACTOR_CATEGORY_SENSITIVE_DATA_EXPOSURE)
             .setDisabled(true)
             .build();
     // When
@@ -517,7 +526,7 @@ class RiskFactorConfigsManagerTest {
                 rf ->
                     rf.getRiskFactorConfig()
                         .getRiskFactorCategory()
-                        .equals(RiskFactorCategory.RISK_FACTOR_CATEGORY_EASE_OF_RESOURCE_DISCOVERY))
+                        .equals(RiskFactorCategory.RISK_FACTOR_CATEGORY_SENSITIVE_DATA_EXPOSURE))
             .collect(Collectors.toList());
     assertEquals(1, matchingFactors.size());
     assertTrue(matchingFactors.get(0).getRiskFactorConfig().getDisabled());
@@ -530,8 +539,7 @@ class RiskFactorConfigsManagerTest {
     RiskConfigScope entityTypeScope = getMcpToolEntityTypeScope();
     RiskFactorConfigUpdateDetails updateDetails =
         RiskFactorConfigUpdateDetails.newBuilder()
-            .setRiskFactorCategory(
-                RiskFactorCategory.RISK_FACTOR_CATEGORY_EASE_OF_RESOURCE_DISCOVERY)
+            .setRiskFactorCategory(RiskFactorCategory.RISK_FACTOR_CATEGORY_SENSITIVE_DATA_EXPOSURE)
             .setDisabled(true)
             .build();
     configsManager.updateRiskContributorConfigs(
@@ -539,7 +547,7 @@ class RiskFactorConfigsManagerTest {
     // When
     configsManager.resetRiskContributorConfigs(
         requestContext,
-        List.of(RiskFactorCategory.RISK_FACTOR_CATEGORY_EASE_OF_RESOURCE_DISCOVERY),
+        List.of(RiskFactorCategory.RISK_FACTOR_CATEGORY_SENSITIVE_DATA_EXPOSURE),
         entityTypeScope);
     // Then
     var matchingFactors =
@@ -551,7 +559,7 @@ class RiskFactorConfigsManagerTest {
                 rf ->
                     rf.getRiskFactorConfig()
                         .getRiskFactorCategory()
-                        .equals(RiskFactorCategory.RISK_FACTOR_CATEGORY_EASE_OF_RESOURCE_DISCOVERY))
+                        .equals(RiskFactorCategory.RISK_FACTOR_CATEGORY_SENSITIVE_DATA_EXPOSURE))
             .collect(Collectors.toList());
     assertEquals(1, matchingFactors.size());
     assertFalse(matchingFactors.get(0).getRiskFactorConfig().getDisabled());

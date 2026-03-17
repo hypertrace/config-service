@@ -2,6 +2,7 @@ package ai.traceable.risk.config.service.v2.factors.manager;
 
 import static java.util.function.Predicate.not;
 
+import ai.traceable.risk.config.service.v2.EntityType;
 import ai.traceable.risk.config.service.v2.RiskConfigIdGenerator;
 import ai.traceable.risk.config.service.v2.RiskConfigScope;
 import ai.traceable.risk.config.service.v2.RiskContributorConfigs;
@@ -31,7 +32,7 @@ public class RiskFactorConfigsManagerImpl implements RiskFactorConfigsManager {
   private final RiskFactorListBuilder riskFactorListBuilder;
   private final RiskFactorConfigBuilder riskFactorConfigBuilder;
   private final RiskFactorConfigsComparator factorConfigsComparator;
-  private final RiskContributorConfigs defaultRiskContributorConfigs;
+  private final Map<EntityType, RiskContributorConfigs> defaultRiskContributorConfigsMap;
   private final RiskConfigIdGenerator configIdGenerator;
 
   @Override
@@ -189,14 +190,18 @@ public class RiskFactorConfigsManagerImpl implements RiskFactorConfigsManager {
 
   public Collection<RiskFactor> buildMergedGlobalAndDefaultRiskFactors(
       RequestContext requestContext, RiskConfigScope riskConfigScope) {
+    RiskContributorConfigs defaultContributorConfigs =
+        defaultRiskContributorConfigsMap.getOrDefault(
+            riskConfigScope.getEntityType(),
+            defaultRiskContributorConfigsMap.get(EntityType.ENTITY_TYPE_API));
     Collection<RiskFactor> globalRiskFactorsForEntityType =
         getRiskFactors(
             requestContext,
-            defaultRiskContributorConfigs.getRiskFactorsList(),
+            defaultContributorConfigs.getRiskFactorsList(),
             RiskConfigScope.newBuilder().setEntityType(riskConfigScope.getEntityType()).build());
     Collection<RiskFactor> mergedGlobalAndDefaultFactors =
         riskFactorListBuilder.mergeDefaultFactors(
-            globalRiskFactorsForEntityType, defaultRiskContributorConfigs.getRiskFactorsList());
+            globalRiskFactorsForEntityType, defaultContributorConfigs.getRiskFactorsList());
     return mergedGlobalAndDefaultFactors.stream()
         .map(
             riskFactor ->

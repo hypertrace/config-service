@@ -8,7 +8,9 @@ import ai.traceable.risk.config.service.v2.RiskConfigServiceRequestValidator;
 import ai.traceable.risk.config.service.v2.RiskContributorConfigs;
 import ai.traceable.risk.config.service.v2.RiskFactor;
 import ai.traceable.risk.config.service.v2.RiskFactorCategory;
+import ai.traceable.risk.config.service.v2.RiskFactorConfigUpdateDetails;
 import ai.traceable.risk.config.service.v2.UpdateRiskContributorConfigsRequest;
+import ai.traceable.risk.config.service.v2.factors.RiskFactorCategoryFilter;
 import ai.traceable.risk.config.service.v2.factors.validator.RiskFactorConfigsValidator;
 import io.grpc.Status;
 import jakarta.inject.Inject;
@@ -36,6 +38,17 @@ public class RiskContributorConfigsValidatorImpl implements RiskContributorConfi
         UpdateRiskContributorConfigsRequest.RISK_FACTOR_CONFIG_UPDATE_DETAILS_FIELD_NUMBER);
     factorConfigsValidator.validateRiskFactorConfigUpdateDetails(
         request.getRiskFactorConfigUpdateDetailsList());
+    for (RiskFactorConfigUpdateDetails detail : request.getRiskFactorConfigUpdateDetailsList()) {
+      if (!RiskFactorCategoryFilter.isCategorySupported(
+          request.getRiskConfigScope().getEntityType(), detail.getRiskFactorCategory())) {
+        throw Status.INVALID_ARGUMENT
+            .withDescription(
+                String.format(
+                    "Risk factor category %s is not supported for entity type %s",
+                    detail.getRiskFactorCategory(), request.getRiskConfigScope().getEntityType()))
+            .asRuntimeException();
+      }
+    }
   }
 
   @Override
@@ -48,6 +61,15 @@ public class RiskContributorConfigsValidatorImpl implements RiskContributorConfi
       Status status = requestValidator.validateFactorCategory(category);
       if (!status.isOk()) {
         throw status.asRuntimeException();
+      }
+      if (!RiskFactorCategoryFilter.isCategorySupported(
+          request.getRiskConfigScope().getEntityType(), category)) {
+        throw Status.INVALID_ARGUMENT
+            .withDescription(
+                String.format(
+                    "Risk factor category %s is not supported for entity type %s",
+                    category, request.getRiskConfigScope().getEntityType()))
+            .asRuntimeException();
       }
     }
   }

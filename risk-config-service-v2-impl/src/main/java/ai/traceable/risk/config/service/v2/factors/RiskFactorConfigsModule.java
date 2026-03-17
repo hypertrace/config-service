@@ -1,9 +1,7 @@
 package ai.traceable.risk.config.service.v2.factors;
 
 import ai.traceable.risk.config.service.v2.RiskConfigBuilder;
-import ai.traceable.risk.config.service.v2.RiskContributorConfigs;
 import ai.traceable.risk.config.service.v2.RiskFactorConfig;
-import ai.traceable.risk.config.service.v2.contributors.DefaultRiskContributorConfigsProvider;
 import ai.traceable.risk.config.service.v2.factors.builder.RiskFactorConfigBuilder;
 import ai.traceable.risk.config.service.v2.factors.comparator.RiskFactorConfigsComparator;
 import ai.traceable.risk.config.service.v2.factors.comparator.RiskFactorConfigsComparatorImpl;
@@ -23,8 +21,6 @@ public class RiskFactorConfigsModule extends AbstractModule {
         .to(RiskFactorConfigBuilder.class);
     bind(new TypeLiteral<IdentifiedObjectStore<RiskFactorConfig>>() {})
         .to(RiskFactorConfigStore.class);
-
-    bind(RiskContributorConfigs.class).toProvider(DefaultRiskContributorConfigsProvider.class);
 
     bind(RiskFactorConfigsManager.class).to(RiskFactorConfigsManagerImpl.class);
     bind(RiskFactorConfigsValidator.class).to(RiskFactorConfigsValidatorImpl.class);

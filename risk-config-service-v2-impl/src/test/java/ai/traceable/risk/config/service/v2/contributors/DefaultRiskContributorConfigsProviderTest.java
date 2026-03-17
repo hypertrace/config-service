@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
+import ai.traceable.risk.config.service.v2.EntityType;
 import ai.traceable.risk.config.service.v2.RiskConfigServiceConfig;
 import ai.traceable.risk.config.service.v2.RiskConfigServiceRequestValidator;
 import ai.traceable.risk.config.service.v2.RiskContributorCategory;
@@ -32,7 +33,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
-public class DefaultRiskContributorConfigsProviderTest {
+class DefaultRiskContributorConfigsProviderTest {
 
   private final LabelsConfigProvider labelsConfigProvider = mock(LabelsConfigProvider.class);
 
@@ -52,20 +53,10 @@ public class DefaultRiskContributorConfigsProviderTest {
           new RiskConfigServiceRequestValidator());
 
   @Test
-  public void testGetNoServiceConfig() {
-    DefaultRiskContributorConfigsProvider provider =
-        new DefaultRiskContributorConfigsProvider(
-            configBuilder,
-            contributorConfigsValidator,
-            new RiskConfigServiceConfig(ConfigFactory.empty()));
-    RiskContributorConfigs configs = provider.get();
-    assertEquals(6, configs.getRiskFactorsCount());
-    Map<RiskFactorCategory, RiskFactor> factorsMap =
-        configs.getRiskFactorsList().stream()
-            .collect(
-                Collectors.toMap(
-                    riskFactor -> riskFactor.getRiskFactorConfig().getRiskFactorCategory(),
-                    Function.identity()));
+  void testGetNoServiceConfigApiLikelihoodFactors() {
+    // Given
+    var factorsMap = getFactorsMap(buildProvider(null), EntityType.ENTITY_TYPE_API);
+    // Then
     {
       RiskFactor factor = factorsMap.get(RiskFactorCategory.RISK_FACTOR_CATEGORY_EASE_OF_ACCESS);
       assertTrue(factor.getRiskFactorInfo().getIsDefault());
@@ -77,7 +68,7 @@ public class DefaultRiskContributorConfigsProviderTest {
       factor
           .getRiskFactorConfig()
           .getRiskElementConfigsList()
-          .forEach(riskElementConfig -> assertTrue(riskElementConfig.getId().length() > 0));
+          .forEach(riskElementConfig -> assertFalse(riskElementConfig.getId().isEmpty()));
     }
     {
       RiskFactor factor = factorsMap.get(RiskFactorCategory.RISK_FACTOR_CATEGORY_VULNERABILITY);
@@ -90,7 +81,7 @@ public class DefaultRiskContributorConfigsProviderTest {
       factor
           .getRiskFactorConfig()
           .getRiskElementConfigsList()
-          .forEach(riskElementConfig -> assertTrue(riskElementConfig.getId().length() > 0));
+          .forEach(riskElementConfig -> assertFalse(riskElementConfig.getId().isEmpty()));
     }
     {
       RiskFactor factor =
@@ -104,8 +95,16 @@ public class DefaultRiskContributorConfigsProviderTest {
       factor
           .getRiskFactorConfig()
           .getRiskElementConfigsList()
-          .forEach(riskElementConfig -> assertTrue(riskElementConfig.getId().length() > 0));
+          .forEach(riskElementConfig -> assertFalse(riskElementConfig.getId().isEmpty()));
     }
+  }
+
+  @Test
+  void testGetNoServiceConfigApiImpactFactors() {
+    // Given
+    var factorsMap = getFactorsMap(buildProvider(null), EntityType.ENTITY_TYPE_API);
+    // Then
+    assertEquals(6, factorsMap.size());
     {
       RiskFactor factor =
           factorsMap.get(RiskFactorCategory.RISK_FACTOR_CATEGORY_SENSITIVE_DATA_EXPOSURE);
@@ -118,7 +117,7 @@ public class DefaultRiskContributorConfigsProviderTest {
       factor
           .getRiskFactorConfig()
           .getRiskElementConfigsList()
-          .forEach(riskElementConfig -> assertTrue(riskElementConfig.getId().length() > 0));
+          .forEach(riskElementConfig -> assertFalse(riskElementConfig.getId().isEmpty()));
     }
     {
       RiskFactor factor = factorsMap.get(RiskFactorCategory.RISK_FACTOR_CATEGORY_BLAST_RADIUS);
@@ -131,7 +130,7 @@ public class DefaultRiskContributorConfigsProviderTest {
       factor
           .getRiskFactorConfig()
           .getRiskElementConfigsList()
-          .forEach(riskElementConfig -> assertTrue(riskElementConfig.getId().length() > 0));
+          .forEach(riskElementConfig -> assertFalse(riskElementConfig.getId().isEmpty()));
     }
     {
       RiskFactor factor = factorsMap.get(RiskFactorCategory.RISK_FACTOR_CATEGORY_LABELS);
@@ -144,26 +143,83 @@ public class DefaultRiskContributorConfigsProviderTest {
       factor
           .getRiskFactorConfig()
           .getRiskElementConfigsList()
-          .forEach(riskElementConfig -> assertTrue(riskElementConfig.getId().length() > 0));
+          .forEach(riskElementConfig -> assertFalse(riskElementConfig.getId().isEmpty()));
     }
   }
 
   @Test
-  public void testGetWithServiceConfig() {
-    DefaultRiskContributorConfigsProvider provider =
-        new DefaultRiskContributorConfigsProvider(
-            configBuilder,
-            contributorConfigsValidator,
-            new RiskConfigServiceConfig(
-                ConfigFactory.parseResources("valid-risk-contributor-config.conf")));
-    RiskContributorConfigs configs = provider.get();
-    assertEquals(6, configs.getRiskFactorsCount());
-    Map<RiskFactorCategory, RiskFactor> factorsMap =
-        configs.getRiskFactorsList().stream()
-            .collect(
-                Collectors.toMap(
-                    riskFactor -> riskFactor.getRiskFactorConfig().getRiskFactorCategory(),
-                    Function.identity()));
+  void testGetNoServiceConfigMcpTool() {
+    // Given
+    var factorsMap = getFactorsMap(buildProvider(null), EntityType.ENTITY_TYPE_MCP_TOOL);
+    // Then
+    assertEquals(4, factorsMap.size());
+    assertTrue(factorsMap.containsKey(RiskFactorCategory.RISK_FACTOR_CATEGORY_EASE_OF_ACCESS));
+    assertTrue(factorsMap.containsKey(RiskFactorCategory.RISK_FACTOR_CATEGORY_VULNERABILITY));
+    assertTrue(
+        factorsMap.containsKey(RiskFactorCategory.RISK_FACTOR_CATEGORY_SENSITIVE_DATA_EXPOSURE));
+    assertTrue(factorsMap.containsKey(RiskFactorCategory.RISK_FACTOR_CATEGORY_LABELS));
+    assertFalse(
+        factorsMap.containsKey(RiskFactorCategory.RISK_FACTOR_CATEGORY_EASE_OF_RESOURCE_DISCOVERY));
+    assertFalse(factorsMap.containsKey(RiskFactorCategory.RISK_FACTOR_CATEGORY_BLAST_RADIUS));
+  }
+
+  @Test
+  void testGetWithServiceConfigApiLikelihoodFactors() {
+    // Given
+    var factorsMap =
+        getFactorsMap(
+            buildProvider("valid-risk-contributor-config.conf"), EntityType.ENTITY_TYPE_API);
+    // Then
+    {
+      RiskFactor factor = factorsMap.get(RiskFactorCategory.RISK_FACTOR_CATEGORY_EASE_OF_ACCESS);
+      assertTrue(factor.getRiskFactorInfo().getIsDefault());
+      assertEquals(
+          RiskContributorCategory.RISK_CONTRIBUTOR_CATEGORY_LIKELIHOOD,
+          factor.getRiskFactorInfo().getRiskContributorCategory());
+      assertFalse(factor.getRiskFactorConfig().getDisabled());
+      assertEquals(12, factor.getRiskFactorConfig().getRiskElementConfigsCount());
+      factor
+          .getRiskFactorConfig()
+          .getRiskElementConfigsList()
+          .forEach(riskElementConfig -> assertFalse(riskElementConfig.getId().isEmpty()));
+    }
+    {
+      RiskFactor factor = factorsMap.get(RiskFactorCategory.RISK_FACTOR_CATEGORY_VULNERABILITY);
+      assertTrue(factor.getRiskFactorInfo().getIsDefault());
+      assertEquals(
+          RiskContributorCategory.RISK_CONTRIBUTOR_CATEGORY_LIKELIHOOD,
+          factor.getRiskFactorInfo().getRiskContributorCategory());
+      assertFalse(factor.getRiskFactorConfig().getDisabled());
+      assertEquals(4, factor.getRiskFactorConfig().getRiskElementConfigsCount());
+      factor
+          .getRiskFactorConfig()
+          .getRiskElementConfigsList()
+          .forEach(riskElementConfig -> assertFalse(riskElementConfig.getId().isEmpty()));
+    }
+    {
+      RiskFactor factor =
+          factorsMap.get(RiskFactorCategory.RISK_FACTOR_CATEGORY_EASE_OF_RESOURCE_DISCOVERY);
+      assertTrue(factor.getRiskFactorInfo().getIsDefault());
+      assertEquals(
+          RiskContributorCategory.RISK_CONTRIBUTOR_CATEGORY_LIKELIHOOD,
+          factor.getRiskFactorInfo().getRiskContributorCategory());
+      assertFalse(factor.getRiskFactorConfig().getDisabled());
+      assertEquals(3, factor.getRiskFactorConfig().getRiskElementConfigsCount());
+      factor
+          .getRiskFactorConfig()
+          .getRiskElementConfigsList()
+          .forEach(riskElementConfig -> assertFalse(riskElementConfig.getId().isEmpty()));
+    }
+  }
+
+  @Test
+  void testGetWithServiceConfigApiImpactFactors() {
+    // Given
+    var factorsMap =
+        getFactorsMap(
+            buildProvider("valid-risk-contributor-config.conf"), EntityType.ENTITY_TYPE_API);
+    // Then
+    assertEquals(6, factorsMap.size());
     {
       RiskFactor factor = factorsMap.get(RiskFactorCategory.RISK_FACTOR_CATEGORY_LABELS);
       assertTrue(factor.getRiskFactorInfo().getIsDefault());
@@ -177,7 +233,7 @@ public class DefaultRiskContributorConfigsProviderTest {
           .getRiskElementConfigsList()
           .forEach(
               riskElementConfig -> {
-                assertTrue(riskElementConfig.getId().length() > 0);
+                assertFalse(riskElementConfig.getId().isEmpty());
                 if (riskElementConfig.getId().equals("sensitive")) {
                   assertEquals(8, riskElementConfig.getRiskElementScoring().getScore());
                 }
@@ -196,52 +252,12 @@ public class DefaultRiskContributorConfigsProviderTest {
           .getRiskElementConfigsList()
           .forEach(
               riskElementConfig -> {
-                assertTrue(riskElementConfig.getId().length() > 0);
+                assertFalse(riskElementConfig.getId().isEmpty());
                 if (riskElementConfig.getRiskElementPredicate().hasDependentApis()) {
                   assertEquals(
                       2, riskElementConfig.getRiskElementPredicate().getDependentApis().getValue());
                 }
               });
-    }
-    {
-      RiskFactor factor = factorsMap.get(RiskFactorCategory.RISK_FACTOR_CATEGORY_EASE_OF_ACCESS);
-      assertTrue(factor.getRiskFactorInfo().getIsDefault());
-      assertEquals(
-          RiskContributorCategory.RISK_CONTRIBUTOR_CATEGORY_LIKELIHOOD,
-          factor.getRiskFactorInfo().getRiskContributorCategory());
-      assertFalse(factor.getRiskFactorConfig().getDisabled());
-      assertEquals(12, factor.getRiskFactorConfig().getRiskElementConfigsCount());
-      factor
-          .getRiskFactorConfig()
-          .getRiskElementConfigsList()
-          .forEach(riskElementConfig -> assertTrue(riskElementConfig.getId().length() > 0));
-    }
-    {
-      RiskFactor factor = factorsMap.get(RiskFactorCategory.RISK_FACTOR_CATEGORY_VULNERABILITY);
-      assertTrue(factor.getRiskFactorInfo().getIsDefault());
-      assertEquals(
-          RiskContributorCategory.RISK_CONTRIBUTOR_CATEGORY_LIKELIHOOD,
-          factor.getRiskFactorInfo().getRiskContributorCategory());
-      assertFalse(factor.getRiskFactorConfig().getDisabled());
-      assertEquals(4, factor.getRiskFactorConfig().getRiskElementConfigsCount());
-      factor
-          .getRiskFactorConfig()
-          .getRiskElementConfigsList()
-          .forEach(riskElementConfig -> assertTrue(riskElementConfig.getId().length() > 0));
-    }
-    {
-      RiskFactor factor =
-          factorsMap.get(RiskFactorCategory.RISK_FACTOR_CATEGORY_EASE_OF_RESOURCE_DISCOVERY);
-      assertTrue(factor.getRiskFactorInfo().getIsDefault());
-      assertEquals(
-          RiskContributorCategory.RISK_CONTRIBUTOR_CATEGORY_LIKELIHOOD,
-          factor.getRiskFactorInfo().getRiskContributorCategory());
-      assertFalse(factor.getRiskFactorConfig().getDisabled());
-      assertEquals(3, factor.getRiskFactorConfig().getRiskElementConfigsCount());
-      factor
-          .getRiskFactorConfig()
-          .getRiskElementConfigsList()
-          .forEach(riskElementConfig -> assertTrue(riskElementConfig.getId().length() > 0));
     }
     {
       RiskFactor factor =
@@ -255,27 +271,56 @@ public class DefaultRiskContributorConfigsProviderTest {
       factor
           .getRiskFactorConfig()
           .getRiskElementConfigsList()
-          .forEach(riskElementConfig -> assertTrue(riskElementConfig.getId().length() > 0));
+          .forEach(riskElementConfig -> assertFalse(riskElementConfig.getId().isEmpty()));
     }
   }
 
   @Test
-  public void testGetWithInvalidServiceConfig() {
+  void testGetWithServiceConfigMcpToolIsUnaffected() {
+    // Given
     DefaultRiskContributorConfigsProvider provider =
-        new DefaultRiskContributorConfigsProvider(
-            configBuilder,
-            contributorConfigsValidator,
-            new RiskConfigServiceConfig(
-                ConfigFactory.parseResources("risk-contributor-config-with-invalid-score.conf")));
-    assertThrows(StatusRuntimeException.class, provider::get);
+        buildProvider("valid-risk-contributor-config.conf");
+    // When
+    RiskContributorConfigs mcpToolConfigs = provider.get().get(EntityType.ENTITY_TYPE_MCP_TOOL);
+    // Then
+    assertEquals(4, mcpToolConfigs.getRiskFactorsCount());
+  }
 
-    provider =
-        new DefaultRiskContributorConfigsProvider(
-            configBuilder,
-            contributorConfigsValidator,
-            new RiskConfigServiceConfig(
-                ConfigFactory.parseResources(
-                    "risk-contributor-config-with-incomplete-factor.conf")));
+  @Test
+  void testGetWithInvalidScore() {
+    // Given
+    DefaultRiskContributorConfigsProvider provider =
+        buildProvider("risk-contributor-config-with-invalid-score.conf");
+    // Then
     assertThrows(StatusRuntimeException.class, provider::get);
+  }
+
+  @Test
+  void testGetWithIncompleteFactor() {
+    // Given
+    DefaultRiskContributorConfigsProvider provider =
+        buildProvider("risk-contributor-config-with-incomplete-factor.conf");
+    // Then
+    assertThrows(StatusRuntimeException.class, provider::get);
+  }
+
+  private DefaultRiskContributorConfigsProvider buildProvider(String configResource) {
+    return new DefaultRiskContributorConfigsProvider(
+        configBuilder,
+        contributorConfigsValidator,
+        new RiskConfigServiceConfig(
+            configResource == null
+                ? ConfigFactory.empty()
+                : ConfigFactory.parseResources(configResource)));
+  }
+
+  private Map<RiskFactorCategory, RiskFactor> getFactorsMap(
+      DefaultRiskContributorConfigsProvider provider, EntityType entityType) {
+    RiskContributorConfigs configs = provider.get().get(entityType);
+    return configs.getRiskFactorsList().stream()
+        .collect(
+            Collectors.toMap(
+                riskFactor -> riskFactor.getRiskFactorConfig().getRiskFactorCategory(),
+                Function.identity()));
   }
 }

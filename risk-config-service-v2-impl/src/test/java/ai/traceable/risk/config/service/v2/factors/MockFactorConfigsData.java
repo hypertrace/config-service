@@ -44,6 +44,13 @@ public class MockFactorConfigsData {
         .build();
   }
 
+  public static RiskContributorConfigs getMcpToolDefaultRiskContributorConfigs() {
+    return RiskContributorConfigs.newBuilder()
+        .addRiskFactors(getDefaultSensitiveDataExposureFactor())
+        .addRiskFactors(getDefaultLabelsFactor())
+        .build();
+  }
+
   private static RiskFactor getDefaultLabelsFactor() {
     return RiskFactor.newBuilder()
         .setRiskFactorInfo(

@@ -8,6 +8,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 
+import ai.traceable.risk.config.service.v2.EntityType;
 import ai.traceable.risk.config.service.v2.GetRiskContributorConfigsRequest;
 import ai.traceable.risk.config.service.v2.ResetRiskContributorConfigsRequest;
 import ai.traceable.risk.config.service.v2.RiskConfigScope;
@@ -369,6 +370,66 @@ class RiskContributorConfigsValidatorImplTest {
                             .setRiskFactorInfo(RiskFactorInfo.getDefaultInstance()))
                     .build())
             .getCode());
+  }
+
+  @Test
+  void testValidateUpdateRequestRejectsUnsupportedCategoryForMcpTool() {
+    // Given
+    RequestContext requestContext = RequestContext.forTenantId("tenant");
+    RiskConfigScope mcpToolScope =
+        RiskConfigScope.newBuilder().setEntityType(EntityType.ENTITY_TYPE_MCP_TOOL).build();
+    UpdateRiskContributorConfigsRequest request =
+        UpdateRiskContributorConfigsRequest.newBuilder()
+            .setRiskConfigScope(mcpToolScope)
+            .addRiskFactorConfigUpdateDetails(
+                RiskFactorConfigUpdateDetails.newBuilder()
+                    .setRiskFactorCategory(RiskFactorCategory.RISK_FACTOR_CATEGORY_BLAST_RADIUS)
+                    .setDisabled(true))
+            .build();
+    doNothing()
+        .when(mockRequestValidator)
+        .validateContextAndScope(requestContext, request.getRiskConfigScope());
+    doNothing()
+        .when(mockFactorConfigsValidator)
+        .validateRiskFactorConfigUpdateDetails(request.getRiskFactorConfigUpdateDetailsList());
+    // When
+    StatusRuntimeException exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () ->
+                riskContributorConfigsValidator.validateUpdateRiskContributorConfigsRequest(
+                    requestContext, request));
+    // Then
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), exception.getStatus().getCode());
+  }
+
+  @Test
+  void testValidateResetRequestRejectsUnsupportedCategoryForMcpTool() {
+    // Given
+    RequestContext requestContext = RequestContext.forTenantId("tenant");
+    RiskConfigScope mcpToolScope =
+        RiskConfigScope.newBuilder().setEntityType(EntityType.ENTITY_TYPE_MCP_TOOL).build();
+    ResetRiskContributorConfigsRequest request =
+        ResetRiskContributorConfigsRequest.newBuilder()
+            .setRiskConfigScope(mcpToolScope)
+            .addRiskFactorCategories(
+                RiskFactorCategory.RISK_FACTOR_CATEGORY_EASE_OF_RESOURCE_DISCOVERY)
+            .build();
+    doNothing()
+        .when(mockRequestValidator)
+        .validateContextAndScope(requestContext, request.getRiskConfigScope());
+    doReturn(Status.OK)
+        .when(mockRequestValidator)
+        .validateFactorCategory(request.getRiskFactorCategories(0));
+    // When
+    StatusRuntimeException exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () ->
+                riskContributorConfigsValidator.validateResetRiskContributorConfigsRequest(
+                    requestContext, request));
+    // Then
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), exception.getStatus().getCode());
   }
 
   private GetRiskContributorConfigsRequest buildGetRequestWithInvalidScope() {
