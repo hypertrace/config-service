@@ -21,8 +21,24 @@ message AkamaiIntegrationDetails {
 message AkamaiPolicyDetails {
   string akamai_policy_configuration_id = 1;
   string policy_id = 2;
-  string network_list_id = 3;
+  string network_list_id = 3 [deprecated = true];
   repeated string notification_emails = 4;
+  AkamaiListConfig list_config = 5;
+}
+
+message AkamaiListConfig {
+  oneof list_type {
+    AkamaiNetworkList network_list = 1;
+    AkamaiClientList client_list = 2;
+  }
+}
+
+message AkamaiNetworkList {
+  string id = 1;
+}
+
+message AkamaiClientList {
+  string id = 1;
 }
 
 message AkamaiAuthCredentials {
