@@ -12,7 +12,7 @@ entities:
     data:
       display_name: "JWT Payload"
       description: "Decoded JWT payload from Authorization Bearer token"
-      disabled: false
+      disabled: true
       internal: true
       category: ENTITY_CATEGORY_MANDATORY
       event_kind:
