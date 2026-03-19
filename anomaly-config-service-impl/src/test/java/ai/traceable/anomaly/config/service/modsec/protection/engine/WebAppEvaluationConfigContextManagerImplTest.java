@@ -381,6 +381,118 @@ class WebAppEvaluationConfigContextManagerImplTest {
   }
 
   @Test
+  void testEdgeWebAppEvaluationConfigContext_WithConfigScopeFiltersScopes() {
+    WebAppEvaluationConfigContext result =
+        configContextManager.getWebAppEvaluationConfigContext(
+            requestContext,
+            GetWebAppEvaluationConfigContextRequest.newBuilder()
+                .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+                .setConfigScope(
+                    AnomalyConfigScope.newBuilder()
+                        .setEnvironmentScope(
+                            AnomalyEnvironmentScope.newBuilder().setEnvironmentId(ENVIRONMENT_ID)))
+                .build());
+
+    assertEquals(1, result.getEvaluationConfigsList().size());
+    WebAppEvaluationConfig evaluationConfig1 = result.getEvaluationConfigs(0);
+    assertEquals(ENVIRONMENT_SCOPE_CONTEXT, evaluationConfig1.getScopeContext());
+    assertEquals(
+        List.of("subRule1", "subRule2", "subRule3"), evaluationConfig1.getDisabledSecRuleIdsList());
+
+    assertEquals(2, result.getSecRuleProcessorConfigsList().size());
+
+    assertEquals(1, result.getWebAppEvaluationRulesContextsList().size());
+    WebAppEvaluationRulesContext rulesContext1 = result.getWebAppEvaluationRulesContexts(0);
+    assertEquals(ENVIRONMENT_SCOPE_CONTEXT, rulesContext1.getScopeContext());
+    assertEquals(
+        HashUtil.calculateSHA256("onlyStandardRulesBlob"), rulesContext1.getCrsRulesBlobId());
+  }
+
+  @Test
+  void testBackwardCompat_NoConfigScopeReturnsAllScopes() {
+    WebAppEvaluationConfigContext resultWithoutScope =
+        configContextManager.getWebAppEvaluationConfigContext(
+            requestContext,
+            GetWebAppEvaluationConfigContextRequest.newBuilder()
+                .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+                .build());
+    assertEquals(2, resultWithoutScope.getEvaluationConfigsList().size());
+    assertEquals(API_SCOPE_CONTEXT, resultWithoutScope.getEvaluationConfigs(0).getScopeContext());
+    assertEquals(
+        ENVIRONMENT_SCOPE_CONTEXT, resultWithoutScope.getEvaluationConfigs(1).getScopeContext());
+    assertEquals(3, resultWithoutScope.getSecRuleProcessorConfigsList().size());
+    assertEquals(2, resultWithoutScope.getWebAppEvaluationRulesContextsList().size());
+  }
+
+  @Test
+  void testScopedRequest_ReturnsFewerResultsThanUnscoped() {
+    WebAppEvaluationConfigContext unscopedResult =
+        configContextManager.getWebAppEvaluationConfigContext(
+            requestContext,
+            GetWebAppEvaluationConfigContextRequest.newBuilder()
+                .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+                .build());
+
+    WebAppEvaluationConfigContext scopedResult =
+        configContextManager.getWebAppEvaluationConfigContext(
+            requestContext,
+            GetWebAppEvaluationConfigContextRequest.newBuilder()
+                .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+                .setConfigScope(
+                    AnomalyConfigScope.newBuilder()
+                        .setEnvironmentScope(
+                            AnomalyEnvironmentScope.newBuilder().setEnvironmentId(ENVIRONMENT_ID)))
+                .build());
+
+    assertEquals(1, unscopedResult.getEvaluationConfigsList().size());
+    assertEquals(0, scopedResult.getEvaluationConfigsList().size());
+    assertEquals(3, unscopedResult.getSecRuleProcessorConfigsList().size());
+    assertEquals(2, scopedResult.getSecRuleProcessorConfigsList().size());
+  }
+
+  @Test
+  void testCachingBehavior_ScopedAndUnscopedAreDifferentCacheEntries() {
+    WebAppEvaluationConfigContext unscopedResult =
+        configContextManager.getWebAppEvaluationConfigContext(
+            requestContext,
+            GetWebAppEvaluationConfigContextRequest.newBuilder()
+                .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+                .build());
+
+    WebAppEvaluationConfigContext scopedResult =
+        configContextManager.getWebAppEvaluationConfigContext(
+            requestContext,
+            GetWebAppEvaluationConfigContextRequest.newBuilder()
+                .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+                .setConfigScope(
+                    AnomalyConfigScope.newBuilder()
+                        .setEnvironmentScope(
+                            AnomalyEnvironmentScope.newBuilder().setEnvironmentId(ENVIRONMENT_ID)))
+                .build());
+    assertNotSame(unscopedResult, scopedResult);
+    assertEquals(2, unscopedResult.getEvaluationConfigsList().size());
+    assertEquals(1, scopedResult.getEvaluationConfigsList().size());
+    verify(anomalyDetectionConfigManager, times(2))
+        .getAllGlobalResolvedScopedAnomalyDetectionConfigs(any(RequestContext.class), any());
+  }
+
+  @Test
+  void testExplicitCustomerScope_ReturnsOnlyCustomerScopedConfigs() {
+    WebAppEvaluationConfigContext result =
+        configContextManager.getWebAppEvaluationConfigContext(
+            requestContext,
+            GetWebAppEvaluationConfigContextRequest.newBuilder()
+                .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+                .setConfigScope(
+                    AnomalyConfigScope.newBuilder()
+                        .setCustomerScope(AnomalyCustomerScope.getDefaultInstance()))
+                .build());
+    assertEquals(0, result.getEvaluationConfigsList().size());
+    assertEquals(1, result.getSecRuleProcessorConfigsList().size());
+    assertEquals(CUSTOMER_SCOPE_CONTEXT, result.getSecRuleProcessorConfigs(0).getScopeContext());
+  }
+
+  @Test
   void testPlatformWebAppEvaluationConfigContext() {
     WebAppEvaluationConfigContext result =
         configContextManager.getWebAppEvaluationConfigContext(
@@ -583,6 +695,35 @@ class WebAppEvaluationConfigContextManagerImplTest {
     assertNotSame(result1, result2);
 
     // Verify the underlying managers were called twice (once for each cache key)
+    verify(anomalyDetectionConfigManager, times(2))
+        .getAllGlobalResolvedScopedAnomalyDetectionConfigs(any(RequestContext.class), any());
+  }
+
+  @Test
+  void testCachingBehavior_DifferentConfigScopeForEdgeIsCacheMiss() {
+    WebAppEvaluationConfigContext result1 =
+        configContextManager.getWebAppEvaluationConfigContext(
+            requestContext,
+            GetWebAppEvaluationConfigContextRequest.newBuilder()
+                .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+                .setConfigScope(
+                    AnomalyConfigScope.newBuilder()
+                        .setEnvironmentScope(
+                            AnomalyEnvironmentScope.newBuilder().setEnvironmentId(ENVIRONMENT_ID)))
+                .build());
+
+    WebAppEvaluationConfigContext result2 =
+        configContextManager.getWebAppEvaluationConfigContext(
+            requestContext,
+            GetWebAppEvaluationConfigContextRequest.newBuilder()
+                .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+                .setConfigScope(
+                    AnomalyConfigScope.newBuilder()
+                        .setEnvironmentScope(
+                            AnomalyEnvironmentScope.newBuilder().setEnvironmentId("different-env")))
+                .build());
+
+    assertNotSame(result1, result2);
     verify(anomalyDetectionConfigManager, times(2))
         .getAllGlobalResolvedScopedAnomalyDetectionConfigs(any(RequestContext.class), any());
   }

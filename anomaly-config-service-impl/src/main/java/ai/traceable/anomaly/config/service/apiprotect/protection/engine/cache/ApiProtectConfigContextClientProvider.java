@@ -58,6 +58,8 @@ public class ApiProtectConfigContextClientProvider implements ApiProtectConfigCo
   protected final ApiProtectionRulesProvider apiProtectionRulesProvider;
   protected final CachedServiceMappingProvider cachedServiceMappingProvider;
   protected final CachedApiMappingProvider cachedApiMappingProvider;
+  private static final AnomalyConfigScopeUtils ANOMALY_CONFIG_SCOPE_UTILS =
+      new AnomalyConfigScopeUtils();
 
   @Override
   public ApiProtectionConfigContext getApiProtectionConfigContext(
@@ -69,9 +71,11 @@ public class ApiProtectConfigContextClientProvider implements ApiProtectConfigCo
       RequestContext requestContext, GetApiProtectEvaluationConfigContextRequest request) {
 
     Map<AnomalyConfigScope, ScopedAnomalyDetectionConfig> scopedAnomalyDetectionConfigMap =
-        getScopedAnomalyDetectionConfigMap(requestContext);
+        filterByRequestScope(
+            getScopedAnomalyDetectionConfigMap(requestContext), request.getConfigScope());
     Map<AnomalyConfigScope, ScopedAnomalyConfigStatus> scopedAnomalyConfigStatusMap =
-        getScopedAnomalyConfigStatusMap(requestContext);
+        filterByRequestScope(
+            getScopedAnomalyConfigStatusMap(requestContext), request.getConfigScope());
     log.debug(
         "Retrieved scopedAnomalyDetectionConfigMap with {} entries and scopedAnomalyConfigStatusMap with {} entries",
         scopedAnomalyDetectionConfigMap.size(),
@@ -265,6 +269,16 @@ public class ApiProtectConfigContextClientProvider implements ApiProtectConfigCo
         .collect(
             Collectors.toUnmodifiableMap(
                 ScopedAnomalyConfigStatus::getConfigScope, Function.identity()));
+  }
+
+  private <T> Map<AnomalyConfigScope, T> filterByRequestScope(
+      Map<AnomalyConfigScope, T> configMap, AnomalyConfigScope requestScope) {
+    if (requestScope.getScopeCase() == AnomalyConfigScope.ScopeCase.SCOPE_NOT_SET) {
+      return configMap;
+    }
+    return configMap.entrySet().stream()
+        .filter(entry -> ANOMALY_CONFIG_SCOPE_UTILS.isParentScope(entry.getKey(), requestScope))
+        .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   private RuleVersion getRuleVersion(

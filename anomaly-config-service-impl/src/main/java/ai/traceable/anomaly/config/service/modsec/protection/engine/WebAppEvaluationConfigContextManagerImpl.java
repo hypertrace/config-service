@@ -104,6 +104,7 @@ public class WebAppEvaluationConfigContextManagerImpl
   private final ModsecRuleVersion defaultModsecRuleVersion;
   private final CachedServiceMappingProvider cachedServiceMappingProvider;
   private final CachedApiMappingProvider cachedApiMappingProvider;
+  private final AnomalyConfigScopeUtils anomalyConfigScopeUtils = new AnomalyConfigScopeUtils();
   private final LoadingCache<ContextualKey<RequestData>, WebAppEvaluationConfigContext>
       webAppConfigContextCache;
 
@@ -183,13 +184,15 @@ public class WebAppEvaluationConfigContextManagerImpl
         request.getSubRuleTypesList());
 
     Map<AnomalyConfigScope, ScopedAnomalyDetectionConfig> scopedAnomalyDetectionConfigMap =
-        getScopedAnomalyDetectionConfigMap(requestContext);
+        filterByRequestScope(
+            getScopedAnomalyDetectionConfigMap(requestContext), request.getConfigScope());
     log.debug(
         "Retrieved scopedAnomalyDetectionConfigMap with {} entries",
         scopedAnomalyDetectionConfigMap.size());
 
     Map<AnomalyConfigScope, ScopedAnomalyConfigStatus> scopedAnomalyConfigStatusMap =
-        getScopedAnomalyConfigStatusMap(requestContext);
+        filterByRequestScope(
+            getScopedAnomalyConfigStatusMap(requestContext), request.getConfigScope());
     log.debug(
         "Retrieved scopedAnomalyConfigStatusMap with {} entries",
         scopedAnomalyConfigStatusMap.size());
@@ -643,6 +646,16 @@ public class WebAppEvaluationConfigContextManagerImpl
     return RuleVersion.getDefaultInstance();
   }
 
+  private <T> Map<AnomalyConfigScope, T> filterByRequestScope(
+      Map<AnomalyConfigScope, T> configMap, AnomalyConfigScope requestScope) {
+    if (requestScope.getScopeCase() == AnomalyConfigScope.ScopeCase.SCOPE_NOT_SET) {
+      return configMap;
+    }
+    return configMap.entrySet().stream()
+        .filter(entry -> anomalyConfigScopeUtils.isParentScope(entry.getKey(), requestScope))
+        .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+  }
+
   private String removeCrsPrefixIfPresent(String ruleId) {
     if (ruleId.startsWith(ModsecRuleUtils.MODSEC_RULE_PREFIX)) {
       return ruleId.substring(4);
@@ -769,6 +782,7 @@ public class WebAppEvaluationConfigContextManagerImpl
   static class RequestData {
     RuleEvaluationPoint ruleEvaluationPoint;
     List<AnomalySubRuleType> subRuleTypes;
+    AnomalyConfigScope configScope;
 
     static RequestData from(GetWebAppEvaluationConfigContextRequest request) {
       // Sort sub-rule types for consistent cache keys
@@ -777,13 +791,15 @@ public class WebAppEvaluationConfigContextManagerImpl
               .sorted(Comparator.comparing(Enum::ordinal))
               .collect(Collectors.toList());
 
-      return new RequestData(request.getRuleEvaluationPoint(), sortedSubRuleTypes);
+      return new RequestData(
+          request.getRuleEvaluationPoint(), sortedSubRuleTypes, request.getConfigScope());
     }
 
     GetWebAppEvaluationConfigContextRequest getRequest() {
       return GetWebAppEvaluationConfigContextRequest.newBuilder()
           .setRuleEvaluationPoint(ruleEvaluationPoint)
           .addAllSubRuleTypes(subRuleTypes)
+          .setConfigScope(configScope)
           .build();
     }
   }

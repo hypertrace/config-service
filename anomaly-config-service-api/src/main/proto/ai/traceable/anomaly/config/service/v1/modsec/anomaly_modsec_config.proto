@@ -35,6 +35,7 @@ message GetDefaultModsecCrsRulesResponse {
 message GetWebAppEvaluationConfigContextRequest {
   RuleEvaluationPoint rule_evaluation_point = 1;
   repeated AnomalySubRuleType sub_rule_types = 2;
+  AnomalyConfigScope config_scope = 3;
 }
 
 message GetWebAppEvaluationConfigContextResponse {

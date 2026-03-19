@@ -1,5 +1,7 @@
 package ai.traceable.edge.config.service.supplier;
 
+import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyEnvironmentScope;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
 import ai.traceable.anomaly.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.anomaly.config.service.v1.modsec.AnomalyModsecConfigServiceGrpc;
@@ -55,7 +57,7 @@ public class WebAppEvaluationConfigContextSupplier extends AbstractTraceableEdge
         "Received request for WebAppEvaluationConfigContext for tenantId: {}",
         requestContext.getTenantId());
     GetWebAppEvaluationConfigContextResponse response =
-        getWebAppEvaluationConfigContext(requestContext, requestElement);
+        getWebAppEvaluationConfigContext(requestContext, environment, requestElement);
     ConfigPayloads configPayloads =
         ConfigPayloads.newBuilder()
             .addConfigBytes(response.getWebAppEvaluationConfigContext())
@@ -68,10 +70,22 @@ public class WebAppEvaluationConfigContextSupplier extends AbstractTraceableEdge
   }
 
   private GetWebAppEvaluationConfigContextResponse getWebAppEvaluationConfigContext(
-      RequestContext requestContext, ConfigRequestElement requestElement) {
+      RequestContext requestContext, String environment, ConfigRequestElement requestElement) {
     GetWebAppEvaluationConfigContextRequest.Builder requestBuilder =
         GetWebAppEvaluationConfigContextRequest.newBuilder()
             .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE);
+    Optional.ofNullable(environment)
+        .filter(env -> !env.isBlank())
+        .ifPresent(
+            environmentName ->
+                requestBuilder
+                    .setConfigScope(
+                        AnomalyConfigScope.newBuilder()
+                            .setEnvironmentScope(
+                                AnomalyEnvironmentScope.newBuilder()
+                                    .setEnvironmentId(environmentName))
+                            .build())
+                    .build());
     Optional.ofNullable(
             requestElement
                 .getAgentCapabilities()
