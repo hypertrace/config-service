@@ -207,6 +207,7 @@ message BlockingMetadataAnomalyDetectionConfig {
     InAgentVulnerableLibraryConfig in_agent_vulnerable_library = 7;
     MaliciousSourcesAnomalyConfig malicious_sources = 8;
     ApiProtectAnomalyConfig api_protect = 9;
+    GenAiAnomalyConfig gen_ai = 10;
   }
 }
 
@@ -553,6 +554,8 @@ message MaliciousSourcesAnomalyConfig {
 }
 
 message ApiProtectAnomalyConfig {}
+
+message GenAiAnomalyConfig {}
 
 message AnomalySubRuleConfig {
   string sub_rule_id = 1;
