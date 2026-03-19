@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.4.5239=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.5243=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.7.70=runtimeClasspath,testRuntimeClasspath
 ai.traceable.license.metering.service:license-metering-service-api:0.1.81=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:cache-provider:0.8.141=runtimeClasspath,testRuntimeClasspath
@@ -14,18 +14,18 @@ ai.traceable.protection.rules:ai-application-protection-rules:0.1.133=compileCla
 ai.traceable.protection.rules:api-protection-rules:0.1.133=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.protection.rules:protection-rules-common:0.1.133=runtimeClasspath,testRuntimeClasspath
 ai.traceable.protection.rules:web-application-protection-rules:0.1.133=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.protection:api-protection-engine-config:0.1.142=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.protection:api-protection-engine:0.1.142=runtimeClasspath,testRuntimeClasspath
-ai.traceable.protection:data-parser:0.1.142=runtimeClasspath,testRuntimeClasspath
-ai.traceable.protection:jexl-processor:0.1.142=runtimeClasspath,testRuntimeClasspath
-ai.traceable.protection:protection-data-context:0.1.142=runtimeClasspath,testRuntimeClasspath
-ai.traceable.protection:protection-data-inspection:0.1.142=runtimeClasspath,testRuntimeClasspath
-ai.traceable.protection:protection-engine-core:0.1.142=runtimeClasspath,testRuntimeClasspath
-ai.traceable.protection:protection-filtering-engine:0.1.142=runtimeClasspath,testRuntimeClasspath
-ai.traceable.protection:protection-processing-common:0.1.142=runtimeClasspath,testRuntimeClasspath
-ai.traceable.protection:secrules-processor:0.1.142=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.protection:web-application-protection-engine-config:0.1.142=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.protection:web-application-protection-engine:0.1.142=runtimeClasspath,testRuntimeClasspath
+ai.traceable.protection:api-protection-engine-config:0.1.144=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.protection:api-protection-engine:0.1.144=runtimeClasspath,testRuntimeClasspath
+ai.traceable.protection:data-parser:0.1.144=runtimeClasspath,testRuntimeClasspath
+ai.traceable.protection:jexl-processor:0.1.144=runtimeClasspath,testRuntimeClasspath
+ai.traceable.protection:protection-data-context:0.1.144=runtimeClasspath,testRuntimeClasspath
+ai.traceable.protection:protection-data-inspection:0.1.144=runtimeClasspath,testRuntimeClasspath
+ai.traceable.protection:protection-engine-core:0.1.144=runtimeClasspath,testRuntimeClasspath
+ai.traceable.protection:protection-filtering-engine:0.1.144=runtimeClasspath,testRuntimeClasspath
+ai.traceable.protection:protection-processing-common:0.1.144=runtimeClasspath,testRuntimeClasspath
+ai.traceable.protection:secrules-processor:0.1.144=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.protection:web-application-protection-engine-config:0.1.144=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.protection:web-application-protection-engine:0.1.144=runtimeClasspath,testRuntimeClasspath
 aopalliance:aopalliance:1.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 at.yawk.lz4:lz4-java:1.8.1=runtimeClasspath,testRuntimeClasspath
 com.auth0:java-jwt:4.4.0=runtimeClasspath,testRuntimeClasspath
