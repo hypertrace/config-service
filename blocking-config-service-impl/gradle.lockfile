@@ -1,8 +1,8 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.4.5228=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.featureflag:feature-flag-service-api:0.7.69=runtimeClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.5239=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.featureflag:feature-flag-service-api:0.7.70=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:ip-utils:0.8.141=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform:actor-service-api:0.2.188=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform:coraza-waf-service-api:0.3.49=runtimeClasspath,testRuntimeClasspath
