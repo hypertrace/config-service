@@ -56,7 +56,9 @@ message GetLabelResponse {
   Label label = 1;
 }
 
-message GetLabelsRequest {}
+message GetLabelsRequest {
+  LabelType type = 1;
+}
 
 message GetLabelsResponse {
   repeated Label labels = 1;

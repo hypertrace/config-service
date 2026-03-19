@@ -14,4 +14,11 @@ message LabelData {
   string key = 1;
   optional string color = 2;
   optional string description = 3;
+  LabelType type = 4;
+}
+
+enum LabelType {
+  LABEL_TYPE_UNSPECIFIED = 0;
+  LABEL_TYPE_API = 1;
+  LABEL_TYPE_SCAN = 2;
 }
