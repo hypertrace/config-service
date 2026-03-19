@@ -73,6 +73,7 @@ public class GlobalAnomalyConfigStatusManagerImpl
   private static final String ENABLED = "Enabled";
   private static final String ANOMALY_DETECTION_TYPE_WAF = "Waf";
   private static final String ANOMALY_DETECTION_TYPE_API_PROTECTION = "Api Protection";
+  private static final String ANOMALY_DETECTION_TYPE_AI_FIREWALL = "AI Firewall";
 
   private final AnomalyGlobalConfigServiceConfig config;
   private final ScopedGlobalConfigStatusChangeConverter configConverter;
@@ -248,6 +249,10 @@ public class GlobalAnomalyConfigStatusManagerImpl
       action =
           scopedConfigStatusChange.getGlobalApiConfigChange().getDisabled() ? DISABLED : ENABLED;
       anomalyDetectionType = ANOMALY_DETECTION_TYPE_API_PROTECTION;
+    } else if (scopedConfigStatusChange.getGlobalGenAiConfigChange().hasDisabled()) {
+      action =
+          scopedConfigStatusChange.getGlobalGenAiConfigChange().getDisabled() ? DISABLED : ENABLED;
+      anomalyDetectionType = ANOMALY_DETECTION_TYPE_AI_FIREWALL;
     }
 
     ScopedAnomalyConfigStatusChange scopedAnomalyConfigStatusChange =
