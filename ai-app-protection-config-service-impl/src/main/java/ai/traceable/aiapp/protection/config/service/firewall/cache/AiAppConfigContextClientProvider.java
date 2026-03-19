@@ -1,0 +1,217 @@
+package ai.traceable.aiapp.protection.config.service.firewall.cache;
+
+import static ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils.ANOMALY_CONFIG_SCOPE_COMPARATOR;
+
+import ai.traceable.aiapp.protection.config.service.v1.GetAiAppEvaluationConfigContextRequest;
+import ai.traceable.aiapp.protection.config.service.v1.RuleEvaluationPoint;
+import ai.traceable.aiapp.protection.config.service.v1.RuleScope;
+import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils;
+import ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigManager;
+import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyEnvironmentScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyRuleAction;
+import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfigType;
+import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
+import ai.traceable.anomaly.config.service.v1.detector.GetAnomalyDetectionConfigsFilter;
+import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
+import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
+import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
+import ai.traceable.protection.engine.config.aifirewall.v1.AiFirewallConfigContext;
+import ai.traceable.protection.engine.config.aifirewall.v1.AiFirewallScopedConfigContext;
+import ai.traceable.protection.engine.config.aifirewall.v1.SecRulesEvaluationConfig;
+import ai.traceable.protection.processing.common.v1.ScopeContext;
+import ai.traceable.protection.rules.aiapp.v1.AiAppRules;
+import ai.traceable.protection.rules.aiapp.v1.AiAppRulesProvider;
+import ai.traceable.protection.rules.aiapp.v1.AiAppThreatRule;
+import jakarta.inject.Inject;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.core.grpcutils.context.RequestContext;
+
+@Slf4j
+@AllArgsConstructor(onConstructor_ = @Inject)
+public class AiAppConfigContextClientProvider implements AiAppConfigContextProvider {
+  private static final GetAnomalyDetectionConfigsFilter ANOMALY_DETECTION_CONFIGS_FILTER =
+      GetAnomalyDetectionConfigsFilter.newBuilder()
+          .addAnomalyDetectionConfigTypes(
+              AnomalyDetectionConfigType.ANOMALY_DETECTION_CONFIG_TYPE_GEN_AI)
+          .build();
+
+  private static final AnomalyConfigScopeUtils ANOMALY_CONFIG_SCOPE_UTILS =
+      new AnomalyConfigScopeUtils();
+
+  protected final AnomalyDetectionConfigManager anomalyDetectionConfigManager;
+  protected final AiAppRulesProvider aiAppRulesProvider;
+  protected final CachedServiceMappingProvider cachedServiceMappingProvider;
+  protected final CachedApiMappingProvider cachedApiMappingProvider;
+
+  @Override
+  public AiFirewallConfigContext getAiFirewallConfigContext(
+      RequestContext requestContext, GetAiAppEvaluationConfigContextRequest request) {
+    return loadAiFirewallConfigContext(requestContext, request);
+  }
+
+  protected AiFirewallConfigContext loadAiFirewallConfigContext(
+      RequestContext requestContext, GetAiAppEvaluationConfigContextRequest request) {
+
+    AnomalyConfigScope anomalyConfigScope =
+        convertRuleScopeToAnomalyConfigScope(request.getRuleScope());
+    Map<AnomalyConfigScope, ScopedAnomalyDetectionConfig> scopedAnomalyDetectionConfigMap =
+        filterByRequestScope(
+            getScopedAnomalyDetectionConfigMap(requestContext), anomalyConfigScope);
+    log.debug(
+        "Retrieved scopedAnomalyDetectionConfigMap with {} entries",
+        scopedAnomalyDetectionConfigMap.size());
+
+    TreeSet<AnomalyConfigScope> configScopes = new TreeSet<>(ANOMALY_CONFIG_SCOPE_COMPARATOR);
+    configScopes.addAll(scopedAnomalyDetectionConfigMap.keySet());
+
+    AiAppRules aiAppRules = aiAppRulesProvider.getAiAppRules();
+    Set<String> secRuleEvaluatedRuleIds = getSecRuleEvaluatedRuleIds(aiAppRules);
+
+    List<AiFirewallScopedConfigContext> scopedConfigContextList = new ArrayList<>();
+    Map<AnomalyConfigScope, ScopeContext> scopeContextMap =
+        AnomalyConfigScopeUtils.getScopeContextMap(
+            requestContext, configScopes, cachedApiMappingProvider, cachedServiceMappingProvider);
+
+    for (AnomalyConfigScope configScope : configScopes) {
+      List<AnomalyConfigScope> scopesWithDecreasingPriority =
+          AnomalyConfigScopeUtils.getConfigScopesWithDecreasingPriority(configScope);
+
+      ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig =
+          scopesWithDecreasingPriority.stream()
+              .filter(scopedAnomalyDetectionConfigMap::containsKey)
+              .findFirst()
+              .map(scopedAnomalyDetectionConfigMap::get)
+              .orElse(ScopedAnomalyDetectionConfig.getDefaultInstance());
+
+      if (!scopedAnomalyDetectionConfig.equals(ScopedAnomalyDetectionConfig.getDefaultInstance())) {
+        List<String> disabledSecRuleIds = new ArrayList<>();
+
+        populateEvaluationConfigs(
+            scopedAnomalyDetectionConfig,
+            request.getRuleEvaluationPoint(),
+            secRuleEvaluatedRuleIds,
+            disabledSecRuleIds);
+
+        AiFirewallScopedConfigContext scopedConfigContext =
+            AiFirewallScopedConfigContext.newBuilder()
+                .setScopeContext(scopeContextMap.get(configScope))
+                .setSecRulesEvaluationConfig(
+                    SecRulesEvaluationConfig.newBuilder()
+                        .addAllDisabledSecRuleIds(disabledSecRuleIds))
+                .build();
+
+        scopedConfigContextList.add(scopedConfigContext);
+      }
+    }
+    return AiFirewallConfigContext.newBuilder()
+        .addAllScopedConfigContexts(scopedConfigContextList)
+        .setSecRulesBlob(aiAppRules.getAiAppRulesBlob())
+        .build();
+  }
+
+  private Set<String> getSecRuleEvaluatedRuleIds(AiAppRules aiAppRules) {
+    return aiAppRules.getThreatRulesList().stream()
+        .filter(rule -> rule.hasRuleEvaluation() && rule.getRuleEvaluation().hasSecRuleEvaluation())
+        .map(AiAppThreatRule::getRuleId)
+        .collect(Collectors.toUnmodifiableSet());
+  }
+
+  private void populateEvaluationConfigs(
+      ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig,
+      RuleEvaluationPoint ruleEvaluationPoint,
+      Set<String> secRuleEvaluatedRuleIds,
+      List<String> disabledSecRuleIds) {
+
+    for (AnomalyDetectionConfig detectionConfig :
+        scopedAnomalyDetectionConfig.getAnomalyDetectionConfigsList()) {
+      if (!detectionConfig.hasGenAiAnomalyDetectionConfig()) {
+        continue;
+      }
+
+      Map<String, AnomalySubRuleConfig> subRuleConfigMap =
+          detectionConfig
+              .getGenAiAnomalyDetectionConfig()
+              .getSubRuleConfigs()
+              .getSubRuleConfigsMap();
+
+      for (Map.Entry<String, AnomalySubRuleConfig> subRuleEntry : subRuleConfigMap.entrySet()) {
+        String subRuleId = subRuleEntry.getKey();
+        AnomalySubRuleConfig subRuleConfig = subRuleEntry.getValue();
+
+        if (secRuleEvaluatedRuleIds.contains(subRuleId)
+            && isDisabled(detectionConfig, subRuleConfig, ruleEvaluationPoint)) {
+          disabledSecRuleIds.add(subRuleId);
+        }
+      }
+    }
+  }
+
+  private boolean isDisabled(
+      AnomalyDetectionConfig detectionConfig,
+      AnomalySubRuleConfig subRuleConfig,
+      RuleEvaluationPoint ruleEvaluationPoint) {
+    switch (ruleEvaluationPoint) {
+      case RULE_EVALUATION_POINT_EDGE:
+        return detectionConfig.getConfigStatus().getDisabled()
+            || !subRuleConfig
+                .getAnomalyRuleAction()
+                .equals(AnomalyRuleAction.ANOMALY_RULE_ACTION_BLOCK);
+      case RULE_EVALUATION_POINT_PLATFORM:
+        return detectionConfig.getConfigStatus().getDisabled()
+            || subRuleConfig
+                .getAnomalyRuleAction()
+                .equals(AnomalyRuleAction.ANOMALY_RULE_ACTION_DISABLE);
+      default:
+        log.error("Unsupported rule evaluation point: {}", ruleEvaluationPoint);
+        throw new IllegalArgumentException(
+            "Unsupported rule evaluation point: " + ruleEvaluationPoint);
+    }
+  }
+
+  private <T> Map<AnomalyConfigScope, T> filterByRequestScope(
+      Map<AnomalyConfigScope, T> configMap, AnomalyConfigScope requestScope) {
+    if (requestScope.getScopeCase() == AnomalyConfigScope.ScopeCase.SCOPE_NOT_SET) {
+      return configMap;
+    }
+    return configMap.entrySet().stream()
+        .filter(entry -> ANOMALY_CONFIG_SCOPE_UTILS.isParentScope(entry.getKey(), requestScope))
+        .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+  }
+
+  private AnomalyConfigScope convertRuleScopeToAnomalyConfigScope(RuleScope ruleScope) {
+    AnomalyConfigScope.Builder builder = AnomalyConfigScope.newBuilder();
+    if (ruleScope.hasTenantScope()) {
+      builder.setCustomerScope(AnomalyCustomerScope.getDefaultInstance());
+    } else if (ruleScope.hasEnvironmentScope()) {
+      if (!ruleScope.getEnvironmentScope().getEnvironmentIdsList().isEmpty()) {
+        builder.setEnvironmentScope(
+            AnomalyEnvironmentScope.newBuilder()
+                .setEnvironmentId(ruleScope.getEnvironmentScope().getEnvironmentIdsList().get(0))
+                .build());
+      }
+    }
+    return builder.build();
+  }
+
+  private Map<AnomalyConfigScope, ScopedAnomalyDetectionConfig> getScopedAnomalyDetectionConfigMap(
+      RequestContext requestContext) {
+    return anomalyDetectionConfigManager
+        .getAllGlobalResolvedScopedAnomalyDetectionConfigs(
+            requestContext, ANOMALY_DETECTION_CONFIGS_FILTER)
+        .stream()
+        .collect(
+            Collectors.toUnmodifiableMap(
+                ScopedAnomalyDetectionConfig::getConfigScope, Function.identity()));
+  }
+}

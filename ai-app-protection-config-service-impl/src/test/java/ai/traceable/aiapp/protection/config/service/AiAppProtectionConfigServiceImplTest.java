@@ -11,6 +11,7 @@ import ai.traceable.aiapp.protection.config.service.converter.customsignature.Ai
 import ai.traceable.aiapp.protection.config.service.converter.customsignature.CustomSignatureToAiAppConverter;
 import ai.traceable.aiapp.protection.config.service.converter.ratelimit.AiAppToRateLimitingConverter;
 import ai.traceable.aiapp.protection.config.service.converter.ratelimit.RateLimitingToAiAppConverter;
+import ai.traceable.aiapp.protection.config.service.firewall.AiAppEvaluationConfigContextManager;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRule;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRuleData;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRuleToDelete;
@@ -93,6 +94,7 @@ class AiAppProtectionConfigServiceImplTest {
   private CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub
       customSignatureConfigStub;
 
+  @Mock private AiAppEvaluationConfigContextManager aiAppEvaluationConfigContextManager;
   @Mock private StreamObserver<GetAiAppRulesResponse> getResponseObserver;
   @Mock private StreamObserver<UpdateAiAppRulesResponse> updateResponseObserver;
   @Mock private StreamObserver<DeleteAiAppRulesResponse> deleteResponseObserver;
@@ -107,6 +109,7 @@ class AiAppProtectionConfigServiceImplTest {
     MockitoAnnotations.openMocks(this);
     service =
         new AiAppProtectionConfigServiceImpl(
+            aiAppEvaluationConfigContextManager,
             validator,
             anomalyToAiAppRuleConverter,
             aiAppToCustomSignatureConverter,

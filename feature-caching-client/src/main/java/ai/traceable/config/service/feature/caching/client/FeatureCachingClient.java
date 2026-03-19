@@ -53,6 +53,7 @@ public class FeatureCachingClient {
   private static final Set<String> DEFAULT_HIDDEN_DEFENSE_AI_FEATURES_VALUE =
       Collections.emptySet();
   private static final boolean DEFAULT_PROTECTION_BLOCKING_DUAL_EVALUATION_FLAG_VALUE = false;
+  private static final boolean DEFAULT_PROTECTION_ENGINE_AI_APP_PROTECTION_FLAG_VALUE = false;
 
   private static final String DATA_CLASSIFICATION_ENHANCED_OBFUSCATION_FLAG =
       "data-classification.enhanced-obfuscation";
@@ -91,6 +92,8 @@ public class FeatureCachingClient {
       "api-protect.policies.migration";
   private static final String PROTECTION_BLOCKING_DUAL_EVALUATION_FLAG =
       "protection.blocking.dual-evaluation";
+  private static final String PROTECTION_ENGINE_AI_APP_PROTECTION_FLAG =
+      "protection-engine.ai-app-protection";
 
   private static final List<String> ALL_FLAGS_TO_FETCH =
       List.of(
@@ -117,7 +120,8 @@ public class FeatureCachingClient {
           PROTECTION_ENGINE_POST_DETECTION_FILTERING_FLAG,
           PROTECTION_ENGINE_CUSTOM_SIGNATURE_FLAG,
           HIDDEN_DEFENSE_AI_FEATURES,
-          PROTECTION_BLOCKING_DUAL_EVALUATION_FLAG);
+          PROTECTION_BLOCKING_DUAL_EVALUATION_FLAG,
+          PROTECTION_ENGINE_AI_APP_PROTECTION_FLAG);
   private final FeatureFlagServiceBlockingStub featureFlagStub;
   private final LoadingCache<ContextualKey<Void>, Map<String, FeatureFlagValue>> featureFlagCache;
   private final Duration featureFlagRequestTimeout;
@@ -489,6 +493,21 @@ public class FeatureCachingClient {
           "Failed to retrieve current feature flag value for Protection Engine Custom Signature",
           exception);
       return DEFAULT_PROTECTION_ENGINE_CUSTOM_SIGNATURE_FLAG_VALUE;
+    }
+  }
+
+  public boolean isProtectionEngineAiAppProtectionEnabledForTenant(RequestContext requestContext) {
+    try {
+      return requireNonNull(
+              this.featureFlagCache
+                  .get(requestContext.buildInternalContextualKey())
+                  .get(PROTECTION_ENGINE_AI_APP_PROTECTION_FLAG))
+          .getBoolean();
+    } catch (Exception exception) {
+      log.warn(
+          "Failed to retrieve current feature flag value for Protection Engine AI App Protection",
+          exception);
+      return DEFAULT_PROTECTION_ENGINE_AI_APP_PROTECTION_FLAG_VALUE;
     }
   }
 

@@ -1,5 +1,6 @@
 package ai.traceable.edge.config.service;
 
+import ai.traceable.aiapp.protection.config.service.v1.AiAppConfigServiceGrpc;
 import ai.traceable.anomaly.config.service.v1.apiprotect.AnomalyApiProtectConfigServiceGrpc;
 import ai.traceable.anomaly.config.service.v1.modsec.AnomalyModsecConfigServiceGrpc;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CloudBotDeploymentConfigServiceGrpc;
@@ -129,6 +130,14 @@ public class TraceableEdgeConfigServiceModule extends AbstractModule {
   CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub
       providesCustomSignatureConfigServiceStub(Channel channel) {
     return CustomSignatureConfigServiceGrpc.newBlockingStub(channel)
+        .withCallCredentials(
+            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  AiAppConfigServiceGrpc.AiAppConfigServiceBlockingStub providesAiAppConfigServiceStub(
+      Channel channel) {
+    return AiAppConfigServiceGrpc.newBlockingStub(channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

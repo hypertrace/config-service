@@ -13,6 +13,7 @@ public class AnomalyConfigServiceConfig {
   private static final String MODSEC_RULE_VERSION_CONFIG_PATH = "modsecRuleVersion";
   private static final String MODSEC_CONFIG_SERVICE_PATH = "modsec.config.service";
   private static final String API_PROTECT_CONFIG_SERVICE_PATH = "api.protect.config.service";
+  private static final String AI_APP_CONFIG_SERVICE_PATH = "ai.app.config.service";
 
   private final Config config;
 
@@ -50,5 +51,9 @@ public class AnomalyConfigServiceConfig {
 
   public Config getApiProtectConfigServiceConfig() {
     return this.config.getConfig(API_PROTECT_CONFIG_SERVICE_PATH);
+  }
+
+  public Config getAiAppConfigServiceConfig() {
+    return this.config.getConfig(AI_APP_CONFIG_SERVICE_PATH);
   }
 }

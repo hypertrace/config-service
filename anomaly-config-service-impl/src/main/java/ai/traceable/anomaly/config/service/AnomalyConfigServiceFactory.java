@@ -26,23 +26,24 @@ public class AnomalyConfigServiceFactory {
   static final String DETECTOR_CONFIG_ANNOTATION = "detectorConfig";
   static final String AGGREGATOR_CONFIG_ANNOTATION = "aggregatorConfig";
 
-  public static List<BindableService> build(
+  public static Injector buildInjector(
       GrpcChannelRegistry channelRegistry,
       Channel channel,
       Config config,
       ConfigChangeEventGenerator configChangeEventGenerator,
       FeatureCachingClient featureCachingClient,
       KafkaLiveEventListener<ConfigChangeEventKey, ConfigChangeEventValue> kafkaLiveEventListener) {
-    Injector injector =
-        Guice.createInjector(
-            new AnomalyConfigServiceModule(
-                channelRegistry,
-                channel,
-                config,
-                configChangeEventGenerator,
-                featureCachingClient,
-                kafkaLiveEventListener));
+    return Guice.createInjector(
+        new AnomalyConfigServiceModule(
+            channelRegistry,
+            channel,
+            config,
+            configChangeEventGenerator,
+            featureCachingClient,
+            kafkaLiveEventListener));
+  }
 
+  public static List<BindableService> getServices(Injector injector) {
     return ImmutableList.of(
         getInjectorInstance(injector, ANOMALY_GLOBAL_CONFIG_ANNOTATION),
         getInjectorInstance(injector, ANOMALY_EXCLUSION_CONFIG_ANNOTATION),
@@ -51,6 +52,23 @@ public class AnomalyConfigServiceFactory {
         getInjectorInstance(injector, TRAINER_CONFIG_ANNOTATION),
         getInjectorInstance(injector, DETECTOR_CONFIG_ANNOTATION),
         getInjectorInstance(injector, AGGREGATOR_CONFIG_ANNOTATION));
+  }
+
+  public static List<BindableService> build(
+      GrpcChannelRegistry channelRegistry,
+      Channel channel,
+      Config config,
+      ConfigChangeEventGenerator configChangeEventGenerator,
+      FeatureCachingClient featureCachingClient,
+      KafkaLiveEventListener<ConfigChangeEventKey, ConfigChangeEventValue> kafkaLiveEventListener) {
+    return getServices(
+        buildInjector(
+            channelRegistry,
+            channel,
+            config,
+            configChangeEventGenerator,
+            featureCachingClient,
+            kafkaLiveEventListener));
   }
 
   private static <T> BindableService getInjectorInstance(Injector injector, String annotation) {

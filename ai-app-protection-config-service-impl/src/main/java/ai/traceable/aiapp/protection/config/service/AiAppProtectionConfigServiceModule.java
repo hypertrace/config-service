@@ -1,8 +1,10 @@
 package ai.traceable.aiapp.protection.config.service;
 
+import ai.traceable.aiapp.protection.config.service.firewall.AiAppConfigServiceConfig;
+import ai.traceable.aiapp.protection.config.service.firewall.AiAppEvaluationConfigContextModule;
+import ai.traceable.anomaly.config.service.AnomalyConfigServiceConfig;
 import ai.traceable.anomaly.config.service.v1.detector.DetectorConfigServiceGrpc;
 import ai.traceable.anomaly.config.service.v1.global.AnomalyGlobalConfigServiceGrpc;
-import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingConfigServiceGrpc;
 import com.google.inject.AbstractModule;
@@ -14,19 +16,23 @@ import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProvide
 
 public class AiAppProtectionConfigServiceModule extends AbstractModule {
   private final Channel channel;
-  private final FeatureCachingClient featureCachingClient;
 
-  public AiAppProtectionConfigServiceModule(
-      Channel channel, FeatureCachingClient featureCachingClient) {
+  public AiAppProtectionConfigServiceModule(Channel channel) {
     this.channel = channel;
-    this.featureCachingClient = featureCachingClient;
   }
 
   @Override
   protected void configure() {
     bind(BindableService.class).to(AiAppProtectionConfigServiceImpl.class);
     bind(Channel.class).toInstance(channel);
-    bind(FeatureCachingClient.class).toInstance(featureCachingClient);
+    install(new AiAppEvaluationConfigContextModule());
+  }
+
+  @Provides
+  @Singleton
+  AiAppConfigServiceConfig provideAiAppConfigServiceConfig(
+      AnomalyConfigServiceConfig anomalyConfigServiceConfig) {
+    return new AiAppConfigServiceConfig(anomalyConfigServiceConfig.getAiAppConfigServiceConfig());
   }
 
   @Provides

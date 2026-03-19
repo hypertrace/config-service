@@ -5,6 +5,7 @@ import ai.traceable.aiapp.protection.config.service.converter.customsignature.Ai
 import ai.traceable.aiapp.protection.config.service.converter.customsignature.CustomSignatureToAiAppConverter;
 import ai.traceable.aiapp.protection.config.service.converter.ratelimit.AiAppToRateLimitingConverter;
 import ai.traceable.aiapp.protection.config.service.converter.ratelimit.RateLimitingToAiAppConverter;
+import ai.traceable.aiapp.protection.config.service.firewall.AiAppEvaluationConfigContextManager;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppConfigServiceGrpc;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRule;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRuleData;
@@ -17,6 +18,8 @@ import ai.traceable.aiapp.protection.config.service.v1.CreateAiAppCustomRuleRequ
 import ai.traceable.aiapp.protection.config.service.v1.CreateAiAppCustomRuleResponse;
 import ai.traceable.aiapp.protection.config.service.v1.DeleteAiAppRulesRequest;
 import ai.traceable.aiapp.protection.config.service.v1.DeleteAiAppRulesResponse;
+import ai.traceable.aiapp.protection.config.service.v1.GetAiAppEvaluationConfigContextRequest;
+import ai.traceable.aiapp.protection.config.service.v1.GetAiAppEvaluationConfigContextResponse;
 import ai.traceable.aiapp.protection.config.service.v1.GetAiAppRulesRequest;
 import ai.traceable.aiapp.protection.config.service.v1.GetAiAppRulesResponse;
 import ai.traceable.aiapp.protection.config.service.v1.ResetToDefault;
@@ -64,6 +67,7 @@ import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesRes
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleResponse;
+import ai.traceable.protection.engine.config.aifirewall.v1.AiFirewallConfigContext;
 import ai.traceable.ratelimiting.config.service.v2.Category;
 import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleRequest;
 import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleResponse;
@@ -107,6 +111,7 @@ public class AiAppProtectionConfigServiceImpl
           AiAppCustomRuleType.AI_APP_CUSTOM_RULE_TYPE_MODEL_GOVERNANCE,
           AiAppCustomRuleType.AI_APP_CUSTOM_RULE_TYPE_INPUT_EXPLOSION);
 
+  private final AiAppEvaluationConfigContextManager aiAppEvaluationConfigContextManager;
   private final AiAppProtectionConfigServiceValidator validator;
   private final AnomalyToAiAppRuleConverter anomalyToAiAppRuleConverter;
   private final AiAppToCustomSignatureConverter aiAppToCustomSignatureConverter;
@@ -123,6 +128,7 @@ public class AiAppProtectionConfigServiceImpl
 
   @Inject
   public AiAppProtectionConfigServiceImpl(
+      AiAppEvaluationConfigContextManager aiAppEvaluationConfigContextManager,
       AiAppProtectionConfigServiceValidator validator,
       AnomalyToAiAppRuleConverter anomalyToAiAppRuleConverter,
       AiAppToCustomSignatureConverter aiAppToCustomSignatureConverter,
@@ -135,6 +141,7 @@ public class AiAppProtectionConfigServiceImpl
       RateLimitingConfigServiceGrpc.RateLimitingConfigServiceBlockingStub rateLimitingConfigService,
       CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub
           customSignatureConfigService) {
+    this.aiAppEvaluationConfigContextManager = aiAppEvaluationConfigContextManager;
     this.validator = validator;
     this.anomalyToAiAppRuleConverter = anomalyToAiAppRuleConverter;
     this.aiAppToCustomSignatureConverter = aiAppToCustomSignatureConverter;
@@ -423,6 +430,30 @@ public class AiAppProtectionConfigServiceImpl
           Status.INTERNAL
               .withDescription("Failed to upsert AI app custom rule: " + e.getMessage())
               .asRuntimeException(context.buildTrailers()));
+    }
+  }
+
+  @Override
+  public void getAiAppEvaluationConfigContext(
+      GetAiAppEvaluationConfigContextRequest request,
+      StreamObserver<GetAiAppEvaluationConfigContextResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      AiFirewallConfigContext configContext =
+          aiAppEvaluationConfigContextManager.getAiAppEvaluationConfigContext(
+              requestContext, request);
+      GetAiAppEvaluationConfigContextResponse response =
+          GetAiAppEvaluationConfigContextResponse.newBuilder()
+              .setAiAppEvaluationConfigContext(configContext.toByteString())
+              .build();
+      responseObserver.onNext(response);
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error(
+          "Failed during fetching AI App Evaluation Config Context for request: {}",
+          requestContext,
+          e);
+      responseObserver.onError(e);
     }
   }
 

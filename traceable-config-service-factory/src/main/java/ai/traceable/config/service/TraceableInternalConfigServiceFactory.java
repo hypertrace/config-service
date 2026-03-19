@@ -65,7 +65,9 @@ import ai.traceable.userattribution.config.service.v1.UserAttributionConfigServi
 import ai.traceable.userattribution.config.service.v2.UserAttributionV2ConfigServiceFactory;
 import ai.traceable.vulnerability.config.service.VulnerabilityConfigServiceFactory;
 import ai.traceable.waf.provider.integration.service.WafIntegrationConfigServiceFactory;
+import com.google.inject.Injector;
 import io.grpc.BindableService;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -224,14 +226,7 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                     providers.getLocalChannel(),
                     providers.getConfig(),
                     providers.getChangeEventGenerator())),
-            wrap(
-                AnomalyConfigServiceFactory.build(
-                    providers.getChannelRegistry(),
-                    providers.getLocalChannel(),
-                    providers.getConfig(),
-                    providers.getChangeEventGenerator(),
-                    providers.getFeatureCachingClient(),
-                    providers.getKafkaLiveEventListener())),
+            wrap(buildAnomalyAndAiAppServices(providers)),
             wrap(
                 ApiAttributeOverridesServiceFactory.build(
                     providers.getLocalChannel(), providers.getChangeEventGenerator())),
@@ -383,9 +378,6 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                     providers.getConfig(),
                     providers.getChangeEventGenerator())),
             wrap(
-                AiAppProtectionConfigServiceFactory.build(
-                    providers.getLocalChannel(), providers.getFeatureCachingClient())),
-            wrap(
                 AgentActionConfigServiceFactory.build(
                     providers.getLocalChannel(), providers.getChangeEventGenerator())),
             wrap(
@@ -410,5 +402,23 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
 
   Stream<GrpcPlatformService> wrap(Collection<BindableService> bindableServices) {
     return bindableServices.stream().map(GrpcPlatformService::new);
+  }
+
+  private Collection<BindableService> buildAnomalyAndAiAppServices(
+      SharedConfigServiceProviders providers) {
+    Injector anomalyInjector =
+        AnomalyConfigServiceFactory.buildInjector(
+            providers.getChannelRegistry(),
+            providers.getLocalChannel(),
+            providers.getConfig(),
+            providers.getChangeEventGenerator(),
+            providers.getFeatureCachingClient(),
+            providers.getKafkaLiveEventListener());
+
+    List<BindableService> services =
+        new ArrayList<>(AnomalyConfigServiceFactory.getServices(anomalyInjector));
+    services.add(
+        AiAppProtectionConfigServiceFactory.build(anomalyInjector, providers.getLocalChannel()));
+    return services;
   }
 }

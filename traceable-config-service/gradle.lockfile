@@ -45,6 +45,7 @@ ai.traceable.protection.rules:api-protection-rules:0.1.133=integrationTestRuntim
 ai.traceable.protection.rules:protection-filtering-rules:0.1.133=integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
 ai.traceable.protection.rules:protection-rules-common:0.1.133=integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
 ai.traceable.protection.rules:web-application-protection-rules:0.1.133=integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
+ai.traceable.protection:ai-firewall-engine-config:0.1.144=integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
 ai.traceable.protection:api-protection-engine-config:0.1.144=integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
 ai.traceable.protection:api-protection-engine:0.1.144=integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
 ai.traceable.protection:condition-expression-processor:0.1.144=integrationTestRuntimeClasspath,runtimeClasspath,testRuntimeClasspath

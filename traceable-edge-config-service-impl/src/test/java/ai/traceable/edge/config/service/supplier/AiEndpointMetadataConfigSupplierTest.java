@@ -3,8 +3,10 @@ package ai.traceable.edge.config.service.supplier;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.edge.config.service.config.TraceableEdgeConfig;
 import ai.traceable.edge.config.service.v1.AgentCapabilities;
@@ -35,14 +37,18 @@ class AiEndpointMetadataConfigSupplierTest {
   @Mock private ConfigRequestElement requestElement;
   @Mock private StreamingAiEndpointMetadataProvider aiEndpointMetadataProvider;
   @Mock private TraceableEdgeConfig config;
+  @Mock private FeatureCachingClient featureCachingClient;
 
   private AiEndpointMetadataConfigSupplier supplier;
 
   @BeforeEach
   void setUp() {
+    lenient()
+        .when(featureCachingClient.isProtectionEngineAiAppProtectionEnabledForTenant(any()))
+        .thenReturn(true);
     supplier =
         new AiEndpointMetadataConfigSupplier(
-            aiEndpointMetadataProvider, config, new UuidGenerator());
+            aiEndpointMetadataProvider, config, new UuidGenerator(), featureCachingClient);
   }
 
   @Test
