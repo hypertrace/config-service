@@ -11,7 +11,7 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
   private static final String MAX_DEPTH = "max_depth";
   private static final String MIN_PERCENT_SEEN = "min_percent_seen";
   private static final String EVALUATE_REQUEST_BODY_PARAMS = "evaluate_request_body_params";
-  private static final String EVALUATE_RESPONSE_BODY_PARAMS = "evaluate_response_body_params";
+  private static final String EXCLUDED_RESPONSE_PARTS = "excluded_response_parts";
   private static final String ENABLED_FOR_INTERNAL_IPS = "enabled_for_internal_ips";
   private static final String THRESHOLDS_FAMILIES_EXCLUDED = "thresholds_families_excluded";
   private static final String SEVERE_REGEX_STRINGS = "severe_regex_strings";
@@ -211,12 +211,12 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
                     .build())
             .build();
 
-    ConfigMetadata evaluateResponseBodyParamsConfigMetadata =
+    ConfigMetadata excludedResponseParts =
         ConfigMetadata.newBuilder()
-            .setKey(EVALUATE_RESPONSE_BODY_PARAMS)
+            .setKey(EXCLUDED_RESPONSE_PARTS)
             .setConfigValueMetadata(
                 ConfigValueMetadata.newBuilder()
-                    .setType(ConfigValueType.CONFIG_VALUE_TYPE_BOOL)
+                    .setType(ConfigValueType.CONFIG_VALUE_TYPE_ARRAY)
                     .build())
             .build();
 
@@ -1036,7 +1036,8 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
             thresholdFamiliesExcluded,
             primaryApiModelTypeConfigMetadata,
             secondaryApiModelTypeConfigMetadata,
-            paramRegexToIgnoreConfigMetadata));
+            paramRegexToIgnoreConfigMetadata,
+            excludedResponseParts));
 
     // schemaValidation_resptve mapping
     threatRuleIdToConfigMetadataMapping.put(
@@ -1047,7 +1048,8 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
             primaryApiModelTypeConfigMetadata,
             secondaryApiModelTypeConfigMetadata,
             useLearntModelForParamTypeInfoMissingConfigMetadata,
-            paramRegexToIgnoreConfigMetadata));
+            paramRegexToIgnoreConfigMetadata,
+            excludedResponseParts));
 
     // schemaValidation_mresp mapping
     threatRuleIdToConfigMetadataMapping.put(
@@ -1056,11 +1058,11 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
             minPercentSeenConfigMetadata,
             severeRegexStrings,
             enabledForInternalIpsConfigMetadata,
-            evaluateResponseBodyParamsConfigMetadata,
             thresholdFamiliesExcluded,
             primaryApiModelTypeConfigMetadata,
             secondaryApiModelTypeConfigMetadata,
-            paramRegexToIgnoreConfigMetadata));
+            paramRegexToIgnoreConfigMetadata,
+            excludedResponseParts));
 
     // schemaValidation_uresp mapping
     threatRuleIdToConfigMetadataMapping.put(
@@ -1070,7 +1072,8 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
             thresholdFamiliesExcluded,
             primaryApiModelTypeConfigMetadata,
             secondaryApiModelTypeConfigMetadata,
-            paramRegexToIgnoreConfigMetadata));
+            paramRegexToIgnoreConfigMetadata,
+            excludedResponseParts));
   }
 
   public static List<ConfigMetadata> getConfigMetadata(String threatRuleId) {
