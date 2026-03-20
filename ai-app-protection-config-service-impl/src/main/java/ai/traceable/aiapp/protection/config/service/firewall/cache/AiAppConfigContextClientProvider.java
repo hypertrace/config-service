@@ -29,6 +29,7 @@ import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
@@ -151,10 +152,18 @@ public class AiAppConfigContextClientProvider implements AiAppConfigContextProvi
 
         if (secRuleEvaluatedRuleIds.contains(subRuleId)
             && isDisabled(detectionConfig, subRuleConfig, ruleEvaluationPoint)) {
-          disabledSecRuleIds.add(subRuleId);
+          sanitiseSubRuleId(subRuleId).ifPresent(disabledSecRuleIds::add);
         }
       }
     }
+  }
+
+  private Optional<String> sanitiseSubRuleId(String subRuleId) {
+    int underscoreIndex = subRuleId.lastIndexOf('_');
+    if (underscoreIndex != -1 && underscoreIndex < subRuleId.length() - 1) {
+      return Optional.of(subRuleId.substring(underscoreIndex + 1));
+    }
+    return Optional.empty();
   }
 
   private boolean isDisabled(

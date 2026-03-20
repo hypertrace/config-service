@@ -38,9 +38,11 @@ import org.junit.jupiter.api.Test;
 class AiAppConfigContextClientProviderTest {
 
   private static final String TENANT_ID = "test-tenant";
-  private static final String SEC_RULE_ID_1 = "sec-rule-1";
-  private static final String SEC_RULE_ID_2 = "sec-rule-2";
-  private static final String NON_SEC_RULE_ID = "non-sec-rule-1";
+  private static final String SEC_RULE_ID_1 = "rule_sec-rule-1";
+  private static final String SANITISED_SEC_RULE_ID_1 = "sec-rule-1";
+  private static final String SEC_RULE_ID_2 = "rule_sec-rule-2";
+  private static final String SANITISED_SEC_RULE_ID_2 = "sec-rule-2";
+  private static final String NON_SEC_RULE_ID = "rule_non-sec-rule-1";
   private static final String SEC_RULES_BLOB = "test-sec-rules-blob";
 
   private static final AnomalyConfigScope CUSTOMER_SCOPE =
@@ -114,7 +116,7 @@ class AiAppConfigContextClientProviderTest {
     assertEquals(1, result.getScopedConfigContextsCount());
     AiFirewallScopedConfigContext scopedCtx = result.getScopedConfigContexts(0);
     SecRulesEvaluationConfig secConfig = scopedCtx.getSecRulesEvaluationConfig();
-    assertEquals(List.of(SEC_RULE_ID_1), secConfig.getDisabledSecRuleIdsList());
+    assertEquals(List.of(SANITISED_SEC_RULE_ID_1), secConfig.getDisabledSecRuleIdsList());
   }
 
   @Test
@@ -202,7 +204,7 @@ class AiAppConfigContextClientProviderTest {
     // SEC_RULE_ID_2 is disabled (DISABLE action, not BLOCK for edge) → in disabled list
     // NON_SEC_RULE_ID is disabled but not sec-rule-evaluated → NOT in disabled list
     SecRulesEvaluationConfig secConfig = scopedCtx.getSecRulesEvaluationConfig();
-    assertEquals(List.of(SEC_RULE_ID_2), secConfig.getDisabledSecRuleIdsList());
+    assertEquals(List.of(SANITISED_SEC_RULE_ID_2), secConfig.getDisabledSecRuleIdsList());
   }
 
   @Test
@@ -235,7 +237,7 @@ class AiAppConfigContextClientProviderTest {
     // SEC_RULE_ID_1 is DISABLE → disabled → in disabled list
     // SEC_RULE_ID_2 is MONITOR → enabled → NOT in disabled list
     assertEquals(
-        List.of(SEC_RULE_ID_1),
+        List.of(SANITISED_SEC_RULE_ID_1),
         scopedCtx.getSecRulesEvaluationConfig().getDisabledSecRuleIdsList());
   }
 
@@ -277,7 +279,7 @@ class AiAppConfigContextClientProviderTest {
 
     // Config is disabled → all sec rules are disabled regardless of action
     assertEquals(
-        List.of(SEC_RULE_ID_1),
+        List.of(SANITISED_SEC_RULE_ID_1),
         scopedCtx.getSecRulesEvaluationConfig().getDisabledSecRuleIdsList());
   }
 
