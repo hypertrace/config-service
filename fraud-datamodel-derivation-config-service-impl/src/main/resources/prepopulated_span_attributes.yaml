@@ -163,7 +163,7 @@ entities:
       internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
-        kind_id: "system_event_kind_integer"
+        kind_id: "system_event_kind_string"
       prepopulated_span_attribute: {}
 
   # ============================================================================
