@@ -125,6 +125,8 @@ public final class AnomalyToAiAppRuleConverter {
 
     // Get hidden rule IDs from feature flags
     Set<String> hiddenRuleIds = featureCachingClient.getHiddenDefenseAiFeatures(requestContext);
+    Set<String> blockingAvailableRuleIds =
+        featureCachingClient.getBlockingAvailableDefenseAiFeatures(requestContext);
     logger.debug(
         "Retrieved {} hidden rule IDs from feature flags: {}", hiddenRuleIds.size(), hiddenRuleIds);
 
@@ -143,7 +145,8 @@ public final class AnomalyToAiAppRuleConverter {
                 modsecRuleInfosById,
                 overridingChildScopesByRuleId,
                 overriddenDefaultByRuleId,
-                hiddenRuleIds);
+                hiddenRuleIds,
+                blockingAvailableRuleIds);
 
         aiAppRules.add(aiAppRule);
         logger.debug("Successfully converted anomaly rule: {}", anomalyRuleInfo.getRuleId());
@@ -402,7 +405,8 @@ public final class AnomalyToAiAppRuleConverter {
       Map<String, AnomalyRuleInfo> modsecRuleInfosById,
       Map<String, List<RuleScope>> overridingChildScopesByRuleId,
       Map<String, Boolean> overriddenDefaultByRuleId,
-      Set<String> hiddenRuleIds) {
+      Set<String> hiddenRuleIds,
+      Set<String> blockingAvailableRuleIds) {
 
     // Determine override information for the main rule
     boolean ruleOverriddenDefault =
@@ -445,7 +449,8 @@ public final class AnomalyToAiAppRuleConverter {
                           subRuleConfigMap.get(subRuleInfo.getRuleId()),
                           overridingChildScopesByRuleId,
                           overriddenDefaultByRuleId,
-                          hiddenRuleIds))
+                          hiddenRuleIds,
+                          blockingAvailableRuleIds))
               .collect(Collectors.toList());
 
       allSubRules.addAll(ootbSubRules);
@@ -460,7 +465,8 @@ public final class AnomalyToAiAppRuleConverter {
               subRuleConfigMap,
               overridingChildScopesByRuleId,
               overriddenDefaultByRuleId,
-              hiddenRuleIds);
+              hiddenRuleIds,
+              blockingAvailableRuleIds);
       allSubRules.addAll(modsecSubRules);
       logger.debug(
           "Added {} ModSec sub-rules to codeDetectedInPrompt rule: {}",
@@ -489,7 +495,8 @@ public final class AnomalyToAiAppRuleConverter {
       AnomalySubRuleConfig subRuleConfig,
       Map<String, List<RuleScope>> overridingChildScopesByRuleId,
       Map<String, Boolean> overriddenDefaultByRuleId,
-      Set<String> hiddenRuleIds) {
+      Set<String> hiddenRuleIds,
+      Set<String> blockingAvailableRuleIds) {
 
     AiAppOotbRule.Builder ootbRuleBuilder =
         AiAppOotbRule.newBuilder()
@@ -517,11 +524,14 @@ public final class AnomalyToAiAppRuleConverter {
 
     // Determine if the sub-rule should be hidden
     boolean subRuleHidden = isSubRuleHidden(subRuleInfo.getRuleId(), hiddenRuleIds);
+    boolean isBlockingAvailable =
+        isBlockingAvailable(subRuleInfo.getRuleId(), blockingAvailableRuleIds);
     logger.debug("Sub-rule {} hidden status: {}", subRuleInfo.getRuleId(), subRuleHidden);
 
     ootbRuleBuilder.setOverriddenDefault(subRuleOverriddenDefault);
     ootbRuleBuilder.addAllOverridingChildScopes(subRuleOverridingChildScopes);
     ootbRuleBuilder.setHidden(subRuleHidden);
+    ootbRuleBuilder.setBlockingAvailable(isBlockingAvailable);
 
     return AiAppSubRule.newBuilder().setOotbRule(ootbRuleBuilder.build()).build();
   }
@@ -535,7 +545,8 @@ public final class AnomalyToAiAppRuleConverter {
       Map<String, AnomalySubRuleConfig> subRuleConfigMap,
       Map<String, List<RuleScope>> overridingChildScopesByRuleId,
       Map<String, Boolean> overriddenDefaultByRuleId,
-      Set<String> hiddenRuleIds) {
+      Set<String> hiddenRuleIds,
+      Set<String> blockingAvailableRuleIds) {
 
     List<AiAppSubRule> modsecSubRules = new ArrayList<>();
 
@@ -560,7 +571,8 @@ public final class AnomalyToAiAppRuleConverter {
                   subRuleConfig,
                   overridingChildScopesByRuleId,
                   overriddenDefaultByRuleId,
-                  hiddenRuleIds);
+                  hiddenRuleIds,
+                  blockingAvailableRuleIds);
           modsecSubRules.add(modsecSubRule);
           logger.debug(
               "Converted ModSec rule {} to sub-rule for codeDetectedInPrompt", threatRuleId);
@@ -582,7 +594,8 @@ public final class AnomalyToAiAppRuleConverter {
       AnomalySubRuleConfig subRuleConfig,
       Map<String, List<RuleScope>> overridingChildScopesByRuleId,
       Map<String, Boolean> overriddenDefaultByRuleId,
-      Set<String> hiddenRuleIds) {
+      Set<String> hiddenRuleIds,
+      Set<String> blockingAvailableRuleIds) {
     AiAppOotbRule.Builder ootbRuleBuilder =
         AiAppOotbRule.newBuilder()
             .setRuleId(modsecRuleInfo.getRuleId())
@@ -618,12 +631,15 @@ public final class AnomalyToAiAppRuleConverter {
 
     // Determine if the ModSec sub-rule should be hidden
     boolean modsecSubRuleHidden = isSubRuleHidden(modsecRuleInfo.getRuleId(), hiddenRuleIds);
+    boolean modsecSubRuleBlockingAvailable =
+        isBlockingAvailable(modsecRuleInfo.getRuleId(), blockingAvailableRuleIds);
     logger.debug(
         "ModSec sub-rule {} hidden status: {}", modsecRuleInfo.getRuleId(), modsecSubRuleHidden);
 
     ootbRuleBuilder.setOverriddenDefault(modsecSubRuleOverriddenDefault);
     ootbRuleBuilder.addAllOverridingChildScopes(modsecSubRuleOverridingChildScopes);
     ootbRuleBuilder.setHidden(modsecSubRuleHidden);
+    ootbRuleBuilder.setBlockingAvailable(modsecSubRuleBlockingAvailable);
 
     return AiAppSubRule.newBuilder().setOotbRule(ootbRuleBuilder.build()).build();
   }
@@ -631,6 +647,11 @@ public final class AnomalyToAiAppRuleConverter {
   private boolean isSubRuleHidden(String subRuleId, Set<String> hiddenRuleIds) {
     return hiddenRuleIds.contains(subRuleId)
         || hiddenRuleIds.stream().anyMatch(subRuleId::startsWith);
+  }
+
+  private boolean isBlockingAvailable(String ruleId, Set<String> blockingAvailableRuleIds) {
+    return blockingAvailableRuleIds.contains(ruleId)
+        || blockingAvailableRuleIds.stream().anyMatch(ruleId::startsWith);
   }
 
   /** Converts anomaly event details to AI app event details. */

@@ -38,6 +38,7 @@ message AiAppOotbRule {
   repeated RuleScope overriding_child_scopes = 8 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Overriding child scopes of the sub rule"];
   bool overridden_default = 9 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "If the sub rule is overriding the default value"];
   bool hidden = 10 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "If the sub rule is hidden from the customer"];
+  bool blocking_available = 11 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "If the blocking action is available for the sub rule"];
 }
 
 message AiAppRuleUpdate {

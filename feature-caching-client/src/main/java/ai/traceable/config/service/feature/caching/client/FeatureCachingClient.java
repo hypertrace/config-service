@@ -94,6 +94,8 @@ public class FeatureCachingClient {
       "protection.blocking.dual-evaluation";
   private static final String PROTECTION_ENGINE_AI_APP_PROTECTION_FLAG =
       "protection-engine.ai-app-protection";
+  private static final String BLOCKING_AVAILABLE_DEFENSE_AI_FEATURES_FLAG =
+      "graphql.security-settings.defense-ai.blocking-available";
 
   private static final List<String> ALL_FLAGS_TO_FETCH =
       List.of(
@@ -121,7 +123,8 @@ public class FeatureCachingClient {
           PROTECTION_ENGINE_CUSTOM_SIGNATURE_FLAG,
           HIDDEN_DEFENSE_AI_FEATURES,
           PROTECTION_BLOCKING_DUAL_EVALUATION_FLAG,
-          PROTECTION_ENGINE_AI_APP_PROTECTION_FLAG);
+          PROTECTION_ENGINE_AI_APP_PROTECTION_FLAG,
+          BLOCKING_AVAILABLE_DEFENSE_AI_FEATURES_FLAG);
   private final FeatureFlagServiceBlockingStub featureFlagStub;
   private final LoadingCache<ContextualKey<Void>, Map<String, FeatureFlagValue>> featureFlagCache;
   private final Duration featureFlagRequestTimeout;
@@ -205,6 +208,25 @@ public class FeatureCachingClient {
           "Failed to retrieve current feature flag value for API Protect Config Policies Migration",
           exception);
       return false;
+    }
+  }
+
+  public Set<String> getBlockingAvailableDefenseAiFeatures(RequestContext requestContext) {
+    try {
+      return requireNonNull(
+              this.featureFlagCache
+                  .get(requestContext.buildInternalContextualKey())
+                  .get(BLOCKING_AVAILABLE_DEFENSE_AI_FEATURES_FLAG))
+          .getList()
+          .getValuesList()
+          .stream()
+          .map(FeatureFlagValue::getString)
+          .collect(Collectors.toUnmodifiableSet());
+    } catch (Exception exception) {
+      log.error(
+          "Failed to retrieve current feature flag value for Blocking Available Defense AI Features",
+          exception);
+      return Collections.emptySet();
     }
   }
 
