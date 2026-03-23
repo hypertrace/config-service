@@ -516,7 +516,7 @@ public final class AnomalyToAiAppRuleConverter {
         overridingChildScopesByRuleId.getOrDefault(subRuleInfo.getRuleId(), new ArrayList<>());
 
     // Determine if the sub-rule should be hidden
-    boolean subRuleHidden = hiddenRuleIds.contains(subRuleInfo.getRuleId());
+    boolean subRuleHidden = isSubRuleHidden(subRuleInfo.getRuleId(), hiddenRuleIds);
     logger.debug("Sub-rule {} hidden status: {}", subRuleInfo.getRuleId(), subRuleHidden);
 
     ootbRuleBuilder.setOverriddenDefault(subRuleOverriddenDefault);
@@ -617,7 +617,7 @@ public final class AnomalyToAiAppRuleConverter {
         overridingChildScopesByRuleId.getOrDefault(modsecRuleInfo.getRuleId(), new ArrayList<>());
 
     // Determine if the ModSec sub-rule should be hidden
-    boolean modsecSubRuleHidden = hiddenRuleIds.contains(modsecRuleInfo.getRuleId());
+    boolean modsecSubRuleHidden = isSubRuleHidden(modsecRuleInfo.getRuleId(), hiddenRuleIds);
     logger.debug(
         "ModSec sub-rule {} hidden status: {}", modsecRuleInfo.getRuleId(), modsecSubRuleHidden);
 
@@ -626,6 +626,11 @@ public final class AnomalyToAiAppRuleConverter {
     ootbRuleBuilder.setHidden(modsecSubRuleHidden);
 
     return AiAppSubRule.newBuilder().setOotbRule(ootbRuleBuilder.build()).build();
+  }
+
+  private boolean isSubRuleHidden(String subRuleId, Set<String> hiddenRuleIds) {
+    return hiddenRuleIds.contains(subRuleId)
+        || hiddenRuleIds.stream().anyMatch(subRuleId::startsWith);
   }
 
   /** Converts anomaly event details to AI app event details. */
