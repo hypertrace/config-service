@@ -5,8 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.config.utils.UuidGenerator;
@@ -32,6 +35,7 @@ import ai.traceable.malicioussources.config.service.v1.RuleActionType;
 import ai.traceable.malicioussources.config.service.v1.UpdateMaliciousSourcesRuleRequest;
 import com.google.protobuf.Duration;
 import com.google.protobuf.Timestamp;
+import com.google.protobuf.Value;
 import io.grpc.StatusRuntimeException;
 import java.time.Clock;
 import java.util.List;
@@ -435,6 +439,75 @@ class MaliciousSourcesRulesManagerTest {
       addMaliciousSourcesRule(MaliciousSourcesRule.newBuilder().setId("id-1").build());
       // Deleting an entity which exists
       assertDoesNotThrow(() -> rulesManager.deleteMaliciousSourcesRule(requestContext, "id-1"));
+    }
+  }
+
+  @Test
+  @DisplayName("AAP-11627: config change events generated for create and update")
+  void testConfigChangeEventsGeneratedForCreateAndUpdate_AAP11627() {
+    // Regression test for AAP-11627: Verify that config change events are generated
+    // for create and update operations.
+    MockGenericConfigService localMockConfigService =
+        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
+    localMockConfigService.start();
+    try {
+      ConfigChangeEventGenerator spyEventGenerator = mock(ConfigChangeEventGenerator.class);
+      ConfigServiceGrpc.ConfigServiceBlockingStub stub =
+          ConfigServiceGrpc.newBlockingStub(localMockConfigService.channel());
+      MaliciousSourcesRulesStore localStore =
+          new MaliciousSourcesRulesStore(
+              stub, spyEventGenerator, mock(MaliciousSourcesConfigServiceConfig.class));
+      UuidGenerator localUuidGenerator = mock(UuidGenerator.class);
+      when(localUuidGenerator.generateId(anyString())).thenReturn("event-test-id");
+      Clock localClock = mock(Clock.class);
+      when(localClock.millis()).thenReturn(1000L);
+      MaliciousSourcesRulesManager localManager =
+          new MaliciousSourcesRulesManager(localStore, localUuidGenerator, localClock);
+      RequestContext testContext = RequestContext.forTenantId("event-test-tenant");
+
+      MaliciousSourcesRuleInfo ruleInfo =
+          MaliciousSourcesRuleInfo.newBuilder()
+              .setName("event-test-rule")
+              .setRuleAction(
+                  MaliciousSourcesRuleAction.newBuilder()
+                      .setActionType(RuleActionType.RULE_ACTION_TYPE_ALERT)
+                      .setExpirationDetails(
+                          ExpirationDetails.newBuilder()
+                              .setExpirationDuration(Duration.newBuilder().setSeconds(10))))
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
+                      .setIpLocationTypeCondition(
+                          IpLocationTypeCondition.newBuilder()
+                              .addIpLocationTypes(IpLocationType.IP_LOCATION_TYPE_ANONYMOUS_VPN)))
+              .build();
+      localManager.createMaliciousSourcesRule(
+          testContext,
+          CreateMaliciousSourcesRuleRequest.newBuilder()
+              .setRuleInfo(ruleInfo)
+              .setRuleScope(ruleScope)
+              .build());
+      verify(spyEventGenerator, atLeastOnce())
+          .sendCreateNotification(
+              any(RequestContext.class), any(String.class), any(String.class), any(Value.class));
+
+      MaliciousSourcesRule updateRule =
+          MaliciousSourcesRule.newBuilder()
+              .setId("event-test-id")
+              .setRuleScope(ruleScope)
+              .setRuleInfo(
+                  MaliciousSourcesRuleInfo.newBuilder(ruleInfo).setName("event-test-rule-updated"))
+              .build();
+      localManager.updateMaliciousSourcesRule(
+          testContext, UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(updateRule).build());
+      verify(spyEventGenerator, atLeastOnce())
+          .sendUpdateNotification(
+              any(RequestContext.class),
+              any(String.class),
+              any(String.class),
+              any(Value.class),
+              any(Value.class));
+    } finally {
+      localMockConfigService.shutdown();
     }
   }
 

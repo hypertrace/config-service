@@ -38,7 +38,7 @@ public class AnomalyDetectionMigrationManager {
   }
 
   public void migrateToApiProtectIfApplicable(RequestContext requestContext) {
-    requestContext = requestContext.withUserTrackingSuppressed();
+    requestContext = new RequestContext(requestContext).withUserTrackingSuppressed();
     if (!featureCachingClient.isApiProtectConfigPoliciesMigrationEnabled(requestContext)) {
       return;
     }

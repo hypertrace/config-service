@@ -82,7 +82,7 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
 
   @Override
   public void migrateFromOldStoreIfApplicable(RequestContext requestContext) {
-    requestContext = requestContext.withUserTrackingSuppressed();
+    requestContext = new RequestContext(requestContext).withUserTrackingSuppressed();
     if (config.isMigrationDisabled()) {
       return;
     }
@@ -165,7 +165,7 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
 
   @Override
   public void migrateFromChangeLog2IfApplicable(RequestContext requestContext) {
-    requestContext = requestContext.withUserTrackingSuppressed();
+    requestContext = new RequestContext(requestContext).withUserTrackingSuppressed();
     if (config.isChangeLog2MigrationDisabled()) {
       return;
     }
@@ -187,7 +187,7 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
 
   @Override
   public void migrateFromChangeLog3IfApplicable(RequestContext requestContext) {
-    requestContext = requestContext.withUserTrackingSuppressed();
+    requestContext = new RequestContext(requestContext).withUserTrackingSuppressed();
     if (config.isChangeLog3MigrationDisabled()) {
       return;
     }
@@ -209,7 +209,7 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
 
   @Override
   public void migrateFromChangeLog4IfApplicable(RequestContext requestContext) {
-    requestContext = requestContext.withUserTrackingSuppressed();
+    requestContext = new RequestContext(requestContext).withUserTrackingSuppressed();
     if (config.isChangeLog4MigrationDisabled()) {
       return;
     }
@@ -249,7 +249,7 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
 
   @Override
   public void migrateForRuleEvaluationPointsIfApplicable(RequestContext requestContext) {
-    requestContext = requestContext.withUserTrackingSuppressed();
+    requestContext = new RequestContext(requestContext).withUserTrackingSuppressed();
     if (config.isRuleEvaluationPointsMigrationDisabled()) {
       return;
     }
@@ -271,7 +271,7 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
 
   @Override
   public void migrateForApiProtectionExclusionRulesIfApplicable(RequestContext requestContext) {
-    requestContext = requestContext.withUserTrackingSuppressed();
+    requestContext = new RequestContext(requestContext).withUserTrackingSuppressed();
     ContextualKey<Void> contextualKey = requestContext.buildInternalContextualKey();
     boolean isFeatureFlagEnabled =
         featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext);
@@ -318,7 +318,7 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
 
   @Override
   public void migrateForAllowOnlyPlatformRemovalIfApplicable(RequestContext requestContext) {
-    requestContext = requestContext.withUserTrackingSuppressed();
+    requestContext = new RequestContext(requestContext).withUserTrackingSuppressed();
     if (config.isAllowOnlyPlatformRemovalMigrationDisabled()) {
       return;
     }

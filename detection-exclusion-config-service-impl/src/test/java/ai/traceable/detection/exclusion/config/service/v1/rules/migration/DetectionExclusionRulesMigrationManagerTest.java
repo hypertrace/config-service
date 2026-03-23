@@ -103,7 +103,7 @@ class DetectionExclusionRulesMigrationManagerTest {
 
   @Test
   void testMigration_oldRules() {
-    when(featureCachingClient.isDetectionExclusionV2EnabledForTenant(requestContext))
+    when(featureCachingClient.isDetectionExclusionV2EnabledForTenant(any(RequestContext.class)))
         .thenReturn(true);
     when(newRulesStore.getAllObjects(any(), any())).thenReturn(newRules);
     when(oldRulesStore.getAllObjects(any())).thenReturn(oldRules);
@@ -113,18 +113,19 @@ class DetectionExclusionRulesMigrationManagerTest {
             .build();
 
     migrationManager.migrateFromOldStoreIfApplicable(requestContext);
-    verify(migrationStore, times(1)).getData(requestContext);
-    verify(migrationStore, times(1)).upsertObject(requestContext, completedMigrationConfig);
-    verify(oldRulesStore, times(1)).getAllObjects(requestContext);
-    verify(newRulesStore, times(1)).getAllObjects(requestContext, OLD_RULES_FILTER);
-    verify(newRulesStore, times(2)).upsertObjects(eq(requestContext), any());
+    verify(migrationStore, times(1)).getData(any(RequestContext.class));
+    verify(migrationStore, times(1))
+        .upsertObject(any(RequestContext.class), eq(completedMigrationConfig));
+    verify(oldRulesStore, times(1)).getAllObjects(any(RequestContext.class));
+    verify(newRulesStore, times(1)).getAllObjects(any(RequestContext.class), eq(OLD_RULES_FILTER));
+    verify(newRulesStore, times(2)).upsertObjects(any(RequestContext.class), any());
     verify(newRulesStore, times(1))
         .upsertObjects(
-            eq(requestContext),
+            any(RequestContext.class),
             argThat(list -> list.size() == 1 && list.get(0).getId().equals("id0")));
     verify(newRulesStore, times(1))
         .upsertObjects(
-            eq(requestContext),
+            any(RequestContext.class),
             argThat(list -> list.size() == 1 && list.get(0).getId().equals("id2")));
 
     resetStores();
@@ -134,7 +135,7 @@ class DetectionExclusionRulesMigrationManagerTest {
 
   @Test
   void testMigration_noUpdate_noOldRules() {
-    when(featureCachingClient.isDetectionExclusionV2EnabledForTenant(requestContext))
+    when(featureCachingClient.isDetectionExclusionV2EnabledForTenant(any(RequestContext.class)))
         .thenReturn(true);
     when(newRulesStore.getAllObjects(any(), any())).thenReturn(Collections.emptyList());
     when(oldRulesStore.getAllObjects(any())).thenReturn(Collections.emptyList());
@@ -144,11 +145,12 @@ class DetectionExclusionRulesMigrationManagerTest {
             .build();
 
     migrationManager.migrateFromOldStoreIfApplicable(requestContext);
-    verify(migrationStore, times(1)).getData(requestContext);
-    verify(migrationStore, times(1)).upsertObject(requestContext, completedMigrationConfig);
-    verify(oldRulesStore, times(1)).getAllObjects(requestContext);
-    verify(newRulesStore, times(1)).getAllObjects(requestContext, OLD_RULES_FILTER);
-    verify(newRulesStore, times(0)).upsertObjects(eq(requestContext), any());
+    verify(migrationStore, times(1)).getData(any(RequestContext.class));
+    verify(migrationStore, times(1))
+        .upsertObject(any(RequestContext.class), eq(completedMigrationConfig));
+    verify(oldRulesStore, times(1)).getAllObjects(any(RequestContext.class));
+    verify(newRulesStore, times(1)).getAllObjects(any(RequestContext.class), eq(OLD_RULES_FILTER));
+    verify(newRulesStore, times(0)).upsertObjects(any(RequestContext.class), any());
 
     resetStores();
     migrationManager.migrateFromOldStoreIfApplicable(requestContext);
@@ -157,15 +159,15 @@ class DetectionExclusionRulesMigrationManagerTest {
 
   @Test
   void testMigration_noUpdate_migrationCompleted() {
-    when(featureCachingClient.isDetectionExclusionV2EnabledForTenant(requestContext))
+    when(featureCachingClient.isDetectionExclusionV2EnabledForTenant(any(RequestContext.class)))
         .thenReturn(true);
     when(newRulesStore.getAllObjects(any(), any())).thenReturn(newRules);
     when(oldRulesStore.getAllObjects(any())).thenReturn(oldRules);
     mockMigrationStore(true, false, false, false);
 
     migrationManager.migrateFromOldStoreIfApplicable(requestContext);
-    verify(migrationStore, times(1)).getData(requestContext);
-    verify(migrationStore, times(0)).upsertObject(eq(requestContext), any());
+    verify(migrationStore, times(1)).getData(any(RequestContext.class));
+    verify(migrationStore, times(0)).upsertObject(any(RequestContext.class), any());
     verifyZeroInteractionWithRulesStore(false);
 
     resetStores();
@@ -187,13 +189,14 @@ class DetectionExclusionRulesMigrationManagerTest {
             .build();
 
     migrationManager.migrateFromChangeLog2IfApplicable(requestContext);
-    verify(migrationStore, times(1)).getData(requestContext);
-    verify(migrationStore, times(1)).upsertObject(requestContext, completedMigrationConfig);
-    verify(newRulesStore, times(1)).getAllConfigData(requestContext);
-    verify(newRulesStore, times(1)).upsertObjects(eq(requestContext), any());
+    verify(migrationStore, times(1)).getData(any(RequestContext.class));
+    verify(migrationStore, times(1))
+        .upsertObject(any(RequestContext.class), eq(completedMigrationConfig));
+    verify(newRulesStore, times(1)).getAllConfigData(any(RequestContext.class));
+    verify(newRulesStore, times(1)).upsertObjects(any(RequestContext.class), any());
     verify(newRulesStore, times(1))
         .upsertObjects(
-            eq(requestContext),
+            any(RequestContext.class),
             argThat(
                 list ->
                     list.size() == 2
@@ -224,9 +227,9 @@ class DetectionExclusionRulesMigrationManagerTest {
     mockMigrationStore(false, true, false, false);
 
     migrationManager.migrateFromChangeLog2IfApplicable(requestContext);
-    verify(migrationStore, times(1)).getData(requestContext);
-    verify(migrationStore, times(0)).upsertObject(eq(requestContext), any());
-    verify(newRulesStore, times(0)).getAllConfigData(requestContext);
+    verify(migrationStore, times(1)).getData(any(RequestContext.class));
+    verify(migrationStore, times(0)).upsertObject(any(RequestContext.class), any());
+    verify(newRulesStore, times(0)).getAllConfigData(any(RequestContext.class));
 
     resetStores();
     migrationManager.migrateFromChangeLog2IfApplicable(requestContext);
@@ -245,13 +248,15 @@ class DetectionExclusionRulesMigrationManagerTest {
             .build();
 
     migrationManager.migrateFromChangeLog3IfApplicable(requestContext);
-    verify(migrationStore, times(1)).getData(requestContext);
-    verify(migrationStore, times(1)).upsertObject(requestContext, completedMigrationConfig);
-    verify(newRulesStore, times(1)).getAllConfigData(requestContext);
-    verify(newRulesStore, times(1)).upsertObjects(eq(requestContext), any());
+    verify(migrationStore, times(1)).getData(any(RequestContext.class));
+    verify(migrationStore, times(1))
+        .upsertObject(any(RequestContext.class), eq(completedMigrationConfig));
+    verify(newRulesStore, times(1)).getAllConfigData(any(RequestContext.class));
+    verify(newRulesStore, times(1)).upsertObjects(any(RequestContext.class), any());
     verify(newRulesStore, times(1))
         .upsertObjects(
-            eq(requestContext), argThat(list -> list.size() == 1 && verifySsti(list.get(0))));
+            any(RequestContext.class),
+            argThat(list -> list.size() == 1 && verifySsti(list.get(0))));
 
     resetStores();
     migrationManager.migrateFromChangeLog3IfApplicable(requestContext);
@@ -272,13 +277,15 @@ class DetectionExclusionRulesMigrationManagerTest {
             .build();
 
     migrationManager.migrateFromChangeLog4IfApplicable(requestContext);
-    verify(migrationStore, times(1)).getData(requestContext);
-    verify(migrationStore, times(1)).upsertObject(requestContext, completedMigrationConfig);
-    verify(newRulesStore, times(1)).getAllConfigData(requestContext);
-    verify(newRulesStore, times(1)).upsertObjects(eq(requestContext), any());
+    verify(migrationStore, times(1)).getData(any(RequestContext.class));
+    verify(migrationStore, times(1))
+        .upsertObject(any(RequestContext.class), eq(completedMigrationConfig));
+    verify(newRulesStore, times(1)).getAllConfigData(any(RequestContext.class));
+    verify(newRulesStore, times(1)).upsertObjects(any(RequestContext.class), any());
     verify(newRulesStore, times(1))
         .upsertObjects(
-            eq(requestContext), argThat(list -> list.size() == 1 && verifyHidden(list.get(0))));
+            any(RequestContext.class),
+            argThat(list -> list.size() == 1 && verifyHidden(list.get(0))));
 
     resetStores();
     migrationManager.migrateFromChangeLog4IfApplicable(requestContext);
@@ -315,9 +322,9 @@ class DetectionExclusionRulesMigrationManagerTest {
     mockMigrationStore(false, false, true, false);
 
     migrationManager.migrateFromChangeLog3IfApplicable(requestContext);
-    verify(migrationStore, times(1)).getData(requestContext);
-    verify(migrationStore, times(0)).upsertObject(eq(requestContext), any());
-    verify(newRulesStore, times(0)).getAllConfigData(requestContext);
+    verify(migrationStore, times(1)).getData(any(RequestContext.class));
+    verify(migrationStore, times(0)).upsertObject(any(RequestContext.class), any());
+    verify(newRulesStore, times(0)).getAllConfigData(any(RequestContext.class));
 
     resetStores();
     migrationManager.migrateFromChangeLog3IfApplicable(requestContext);
@@ -335,9 +342,9 @@ class DetectionExclusionRulesMigrationManagerTest {
     mockMigrationStore(false, false, false, true);
 
     migrationManager.migrateFromChangeLog4IfApplicable(requestContext);
-    verify(migrationStore, times(1)).getData(requestContext);
-    verify(migrationStore, times(0)).upsertObject(eq(requestContext), any());
-    verify(newRulesStore, times(0)).getAllConfigData(requestContext);
+    verify(migrationStore, times(1)).getData(any(RequestContext.class));
+    verify(migrationStore, times(0)).upsertObject(any(RequestContext.class), any());
+    verify(newRulesStore, times(0)).getAllConfigData(any(RequestContext.class));
 
     resetStores();
     migrationManager.migrateFromChangeLog4IfApplicable(requestContext);
@@ -346,7 +353,7 @@ class DetectionExclusionRulesMigrationManagerTest {
 
   @Test
   void testMigration_apiProtectionExclusionRules_ForwardMigration() {
-    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext))
+    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(any(RequestContext.class)))
         .thenReturn(true);
     when(newRulesStore.getAllConfigDataWithoutDefaults(any()))
         .thenReturn(
@@ -359,13 +366,14 @@ class DetectionExclusionRulesMigrationManagerTest {
             .build();
 
     migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
-    verify(migrationStore, times(1)).getData(requestContext);
-    verify(migrationStore, times(1)).upsertObject(requestContext, completedMigrationConfig);
-    verify(newRulesStore, times(1)).getAllConfigDataWithoutDefaults(requestContext);
-    verify(newRulesStore, times(1)).upsertObjects(eq(requestContext), any());
+    verify(migrationStore, times(1)).getData(any(RequestContext.class));
+    verify(migrationStore, times(1))
+        .upsertObject(any(RequestContext.class), eq(completedMigrationConfig));
+    verify(newRulesStore, times(1)).getAllConfigDataWithoutDefaults(any(RequestContext.class));
+    verify(newRulesStore, times(1)).upsertObjects(any(RequestContext.class), any());
     verify(newRulesStore, times(1))
         .upsertObjects(
-            eq(requestContext),
+            any(RequestContext.class),
             argThat(list -> list.size() == 1 && verifyApiProtectionForward(list.get(0))));
 
     resetStores();
@@ -375,7 +383,7 @@ class DetectionExclusionRulesMigrationManagerTest {
 
   @Test
   void testMigrationCompleted_apiProtectionExclusionRules() {
-    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext))
+    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(any(RequestContext.class)))
         .thenReturn(true);
     when(newRulesStore.getAllConfigDataWithoutDefaults(any()))
         .thenReturn(
@@ -386,9 +394,9 @@ class DetectionExclusionRulesMigrationManagerTest {
     mockMigrationStore(false, false, false, false, true);
 
     migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
-    verify(migrationStore, times(1)).getData(requestContext);
-    verify(migrationStore, times(0)).upsertObject(eq(requestContext), any());
-    verify(newRulesStore, times(0)).getAllConfigDataWithoutDefaults(requestContext);
+    verify(migrationStore, times(1)).getData(any(RequestContext.class));
+    verify(migrationStore, times(0)).upsertObject(any(RequestContext.class), any());
+    verify(newRulesStore, times(0)).getAllConfigDataWithoutDefaults(any(RequestContext.class));
 
     resetStores();
     migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
@@ -398,7 +406,7 @@ class DetectionExclusionRulesMigrationManagerTest {
   @Test
   void testMigration_apiProtectionExclusionRules_BackwardMigration() {
     // Feature flag is disabled, migration was completed -> trigger backward migration
-    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext))
+    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(any(RequestContext.class)))
         .thenReturn(false);
     when(newRulesStore.getAllConfigDataWithoutDefaults(any()))
         .thenReturn(
@@ -411,20 +419,21 @@ class DetectionExclusionRulesMigrationManagerTest {
             .build();
 
     migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
-    verify(migrationStore, times(1)).getData(requestContext);
-    verify(migrationStore, times(1)).upsertObject(requestContext, rollbackMigrationConfig);
-    verify(newRulesStore, times(1)).getAllConfigDataWithoutDefaults(requestContext);
-    verify(newRulesStore, times(1)).upsertObjects(eq(requestContext), any());
+    verify(migrationStore, times(1)).getData(any(RequestContext.class));
+    verify(migrationStore, times(1))
+        .upsertObject(any(RequestContext.class), eq(rollbackMigrationConfig));
+    verify(newRulesStore, times(1)).getAllConfigDataWithoutDefaults(any(RequestContext.class));
+    verify(newRulesStore, times(1)).upsertObjects(any(RequestContext.class), any());
     verify(newRulesStore, times(1))
         .upsertObjects(
-            eq(requestContext),
+            any(RequestContext.class),
             argThat(list -> list.size() == 1 && verifyApiProtectionBackward(list.get(0))));
   }
 
   @Test
   void testMigration_apiProtectionExclusionRules_BackwardMigration_ContentType() {
     // Feature flag is disabled, migration was completed -> trigger backward migration
-    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext))
+    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(any(RequestContext.class)))
         .thenReturn(false);
     when(newRulesStore.getAllConfigDataWithoutDefaults(any()))
         .thenReturn(
@@ -437,27 +446,28 @@ class DetectionExclusionRulesMigrationManagerTest {
             .build();
 
     migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
-    verify(migrationStore, times(1)).getData(requestContext);
-    verify(migrationStore, times(1)).upsertObject(requestContext, rollbackMigrationConfig);
-    verify(newRulesStore, times(1)).getAllConfigDataWithoutDefaults(requestContext);
-    verify(newRulesStore, times(1)).upsertObjects(eq(requestContext), any());
+    verify(migrationStore, times(1)).getData(any(RequestContext.class));
+    verify(migrationStore, times(1))
+        .upsertObject(any(RequestContext.class), eq(rollbackMigrationConfig));
+    verify(newRulesStore, times(1)).getAllConfigDataWithoutDefaults(any(RequestContext.class));
+    verify(newRulesStore, times(1)).upsertObjects(any(RequestContext.class), any());
     verify(newRulesStore, times(1))
         .upsertObjects(
-            eq(requestContext),
+            any(RequestContext.class),
             argThat(list -> list.size() == 1 && verifyContentTypeBackward(list.get(0))));
   }
 
   @Test
   void testNoMigration_apiProtectionExclusionRules_FeatureFlagDisabled_NotCompleted() {
     // Feature flag is disabled, migration NOT completed -> do nothing
-    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext))
+    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(any(RequestContext.class)))
         .thenReturn(false);
     mockMigrationStore(true, true, true, true, false);
 
     migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
-    verify(migrationStore, times(1)).getData(requestContext);
-    verify(migrationStore, times(0)).upsertObject(eq(requestContext), any());
-    verify(newRulesStore, times(0)).getAllConfigDataWithoutDefaults(requestContext);
+    verify(migrationStore, times(1)).getData(any(RequestContext.class));
+    verify(migrationStore, times(0)).upsertObject(any(RequestContext.class), any());
+    verify(newRulesStore, times(0)).getAllConfigDataWithoutDefaults(any(RequestContext.class));
   }
 
   @Test
@@ -465,7 +475,7 @@ class DetectionExclusionRulesMigrationManagerTest {
     // This test covers the full lifecycle: FF enabled -> FF disabled -> FF enabled again
 
     // ==================== PHASE 1: FF ENABLED - Forward Migration ====================
-    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext))
+    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(any(RequestContext.class)))
         .thenReturn(true);
     when(newRulesStore.getAllConfigDataWithoutDefaults(any()))
         .thenReturn(List.of(getSampleApiProtectionRule(false, "id4a")));
@@ -478,30 +488,31 @@ class DetectionExclusionRulesMigrationManagerTest {
     // First call: Forward migration should happen
     migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
 
-    verify(migrationStore, times(1)).getData(requestContext);
-    verify(migrationStore, times(1)).upsertObject(requestContext, forwardMigrationConfig);
-    verify(newRulesStore, times(1)).getAllConfigDataWithoutDefaults(requestContext);
+    verify(migrationStore, times(1)).getData(any(RequestContext.class));
+    verify(migrationStore, times(1))
+        .upsertObject(any(RequestContext.class), eq(forwardMigrationConfig));
+    verify(newRulesStore, times(1)).getAllConfigDataWithoutDefaults(any(RequestContext.class));
     verify(newRulesStore, times(1))
         .upsertObjects(
-            eq(requestContext),
+            any(RequestContext.class),
             argThat(list -> list.size() == 1 && verifyApiProtectionForward(list.get(0))));
 
     // ==================== PHASE 2: FF STILL ENABLED - Cached (no work) ====================
     resetStores();
-    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext))
+    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(any(RequestContext.class)))
         .thenReturn(true);
     // No need to mock migrationStore since we return early before accessing it
 
     // Second call: Should return early (cached), no DB access at all
     migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
 
-    verify(migrationStore, times(0)).getData(requestContext);
-    verify(migrationStore, times(0)).upsertObject(eq(requestContext), any());
-    verify(newRulesStore, times(0)).getAllConfigDataWithoutDefaults(requestContext);
+    verify(migrationStore, times(0)).getData(any(RequestContext.class));
+    verify(migrationStore, times(0)).upsertObject(any(RequestContext.class), any());
+    verify(newRulesStore, times(0)).getAllConfigDataWithoutDefaults(any(RequestContext.class));
 
     // ==================== PHASE 3: FF DISABLED - Backward Migration ====================
     resetStores();
-    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext))
+    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(any(RequestContext.class)))
         .thenReturn(false);
     when(newRulesStore.getAllConfigDataWithoutDefaults(any()))
         .thenReturn(List.of(getSampleApiProtectionRule(true, "id4a"))); // Already migrated
@@ -514,31 +525,32 @@ class DetectionExclusionRulesMigrationManagerTest {
     // Third call: Backward migration should happen
     migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
 
-    verify(migrationStore, times(1)).getData(requestContext);
-    verify(migrationStore, times(1)).upsertObject(requestContext, backwardMigrationConfig);
-    verify(newRulesStore, times(1)).getAllConfigDataWithoutDefaults(requestContext);
+    verify(migrationStore, times(1)).getData(any(RequestContext.class));
+    verify(migrationStore, times(1))
+        .upsertObject(any(RequestContext.class), eq(backwardMigrationConfig));
+    verify(newRulesStore, times(1)).getAllConfigDataWithoutDefaults(any(RequestContext.class));
     verify(newRulesStore, times(1))
         .upsertObjects(
-            eq(requestContext),
+            any(RequestContext.class),
             argThat(list -> list.size() == 1 && verifyApiProtectionBackward(list.get(0))));
 
     // ==================== PHASE 4: FF DISABLED AGAIN - No work (nothing to rollback)
     // ====================
     resetStores();
-    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext))
+    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(any(RequestContext.class)))
         .thenReturn(false);
     mockMigrationStore(true, true, true, true, false); // migration NOT completed
 
     // Fourth call: Should return early (nothing to rollback)
     migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
 
-    verify(migrationStore, times(1)).getData(requestContext);
-    verify(migrationStore, times(0)).upsertObject(eq(requestContext), any());
-    verify(newRulesStore, times(0)).getAllConfigDataWithoutDefaults(requestContext);
+    verify(migrationStore, times(1)).getData(any(RequestContext.class));
+    verify(migrationStore, times(0)).upsertObject(any(RequestContext.class), any());
+    verify(newRulesStore, times(0)).getAllConfigDataWithoutDefaults(any(RequestContext.class));
 
     // ==================== PHASE 5: FF ENABLED AGAIN - Forward Migration Again ====================
     resetStores();
-    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext))
+    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(any(RequestContext.class)))
         .thenReturn(true);
     when(newRulesStore.getAllConfigDataWithoutDefaults(any()))
         .thenReturn(List.of(getSampleApiProtectionRule(false, "id4a")));
@@ -551,18 +563,18 @@ class DetectionExclusionRulesMigrationManagerTest {
     // Fifth call: Forward migration should happen again
     migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
 
-    verify(migrationStore, times(1)).getData(requestContext);
-    verify(migrationStore, times(1)).upsertObject(requestContext, reMigrationConfig);
-    verify(newRulesStore, times(1)).getAllConfigDataWithoutDefaults(requestContext);
+    verify(migrationStore, times(1)).getData(any(RequestContext.class));
+    verify(migrationStore, times(1)).upsertObject(any(RequestContext.class), eq(reMigrationConfig));
+    verify(newRulesStore, times(1)).getAllConfigDataWithoutDefaults(any(RequestContext.class));
     verify(newRulesStore, times(1))
         .upsertObjects(
-            eq(requestContext),
+            any(RequestContext.class),
             argThat(list -> list.size() == 1 && verifyApiProtectionForward(list.get(0))));
   }
 
   @Test
   void testMigration_apiProtectionExclusionRules_contentTypeMultipleEvents() {
-    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(requestContext))
+    when(featureCachingClient.isApiProtectConfigPoliciesRevampEnabled(any(RequestContext.class)))
         .thenReturn(true);
     when(newRulesStore.getAllConfigDataWithoutDefaults(any()))
         .thenReturn(
@@ -576,13 +588,14 @@ class DetectionExclusionRulesMigrationManagerTest {
             .build();
 
     migrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
-    verify(migrationStore, times(1)).getData(requestContext);
-    verify(migrationStore, times(1)).upsertObject(requestContext, completedMigrationConfig);
-    verify(newRulesStore, times(1)).getAllConfigDataWithoutDefaults(requestContext);
-    verify(newRulesStore, times(1)).upsertObjects(eq(requestContext), any());
+    verify(migrationStore, times(1)).getData(any(RequestContext.class));
+    verify(migrationStore, times(1))
+        .upsertObject(any(RequestContext.class), eq(completedMigrationConfig));
+    verify(newRulesStore, times(1)).getAllConfigDataWithoutDefaults(any(RequestContext.class));
+    verify(newRulesStore, times(1)).upsertObjects(any(RequestContext.class), any());
     verify(newRulesStore, times(1))
         .upsertObjects(
-            eq(requestContext),
+            any(RequestContext.class),
             argThat(list -> list.size() == 1 && verifyContentTypeMultipleEvents(list.get(0))));
 
     resetStores();
@@ -988,11 +1001,11 @@ class DetectionExclusionRulesMigrationManagerTest {
 
   private void verifyZeroInteractionWithRulesStore(boolean verifyMigrationStore) {
     if (verifyMigrationStore) {
-      verify(migrationStore, times(0)).getData(requestContext);
+      verify(migrationStore, times(0)).getData(any(RequestContext.class));
     }
-    verify(oldRulesStore, times(0)).getAllObjects(requestContext);
-    verify(newRulesStore, times(0)).getAllObjects(eq(requestContext), any());
-    verify(newRulesStore, times(0)).upsertObjects(eq(requestContext), any());
+    verify(oldRulesStore, times(0)).getAllObjects(any(RequestContext.class));
+    verify(newRulesStore, times(0)).getAllObjects(any(RequestContext.class), any());
+    verify(newRulesStore, times(0)).upsertObjects(any(RequestContext.class), any());
   }
 
   private static class SampleContextualConfigObject<T> implements ContextualConfigObject<T> {
@@ -1079,13 +1092,14 @@ class DetectionExclusionRulesMigrationManagerTest {
             .build();
 
     migrationManager.migrateForRuleEvaluationPointsIfApplicable(requestContext);
-    verify(migrationStore, times(1)).getData(requestContext);
-    verify(migrationStore, times(1)).upsertObject(requestContext, completedMigrationConfig);
-    verify(newRulesStore, times(1)).getAllConfigData(requestContext);
-    verify(newRulesStore, times(1)).upsertObjects(eq(requestContext), any());
+    verify(migrationStore, times(1)).getData(any(RequestContext.class));
+    verify(migrationStore, times(1))
+        .upsertObject(any(RequestContext.class), eq(completedMigrationConfig));
+    verify(newRulesStore, times(1)).getAllConfigData(any(RequestContext.class));
+    verify(newRulesStore, times(1)).upsertObjects(any(RequestContext.class), any());
     verify(newRulesStore, times(1))
         .upsertObjects(
-            eq(requestContext),
+            any(RequestContext.class),
             argThat(
                 list ->
                     list.size() == 2
@@ -1110,9 +1124,9 @@ class DetectionExclusionRulesMigrationManagerTest {
     mockMigrationStore(false, false, false, false, false, true, false);
 
     migrationManager.migrateForRuleEvaluationPointsIfApplicable(requestContext);
-    verify(migrationStore, times(1)).getData(requestContext);
-    verify(migrationStore, times(0)).upsertObject(eq(requestContext), any());
-    verify(newRulesStore, times(0)).getAllConfigData(requestContext);
+    verify(migrationStore, times(1)).getData(any(RequestContext.class));
+    verify(migrationStore, times(0)).upsertObject(any(RequestContext.class), any());
+    verify(newRulesStore, times(0)).getAllConfigData(any(RequestContext.class));
 
     resetStores();
     migrationManager.migrateForRuleEvaluationPointsIfApplicable(requestContext);
@@ -1135,13 +1149,14 @@ class DetectionExclusionRulesMigrationManagerTest {
             .build();
 
     migrationManager.migrateForAllowOnlyPlatformRemovalIfApplicable(requestContext);
-    verify(migrationStore, times(1)).getData(requestContext);
-    verify(migrationStore, times(1)).upsertObject(requestContext, completedMigrationConfig);
-    verify(newRulesStore, times(1)).getAllConfigData(requestContext);
-    verify(newRulesStore, times(1)).upsertObjects(eq(requestContext), any());
+    verify(migrationStore, times(1)).getData(any(RequestContext.class));
+    verify(migrationStore, times(1))
+        .upsertObject(any(RequestContext.class), eq(completedMigrationConfig));
+    verify(newRulesStore, times(1)).getAllConfigData(any(RequestContext.class));
+    verify(newRulesStore, times(1)).upsertObjects(any(RequestContext.class), any());
     verify(newRulesStore, times(1))
         .upsertObjects(
-            eq(requestContext),
+            any(RequestContext.class),
             argThat(
                 list -> {
                   if (list.size() != 2) {
@@ -1189,9 +1204,9 @@ class DetectionExclusionRulesMigrationManagerTest {
     mockMigrationStore(false, false, false, false, false, false, true);
 
     migrationManager.migrateForAllowOnlyPlatformRemovalIfApplicable(requestContext);
-    verify(migrationStore, times(1)).getData(requestContext);
-    verify(migrationStore, times(0)).upsertObject(eq(requestContext), any());
-    verify(newRulesStore, times(0)).getAllConfigData(requestContext);
+    verify(migrationStore, times(1)).getData(any(RequestContext.class));
+    verify(migrationStore, times(0)).upsertObject(any(RequestContext.class), any());
+    verify(newRulesStore, times(0)).getAllConfigData(any(RequestContext.class));
 
     resetStores();
     migrationManager.migrateForAllowOnlyPlatformRemovalIfApplicable(requestContext);

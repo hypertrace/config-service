@@ -5,7 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.iprange.config.service.IpRangeConfigServiceConfig;
@@ -26,6 +29,7 @@ import ai.traceable.iprange.config.service.v1.RuleAction;
 import ai.traceable.iprange.config.service.v1.RuleEffectWithModifications;
 import ai.traceable.iprange.config.service.v1.RuleScope;
 import ai.traceable.iprange.config.service.v1.UpdateIpRangeRuleRequest;
+import com.google.protobuf.Value;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Arrays;
@@ -392,6 +396,70 @@ class IpRangeRulesManagerTest {
       addIpRangeRule(IpRangeRule.newBuilder().setId("id-1").build());
       // Deleting an entity which exists
       assertDoesNotThrow(() -> rulesManager.deleteIpRangeRule(requestContext, "id-1"));
+    }
+  }
+
+  @Test
+  @DisplayName("AAP-11627: config change events generated for create and update")
+  void testConfigChangeEventsGeneratedForCreateAndUpdate_AAP11627() {
+    // Regression test for AAP-11627: Verify that config change events are generated
+    // for create and update operations.
+    MockGenericConfigService localMockConfigService =
+        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
+    localMockConfigService.start();
+    try {
+      ConfigChangeEventGenerator spyEventGenerator = mock(ConfigChangeEventGenerator.class);
+      ConfigServiceGrpc.ConfigServiceBlockingStub stub =
+          ConfigServiceGrpc.newBlockingStub(localMockConfigService.channel());
+      IpRangeRulesStore localStore =
+          new IpRangeRulesStore(stub, spyEventGenerator, mock(IpRangeConfigServiceConfig.class));
+      UuidGenerator localUuidGenerator = mock(UuidGenerator.class);
+      when(localUuidGenerator.generateId()).thenReturn("event-test-id");
+      Clock localClock = mock(Clock.class);
+      long now = Clock.systemUTC().millis();
+      when(localClock.millis()).thenReturn(now);
+      IpRangeRulesManager localManager =
+          new IpRangeRulesManager(localStore, localUuidGenerator, localClock);
+      RequestContext testContext = RequestContext.forTenantId("event-test-tenant");
+
+      IpRangeRuleDetails ruleDetails =
+          IpRangeRuleDetails.newBuilder()
+              .setName("event-test-rule")
+              .addAllRawInputIpData(Arrays.asList("1.2.3.4"))
+              .setRuleAction(RuleAction.RULE_ACTION_BLOCK)
+              .build();
+      localManager.createIpRangeRule(
+          testContext,
+          CreateIpRangeRuleRequest.newBuilder()
+              .setRuleDetails(ruleDetails)
+              .setRuleScope(ruleScope)
+              .build());
+      verify(spyEventGenerator, atLeastOnce())
+          .sendCreateNotification(
+              any(RequestContext.class), any(String.class), any(String.class), any(Value.class));
+
+      IpRangeRuleDetails updateDetails =
+          IpRangeRuleDetails.newBuilder()
+              .setName("event-test-rule-updated")
+              .addAllRawInputIpData(Arrays.asList("1.2.3.4"))
+              .setRuleAction(RuleAction.RULE_ACTION_BLOCK)
+              .build();
+      localManager.updateIpRangeRule(
+          testContext,
+          UpdateIpRangeRuleRequest.newBuilder()
+              .setId("event-test-id")
+              .setRuleDetails(updateDetails)
+              .setRuleScope(ruleScope)
+              .build());
+      verify(spyEventGenerator, atLeastOnce())
+          .sendUpdateNotification(
+              any(RequestContext.class),
+              any(String.class),
+              any(String.class),
+              any(Value.class),
+              any(Value.class));
+    } finally {
+      localMockConfigService.shutdown();
     }
   }
 

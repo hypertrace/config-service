@@ -55,13 +55,14 @@ class RateLimitingMigrationManagerTest {
         mockMigrationStore(false).toBuilder().setChangeLog1MigrationCompleted(true).build();
 
     migrationManager.migrateFromChangeLog1IfApplicable(requestContext);
-    verify(migrationStore, times(1)).getData(requestContext);
-    verify(migrationStore, times(1)).upsertObject(requestContext, completedMigrationConfig);
-    verify(rulesStore, times(1)).getAllConfigData(requestContext);
-    verify(rulesStore, times(1)).upsertObjects(eq(requestContext), any());
+    verify(migrationStore, times(1)).getData(any(RequestContext.class));
+    verify(migrationStore, times(1))
+        .upsertObject(any(RequestContext.class), eq(completedMigrationConfig));
+    verify(rulesStore, times(1)).getAllConfigData(any(RequestContext.class));
+    verify(rulesStore, times(1)).upsertObjects(any(RequestContext.class), any());
     verify(rulesStore, times(1))
         .upsertObjects(
-            eq(requestContext),
+            any(RequestContext.class),
             argThat(list -> list.size() == 1 && list.get(0).equals(getRule("id1", true, true))));
 
     resetStores();
@@ -76,8 +77,8 @@ class RateLimitingMigrationManagerTest {
     mockMigrationStore(true);
 
     migrationManager.migrateFromChangeLog1IfApplicable(requestContext);
-    verify(migrationStore, times(1)).getData(requestContext);
-    verify(migrationStore, times(0)).upsertObject(eq(requestContext), any());
+    verify(migrationStore, times(1)).getData(any(RequestContext.class));
+    verify(migrationStore, times(0)).upsertObject(any(RequestContext.class), any());
     verifyZeroInteractionWithRulesStore(false);
 
     resetStores();
@@ -127,9 +128,9 @@ class RateLimitingMigrationManagerTest {
 
   private void verifyZeroInteractionWithRulesStore(boolean verifyMigrationStore) {
     if (verifyMigrationStore) {
-      verify(migrationStore, times(0)).getData(requestContext);
+      verify(migrationStore, times(0)).getData(any(RequestContext.class));
     }
-    verify(rulesStore, times(0)).getAllObjects(requestContext);
-    verify(rulesStore, times(0)).upsertObjects(eq(requestContext), any());
+    verify(rulesStore, times(0)).getAllObjects(any(RequestContext.class));
+    verify(rulesStore, times(0)).upsertObjects(any(RequestContext.class), any());
   }
 }

@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -31,6 +33,7 @@ import ai.traceable.detection.exclusion.config.service.v1.UpsertDetectionExclusi
 import ai.traceable.detection.exclusion.config.service.v1.rules.migration.DetectionExclusionRulesMigrationManager;
 import ai.traceable.detection.exclusion.config.service.v1.rules.migration.RulesMigrationManager;
 import ai.traceable.detection.exclusion.config.service.v1.rules.modsec.ExclusionModsecRulesManager;
+import com.google.protobuf.Value;
 import com.typesafe.config.ConfigFactory;
 import java.time.Clock;
 import java.util.List;
@@ -251,6 +254,108 @@ class DetectionExclusionRulesManagerTest {
     // deleting default rule does not throw an exception
     assertDoesNotThrow(
         () -> rulesManager.deleteDetectionExclusionRule(requestContext, "defaultRuleId1"));
+  }
+
+  @Test
+  void testConfigChangeEventsGeneratedForCreateAndUpdate_AAP11627() {
+    // Regression test for AAP-11627: Verify that config change events are generated
+    // for create and update operations even when migration methods call
+    // withUserTrackingSuppressed() on the RequestContext.
+    // Before the fix, withUserTrackingSuppressed() mutated the original RequestContext
+    // in-place, causing subsequent upsert operations to skip event generation.
+
+    MockGenericConfigService mockConfigService =
+        new MockGenericConfigService()
+            .mockUpsert()
+            .mockGet()
+            .mockGetAll()
+            .mockDelete()
+            .mockUpsertAll();
+    mockConfigService.start();
+    ConfigServiceGrpc.ConfigServiceBlockingStub stub =
+        ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
+    ConfigChangeEventGenerator spyEventGenerator = mock(ConfigChangeEventGenerator.class);
+    FeatureCachingClient localFeatureClient = mock(FeatureCachingClient.class);
+    when(localFeatureClient.isApiProtectConfigPoliciesRevampEnabled(any())).thenReturn(false);
+    DetectionExclusionConfigServiceConfig localConfig =
+        mock(DetectionExclusionConfigServiceConfig.class);
+    when(localConfig.getDefaultDetectionExclusionRules()).thenReturn(List.of());
+    when(localConfig.getUserVisibleEmailConfig())
+        .thenReturn(
+            new UserVisibleEmailConfig(
+                ConfigFactory.parseString(
+                    "generic.config.service.customer.visible.excluded.email.patterns: []")));
+    DetectionExclusionRulesStore localRulesStore =
+        new DetectionExclusionRulesStore(
+            stub,
+            spyEventGenerator,
+            localFeatureClient,
+            localConfig,
+            new DetectionExclusionAuditHelper(localConfig));
+    ThresholdExceededDetectionExclusionRuleStore localThresholdStore =
+        new ThresholdExceededDetectionExclusionRuleStore(
+            stub, spyEventGenerator, new DetectionExclusionAuditHelper(localConfig));
+
+    // Create a migration manager mock that mutates the context (simulates real behavior)
+    RulesMigrationManager mutatingMigrationManager = mock(RulesMigrationManager.class);
+    doAnswer(
+            invocation -> {
+              RequestContext ctx = invocation.getArgument(0);
+              ctx.withUserTrackingSuppressed();
+              return null;
+            })
+        .when(mutatingMigrationManager)
+        .migrateFromOldStoreIfApplicable(any());
+
+    UuidGenerator localUuidGenerator = mock(UuidGenerator.class);
+    DetectionExclusionRulesManager localRulesManager =
+        new DetectionExclusionRulesManager(
+            localRulesStore,
+            localThresholdStore,
+            localUuidGenerator,
+            mutatingMigrationManager,
+            mock(ExclusionModsecRulesManager.class),
+            mock(Clock.class));
+
+    when(localUuidGenerator.generateRandomId()).thenReturn("event-test-id");
+    RequestContext testContext = RequestContext.forTenantId("event-test-tenant");
+
+    // CREATE: should generate a create notification
+    DetectionExclusionRuleInfo ruleInfo =
+        DetectionExclusionRuleInfo.newBuilder()
+            .setName("event-test-rule")
+            .addExclusionTargets(EXCLUSION_TARGET_BLOCK)
+            .setRuleStatus(DetectionExclusionRuleStatus.newBuilder().build())
+            .build();
+    localRulesManager.createDetectionExclusionRule(
+        testContext, DetectionExclusionRuleScope.getDefaultInstance(), ruleInfo);
+
+    // Verify create event was sent
+    verify(spyEventGenerator, atLeastOnce())
+        .sendCreateNotification(
+            any(RequestContext.class), any(String.class), any(String.class), any(Value.class));
+
+    // Verify the original context was NOT mutated
+    assertFalse(
+        testContext.isUserTrackingSuppressed(),
+        "Original RequestContext should NOT have user tracking suppressed after create");
+
+    // UPDATE: should generate an update notification
+    DetectionExclusionRule updateRule =
+        DetectionExclusionRule.newBuilder()
+            .setId("event-test-id")
+            .setRuleInfo(
+                DetectionExclusionRuleInfo.newBuilder()
+                    .setName("event-test-rule-updated")
+                    .setRuleStatus(DetectionExclusionRuleStatus.newBuilder().build()))
+            .setRuleScope(DetectionExclusionRuleScope.getDefaultInstance())
+            .build();
+    localRulesManager.updateDetectionExclusionRule(testContext, updateRule);
+
+    // Verify the original context is still NOT mutated after update
+    assertFalse(
+        testContext.isUserTrackingSuppressed(),
+        "Original RequestContext should NOT have user tracking suppressed after update");
   }
 
   @Test

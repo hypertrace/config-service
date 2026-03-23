@@ -5,8 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.audit.utils.UserVisibleEmailConfig;
@@ -32,6 +35,7 @@ import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceConfig;
 import ai.traceable.ratelimiting.service.v2.rules.RateLimitingRulesManager;
 import ai.traceable.ratelimiting.service.v2.rules.RateLimitingRulesStore;
 import ai.traceable.ratelimiting.service.v2.rules.modsec.RateLimitingModsecRulesManager;
+import com.google.protobuf.Value;
 import com.typesafe.config.ConfigFactory;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -514,6 +518,63 @@ public class RateLimitingRulesManagerTest {
 
     // deleting default rule does not throw an exception
     assertDoesNotThrow(() -> rulesManager.deleteRateLimitingRule(requestContext, "defaultRuleId1"));
+  }
+
+  @Test
+  void testConfigChangeEventsGeneratedForCreateAndUpdate_AAP11627() {
+    // Regression test for AAP-11627: Verify that config change events are generated
+    // for create and update operations.
+    MockGenericConfigService localMockConfigService =
+        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
+    localMockConfigService.start();
+    try {
+      ConfigChangeEventGenerator spyEventGenerator = mock(ConfigChangeEventGenerator.class);
+      ConfigServiceBlockingStub stub =
+          ConfigServiceGrpc.newBlockingStub(localMockConfigService.channel());
+      RateLimitingConfigServiceConfig localConfig = mock(RateLimitingConfigServiceConfig.class);
+      when(localConfig.getDefaultRateLimitingRules()).thenReturn(List.of());
+      when(localConfig.getUserVisibleEmailConfig())
+          .thenReturn(
+              new UserVisibleEmailConfig(
+                  ConfigFactory.parseString(
+                      "generic.config.service.customer.visible.excluded.email.patterns: []")));
+      RateLimitingRulesStore localStore =
+          new RateLimitingRulesStore(stub, spyEventGenerator, localConfig);
+      UuidGenerator localUuidGenerator = mock(UuidGenerator.class);
+      when(localUuidGenerator.generateRandomId()).thenReturn("event-test-id");
+      Clock localClock = mock(Clock.class);
+      doReturn(1000000L).when(localClock).millis();
+      RateLimitingRulesManager localManager =
+          new RateLimitingRulesManager(
+              localStore,
+              localUuidGenerator,
+              localConfig,
+              mock(RateLimitingModsecRulesManager.class),
+              localClock);
+      RequestContext testContext = RequestContext.forTenantId("event-test-tenant");
+
+      localManager.createRateLimitingRule(
+          testContext,
+          buildRateLimitingRuleData("event-test-rule", Category.CATEGORY_RATE_LIMITING, false));
+      verify(spyEventGenerator, atLeastOnce())
+          .sendCreateNotification(
+              any(RequestContext.class), any(String.class), any(String.class), any(Value.class));
+
+      localManager.updateRateLimitingRule(
+          testContext,
+          "event-test-id",
+          buildRateLimitingRuleData(
+              "event-test-rule-updated", Category.CATEGORY_RATE_LIMITING, false));
+      verify(spyEventGenerator, atLeastOnce())
+          .sendUpdateNotification(
+              any(RequestContext.class),
+              any(String.class),
+              any(String.class),
+              any(Value.class),
+              any(Value.class));
+    } finally {
+      localMockConfigService.shutdown();
+    }
   }
 
   private RateLimitingRule buildRateLimitingRule(

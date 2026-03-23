@@ -3,7 +3,10 @@ package ai.traceable.region.config.service.rules;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.config.utils.UuidGenerator;
@@ -25,6 +28,7 @@ import ai.traceable.region.config.service.v1.RuleEffectWithModifications;
 import ai.traceable.region.config.service.v1.RuleScope;
 import ai.traceable.region.config.service.v1.UpdateRegionRuleRequest;
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.protobuf.Value;
 import java.time.Clock;
 import java.util.List;
 import java.util.Map;
@@ -331,6 +335,67 @@ class RegionRulesManagerTest {
       RegionRule regionRule = RegionRule.newBuilder().setId("id-1").setName("name-1").build();
       addRegionRules(ImmutableSortedMap.of("id-1", regionRule));
       assertDoesNotThrow(() -> rulesManager.deleteRegionRule(requestContext, "id-1"));
+    }
+  }
+
+  @Test
+  void testConfigChangeEventsGeneratedForCreateAndUpdate_AAP11627() {
+    // Regression test for AAP-11627: Verify that config change events are generated
+    // for create and update operations. Guards against regression where migration or other
+    // code mutating RequestContext (e.g. withUserTrackingSuppressed()) causes subsequent
+    // upsert operations to skip event generation.
+    MockGenericConfigService localMockConfigService =
+        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
+    localMockConfigService.start();
+    try {
+      ConfigChangeEventGenerator spyEventGenerator = mock(ConfigChangeEventGenerator.class);
+      ConfigServiceGrpc.ConfigServiceBlockingStub stub =
+          ConfigServiceGrpc.newBlockingStub(localMockConfigService.channel());
+      RegionRulesStore localStore =
+          new RegionRulesStore(
+              stub,
+              spyEventGenerator,
+              mock(ai.traceable.region.config.service.RegionConfigServiceConfig.class));
+      UuidGenerator localUuidGenerator = mock(UuidGenerator.class);
+      when(localUuidGenerator.generateRandomId()).thenReturn("event-test-id");
+      RegionRulesManager managerWithUuid =
+          new RegionRulesManager(clock, localStore, localUuidGenerator);
+      RequestContext testContext = RequestContext.forTenantId("event-test-tenant");
+
+      RegionRuleConditions conditions =
+          RegionRuleConditions.newBuilder()
+              .setIpReputation(
+                  IpReputationCondition.newBuilder()
+                      .setMinIpReputationSeverity(IpReputationSeverity.IP_REPUTATION_SEVERITY_HIGH))
+              .build();
+      CreateRegionRuleRequest createRequest =
+          CreateRegionRuleRequest.newBuilder()
+              .setName("event-test-rule")
+              .setRuleScope(ruleScope)
+              .setConditions(conditions)
+              .build();
+      managerWithUuid.createRegionRule(testContext, createRequest);
+      verify(spyEventGenerator, atLeastOnce())
+          .sendCreateNotification(
+              any(RequestContext.class), any(String.class), any(String.class), any(Value.class));
+
+      UpdateRegionRuleRequest updateRequest =
+          UpdateRegionRuleRequest.newBuilder()
+              .setId("event-test-id")
+              .setName("event-test-rule-updated")
+              .setRuleScope(ruleScope)
+              .setConditions(conditions)
+              .build();
+      managerWithUuid.updateRegionRule(testContext, updateRequest);
+      verify(spyEventGenerator, atLeastOnce())
+          .sendUpdateNotification(
+              any(RequestContext.class),
+              any(String.class),
+              any(String.class),
+              any(Value.class),
+              any(Value.class));
+    } finally {
+      localMockConfigService.shutdown();
     }
   }
 

@@ -35,7 +35,7 @@ public class RateLimitingMigrationManagerImpl implements RateLimitingMigrationMa
 
   @Override
   public void migrateFromChangeLog1IfApplicable(RequestContext requestContext) {
-    requestContext = requestContext.withUserTrackingSuppressed();
+    requestContext = new RequestContext(requestContext).withUserTrackingSuppressed();
     if (config.isChangeLog1MigrationDisabled()) {
       return;
     }
@@ -71,7 +71,7 @@ public class RateLimitingMigrationManagerImpl implements RateLimitingMigrationMa
 
   @Override
   public void migrateForRuleEvaluationPointsIfApplicable(RequestContext requestContext) {
-    requestContext = requestContext.withUserTrackingSuppressed();
+    requestContext = new RequestContext(requestContext).withUserTrackingSuppressed();
     if (config.isRuleEvaluationPointsMigrationDisabled()) {
       return;
     }
@@ -92,7 +92,7 @@ public class RateLimitingMigrationManagerImpl implements RateLimitingMigrationMa
 
   @Override
   public void migrateAllowRulesPlatformExclusion(RequestContext requestContext) {
-    requestContext = requestContext.withUserTrackingSuppressed();
+    requestContext = new RequestContext(requestContext).withUserTrackingSuppressed();
     if (config.isAllowRulesPlatformExclusionMigrationDisabled()) {
       return;
     }

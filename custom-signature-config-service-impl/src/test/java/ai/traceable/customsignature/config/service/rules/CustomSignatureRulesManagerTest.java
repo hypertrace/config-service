@@ -9,8 +9,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.audit.utils.UserVisibleEmailConfig;
@@ -864,5 +866,70 @@ class CustomSignatureRulesManagerTest {
     return RuleScope.newBuilder()
         .setEnvironmentScope(EnvironmentScope.newBuilder().addAllEnvironmentIds(environmentIds))
         .build();
+  }
+
+  @Test
+  void testConfigChangeEventsGeneratedForCreateAndUpdate_AAP11627() {
+    // Regression test for AAP-11627: Verify that config change events are generated
+    // for create and update operations.
+    MockGenericConfigService localMockConfigService =
+        new MockGenericConfigService()
+            .mockUpsert()
+            .mockGet()
+            .mockGetAll()
+            .mockDelete()
+            .mockDeleteAll()
+            .mockUpsertAll();
+    localMockConfigService.start();
+    try {
+      ConfigChangeEventGenerator spyEventGenerator = mock(ConfigChangeEventGenerator.class);
+      ConfigServiceGrpc.ConfigServiceBlockingStub stub =
+          ConfigServiceGrpc.newBlockingStub(localMockConfigService.channel());
+      CustomSignatureConfigServiceConfig localConfig =
+          mock(CustomSignatureConfigServiceConfig.class);
+      when(localConfig.getDefaultCustomSignatureRules())
+          .thenReturn(List.of(DEFAULT_CUSTOM_SIGNATURE_RULE));
+      when(localConfig.getUserVisibleEmailConfig())
+          .thenReturn(
+              new UserVisibleEmailConfig(
+                  ConfigFactory.parseString(
+                      "generic.config.service.customer.visible.excluded.email.patterns: []")));
+      CustomSignatureRulesStore localStore =
+          new CustomSignatureRulesStore(
+              stub, new CustomSignatureRuleConverter(), spyEventGenerator, localConfig);
+      CustomSignatureRulesManager localManager =
+          new CustomSignatureRulesManager(
+              localStore,
+              localConfig,
+              mock(CustomSignatureConfigContextCacheProvider.class),
+              mock(CustomSignatureConfigContextClientProvider.class),
+              mock(FeatureCachingClient.class));
+      RequestContext testContext = RequestContext.forTenantId("event-test-tenant");
+
+      CreateCustomSignatureRuleRequest createRequest =
+          CreateCustomSignatureRuleRequest.newBuilder()
+              .setName("event-test-rule")
+              .setDefinition(testRuleDefinition)
+              .setRuleScope(getRuleScope(List.of("dev")))
+              .build();
+      CustomSignatureRule created =
+          localManager.createCustomSignatureRule(testContext, createRequest).get();
+      verify(spyEventGenerator, atLeastOnce())
+          .sendCreateNotification(
+              any(RequestContext.class), any(String.class), any(String.class), any(Value.class));
+
+      CustomSignatureRule updateRule =
+          created.toBuilder().setName("event-test-rule-updated").build();
+      localManager.updateCustomSignatureRule(testContext, updateRule).get();
+      verify(spyEventGenerator, atLeastOnce())
+          .sendUpdateNotification(
+              any(RequestContext.class),
+              any(String.class),
+              any(String.class),
+              any(Value.class),
+              any(Value.class));
+    } finally {
+      localMockConfigService.shutdown();
+    }
   }
 }
