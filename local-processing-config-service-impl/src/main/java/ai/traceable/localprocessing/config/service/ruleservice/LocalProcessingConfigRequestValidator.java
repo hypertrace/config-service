@@ -18,6 +18,10 @@ public class LocalProcessingConfigRequestValidator {
     validateDefaultProtectionMode(request.getDefaultProtectionMode());
   }
 
+  static void validateOrThrow(RequestContext requestContext) {
+    validateRequestContext(requestContext);
+  }
+
   private static void validateDefaultProtectionMode(ProtectionMode defaultProtectionMode) {
     switch (defaultProtectionMode) {
       case UNRECOGNIZED:

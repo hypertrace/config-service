@@ -18,6 +18,11 @@ service LocalProcessingConfigService {
   rpc GetApiNamingModel(GetApiNamingModelRequest) returns (GetApiNamingModelResponse) {}
 
   rpc GetSpanProcessingRules(GetSpanProcessingRulesRequest) returns (GetSpanProcessingRulesResponse) {}
+
+  // Returns modsec-formatted detection rules for libtraceable's detection engine.
+  // Unlike GetLocalProcessingConfig which may return coraza-formatted rules based on TPA version,
+  // this RPC always returns modsec-formatted rules regardless of the caller's version.
+  rpc GetDetectionRules(GetDetectionRulesRequest) returns (GetDetectionRulesResponse) {}
 }
 
 message GetLocalProcessingConfigRequest {
@@ -134,4 +139,15 @@ message PercentageLimitConfig {
   float allowed_percentage = 2;
   SpanFilter filter = 3;
   SpanLimitingStrategy limiting_strategy = 4;
+}
+
+message GetDetectionRulesRequest {
+  string regular_modsec_detection_rules_hash = 1;
+  string custom_modsec_detection_rules_hash = 2;
+  optional string environment = 3;
+}
+
+message GetDetectionRulesResponse {
+  RegularModsecDetectionRules regular_modsec_detection_rules = 1;
+  CustomModsecDetectionRules custom_modsec_detection_rules = 2;
 }

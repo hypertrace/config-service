@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package ai.traceable.localprocessing.config.service.v1;
 
+import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
+import "ai/traceable/graphql/autogen/schema/annotations/method/v1/graphql_method_options.proto";
 import "ai/traceable/localprocessing/config/service/v1/protection_mode_config.proto";
 
 option go_package = "github.com/Traceableai/config-service/localprocessing/v1";
@@ -21,6 +23,18 @@ service LocalProcessingRulesService {
 
   // get default protection mode
   rpc GetDefaultProtectionMode(GetDefaultProtectionModeRequest) returns (GetDefaultProtectionModeResponse) {}
+
+  // update detection rules enabled state
+  rpc UpdateDetectionRulesEnabled(UpdateDetectionRulesEnabledRequest) returns (UpdateDetectionRulesEnabledResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_field_name) = "updateDetectionRulesEnabled";
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "Update whether detection rules serving is enabled for the tenant";
+  }
+
+  // get detection rules enabled state
+  rpc GetDetectionRulesEnabled(GetDetectionRulesEnabledRequest) returns (GetDetectionRulesEnabledResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_field_name) = "detectionRulesEnabled";
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "Get whether detection rules serving is enabled for the tenant";
+  }
 }
 
 message CreateLocalProcessingRuleRequest {
@@ -63,6 +77,24 @@ message GetDefaultProtectionModeRequest {}
 
 message GetDefaultProtectionModeResponse {
   ProtectionMode default_protection_mode = 1;
+}
+
+message UpdateDetectionRulesEnabledRequest {
+  bool detection_rules_enabled = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Whether detection rules serving should be enabled"];
+}
+
+message UpdateDetectionRulesEnabledResponse {
+  bool detection_rules_enabled = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Updated detection rules serving state"];
+}
+
+message GetDetectionRulesEnabledRequest {}
+
+message GetDetectionRulesEnabledResponse {
+  bool detection_rules_enabled = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Whether detection rules serving is enabled"];
+}
+
+message DetectionRulesConfig {
+  bool detection_rules_enabled = 1;
 }
 
 message NewLocalProcessingRule {

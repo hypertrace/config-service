@@ -11,6 +11,8 @@ import ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProce
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.v1.GetApiNamingModelRequest;
 import ai.traceable.localprocessing.config.service.v1.GetApiNamingModelResponse;
+import ai.traceable.localprocessing.config.service.v1.GetDetectionRulesRequest;
+import ai.traceable.localprocessing.config.service.v1.GetDetectionRulesResponse;
 import ai.traceable.localprocessing.config.service.v1.GetLocalProcessingConfigRequest;
 import ai.traceable.localprocessing.config.service.v1.GetLocalProcessingConfigResponse;
 import ai.traceable.localprocessing.config.service.v1.GetSpanProcessingRulesRequest;
@@ -100,6 +102,41 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Get Local Processing Config RPC failed for request:{}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getDetectionRules(
+      GetDetectionRulesRequest request,
+      StreamObserver<GetDetectionRulesResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      GetDetectionRulesResponse.Builder responseBuilder = GetDetectionRulesResponse.newBuilder();
+      if (!configServiceCoordinator.getDetectionRulesEnabledConfig(requestContext)) {
+        responseBuilder
+            .setCustomModsecDetectionRules(customModsecDetectionManager.getEmptyRules())
+            .setRegularModsecDetectionRules(regularModsecDetectionManager.getEmptyRules());
+      } else {
+        responseBuilder
+            .setCustomModsecDetectionRules(
+                customModsecDetectionManager.getEnabledRules(
+                    requestContext,
+                    request.getCustomModsecDetectionRulesHash(),
+                    false,
+                    request.getEnvironment()))
+            .setRegularModsecDetectionRules(
+                regularModsecDetectionManager.getDetectionRules(
+                    requestContext,
+                    request.getRegularModsecDetectionRulesHash(),
+                    false,
+                    false,
+                    request.getEnvironment()));
+      }
+      responseObserver.onNext(responseBuilder.build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Get Detection Rules RPC failed for request:{}", request, e);
       responseObserver.onError(e);
     }
   }

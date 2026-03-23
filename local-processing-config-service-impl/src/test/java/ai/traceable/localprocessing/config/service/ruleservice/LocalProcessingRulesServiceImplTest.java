@@ -5,16 +5,20 @@ import static ai.traceable.localprocessing.config.service.constants.LocalProcess
 import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.MODSEC_REDACT_MESSAGES;
 import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.SAMPLING_POLICIES;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import ai.traceable.localprocessing.config.service.LocalProcessingConfigServiceConfig;
 import ai.traceable.localprocessing.config.service.coordinator.ConfigServiceCoordinatorImpl;
 import ai.traceable.localprocessing.config.service.coordinator.DefaultProtectionModeConfigStore;
+import ai.traceable.localprocessing.config.service.coordinator.DetectionRulesConfigStore;
 import ai.traceable.localprocessing.config.service.coordinator.LocalProcessingRulesConfigStore;
 import ai.traceable.localprocessing.config.service.v1.CreateLocalProcessingRuleRequest;
 import ai.traceable.localprocessing.config.service.v1.DeleteLocalProcessingRuleRequest;
 import ai.traceable.localprocessing.config.service.v1.GetAllLocalProcessingRulesRequest;
 import ai.traceable.localprocessing.config.service.v1.GetDefaultProtectionModeRequest;
+import ai.traceable.localprocessing.config.service.v1.GetDetectionRulesEnabledRequest;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingRule;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingRuleDetails;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingRuleMetadata;
@@ -24,6 +28,7 @@ import ai.traceable.localprocessing.config.service.v1.NewLocalProcessingRule;
 import ai.traceable.localprocessing.config.service.v1.ProtectionMode;
 import ai.traceable.localprocessing.config.service.v1.UpdateDefaultProtectionModeRequest;
 import ai.traceable.localprocessing.config.service.v1.UpdateDefaultProtectionModeResponse;
+import ai.traceable.localprocessing.config.service.v1.UpdateDetectionRulesEnabledRequest;
 import ai.traceable.localprocessing.config.service.v1.UpdateLocalProcessingRuleRequest;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -66,6 +71,8 @@ class LocalProcessingRulesServiceImplTest {
                 new ConfigServiceCoordinatorImpl(
                     new LocalProcessingConfigServiceConfig(config),
                     new DefaultProtectionModeConfigStore(
+                        configServiceBlockingStub, configChangeEventGenerator),
+                    new DetectionRulesConfigStore(
                         configServiceBlockingStub, configChangeEventGenerator),
                     new LocalProcessingRulesConfigStore(
                         configServiceBlockingStub, configChangeEventGenerator))))
@@ -177,6 +184,30 @@ class LocalProcessingRulesServiceImplTest {
             .getDefaultProtectionMode(GetDefaultProtectionModeRequest.newBuilder().build())
             .getDefaultProtectionMode();
     assertEquals(ProtectionMode.PROTECTION_MODE_CORE, defaultProtectionMode);
+  }
+
+  @Test
+  void upsertAndGetDetectionRulesEnabled() {
+    boolean detectionRulesEnabled =
+        localProcessingRulesStub
+            .getDetectionRulesEnabled(GetDetectionRulesEnabledRequest.getDefaultInstance())
+            .getDetectionRulesEnabled();
+    assertTrue(detectionRulesEnabled);
+
+    detectionRulesEnabled =
+        localProcessingRulesStub
+            .updateDetectionRulesEnabled(
+                UpdateDetectionRulesEnabledRequest.newBuilder()
+                    .setDetectionRulesEnabled(false)
+                    .build())
+            .getDetectionRulesEnabled();
+    assertFalse(detectionRulesEnabled);
+
+    detectionRulesEnabled =
+        localProcessingRulesStub
+            .getDetectionRulesEnabled(GetDetectionRulesEnabledRequest.getDefaultInstance())
+            .getDetectionRulesEnabled();
+    assertFalse(detectionRulesEnabled);
   }
 
   private LocalProcessingRuleDetails buildLocalProcessingRuleDetails(

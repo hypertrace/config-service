@@ -24,6 +24,7 @@ import ai.traceable.localprocessing.config.service.client.EntityQueryServiceClie
 import ai.traceable.localprocessing.config.service.coordinator.ConfigServiceCoordinator;
 import ai.traceable.localprocessing.config.service.coordinator.ConfigServiceCoordinatorImpl;
 import ai.traceable.localprocessing.config.service.coordinator.DefaultProtectionModeConfigStore;
+import ai.traceable.localprocessing.config.service.coordinator.DetectionRulesConfigStore;
 import ai.traceable.localprocessing.config.service.coordinator.LocalProcessingRulesConfigStore;
 import ai.traceable.localprocessing.config.service.customsignature.CustomModsecDetectionManager;
 import ai.traceable.localprocessing.config.service.customsignature.DefaultCustomModsecDetectionManager;
@@ -36,6 +37,8 @@ import ai.traceable.localprocessing.config.service.v1.CreateLocalProcessingRuleR
 import ai.traceable.localprocessing.config.service.v1.CustomModsecDetectionRules;
 import ai.traceable.localprocessing.config.service.v1.GetApiNamingModelRequest;
 import ai.traceable.localprocessing.config.service.v1.GetApiNamingModelResponse;
+import ai.traceable.localprocessing.config.service.v1.GetDetectionRulesRequest;
+import ai.traceable.localprocessing.config.service.v1.GetDetectionRulesResponse;
 import ai.traceable.localprocessing.config.service.v1.GetLocalProcessingConfigRequest;
 import ai.traceable.localprocessing.config.service.v1.GetLocalProcessingConfigResponse;
 import ai.traceable.localprocessing.config.service.v1.HttpApiNamingConfig;
@@ -54,6 +57,7 @@ import ai.traceable.localprocessing.config.service.v1.ProtectionModeConfig;
 import ai.traceable.localprocessing.config.service.v1.RegularModsecDetectionRules;
 import ai.traceable.localprocessing.config.service.v1.SamplingPolicies;
 import ai.traceable.localprocessing.config.service.v1.SamplingPolicy;
+import ai.traceable.localprocessing.config.service.v1.UpdateDetectionRulesEnabledRequest;
 import com.google.protobuf.Duration;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -159,6 +163,7 @@ class LocalProcessingConfigServiceImplTest {
             new LocalProcessingConfigServiceConfig(config),
             new DefaultProtectionModeConfigStore(
                 configServiceBlockingStub, configChangeEventGenerator),
+            new DetectionRulesConfigStore(configServiceBlockingStub, configChangeEventGenerator),
             new LocalProcessingRulesConfigStore(
                 configServiceBlockingStub, configChangeEventGenerator));
     mockGenericConfigService
@@ -472,6 +477,82 @@ class LocalProcessingConfigServiceImplTest {
             .getAttributesRequiredForSampling(0)
             .getValues(1)
             .getBoolValue());
+  }
+
+  @Test
+  @DisplayName("Test getDetectionRules always returns modsec format rules")
+  void testGetDetectionRulesAlwaysReturnsModsecFormat() {
+    CustomModsecDetectionRules expectedCustomModsecDetectionRules =
+        CustomModsecDetectionRules.newBuilder()
+            .setCustomModsecDetectionRulesBlob("modsec custom blob")
+            .setHash("custom-hash")
+            .build();
+    doReturn(expectedCustomModsecDetectionRules)
+        .when(customModsecDetectionManager)
+        .getEnabledRules(any(), any(), eq(false), any());
+    RegularModsecDetectionRules expectedRegularModsecDetectionRules =
+        RegularModsecDetectionRules.newBuilder()
+            .setRegularModsecDetectionRulesBlob("modsec regular blob")
+            .setHash("regular-hash")
+            .build();
+    doReturn(expectedRegularModsecDetectionRules)
+        .when(regularModsecDetectionManager)
+        .getDetectionRules(any(), any(), eq(false), eq(false), any());
+
+    GetDetectionRulesResponse response =
+        localProcessingConfigStub.getDetectionRules(
+            GetDetectionRulesRequest.newBuilder()
+                .setCustomModsecDetectionRulesHash("old hash")
+                .setEnvironment("environmentId")
+                .build());
+    assertEquals(expectedCustomModsecDetectionRules, response.getCustomModsecDetectionRules());
+    assertEquals(expectedRegularModsecDetectionRules, response.getRegularModsecDetectionRules());
+  }
+
+  @Test
+  @DisplayName("Test getDetectionRules with environment scoping")
+  void testGetDetectionRulesWithEnvironment() {
+    CustomModsecDetectionRules expectedCustomRules =
+        CustomModsecDetectionRules.newBuilder()
+            .setCustomModsecDetectionRulesBlob("env-scoped blob")
+            .setHash("env-hash")
+            .build();
+    doReturn(expectedCustomRules)
+        .when(customModsecDetectionManager)
+        .getEnabledRules(any(), eq("custom-hash"), eq(false), eq("prod"));
+    RegularModsecDetectionRules expectedRegularRules =
+        RegularModsecDetectionRules.newBuilder()
+            .setRegularModsecDetectionRulesBlob("env-scoped regular blob")
+            .setHash("env-regular-hash")
+            .build();
+    doReturn(expectedRegularRules)
+        .when(regularModsecDetectionManager)
+        .getDetectionRules(any(), eq("regular-hash"), eq(false), eq(false), eq("prod"));
+
+    GetDetectionRulesResponse response =
+        localProcessingConfigStub.getDetectionRules(
+            GetDetectionRulesRequest.newBuilder()
+                .setCustomModsecDetectionRulesHash("custom-hash")
+                .setRegularModsecDetectionRulesHash("regular-hash")
+                .setEnvironment("prod")
+                .build());
+    assertEquals(expectedCustomRules, response.getCustomModsecDetectionRules());
+    assertEquals(expectedRegularRules, response.getRegularModsecDetectionRules());
+  }
+
+  @Test
+  @DisplayName(
+      "Test getDetectionRules returns empty rules when detection rules serving is disabled")
+  void testGetDetectionRulesWithDetectionRulesDisabled() {
+    localProcessingRulesStub.updateDetectionRulesEnabled(
+        UpdateDetectionRulesEnabledRequest.newBuilder().setDetectionRulesEnabled(false).build());
+
+    GetDetectionRulesResponse response =
+        localProcessingConfigStub.getDetectionRules(GetDetectionRulesRequest.getDefaultInstance());
+    assertEquals(
+        customModsecDetectionManager.getEmptyRules(), response.getCustomModsecDetectionRules());
+    assertEquals(
+        regularModsecDetectionManager.getEmptyRules(), response.getRegularModsecDetectionRules());
   }
 
   private LocalProcessingRuleDetails createLocalProcessingRule(

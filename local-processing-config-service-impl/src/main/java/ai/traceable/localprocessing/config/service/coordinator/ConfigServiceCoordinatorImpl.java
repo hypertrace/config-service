@@ -1,6 +1,7 @@
 package ai.traceable.localprocessing.config.service.coordinator;
 
 import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.DEFAULT_PROTECTION_MODE;
+import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.DETECTION_RULES_ENABLED;
 import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.LOCAL_PROCESSING_CONFIG_SERVICE_CONFIG;
 import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.MODSEC_REDACT_MESSAGES;
 import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.SAMPLING_POLICIES;
@@ -12,6 +13,7 @@ import com.google.inject.Inject;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
 import com.google.protobuf.util.JsonFormat;
+import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
 import java.util.List;
 import java.util.UUID;
@@ -25,6 +27,8 @@ public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   private final ProtectionMode defaultProtectionMode;
   private final SamplingPolicies defaultSamplingPolicies;
   private final DefaultProtectionModeConfigStore defaultProtectionModeConfigStore;
+  private final boolean defaultDetectionRulesEnabled;
+  private final DetectionRulesConfigStore detectionRulesConfigStore;
   private final LocalProcessingRulesConfigStore localProcessingRulesConfigStore;
   private final ModsecConfig defaultModsecConfig;
 
@@ -32,24 +36,25 @@ public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   public ConfigServiceCoordinatorImpl(
       LocalProcessingConfigServiceConfig localProcessingConfigServiceConfig,
       DefaultProtectionModeConfigStore defaultProtectionModeConfigStore,
+      DetectionRulesConfigStore detectionRulesConfigStore,
       LocalProcessingRulesConfigStore localProcessingRulesConfigStore) {
+    Config localProcessingConfig =
+        localProcessingConfigServiceConfig
+            .getConfig()
+            .getConfig(LOCAL_PROCESSING_CONFIG_SERVICE_CONFIG);
     this.defaultProtectionMode =
-        ProtectionMode.valueOf(
-            localProcessingConfigServiceConfig
-                .getConfig()
-                .getConfig(LOCAL_PROCESSING_CONFIG_SERVICE_CONFIG)
-                .getString(DEFAULT_PROTECTION_MODE));
+        ProtectionMode.valueOf(localProcessingConfig.getString(DEFAULT_PROTECTION_MODE));
     this.defaultSamplingPolicies =
         getSamplingPoliciesFromConfig(localProcessingConfigServiceConfig);
     this.defaultProtectionModeConfigStore = defaultProtectionModeConfigStore;
+    this.defaultDetectionRulesEnabled =
+        !localProcessingConfig.hasPath(DETECTION_RULES_ENABLED)
+            || localProcessingConfig.getBoolean(DETECTION_RULES_ENABLED);
+    this.detectionRulesConfigStore = detectionRulesConfigStore;
     this.localProcessingRulesConfigStore = localProcessingRulesConfigStore;
     this.defaultModsecConfig =
         ModsecConfig.newBuilder()
-            .setRedactMessages(
-                localProcessingConfigServiceConfig
-                    .getConfig()
-                    .getConfig(LOCAL_PROCESSING_CONFIG_SERVICE_CONFIG)
-                    .getBoolean(MODSEC_REDACT_MESSAGES))
+            .setRedactMessages(localProcessingConfig.getBoolean(MODSEC_REDACT_MESSAGES))
             .build();
   }
 
@@ -115,6 +120,27 @@ public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
         .getData(requestContext)
         .map(DefaultProtectionModeConfig::getDefaultProtectionMode)
         .orElse(defaultProtectionMode);
+  }
+
+  @Override
+  public boolean upsertDetectionRulesEnabledConfig(
+      RequestContext requestContext, boolean detectionRulesEnabled) {
+    return this.detectionRulesConfigStore
+        .upsertObject(
+            requestContext,
+            DetectionRulesConfig.newBuilder()
+                .setDetectionRulesEnabled(detectionRulesEnabled)
+                .build())
+        .getData()
+        .getDetectionRulesEnabled();
+  }
+
+  @Override
+  public boolean getDetectionRulesEnabledConfig(RequestContext requestContext) {
+    return this.detectionRulesConfigStore
+        .getData(requestContext)
+        .map(DetectionRulesConfig::getDetectionRulesEnabled)
+        .orElse(defaultDetectionRulesEnabled);
   }
 
   @Override

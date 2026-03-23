@@ -26,6 +26,11 @@ public interface ConfigServiceCoordinator {
 
   ProtectionMode getDefaultProtectionModeConfig(RequestContext requestContext);
 
+  boolean upsertDetectionRulesEnabledConfig(
+      RequestContext requestContext, boolean detectionRulesEnabled);
+
+  boolean getDetectionRulesEnabledConfig(RequestContext requestContext);
+
   SamplingPolicies getSamplingPoliciesConfig();
 
   ModsecConfig getModsecConfig(boolean shouldUseCoraza);

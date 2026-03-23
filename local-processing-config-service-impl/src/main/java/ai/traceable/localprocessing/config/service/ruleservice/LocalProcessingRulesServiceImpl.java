@@ -9,10 +9,14 @@ import ai.traceable.localprocessing.config.service.v1.GetAllLocalProcessingRules
 import ai.traceable.localprocessing.config.service.v1.GetAllLocalProcessingRulesResponse;
 import ai.traceable.localprocessing.config.service.v1.GetDefaultProtectionModeRequest;
 import ai.traceable.localprocessing.config.service.v1.GetDefaultProtectionModeResponse;
+import ai.traceable.localprocessing.config.service.v1.GetDetectionRulesEnabledRequest;
+import ai.traceable.localprocessing.config.service.v1.GetDetectionRulesEnabledResponse;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingRulesServiceGrpc;
 import ai.traceable.localprocessing.config.service.v1.ProtectionMode;
 import ai.traceable.localprocessing.config.service.v1.UpdateDefaultProtectionModeRequest;
 import ai.traceable.localprocessing.config.service.v1.UpdateDefaultProtectionModeResponse;
+import ai.traceable.localprocessing.config.service.v1.UpdateDetectionRulesEnabledRequest;
+import ai.traceable.localprocessing.config.service.v1.UpdateDetectionRulesEnabledResponse;
 import ai.traceable.localprocessing.config.service.v1.UpdateLocalProcessingRuleRequest;
 import ai.traceable.localprocessing.config.service.v1.UpdateLocalProcessingRuleResponse;
 import com.google.inject.Inject;
@@ -141,6 +145,46 @@ public class LocalProcessingRulesServiceImpl
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Get Default Protection Mode Config RPC failed for request:{}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void updateDetectionRulesEnabled(
+      UpdateDetectionRulesEnabledRequest request,
+      StreamObserver<UpdateDetectionRulesEnabledResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      LocalProcessingConfigRequestValidator.validateOrThrow(requestContext);
+      boolean detectionRulesEnabled =
+          configServiceCoordinator.upsertDetectionRulesEnabledConfig(
+              requestContext, request.getDetectionRulesEnabled());
+      responseObserver.onNext(
+          UpdateDetectionRulesEnabledResponse.newBuilder()
+              .setDetectionRulesEnabled(detectionRulesEnabled)
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Update Detection Rules Enabled RPC failed for request:{}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getDetectionRulesEnabled(
+      GetDetectionRulesEnabledRequest request,
+      StreamObserver<GetDetectionRulesEnabledResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      LocalProcessingConfigRequestValidator.validateOrThrow(requestContext);
+      responseObserver.onNext(
+          GetDetectionRulesEnabledResponse.newBuilder()
+              .setDetectionRulesEnabled(
+                  configServiceCoordinator.getDetectionRulesEnabledConfig(requestContext))
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Get Detection Rules Enabled RPC failed for request:{}", request, e);
       responseObserver.onError(e);
     }
   }
