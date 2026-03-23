@@ -512,6 +512,7 @@ data:
     default.variables.user-attribution = {{- .Values.defaultTraceableEdgeUserAttributionVariables | indent 4 }}
     {{- end }}
     get.configs.thread.pool.size = {{ .Values.traceableEdgeConfigService.getConfigsThreadPoolSize }}
+    ai.endpoint.metadata.enabled = {{ .Values.traceableEdgeConfigService.aiEndpointMetadataEnabled }}
 
   {{- if and (hasKey .Values "apiProtectThreatRuleConfigsConf") .Values.apiProtectThreatRuleConfigsConf }}
   api-protect-threat-rule-configs.conf: |-

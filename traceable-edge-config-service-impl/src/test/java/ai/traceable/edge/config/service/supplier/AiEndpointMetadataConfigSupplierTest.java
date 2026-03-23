@@ -43,6 +43,7 @@ class AiEndpointMetadataConfigSupplierTest {
 
   @BeforeEach
   void setUp() {
+    lenient().when(config.isAiEndpointMetadataEnabled()).thenReturn(true);
     lenient()
         .when(featureCachingClient.isProtectionEngineAiAppProtectionEnabledForTenant(any()))
         .thenReturn(true);
@@ -165,6 +166,42 @@ class AiEndpointMetadataConfigSupplierTest {
         AiEndpointMetadata.parseFrom(data.getAiEndpointMetadataMap().get("api-2"));
     assertEquals(0, details2.getAssociatedAiModelsCount());
     assertEquals(1, details2.getPromptAttributeKeysCount());
+  }
+
+  @Test
+  void testGetConfigs_helmDrivenDisabled_returnsEmptyPayload() {
+    AgentCapabilities agentCapabilities =
+        AgentCapabilities.newBuilder()
+            .putAllAdditionalFields(ImmutableMap.of("serviceName", "test-service"))
+            .build();
+    when(config.isAiEndpointMetadataEnabled()).thenReturn(false);
+    when(config.getAgentPollingFrequency("AiEndpointMetadataConfig"))
+        .thenReturn(Duration.newBuilder().setSeconds(600).build());
+
+    ConfigResponseElement response =
+        supplier.getConfigs(requestContext, TEST_ENV, requestElement, agentCapabilities);
+    assertNotNull(response);
+    assertEquals("AiEndpointMetadataConfig", response.getConfigType());
+    assertTrue(response.getConfigPayloads().getConfigBytesList().isEmpty());
+  }
+
+  @Test
+  void testGetConfigs_featureFlagDisabled_returnsEmptyPayload() {
+    AgentCapabilities agentCapabilities =
+        AgentCapabilities.newBuilder()
+            .putAllAdditionalFields(ImmutableMap.of("serviceName", "test-service"))
+            .build();
+    when(config.isAiEndpointMetadataEnabled()).thenReturn(true);
+    when(config.getAgentPollingFrequency("AiEndpointMetadataConfig"))
+        .thenReturn(Duration.newBuilder().setSeconds(600).build());
+    when(featureCachingClient.isProtectionEngineAiAppProtectionEnabledForTenant(any()))
+        .thenReturn(false);
+
+    ConfigResponseElement response =
+        supplier.getConfigs(requestContext, TEST_ENV, requestElement, agentCapabilities);
+    assertNotNull(response);
+    assertEquals("AiEndpointMetadataConfig", response.getConfigType());
+    assertTrue(response.getConfigPayloads().getConfigBytesList().isEmpty());
   }
 
   @Test

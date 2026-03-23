@@ -46,7 +46,9 @@ public class AiEndpointMetadataConfigSupplier implements TraceableEdgeConfigSupp
       ConfigRequestElement requestElement,
       AgentCapabilities agentCapabilities) {
 
-    if (!featureCachingClient.isProtectionEngineAiAppProtectionEnabledForTenant(requestContext)) {
+    if (!config.isAiEndpointMetadataEnabled()
+        || !featureCachingClient.isProtectionEngineAiAppProtectionEnabledForTenant(
+            requestContext)) {
       log.debug("AI App protection not enabled for tenant: {}", requestContext.getTenantId());
       ConfigPayloads emptyPayloads = ConfigPayloads.getDefaultInstance();
       return ConfigResponseElement.newBuilder()
