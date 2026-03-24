@@ -283,7 +283,9 @@ class EntityQueryServiceClient {
                               row.getColumn(1).getString(),
                               row.getColumn(2).getString(),
                               row.getColumn(3).getStringArrayList(),
-                              Collections.emptyList()))));
+                              Collections.emptyList(),
+                              row.getColumn(4).getString(),
+                              row.getColumn(5).getString()))));
     }
     return apiEntitiesMap.entrySet().stream()
         .collect(
@@ -330,7 +332,9 @@ class EntityQueryServiceClient {
                         row.getColumn(1).getString(),
                         row.getColumn(2).getString(),
                         row.getColumn(3).getStringArrayList(),
-                        row.getColumn(4).getStringArrayList());
+                        row.getColumn(4).getStringArrayList(),
+                        row.getColumn(5).getString(),
+                        row.getColumn(6).getString());
                 List<String> filteredApiLabelIds =
                     apiIdentifierEntity.getApiLabels().stream()
                         .filter(apiLabelIds::contains)
@@ -366,6 +370,9 @@ class EntityQueryServiceClient {
         .addSelection(
             buildSelectionExpression(
                 entityQueryServiceConfig.getApiResolvedUrlPatternsColumnName()))
+        .addSelection(buildSelectionExpression(entityQueryServiceConfig.getHttpMethodColumnName()))
+        .addSelection(
+            buildSelectionExpression(entityQueryServiceConfig.getApiServiceNameColumnName()))
         .setFilter(buildApiIdFilter(apiIds))
         .build();
   }
@@ -381,6 +388,9 @@ class EntityQueryServiceClient {
             buildSelectionExpression(
                 entityQueryServiceConfig.getApiResolvedUrlPatternsColumnName()))
         .addSelection(buildSelectionExpression(entityQueryServiceConfig.getApiLabelsColumnName()))
+        .addSelection(buildSelectionExpression(entityQueryServiceConfig.getHttpMethodColumnName()))
+        .addSelection(
+            buildSelectionExpression(entityQueryServiceConfig.getApiServiceNameColumnName()))
         .setFilter(buildApiLabelFilter(apiLabelIds))
         .build();
   }

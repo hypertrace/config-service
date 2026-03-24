@@ -139,7 +139,8 @@ class WebAppEvaluationConfigContextManagerImplTest {
     featureCachingClient = mock(FeatureCachingClient.class);
     webAppRuleInfoProvider = mock(WebAppRuleInfoProvider.class);
     ApiIdentifierEntity apiEntity =
-        new ApiIdentifierEntity(API_ID, API_NAME, "/api-path", List.of("/api/path/.*"), List.of());
+        new ApiIdentifierEntity(
+            API_ID, API_NAME, "/api-path", List.of("/api/path/.*"), List.of(), null, null);
     when(apiMappingProvider.getApiIdentifierEntities(any(RequestContext.class), anySet()))
         .thenReturn(Map.of(API_ID, Optional.of(apiEntity)));
     ServiceIdentifierEntity serviceEntity =

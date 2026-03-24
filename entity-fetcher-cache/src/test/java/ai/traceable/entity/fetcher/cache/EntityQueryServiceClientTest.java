@@ -110,12 +110,24 @@ class EntityQueryServiceClientTest {
     assertEquals(
         Optional.of(
             new ApiIdentifierEntity(
-                "apiId1", "apiName1", "/api1", List.of("/api1"), Collections.emptyList())),
+                "apiId1",
+                "apiName1",
+                "/api1",
+                List.of("/api1"),
+                Collections.emptyList(),
+                "GET",
+                "service1")),
         apiIdentifierEntitiesMap.get(apiId1Key));
     assertEquals(
         Optional.of(
             new ApiIdentifierEntity(
-                "apiId2", "apiName2", "/api2", List.of("/api2"), Collections.emptyList())),
+                "apiId2",
+                "apiName2",
+                "/api2",
+                List.of("/api2"),
+                Collections.emptyList(),
+                "POST",
+                "service2")),
         apiIdentifierEntitiesMap.get(apiId2Key));
     assertEquals(Optional.empty(), apiIdentifierEntitiesMap.get(apiId3Key));
   }
@@ -137,14 +149,32 @@ class EntityQueryServiceClientTest {
     assertEquals(
         Set.of(
             new ApiIdentifierEntity(
-                "apiId1", "apiName1", "/api1", List.of("/api1"), List.of("labelId1", "labelId2")),
+                "apiId1",
+                "apiName1",
+                "/api1",
+                List.of("/api1"),
+                List.of("labelId1", "labelId2"),
+                "GET",
+                "service1"),
             new ApiIdentifierEntity(
-                "apiId2", "apiName2", "/api2", List.of("/api2"), List.of("labelId1"))),
+                "apiId2",
+                "apiName2",
+                "/api2",
+                List.of("/api2"),
+                List.of("labelId1"),
+                "POST",
+                "service2")),
         apiIdentifierEntitiesMap.get(labelId1Key));
     assertEquals(
         Set.of(
             new ApiIdentifierEntity(
-                "apiId1", "apiName1", "/api1", List.of("/api1"), List.of("labelId1", "labelId2"))),
+                "apiId1",
+                "apiName1",
+                "/api1",
+                List.of("/api1"),
+                List.of("labelId1", "labelId2"),
+                "GET",
+                "service1")),
         apiIdentifierEntitiesMap.get(labelId2Key));
     assertEquals(Set.of(), apiIdentifierEntitiesMap.get(labelId3Key));
   }
@@ -224,6 +254,12 @@ class EntityQueryServiceClientTest {
             Expression.newBuilder()
                 .setColumnIdentifier(
                     ColumnIdentifier.newBuilder().setColumnName("apiResolvedUrlPatterns")))
+        .addSelection(
+            Expression.newBuilder()
+                .setColumnIdentifier(ColumnIdentifier.newBuilder().setColumnName("httpMethod")))
+        .addSelection(
+            Expression.newBuilder()
+                .setColumnIdentifier(ColumnIdentifier.newBuilder().setColumnName("apiServiceName")))
         .setFilter(
             Filter.newBuilder()
                 .setLhs(
@@ -245,7 +281,13 @@ class EntityQueryServiceClientTest {
   private ResultSetChunk getApiIdsResultSetChunk() {
     ResultSetChunk.Builder resultSetChunkBuilder = ResultSetChunk.newBuilder();
     List<String> columnNames =
-        List.of("apiId", "apiName", "apiUrlPattern", "apiResolvedUrlPatterns");
+        List.of(
+            "apiId",
+            "apiName",
+            "apiUrlPattern",
+            "apiResolvedUrlPatterns",
+            "httpMethod",
+            "apiServiceName");
     List<ColumnMetadata> columnMetadataBuilders =
         columnNames.stream()
             .map(
@@ -268,7 +310,9 @@ class EntityQueryServiceClientTest {
                 .addColumn(
                     Value.newBuilder()
                         .addAllStringArray(List.of("/api1"))
-                        .setValueType(ValueType.STRING_ARRAY)))
+                        .setValueType(ValueType.STRING_ARRAY))
+                .addColumn(Value.newBuilder().setString("GET").setValueType(ValueType.STRING))
+                .addColumn(Value.newBuilder().setString("service1").setValueType(ValueType.STRING)))
         .addRow(
             Row.newBuilder()
                 .addColumn(Value.newBuilder().setString("apiId2").setValueType(ValueType.STRING))
@@ -277,7 +321,10 @@ class EntityQueryServiceClientTest {
                 .addColumn(
                     Value.newBuilder()
                         .addAllStringArray(List.of("/api2"))
-                        .setValueType(ValueType.STRING_ARRAY)));
+                        .setValueType(ValueType.STRING_ARRAY))
+                .addColumn(Value.newBuilder().setString("POST").setValueType(ValueType.STRING))
+                .addColumn(
+                    Value.newBuilder().setString("service2").setValueType(ValueType.STRING)));
 
     return resultSetChunkBuilder.build();
   }
@@ -301,6 +348,12 @@ class EntityQueryServiceClientTest {
         .addSelection(
             Expression.newBuilder()
                 .setColumnIdentifier(ColumnIdentifier.newBuilder().setColumnName("apiLabels")))
+        .addSelection(
+            Expression.newBuilder()
+                .setColumnIdentifier(ColumnIdentifier.newBuilder().setColumnName("httpMethod")))
+        .addSelection(
+            Expression.newBuilder()
+                .setColumnIdentifier(ColumnIdentifier.newBuilder().setColumnName("apiServiceName")))
         .setFilter(
             Filter.newBuilder()
                 .setLhs(
@@ -323,7 +376,14 @@ class EntityQueryServiceClientTest {
   private ResultSetChunk getApiLabelIdsResultSetChunk() {
     ResultSetChunk.Builder resultSetChunkBuilder = ResultSetChunk.newBuilder();
     List<String> columnNames =
-        List.of("apiId", "apiName", "apiUrlPattern", "apiResolvedUrlPatterns", "apiLabels");
+        List.of(
+            "apiId",
+            "apiName",
+            "apiUrlPattern",
+            "apiResolvedUrlPatterns",
+            "apiLabels",
+            "httpMethod",
+            "apiServiceName");
     List<ColumnMetadata> columnMetadataBuilders =
         columnNames.stream()
             .map(
@@ -350,7 +410,9 @@ class EntityQueryServiceClientTest {
                 .addColumn(
                     Value.newBuilder()
                         .addAllStringArray(List.of("labelId1", "labelId2"))
-                        .setValueType(ValueType.STRING_ARRAY)))
+                        .setValueType(ValueType.STRING_ARRAY))
+                .addColumn(Value.newBuilder().setString("GET").setValueType(ValueType.STRING))
+                .addColumn(Value.newBuilder().setString("service1").setValueType(ValueType.STRING)))
         .addRow(
             Row.newBuilder()
                 .addColumn(Value.newBuilder().setString("apiId2").setValueType(ValueType.STRING))
@@ -363,7 +425,10 @@ class EntityQueryServiceClientTest {
                 .addColumn(
                     Value.newBuilder()
                         .addAllStringArray(List.of("labelId1"))
-                        .setValueType(ValueType.STRING_ARRAY)));
+                        .setValueType(ValueType.STRING_ARRAY))
+                .addColumn(Value.newBuilder().setString("POST").setValueType(ValueType.STRING))
+                .addColumn(
+                    Value.newBuilder().setString("service2").setValueType(ValueType.STRING)));
 
     return resultSetChunkBuilder.build();
   }

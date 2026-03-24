@@ -22,5 +22,7 @@ public interface CachedApiMappingProvider {
     String apiUrlPattern;
     List<String> resolvedUrlPatterns;
     List<String> apiLabels;
+    String httpMethod;
+    String serviceName;
   }
 }

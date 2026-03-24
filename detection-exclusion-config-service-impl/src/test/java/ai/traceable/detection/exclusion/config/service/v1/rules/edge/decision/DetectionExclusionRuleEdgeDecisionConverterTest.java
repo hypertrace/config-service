@@ -56,7 +56,7 @@ class DetectionExclusionRuleEdgeDecisionConverterTest {
     CachedApiMappingProvider apiEntityProvider = mock(CachedApiMappingProvider.class);
     CachedApiMappingProvider.ApiIdentifierEntity api1 =
         new CachedApiMappingProvider.ApiIdentifierEntity(
-            "apiId1", "apiName1", "/api1", List.of("/api1"), Collections.emptyList());
+            "apiId1", "apiName1", "/api1", List.of("/api1"), Collections.emptyList(), null, null);
     Map<String, Optional<CachedApiMappingProvider.ApiIdentifierEntity>> apiIdentifierEntityMap =
         Map.of("apiId1", Optional.of(api1));
     Map<String, Set<CachedApiMappingProvider.ApiIdentifierEntity>> apiIdentifierEntityLabelMap =

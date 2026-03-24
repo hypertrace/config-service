@@ -76,7 +76,7 @@ class CustomSignatureConfigContextConverterTest {
     apiMappingProvider = mock(CachedApiMappingProvider.class);
     ApiIdentifierEntity apiEntity =
         new ApiIdentifierEntity(
-            "api-id-1", "api-name", "/api-path", List.of("/api/path/.*"), List.of());
+            "api-id-1", "api-name", "/api-path", List.of("/api/path/.*"), List.of(), null, null);
     when(apiMappingProvider.getApiIdentifierEntities(any(RequestContext.class), anySet()))
         .thenReturn(Map.of("api-id-1", Optional.of(apiEntity)));
 

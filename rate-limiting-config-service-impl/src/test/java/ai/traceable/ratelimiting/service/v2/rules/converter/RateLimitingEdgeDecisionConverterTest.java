@@ -48,21 +48,25 @@ class RateLimitingEdgeDecisionConverterTest {
     CachedApiMappingProvider provider = mock(CachedApiMappingProvider.class);
     ApiIdentifierEntity api1 =
         new ApiIdentifierEntity(
-            "apiId1", "apiName1", "/api1", List.of("/api1"), Collections.emptyList());
+            "apiId1", "apiName1", "/api1", List.of("/api1"), Collections.emptyList(), null, null);
     ApiIdentifierEntity api2 =
         new ApiIdentifierEntity(
             "apiId2",
             "/apiId2/{apiId2-id}",
             "/apiId2/{apiId2-id}",
             List.of("/apiId2/.*"),
-            Collections.emptyList());
+            Collections.emptyList(),
+            null,
+            null);
     ApiIdentifierEntity api3 =
         new ApiIdentifierEntity(
             "apiId3",
             "/apiId3/abc/{apiId3-id}",
             "/apiId3/abc/{apiId3-id}",
             List.of("/apiId3/abc/.*"),
-            Collections.emptyList());
+            Collections.emptyList(),
+            null,
+            null);
     Map<String, Optional<ApiIdentifierEntity>> apiIdentifierEntityMap1 =
         Map.of("apiId1", Optional.of(api1));
     Map<String, Optional<ApiIdentifierEntity>> apiIdentifierEntityMap2 =
