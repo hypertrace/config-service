@@ -3369,7 +3369,6 @@ anomalyConfigServiceConfig:
       - "schemaValidation_uresc"
 traceableEdgeConfigService:
   getConfigsThreadPoolSize: 10
-  aiEndpointMetadataEnabled: false
 fraudDataModelDerivationConfigService:
   defaultFraudDataModelDerivations: |-
     []

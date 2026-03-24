@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import lombok.Getter;
 import org.hypertrace.config.objectstore.ClientConfig;
 
 public class TraceableEdgeConfig {
@@ -29,8 +28,6 @@ public class TraceableEdgeConfig {
       "get.configs.thread.pool.size";
   private static final String CUSTOM_SIGNATURE_RULE_VERSION_CONFIG_NAME =
       "custom.signature.rule.version";
-  private static final String AI_ENDPOINT_METADATA_ENABLED_CONFIG_NAME =
-      "ai.endpoint.metadata.enabled";
   private static final int DEFAULT_GET_CONFIGS_EXECUTOR_SERVICE_THREAD_POOL_SIZE = 10;
   private static final CustomModsecRuleVersion DEFAULT_CUSTOM_SIGNATURE_RULE_VERSION =
       CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3;
@@ -39,7 +36,6 @@ public class TraceableEdgeConfig {
   private final Map<String, EdgeConfigSupplierConfig> edgeConfigSupplierConfigs;
   private final int getConfigsThreadPoolSize;
   private final CustomModsecRuleVersion customSignatureRuleVersion;
-  @Getter public final boolean aiEndpointMetadataEnabled;
 
   @Inject
   public TraceableEdgeConfig(Config config) {
@@ -53,9 +49,6 @@ public class TraceableEdgeConfig {
             ? edgeConfig.getInt(GET_CONFIGS_THREAD_POOL_SIZE_CONFIG_NAME)
             : DEFAULT_GET_CONFIGS_EXECUTOR_SERVICE_THREAD_POOL_SIZE;
     this.customSignatureRuleVersion = getCustomSignatureRuleVersion(edgeConfig);
-    this.aiEndpointMetadataEnabled =
-        edgeConfig.hasPath(AI_ENDPOINT_METADATA_ENABLED_CONFIG_NAME)
-            && edgeConfig.getBoolean(AI_ENDPOINT_METADATA_ENABLED_CONFIG_NAME);
   }
 
   public int getConfigsThreadPoolSize() {

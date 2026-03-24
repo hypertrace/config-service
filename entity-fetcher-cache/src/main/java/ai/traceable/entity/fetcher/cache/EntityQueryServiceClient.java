@@ -107,9 +107,13 @@ class EntityQueryServiceClient {
               AiEndpointMetadata.Builder builder =
                   AiEndpointMetadata.newBuilder()
                       .addAllAssociatedAiModels(row.getColumn(1).getStringArrayList())
-                      .addAllAssociatedAiVendors(row.getColumn(2).getStringArrayList())
-                      .addAllPromptAttributeKeys(
-                          parsePromptAttributeKeys(row.getColumn(3).getStringArrayList()));
+                      .addAllAssociatedAiVendors(row.getColumn(2).getStringArrayList());
+              // TODO : we are currently not parsing prompt attribute keys at all since we don't
+              // have that as of now, uncomment and update the code once we have that column in
+              // place and start populating it in entity query service
+              //                      .addAllPromptAttributeKeys(
+              //
+              // parsePromptAttributeKeys(row.getColumn(3).getStringArrayList()));
               return new ApiAiEndpointMetadataDetails(apiId, builder.build());
             });
   }
@@ -164,9 +168,9 @@ class EntityQueryServiceClient {
         .addSelection(
             buildSelectionExpression(
                 entityQueryServiceConfig.getApiAssociatedAiVendorsColumnName()))
-        .addSelection(
-            buildSelectionExpression(
-                entityQueryServiceConfig.getApiPromptAttributeKeysColumnName()))
+        //        .addSelection(
+        //            buildSelectionExpression(
+        //                entityQueryServiceConfig.getApiPromptAttributeKeysColumnName()))
         .build();
   }
 

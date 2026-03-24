@@ -43,7 +43,6 @@ class AiEndpointMetadataConfigSupplierTest {
 
   @BeforeEach
   void setUp() {
-    lenient().when(config.isAiEndpointMetadataEnabled()).thenReturn(true);
     lenient()
         .when(featureCachingClient.isProtectionEngineAiAppProtectionEnabledForTenant(any()))
         .thenReturn(true);
@@ -174,7 +173,6 @@ class AiEndpointMetadataConfigSupplierTest {
         AgentCapabilities.newBuilder()
             .putAllAdditionalFields(ImmutableMap.of("serviceName", "test-service"))
             .build();
-    when(config.isAiEndpointMetadataEnabled()).thenReturn(false);
     when(config.getAgentPollingFrequency("AiEndpointMetadataConfig"))
         .thenReturn(Duration.newBuilder().setSeconds(600).build());
 
@@ -191,7 +189,6 @@ class AiEndpointMetadataConfigSupplierTest {
         AgentCapabilities.newBuilder()
             .putAllAdditionalFields(ImmutableMap.of("serviceName", "test-service"))
             .build();
-    when(config.isAiEndpointMetadataEnabled()).thenReturn(true);
     when(config.getAgentPollingFrequency("AiEndpointMetadataConfig"))
         .thenReturn(Duration.newBuilder().setSeconds(600).build());
     when(featureCachingClient.isProtectionEngineAiAppProtectionEnabledForTenant(any()))
