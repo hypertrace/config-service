@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.4.5314=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.5320=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.7.70=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:cache-provider:0.8.141=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:data-model:0.8.141=runtimeClasspath,testRuntimeClasspath
@@ -158,8 +158,8 @@ org.hypertrace.core.serviceframework:platform-metrics:0.1.92=compileClasspath,ru
 org.hypertrace.core.spannormalizer:raw-span-constants:3.0.22=runtimeClasspath,testRuntimeClasspath
 org.hypertrace.core.spannormalizer:semantic-convention-utils:3.0.22=runtimeClasspath,testRuntimeClasspath
 org.hypertrace.core.spannormalizer:span-normalizer-constants:3.0.22=runtimeClasspath,testRuntimeClasspath
-org.hypertrace.entity.service:entity-service-api:0.11.5=runtimeClasspath,testRuntimeClasspath
-org.hypertrace.entity.service:entity-service-change-event-api:0.11.5=runtimeClasspath,testRuntimeClasspath
+org.hypertrace.entity.service:entity-service-api:0.11.6=runtimeClasspath,testRuntimeClasspath
+org.hypertrace.entity.service:entity-service-change-event-api:0.11.6=runtimeClasspath,testRuntimeClasspath
 org.jsoup:jsoup:1.15.3=runtimeClasspath,testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-api:5.10.2=testCompileClasspath,testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-engine:5.10.2=testRuntimeClasspath
