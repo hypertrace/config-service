@@ -212,7 +212,12 @@ dependencies {
   integrationTestImplementation(projects.customSignatureConfigServiceImpl)
   integrationTestImplementation(projects.detectionExclusionConfigServiceImpl)
   integrationTestImplementation(projects.rateLimitingConfigServiceImpl)
+  integrationTestImplementation(projects.auditUtils)
   integrationTestImplementation(localLibs.hypertrace.configservice.objectstore)
+  integrationTestImplementation(testFixtures(localLibs.hypertrace.configservice.api))
+  integrationTestImplementation(localLibs.hypertrace.configservice.changeeventgenerator)
+  integrationTestImplementation(commonLibs.mockito.core)
+  integrationTestImplementation(commonLibs.mockito.junit)
 }
 
 application {
