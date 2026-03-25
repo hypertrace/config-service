@@ -33,6 +33,8 @@ public class DetectionExclusionConfigServiceConfig {
       "ruleEvaluationPoints." + MIGRATION_DISABLED_KEY;
   private static final String ALLOW_ONLY_PLATFORM_REMOVAL_MIGRATION_DISABLED_KEY =
       "allowOnlyPlatformRemoval." + MIGRATION_DISABLED_KEY;
+  private static final String EXCLUSION_TARGET_ANY_MATCH_FIX_MIGRATION_DISABLED_KEY =
+      "exclusionTargetAnyMatchFix." + MIGRATION_DISABLED_KEY;
 
   private final Config config;
   @Getter private final boolean migrationDisabled;
@@ -41,6 +43,7 @@ public class DetectionExclusionConfigServiceConfig {
   @Getter private final boolean changeLog4MigrationDisabled;
   @Getter private final boolean ruleEvaluationPointsMigrationDisabled;
   @Getter private final boolean allowOnlyPlatformRemovalMigrationDisabled;
+  @Getter private final boolean exclusionTargetAnyMatchFixMigrationDisabled;
 
   @Getter private final List<DetectionExclusionRule> defaultDetectionExclusionRules;
   @Getter private final List<DetectionExclusionRule> defaultNewDetectionExclusionRules;
@@ -71,6 +74,9 @@ public class DetectionExclusionConfigServiceConfig {
     this.allowOnlyPlatformRemovalMigrationDisabled =
         this.config.hasPath(ALLOW_ONLY_PLATFORM_REMOVAL_MIGRATION_DISABLED_KEY)
             && this.config.getBoolean(ALLOW_ONLY_PLATFORM_REMOVAL_MIGRATION_DISABLED_KEY);
+    this.exclusionTargetAnyMatchFixMigrationDisabled =
+        this.config.hasPath(EXCLUSION_TARGET_ANY_MATCH_FIX_MIGRATION_DISABLED_KEY)
+            && this.config.getBoolean(EXCLUSION_TARGET_ANY_MATCH_FIX_MIGRATION_DISABLED_KEY);
     this.userVisibleEmailConfig = new UserVisibleEmailConfig(config);
   }
 

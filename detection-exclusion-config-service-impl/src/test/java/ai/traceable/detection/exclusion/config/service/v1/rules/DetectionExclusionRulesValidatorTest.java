@@ -342,7 +342,6 @@ class DetectionExclusionRulesValidatorTest {
             detectionExclusionRulesValidator.validateOrThrow(
                 REQUEST_CONTEXT, createDetectionExclusionRuleRequest3, List.of()));
 
-    // check for incorrect rule evaluation point (EDGE)
     CreateDetectionExclusionRuleRequest createDetectionExclusionRuleRequest4 =
         CreateDetectionExclusionRuleRequest.newBuilder()
             .setRuleScope(detectionExclusionRuleScope)
@@ -354,7 +353,10 @@ class DetectionExclusionRulesValidatorTest {
                     .addExclusionTargets(EXCLUSION_TARGET_ALERT)
                     .addConditions(
                         DetectionExclusionCondition.newBuilder()
-                            .setRegionCondition(regionCondition))
+                            .setIpAbuseVelocityCondition(
+                                IpAbuseVelocityCondition.newBuilder()
+                                    .setMaxIpAbuseVelocity(
+                                        IpAbuseVelocity.IP_ABUSE_VELOCITY_MEDIUM)))
                     .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE))
             .build();
     assertThrows(
@@ -363,7 +365,6 @@ class DetectionExclusionRulesValidatorTest {
             detectionExclusionRulesValidator.validateOrThrow(
                 REQUEST_CONTEXT, createDetectionExclusionRuleRequest4, List.of()));
 
-    // check for incorrect rule evaluation point (INLINE_TRACING_AGENT)
     CreateDetectionExclusionRuleRequest createDetectionExclusionRuleRequest5 =
         CreateDetectionExclusionRuleRequest.newBuilder()
             .setRuleScope(detectionExclusionRuleScope)
@@ -495,7 +496,7 @@ class DetectionExclusionRulesValidatorTest {
             detectionExclusionRulesValidator.validateOrThrow(
                 REQUEST_CONTEXT, updateDetectionExclusionRuleRequest3, List.of()));
 
-    // check for incorrect rule evaluation point (EDGE)
+    // check for incorrect rule evaluation point (EDGE) - both condition and target unsupported
     UpdateDetectionExclusionRuleRequest updateDetectionExclusionRuleRequest4 =
         UpdateDetectionExclusionRuleRequest.newBuilder()
             .setRule(
@@ -506,7 +507,10 @@ class DetectionExclusionRulesValidatorTest {
                             .addExclusionTargets(EXCLUSION_TARGET_ALERT)
                             .addConditions(
                                 DetectionExclusionCondition.newBuilder()
-                                    .setRegionCondition(regionCondition))
+                                    .setIpAbuseVelocityCondition(
+                                        IpAbuseVelocityCondition.newBuilder()
+                                            .setMaxIpAbuseVelocity(
+                                                IpAbuseVelocity.IP_ABUSE_VELOCITY_MEDIUM)))
                             .setName("name-4")
                             .setDescription("description-4")
                             .addRuleEvaluationPoints(

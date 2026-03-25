@@ -1,7 +1,5 @@
 package ai.traceable.config.service.migration;
 
-import static ai.traceable.detection.exclusion.config.service.v1.RuleSource.RULE_SOURCE_CUSTOMER;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.config.service.TraceableConfigServiceIntegrationTestBase;
@@ -13,12 +11,12 @@ import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConf
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleInfo;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleScope;
-import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleStatus;
 import ai.traceable.detection.exclusion.config.service.v1.EnvironmentScope;
 import ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget;
 import ai.traceable.detection.exclusion.config.service.v1.GetDetectionExclusionRulesRequest;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
 import ai.traceable.detection.exclusion.config.service.v1.IpAddressCondition;
+import ai.traceable.detection.exclusion.config.service.v1.RegionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionAuditHelper;
 import ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionRulesStore;
@@ -34,7 +32,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-public class DetectionExclusionAllowOnlyPlatformRemovalMigrationConfigServiceIntegrationTest
+public class DetectionExclusionExclusionTargetAnyMatchFixMigrationIntegrationTest
     extends TraceableConfigServiceIntegrationTestBase {
   private static DetectionExclusionConfigServiceGrpc.DetectionExclusionConfigServiceBlockingStub
       detectionExclusionConfigServiceBlockingStub;
@@ -137,114 +135,96 @@ public class DetectionExclusionAllowOnlyPlatformRemovalMigrationConfigServiceInt
   }
 
   @Test
-  void testMigrationForAllowOnlyPlatformRemoval() {
-    // case-1: rule has rule evaluation points other than PLATFORM
-    DetectionExclusionRule createdRule1 = createDetectionExclusionRule1();
-    String createdRuleId1 = createdRule1.getId();
+  void testMigrationForExclusionTargetAnyMatchFix() {
+    DetectionExclusionRuleScope detectionExclusionRuleScope =
+        DetectionExclusionRuleScope.newBuilder()
+            .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("env-id"))
+            .build();
 
-    List<DetectionExclusionRule> fetchedRules =
+    List<ExclusionTarget> exclusionTargetsList1 =
+        List.of(ExclusionTarget.EXCLUSION_TARGET_ALLOW, ExclusionTarget.EXCLUSION_TARGET_ALERT);
+    List<ExclusionTarget> exclusionTargetsList2 =
+        List.of(ExclusionTarget.EXCLUSION_TARGET_BLOCK, ExclusionTarget.EXCLUSION_TARGET_ALERT);
+    List<RuleEvaluationPoint> allRuleEvaluationPoints =
+        List.of(
+            RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM,
+            RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE,
+            RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT);
+
+    // conditions supported for both EDGE and INLINE_TRACING_AGENT rule evaluation points
+    RegionCondition regionCondition =
+        RegionCondition.newBuilder()
+            .addRegions(RegionCondition.Region.newBuilder().setCountryIsoCode("iso"))
+            .build();
+    IpAddressCondition ipAddressCondition =
+        IpAddressCondition.newBuilder().addIpAddresses("1.2.3.4").build();
+    List<DetectionExclusionCondition> detectionExclusionConditions =
+        List.of(
+            DetectionExclusionCondition.newBuilder()
+                .setIpAddressCondition(ipAddressCondition)
+                .build(),
+            DetectionExclusionCondition.newBuilder().setRegionCondition(regionCondition).build());
+
+    // existing rule eligible for EDGE rule evaluation point upon migration
+    DetectionExclusionRule createdRule1 =
+        DetectionExclusionRule.newBuilder()
+            .setId("rule-id-1")
+            .setRuleScope(detectionExclusionRuleScope)
+            .setRuleInfo(
+                DetectionExclusionRuleInfo.newBuilder()
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+                    .addAllExclusionTargets(exclusionTargetsList1)
+                    .addAllConditions(detectionExclusionConditions))
+            .build();
+
+    detectionExclusionRulesStore.upsertObjects(REQUEST_CONTEXT_1, List.of(createdRule1));
+
+    DetectionExclusionRule fetchedRule1 =
         GrpcClientRequestContextUtil.executeInTenantContext(
                 TENANT_ID_1,
                 () ->
-                    detectionExclusionConfigServiceBlockingStub.getDetectionExclusionRules(
-                        getDetectionExclusionRulesRequest(createdRuleId1)))
-            .getRulesList();
-
-    DetectionExclusionRule fetchedRule1 = fetchedRules.get(0);
-    assertEquals(2, fetchedRule1.getRuleInfo().getRuleEvaluationPointsList().size());
+                    detectionExclusionConfigServiceBlockingStub
+                        .getDetectionExclusionRules(
+                            GetDetectionExclusionRulesRequest.newBuilder()
+                                .setFilter(GetRulesFilter.newBuilder().addRuleIds("rule-id-1"))
+                                .build())
+                        .getRulesList())
+            .get(0);
     assertTrue(
         fetchedRule1
             .getRuleInfo()
             .getRuleEvaluationPointsList()
-            .containsAll(
-                List.of(
-                    RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE,
-                    RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT)));
+            .containsAll(allRuleEvaluationPoints));
 
-    // case-2: rule has no rule evaluation points other than PLATFORM
-    DetectionExclusionRule createdRule2 = createDetectionExclusionRule2();
-    String createdRuleId2 = createdRule2.getId();
+    // existing rule eligible for INLINE_TRACING_AGENT rule evaluation point upon migration
+    DetectionExclusionRule createdRule2 =
+        DetectionExclusionRule.newBuilder()
+            .setId("rule-id-2")
+            .setRuleScope(detectionExclusionRuleScope)
+            .setRuleInfo(
+                DetectionExclusionRuleInfo.newBuilder()
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+                    .addAllExclusionTargets(exclusionTargetsList2)
+                    .addAllConditions(detectionExclusionConditions))
+            .build();
 
-    fetchedRules =
+    detectionExclusionRulesStore.upsertObjects(REQUEST_CONTEXT_2, List.of(createdRule2));
+
+    DetectionExclusionRule fetchedRule2 =
         GrpcClientRequestContextUtil.executeInTenantContext(
                 TENANT_ID_2,
                 () ->
-                    detectionExclusionConfigServiceBlockingStub.getDetectionExclusionRules(
-                        getDetectionExclusionRulesRequest(createdRuleId2)))
-            .getRulesList();
-
-    DetectionExclusionRule fetchedRule2 = fetchedRules.get(0);
-    assertEquals(2, fetchedRule2.getRuleInfo().getRuleEvaluationPointsList().size());
+                    detectionExclusionConfigServiceBlockingStub
+                        .getDetectionExclusionRules(
+                            GetDetectionExclusionRulesRequest.newBuilder()
+                                .setFilter(GetRulesFilter.newBuilder().addRuleIds("rule-id-2"))
+                                .build())
+                        .getRulesList())
+            .get(0);
     assertTrue(
         fetchedRule2
             .getRuleInfo()
             .getRuleEvaluationPointsList()
-            .containsAll(
-                List.of(
-                    RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE,
-                    RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT)));
-  }
-
-  private DetectionExclusionRule createDetectionExclusionRule1() {
-    DetectionExclusionRule detectionExclusionRule =
-        DetectionExclusionRule.newBuilder()
-            .setId("rule-id-1")
-            .setRuleScope(getDetectionExclusionRuleScope())
-            .setRuleInfo(
-                DetectionExclusionRuleInfo.newBuilder()
-                    .setName("rule-name-1")
-                    .setDescription("rule-description-1")
-                    .setRuleStatus(getDetectionExclusionRuleStatus())
-                    .addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_ALLOW)
-                    .addConditions(getIpAddressCondition())
-                    .addAllRuleEvaluationPoints(
-                        List.of(
-                            RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE,
-                            RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)))
-            .build();
-    detectionExclusionRulesStore.upsertObjects(REQUEST_CONTEXT_1, List.of(detectionExclusionRule));
-    return detectionExclusionRule;
-  }
-
-  private DetectionExclusionRule createDetectionExclusionRule2() {
-    DetectionExclusionRule detectionExclusionRule =
-        DetectionExclusionRule.newBuilder()
-            .setId("rule-id-2")
-            .setRuleInfo(
-                DetectionExclusionRuleInfo.newBuilder()
-                    .setName("rule-name-2")
-                    .setDescription("rule-description-2")
-                    .setRuleStatus(getDetectionExclusionRuleStatus())
-                    .addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_ALLOW)
-                    .addConditions(getIpAddressCondition())
-                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM))
-            .setRuleScope(getDetectionExclusionRuleScope())
-            .build();
-    detectionExclusionRulesStore.upsertObjects(REQUEST_CONTEXT_2, List.of(detectionExclusionRule));
-    return detectionExclusionRule;
-  }
-
-  private GetDetectionExclusionRulesRequest getDetectionExclusionRulesRequest(String ruleId) {
-    return GetDetectionExclusionRulesRequest.newBuilder()
-        .setFilter(GetRulesFilter.newBuilder().addRuleIds(ruleId))
-        .build();
-  }
-
-  private DetectionExclusionCondition getIpAddressCondition() {
-    return DetectionExclusionCondition.newBuilder()
-        .setIpAddressCondition(IpAddressCondition.newBuilder().addIpAddresses("1.2.3.4"))
-        .build();
-  }
-
-  private DetectionExclusionRuleScope getDetectionExclusionRuleScope() {
-    return DetectionExclusionRuleScope.newBuilder()
-        .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("env-id"))
-        .build();
-  }
-
-  private DetectionExclusionRuleStatus getDetectionExclusionRuleStatus() {
-    return DetectionExclusionRuleStatus.newBuilder()
-        .setRuleCreationSource(RULE_SOURCE_CUSTOMER)
-        .build();
+            .containsAll(allRuleEvaluationPoints));
   }
 }

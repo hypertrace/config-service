@@ -93,6 +93,7 @@ public class DetectionExclusionRulesManager implements RulesManager {
     rulesMigrationManager.migrateForRuleEvaluationPointsIfApplicable(requestContext);
     rulesMigrationManager.migrateForApiProtectionExclusionRulesIfApplicable(requestContext);
     rulesMigrationManager.migrateForAllowOnlyPlatformRemovalIfApplicable(requestContext);
+    rulesMigrationManager.migrateForExclusionTargetAnyMatchFixIfApplicable(requestContext);
   }
 
   @Override

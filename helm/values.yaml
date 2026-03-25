@@ -439,6 +439,8 @@ traceableConfigServiceConfig:
       migrationDisabled: false
     allowOnlyPlatformRemoval:
       migrationDisabled: true
+    exclusionTargetAnyMatchFix:
+      migrationDisabled: true
   rateLimitingConfigService:
     changeLog1:
       migrationDisabled: true

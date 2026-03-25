@@ -977,6 +977,26 @@ class DetectionExclusionRulesMigrationManagerTest {
       boolean apiProtectionExclusionRulesMigrationCompleted,
       boolean ruleEvaluationPointsMigrationCompleted,
       boolean allowOnlyPlatformRemovalMigrationCompleted) {
+    return mockMigrationStore(
+        migrationCompleted,
+        changeLog2MigrationCompleted,
+        changeLog3MigrationCompleted,
+        changeLog4MigrationCompleted,
+        apiProtectionExclusionRulesMigrationCompleted,
+        ruleEvaluationPointsMigrationCompleted,
+        allowOnlyPlatformRemovalMigrationCompleted,
+        false);
+  }
+
+  private DetectionExclusionMigrationConfig mockMigrationStore(
+      boolean migrationCompleted,
+      boolean changeLog2MigrationCompleted,
+      boolean changeLog3MigrationCompleted,
+      boolean changeLog4MigrationCompleted,
+      boolean apiProtectionExclusionRulesMigrationCompleted,
+      boolean ruleEvaluationPointsMigrationCompleted,
+      boolean allowOnlyPlatformRemovalMigrationCompleted,
+      boolean exclusionTargetAnyMatchFixMigrationCompleted) {
     DetectionExclusionMigrationConfig migrationConfig =
         DetectionExclusionMigrationConfig.newBuilder()
             .setMigrationCompleted(migrationCompleted)
@@ -988,6 +1008,8 @@ class DetectionExclusionRulesMigrationManagerTest {
             .setRuleEvaluationPointsMigrationCompleted(ruleEvaluationPointsMigrationCompleted)
             .setAllowOnlyPlatformRemovalMigrationCompleted(
                 allowOnlyPlatformRemovalMigrationCompleted)
+            .setExclusionTargetAnyMatchFixMigrationCompleted(
+                exclusionTargetAnyMatchFixMigrationCompleted)
             .build();
     when(migrationStore.getData(any())).thenReturn(Optional.of(migrationConfig));
     return migrationConfig;
@@ -1349,5 +1371,57 @@ class DetectionExclusionRulesMigrationManagerTest {
                                         .setEntityType(EntityType.ENTITY_TYPE_SERVICE)
                                         .addEntityIds("service")))))
         .build();
+  }
+
+  @Test
+  void testMigration_exclusionTargetAnyMatchFix() {
+    when(newRulesStore.getAllConfigData(any()))
+        .thenReturn(
+            List.of(
+                getSampleRuleWithoutRuleEvaluationPoints(),
+                getSampleRuleWithRuleEvaluationPoints()));
+    DetectionExclusionMigrationConfig completedMigrationConfig =
+        mockMigrationStore(true, true, true, true, false, true, false, false).toBuilder()
+            .setExclusionTargetAnyMatchFixMigrationCompleted(true)
+            .build();
+
+    migrationManager.migrateForExclusionTargetAnyMatchFixIfApplicable(requestContext);
+    verify(migrationStore, times(1)).getData(requestContext);
+    verify(migrationStore, times(1)).upsertObject(requestContext, completedMigrationConfig);
+    verify(newRulesStore, times(1)).getAllConfigData(requestContext);
+    verify(newRulesStore, times(1)).upsertObjects(eq(requestContext), any());
+    verify(newRulesStore, times(1))
+        .upsertObjects(
+            eq(requestContext),
+            argThat(
+                list ->
+                    list.size() == 1
+                        && list.stream()
+                            .allMatch(
+                                rule ->
+                                    !rule.getRuleInfo().getRuleEvaluationPointsList().isEmpty())));
+
+    resetStores();
+    migrationManager.migrateForExclusionTargetAnyMatchFixIfApplicable(requestContext);
+    verifyZeroInteractionWithRulesStore(true);
+  }
+
+  @Test
+  void testMigrationCompleted_exclusionTargetAnyMatchFix() {
+    when(newRulesStore.getAllConfigData(any()))
+        .thenReturn(
+            List.of(
+                getSampleRuleWithoutRuleEvaluationPoints(),
+                getSampleRuleWithRuleEvaluationPoints()));
+    mockMigrationStore(false, false, false, false, false, true, false, true);
+
+    migrationManager.migrateForExclusionTargetAnyMatchFixIfApplicable(requestContext);
+    verify(migrationStore, times(1)).getData(requestContext);
+    verify(migrationStore, times(0)).upsertObject(eq(requestContext), any());
+    verify(newRulesStore, times(0)).getAllConfigData(requestContext);
+
+    resetStores();
+    migrationManager.migrateForExclusionTargetAnyMatchFixIfApplicable(requestContext);
+    verifyZeroInteractionWithRulesStore(true);
   }
 }

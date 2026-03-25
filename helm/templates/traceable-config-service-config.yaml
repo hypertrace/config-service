@@ -306,6 +306,7 @@ data:
       changeLog3.migrationDisabled = {{ .Values.traceableConfigServiceConfig.detectionExclusionConfigService.changeLog3.migrationDisabled }}
       ruleEvaluationPoints.migrationDisabled = {{ .Values.traceableConfigServiceConfig.detectionExclusionConfigService.ruleEvaluationPoints.migrationDisabled }}
       allowOnlyPlatformRemoval.migrationDisabled = {{ .Values.traceableConfigServiceConfig.detectionExclusionConfigService.allowOnlyPlatformRemoval.migrationDisabled }}
+      exclusionTargetAnyMatchFix.migrationDisabled = {{ .Values.traceableConfigServiceConfig.detectionExclusionConfigService.exclusionTargetAnyMatchFix.migrationDisabled }}
       {{- if .Values.traceableConfigServiceConfig.detectionExclusionConfigService.defaultDetectionExclusionRules }}
       defaultDetectionExclusionRules =
         {{- .Values.traceableConfigServiceConfig.detectionExclusionConfigService.defaultDetectionExclusionRules | nindent 8 }}

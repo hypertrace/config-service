@@ -73,9 +73,17 @@ public class DetectionExclusionRuleEvaluationPointsMigrator {
 
   List<RuleEvaluationPoint> getRuleEvaluationPoints(DetectionExclusionRuleInfo ruleInfo) {
     List<RuleEvaluationPoint> ruleEvaluationPoints = new ArrayList<>();
-    ruleEvaluationPoints.add(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM); // by default
     List<ExclusionTarget> exclusionTargets = ruleInfo.getExclusionTargetsList();
     List<DetectionExclusionCondition> detectionExclusionConditions = ruleInfo.getConditionsList();
+
+    // Add PLATFORM by default, except for allow-only rules (allow rules are not evaluated on
+    // platform)
+    boolean isAllowOnly =
+        exclusionTargets.size() == 1
+            && exclusionTargets.get(0) == ExclusionTarget.EXCLUSION_TARGET_ALLOW;
+    if (!isAllowOnly) {
+      ruleEvaluationPoints.add(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM);
+    }
 
     // check for edge
     if (DetectionExclusionRulesValidator.checkForEdgeDecisionSupportedConditionsAndTargets(

@@ -343,10 +343,9 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
     boolean hasSupportedEdgeDecisionConditions =
         detectionExclusionConditions.stream()
             .allMatch(ExclusionEdgeDecisionRulesSupportChecker::isEdgeDecisionConditionSupported);
-
     boolean hasSupportedEdgeDecisionExclusionTargets =
         exclusionTargets.stream()
-            .allMatch(ExclusionEdgeDecisionRulesSupportChecker::isEdgeDecisionTargetSupported);
+            .anyMatch(ExclusionEdgeDecisionRulesSupportChecker::isEdgeDecisionTargetSupported);
 
     return hasSupportedEdgeDecisionConditions && hasSupportedEdgeDecisionExclusionTargets;
   }
@@ -366,10 +365,10 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
     boolean hasSupportedModsecConditions =
         detectionExclusionConditions.stream()
             .allMatch(ExclusionModsecRulesSupportChecker::isModsecConditionSupported);
-
     boolean hasSupportedModsecExclusionTargets =
         exclusionTargets.stream()
-            .allMatch(ExclusionModsecRulesSupportChecker::isModsecExclusionTargetSupported);
+            .anyMatch(ExclusionModsecRulesSupportChecker::isModsecExclusionTargetSupported);
+
     return hasSupportedModsecConditions && hasSupportedModsecExclusionTargets;
   }
 }

@@ -102,6 +102,8 @@ message DetectionExclusionMigrationConfig {
   bool api_protection_exclusion_rules_migration_completed = 6;
   // migration for removal of PLATFORM rule evaluation point when EXCLUDE_FROM_ALLOW is the only exclusion target
   bool allow_only_platform_removal_migration_completed = 7;
+  // re-migration to fix rule evaluation points computed using allMatch for exclusion targets (should be anyMatch)
+  bool exclusion_target_any_match_fix_migration_completed = 8;
 }
 
 message GetExclusionModsecRulesRequest {

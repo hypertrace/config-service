@@ -59,6 +59,8 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
       new HashSet<>();
   private final Set<ContextualKey<Void>> allowOnlyPlatformRemovalMigrationCompletedTenantsSet =
       new HashSet<>();
+  private final Set<ContextualKey<Void>> exclusionTargetAnyMatchFixMigrationCompletedTenantsSet =
+      new HashSet<>();
 
   @Inject
   public DetectionExclusionRulesMigrationManager(
@@ -338,6 +340,28 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
     }
   }
 
+  @Override
+  public void migrateForExclusionTargetAnyMatchFixIfApplicable(RequestContext requestContext) {
+    requestContext = requestContext.withUserTrackingSuppressed();
+    if (config.isExclusionTargetAnyMatchFixMigrationDisabled()) {
+      return;
+    }
+    ContextualKey<Void> contextualKey = requestContext.buildInternalContextualKey();
+    if (exclusionTargetAnyMatchFixMigrationCompletedTenantsSet.contains(contextualKey)) {
+      return;
+    }
+    DetectionExclusionMigrationConfig detectionExclusionMigrationConfig =
+        migrationStore
+            .getData(requestContext)
+            .orElse(DetectionExclusionMigrationConfig.getDefaultInstance());
+    if (detectionExclusionMigrationConfig.getExclusionTargetAnyMatchFixMigrationCompleted()) {
+      exclusionTargetAnyMatchFixMigrationCompletedTenantsSet.add(contextualKey);
+    } else {
+      updateDetectionExclusionRulesWithExclusionTargetAnyMatchFix(
+          requestContext, detectionExclusionMigrationConfig);
+    }
+  }
+
   private void updateDetectionExclusionRulesWithRuleEvaluationPoints(
       RequestContext requestContext, DetectionExclusionMigrationConfig migrationConfig) {
     List<DetectionExclusionRule> updatedRules =
@@ -533,5 +557,36 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
       return true;
     }
     return !ruleInfo.getRuleEvaluationPointsList().contains(RULE_EVALUATION_POINT_PLATFORM);
+  }
+
+  private void updateDetectionExclusionRulesWithExclusionTargetAnyMatchFix(
+      RequestContext requestContext,
+      DetectionExclusionMigrationConfig detectionExclusionMigrationConfig) {
+    List<DetectionExclusionRule> updatedRules =
+        newRulesStore.getAllConfigData(requestContext).stream()
+            .filter(rule -> !rule.getRuleInfo().getRuleEvaluationPointsList().isEmpty())
+            .map(
+                rule ->
+                    rule.toBuilder()
+                        .setRuleInfo(
+                            rule.getRuleInfo().toBuilder()
+                                .clearRuleEvaluationPoints()
+                                .addAllRuleEvaluationPoints(
+                                    ruleEvaluationPointsMigrator.getRuleEvaluationPoints(
+                                        rule.getRuleInfo())))
+                        .build())
+            .collect(Collectors.toUnmodifiableList());
+
+    if (!updatedRules.isEmpty()) {
+      newRulesStore.upsertObjects(requestContext, updatedRules);
+    }
+
+    migrationStore.upsertObject(
+        requestContext,
+        detectionExclusionMigrationConfig.toBuilder()
+            .setExclusionTargetAnyMatchFixMigrationCompleted(true)
+            .build());
+    exclusionTargetAnyMatchFixMigrationCompletedTenantsSet.add(
+        requestContext.buildInternalContextualKey());
   }
 }

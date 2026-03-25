@@ -20,6 +20,8 @@ public interface RulesMigrationManager {
 
   void migrateForAllowOnlyPlatformRemovalIfApplicable(RequestContext requestContext);
 
+  void migrateForExclusionTargetAnyMatchFixIfApplicable(RequestContext requestContext);
+
   CreateDetectionExclusionRuleRequest migrateCreateDetectionExclusionRuleRequest(
       CreateDetectionExclusionRuleRequest createDetectionExclusionRuleRequest);
 
