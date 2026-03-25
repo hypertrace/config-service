@@ -326,7 +326,7 @@ public class CustomSignatureConfigServiceImpl
 
       EdgeDecisionEngineConfig edgeDecisionEngineConfig =
           edgeDecisionConverter.convert(
-              CustomSignatureRulesEdgeDecisionFilter.getConvertibleRules(
+              CustomSignatureRulesEdgeDecisionFilter.getConvertibleAndActiveRules(
                   rulesManager.getCustomSignatureRules(context, request.getRulesFilter())));
 
       GetCustomSignatureEdgeDecisionRulesResponse response =

@@ -22,6 +22,7 @@ import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.ClauseOperator;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.EventType;
+import ai.traceable.customsignature.config.service.v1.ExpiryDetails;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import ai.traceable.customsignature.config.service.v1.RuleEffectWithModifications;
@@ -31,6 +32,7 @@ import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchConditio
 import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchOperator;
 import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
 import ai.traceable.edge.decision.config.service.RuleInfoDecorationsHandler;
+import ai.traceable.edge.decision.config.service.v1.ConfigTtl;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecision;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRule;
@@ -48,6 +50,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
+import com.google.protobuf.Timestamp;
 import com.google.protobuf.Value;
 import java.util.HashMap;
 import java.util.List;
@@ -112,6 +115,18 @@ public class CustomSignatureEdgeDecisionConverter {
     EdgeDecisionRuleStatus.Builder builder = EdgeDecisionRuleStatus.newBuilder();
     builder.setDisabled(customSignatureRule.getDisabled());
     builder.setInternal(customSignatureRule.getInternal());
+    if (customSignatureRule.hasBlockingExpiryDetails()) {
+      ExpiryDetails expiryDetails = customSignatureRule.getBlockingExpiryDetails();
+      if (expiryDetails.hasExpiryTimestampMillis()) {
+        long expiryMillis = expiryDetails.getExpiryTimestampMillis();
+        builder.setTtl(
+            ConfigTtl.newBuilder()
+                .setExpiresAt(
+                    Timestamp.newBuilder()
+                        .setSeconds(expiryMillis / 1000)
+                        .setNanos((int) ((expiryMillis % 1000) * 1_000_000))));
+      }
+    }
     return builder.build();
   }
 

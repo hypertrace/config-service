@@ -28,6 +28,26 @@ public class CustomSignatureRulesEdgeDecisionFilter {
         .collect(Collectors.toUnmodifiableList());
   }
 
+  // Rules that can be converted to edge decision rules AND are not expired
+  public static List<CustomSignatureRule> getConvertibleAndActiveRules(
+      List<CustomSignatureRule> rules) {
+    return rules.stream()
+        .filter(
+            rule ->
+                rule.getEffect()
+                    .getRuleEvaluationPointsList()
+                    .contains(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE))
+        .filter(rule -> !isExpiredRule(rule))
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  static boolean isExpiredRule(CustomSignatureRule rule) {
+    if (!rule.hasBlockingExpiryDetails()) {
+      return false;
+    }
+    return rule.getBlockingExpiryDetails().getExpiryTimestampMillis() <= System.currentTimeMillis();
+  }
+
   public static boolean isConvertibleRule(RuleEffect ruleEffect, ClauseGroup clauseGroup) {
     return hasCompatibleEventType(ruleEffect) && hasCompatibleClauseGroup(clauseGroup);
   }
