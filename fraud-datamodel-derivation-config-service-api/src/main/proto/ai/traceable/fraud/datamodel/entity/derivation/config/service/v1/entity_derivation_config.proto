@@ -33,6 +33,9 @@ message EntityDerivationConfigData {
     ParentDerivation parent_derivation = 9 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Derive value from a parent entity"];
     PrepopulatedSpanAttribute prepopulated_span_attribute = 10 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Prepopulated span attribute"];
   }
+
+  bool filter_only = 11 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "If true, entity can only be used in policy filters, not as aggregation or group-by field"];
+  bool monitor_only = 12 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "If true, entity can only be used in monitored policies, not blocking."];
 }
 
 // SpanProjection extracts values directly from span data (request/response)

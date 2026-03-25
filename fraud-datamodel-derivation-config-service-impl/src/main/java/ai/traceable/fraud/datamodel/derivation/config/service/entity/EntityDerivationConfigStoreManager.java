@@ -19,8 +19,10 @@ import io.grpc.StatusException;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -94,8 +96,10 @@ public class EntityDerivationConfigStoreManager {
     List<EntityDerivationConfig> allConfigs =
         mergeDefaultsWithUserConfigs(userConfigs, configsRequest);
 
+    List<EntityDerivationConfig> filteredConfigs = applyFilters(allConfigs, request);
+
     List<EntityDerivationConfigSummary> summaries =
-        allConfigs.stream()
+        filteredConfigs.stream()
             .map(
                 config ->
                     EntityDerivationConfigSummary.newBuilder()
@@ -109,6 +113,41 @@ public class EntityDerivationConfigStoreManager {
     return GetEntityDerivationConfigSummariesResponse.newBuilder()
         .addAllSummaries(summaries)
         .build();
+  }
+
+  private List<EntityDerivationConfig> applyFilters(
+      List<EntityDerivationConfig> configs, GetEntityDerivationConfigSummariesRequest request) {
+    if (!request.hasFilter()) {
+      return configs;
+    }
+
+    var filter = request.getFilter();
+    Map<String, EntityDerivationConfig> configsById =
+        filter.hasScopeFilter()
+            ? configs.stream()
+                .collect(Collectors.toMap(EntityDerivationConfig::getId, Function.identity()))
+            : null;
+
+    return configs.stream()
+        .filter(
+            config -> {
+              if (filter.hasScopeFilter()
+                  && !EntityDerivationConfigFilterUtil.applyScopeFilter(
+                      config, filter.getScopeFilter(), configsById)) {
+                return false;
+              }
+              if (config.getData().getFilterOnly()
+                  && !(filter.hasIncludeFilterOnly() && filter.getIncludeFilterOnly())) {
+                return false;
+              }
+              if (filter.hasExcludeMonitorOnly()
+                  && filter.getExcludeMonitorOnly()
+                  && config.getData().getMonitorOnly()) {
+                return false;
+              }
+              return true;
+            })
+        .collect(Collectors.toList());
   }
 
   public GetEntityDerivationConfigsResponse getEntityDerivationConfigs(

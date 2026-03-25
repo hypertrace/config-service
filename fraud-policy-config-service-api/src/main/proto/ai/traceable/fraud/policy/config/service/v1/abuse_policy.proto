@@ -105,6 +105,7 @@ message AbuseActionConfig {
 enum AbuseActionType {
   ABUSE_ACTION_TYPE_UNSPECIFIED = 0;
   ABUSE_ACTION_TYPE_ALERT = 1;
+  ABUSE_ACTION_TYPE_BLOCK = 2;
 }
 
 // Configuration for simple aggregation template

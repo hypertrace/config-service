@@ -53,6 +53,14 @@ message EntityDerivationConfigSummary {
 message EntityDerivationConfigFilter {
   optional bool include_disabled = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Include disabled entities"];
   optional bool include_internal = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Include internal entities"];
+  EntityDerivationScopeFilter scope_filter = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Filter entities by scope overlap (environment and API IDs)"];
+  optional bool include_filter_only = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Include filter-only entities (entities that can only be used in filters, not as aggregation/group-by fields)"];
+  optional bool exclude_monitor_only = 5 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Exclude monitor-only entities (entities that require async enrichment and cannot be used in blocking policies)"];
+}
+
+message EntityDerivationScopeFilter {
+  repeated string environment_ids = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Environment IDs to filter by - entities with overlapping environment scope will be included"];
+  repeated string api_ids = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "API IDs to filter by - entities with overlapping API scope will be included"];
 }
 
 message GetEntityDerivationConfigsRequest {

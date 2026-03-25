@@ -277,6 +277,7 @@ entities:
       description: "Latitude coordinate of the user location"
       disabled: false
       internal: false
+      filter_only: true
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
         kind_id: "system_event_kind_float"
@@ -289,6 +290,7 @@ entities:
       description: "Longitude coordinate of the user location"
       disabled: false
       internal: false
+      filter_only: true
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
         kind_id: "system_event_kind_float"
@@ -329,6 +331,8 @@ entities:
       description: "Indicates if the IP address is a proxy"
       disabled: false
       internal: false
+      filter_only: true
+      monitor_only: true
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
         kind_id: "system_event_kind_boolean"
@@ -341,6 +345,8 @@ entities:
       description: "Indicates if the IP address is from a VPN"
       disabled: false
       internal: false
+      filter_only: true
+      monitor_only: true
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
         kind_id: "system_event_kind_boolean"
@@ -353,6 +359,8 @@ entities:
       description: "Indicates if the IP address is a Tor exit node"
       disabled: false
       internal: false
+      filter_only: true
+      monitor_only: true
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
         kind_id: "system_event_kind_boolean"
@@ -365,6 +373,8 @@ entities:
       description: "Indicates if the IP address is associated with bot traffic"
       disabled: false
       internal: false
+      filter_only: true
+      monitor_only: true
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
         kind_id: "system_event_kind_boolean"
@@ -377,6 +387,8 @@ entities:
       description: "Numerical reputation score for the IP address"
       disabled: false
       internal: false
+      filter_only: true
+      monitor_only: true
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
         kind_id: "system_event_kind_integer"
@@ -389,6 +401,8 @@ entities:
       description: "Categorical reputation level for the IP address (e.g., low, medium, high)"
       disabled: false
       internal: false
+      filter_only: true
+      monitor_only: true
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
         kind_id: "system_event_kind_string"
@@ -401,6 +415,8 @@ entities:
       description: "Rate of abuse activity from the IP address"
       disabled: false
       internal: false
+      filter_only: true
+      monitor_only: true
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
         kind_id: "system_event_kind_string"
@@ -413,6 +429,8 @@ entities:
       description: "Type of internet connection (e.g., residential, corporate, mobile)"
       disabled: false
       internal: false
+      filter_only: true
+      monitor_only: true
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
         kind_id: "system_event_kind_string"
@@ -425,6 +443,8 @@ entities:
       description: "Autonomous System Number for the IP address"
       disabled: false
       internal: false
+      filter_only: true
+      monitor_only: true
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
         kind_id: "system_event_kind_string"
