@@ -18,6 +18,8 @@ service EntityDerivationConfigService {
 
 message CreateEntityDerivationConfigRequest {
   EntityDerivationConfigData data = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Entity derivation configuration data (Required)"];
+  // Optional: if provided, use this ID instead of generating one. Intended for internal callers that need a deterministic/fixed ID.
+  string id = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_skip) = true];
 }
 
 message CreateEntityDerivationConfigResponse {

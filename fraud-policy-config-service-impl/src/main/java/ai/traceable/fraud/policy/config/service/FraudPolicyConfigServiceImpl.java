@@ -3,6 +3,8 @@ package ai.traceable.fraud.policy.config.service;
 import ai.traceable.fraud.policy.config.service.store.AbusePolicyConfigStoreManager;
 import ai.traceable.fraud.policy.config.service.store.ApiAccessAnomalyConfigStoreManager;
 import ai.traceable.fraud.policy.config.service.store.FraudPolicyConfigStoreManager;
+import ai.traceable.fraud.policy.config.service.sync.PolicyScopeEntityDerivationSyncer;
+import ai.traceable.fraud.policy.config.service.v1.AbusePolicy;
 import ai.traceable.fraud.policy.config.service.v1.CreateAbusePolicyRequest;
 import ai.traceable.fraud.policy.config.service.v1.CreateAbusePolicyResponse;
 import ai.traceable.fraud.policy.config.service.v1.CreateApiAccessAnomalyConfigRequest;
@@ -56,6 +58,7 @@ class FraudPolicyConfigServiceImpl
   private final ApiAccessAnomalyConfigStoreManager apiAccessAnomalyConfigStoreManager;
   private final AbusePolicyConfigStoreManager abusePolicyConfigStoreManager;
   private final AbusePolicyConfigRequestValidator abusePolicyRequestValidator;
+  private final PolicyScopeEntityDerivationSyncer policyScopeEntityDerivationSyncer;
 
   @Inject
   FraudPolicyConfigServiceImpl(
@@ -64,12 +67,14 @@ class FraudPolicyConfigServiceImpl
       ApiAccessAnomalyConfigStoreManager apiAccessAnomalyConfigStoreManager,
       ApiAccessAnomalyConfigServiceRequestValidator apiAccessAnomalyConfigServiceRequestValidator,
       AbusePolicyConfigStoreManager abusePolicyConfigStoreManager,
-      AbusePolicyConfigRequestValidator abusePolicyRequestValidator) {
+      AbusePolicyConfigRequestValidator abusePolicyRequestValidator,
+      PolicyScopeEntityDerivationSyncer policyScopeEntityDerivationSyncer) {
     this.fraudPolicyConfigStoreManager = fraudPolicyConfigStoreManager;
     this.requestValidator = requestValidator;
     this.apiAccessAnomalyConfigStoreManager = apiAccessAnomalyConfigStoreManager;
     this.abusePolicyConfigStoreManager = abusePolicyConfigStoreManager;
     this.abusePolicyRequestValidator = abusePolicyRequestValidator;
+    this.policyScopeEntityDerivationSyncer = policyScopeEntityDerivationSyncer;
   }
 
   @Override
@@ -248,8 +253,10 @@ class FraudPolicyConfigServiceImpl
     RequestContext requestContext = RequestContext.CURRENT.get();
     try {
       abusePolicyRequestValidator.validateCreateRequest(request, requestContext);
-      responseObserver.onNext(
-          abusePolicyConfigStoreManager.createAbusePolicy(requestContext, request));
+      CreateAbusePolicyResponse response =
+          abusePolicyConfigStoreManager.createAbusePolicy(requestContext, request);
+      policyScopeEntityDerivationSyncer.onPolicyCreated(requestContext, response.getPolicy());
+      responseObserver.onNext(response);
       responseObserver.onCompleted();
     } catch (Exception exception) {
       Exception decoratedException = decorateException(requestContext, exception);
@@ -269,8 +276,17 @@ class FraudPolicyConfigServiceImpl
     RequestContext requestContext = RequestContext.CURRENT.get();
     try {
       abusePolicyRequestValidator.validateUpdateRequest(request, requestContext);
-      responseObserver.onNext(
-          abusePolicyConfigStoreManager.updateAbusePolicy(requestContext, request));
+      AbusePolicy oldPolicy =
+          abusePolicyConfigStoreManager
+              .fetchAbusePolicy(
+                  requestContext,
+                  GetAbusePolicyRequest.newBuilder().setPolicyId(request.getPolicyId()).build())
+              .getPolicy();
+      UpdateAbusePolicyResponse response =
+          abusePolicyConfigStoreManager.updateAbusePolicy(requestContext, request);
+      policyScopeEntityDerivationSyncer.onPolicyUpdated(
+          requestContext, oldPolicy, response.getPolicy());
+      responseObserver.onNext(response);
       responseObserver.onCompleted();
     } catch (Exception exception) {
       Exception decoratedException = decorateException(requestContext, exception);
@@ -290,8 +306,11 @@ class FraudPolicyConfigServiceImpl
     RequestContext requestContext = RequestContext.CURRENT.get();
     try {
       abusePolicyRequestValidator.validateRequestContext(requestContext);
-      responseObserver.onNext(
-          abusePolicyConfigStoreManager.deleteAbusePolicyList(requestContext, request));
+      DeleteAbusePolicyResponse response =
+          abusePolicyConfigStoreManager.deleteAbusePolicyList(requestContext, request);
+      policyScopeEntityDerivationSyncer.onPoliciesDeleted(
+          requestContext, response.getPoliciesList());
+      responseObserver.onNext(response);
       responseObserver.onCompleted();
     } catch (Exception exception) {
       Exception decoratedException = decorateException(requestContext, exception);

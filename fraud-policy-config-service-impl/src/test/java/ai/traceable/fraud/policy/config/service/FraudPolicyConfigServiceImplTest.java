@@ -24,6 +24,7 @@ import ai.traceable.fraud.policy.config.service.store.ApiAccessAnomalyConfigStor
 import ai.traceable.fraud.policy.config.service.store.ApiAccessAnomalyConfigStoreManager;
 import ai.traceable.fraud.policy.config.service.store.FraudPolicyConfigStore;
 import ai.traceable.fraud.policy.config.service.store.FraudPolicyConfigStoreManager;
+import ai.traceable.fraud.policy.config.service.sync.PolicyScopeEntityDerivationSyncer;
 import ai.traceable.fraud.policy.config.service.v1.APISpec;
 import ai.traceable.fraud.policy.config.service.v1.ApiAccessAnomalyConfig;
 import ai.traceable.fraud.policy.config.service.v1.ApiCollection;
@@ -141,7 +142,8 @@ class FraudPolicyConfigServiceImplTest {
                 new ApiAccessAnomalyConfigServiceRequestValidator(),
                 abusePolicyConfigStoreManager,
                 new AbusePolicyConfigRequestValidator(
-                    fraudDataModelEventKindRegistry, entityDerivationConfigServiceStub)))
+                    fraudDataModelEventKindRegistry, entityDerivationConfigServiceStub),
+                new PolicyScopeEntityDerivationSyncer(entityDerivationConfigServiceStub)))
         .start();
 
     this.fraudPolicyConfigServiceBlockingStub =

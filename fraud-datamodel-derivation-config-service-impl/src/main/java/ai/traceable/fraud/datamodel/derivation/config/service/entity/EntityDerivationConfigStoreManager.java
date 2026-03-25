@@ -43,7 +43,8 @@ public class EntityDerivationConfigStoreManager {
 
   public CreateEntityDerivationConfigResponse createEntityDerivationConfig(
       RequestContext requestContext, CreateEntityDerivationConfigRequest request) {
-    String configId = uuidGenerator.generateRandomId();
+    String configId =
+        request.getId().isEmpty() ? uuidGenerator.generateRandomId() : request.getId();
     String columnName = generateColumnName(request.getData().getDisplayName());
 
     EntityDerivationConfig config =
