@@ -482,6 +482,8 @@ class LocalProcessingConfigServiceImplTest {
   @Test
   @DisplayName("Test getDetectionRules always returns modsec format rules")
   void testGetDetectionRulesAlwaysReturnsModsecFormat() {
+    localProcessingRulesStub.updateDetectionRulesEnabled(
+        UpdateDetectionRulesEnabledRequest.newBuilder().setDetectionRulesEnabled(true).build());
     CustomModsecDetectionRules expectedCustomModsecDetectionRules =
         CustomModsecDetectionRules.newBuilder()
             .setCustomModsecDetectionRulesBlob("modsec custom blob")
@@ -512,6 +514,8 @@ class LocalProcessingConfigServiceImplTest {
   @Test
   @DisplayName("Test getDetectionRules with environment scoping")
   void testGetDetectionRulesWithEnvironment() {
+    localProcessingRulesStub.updateDetectionRulesEnabled(
+        UpdateDetectionRulesEnabledRequest.newBuilder().setDetectionRulesEnabled(true).build());
     CustomModsecDetectionRules expectedCustomRules =
         CustomModsecDetectionRules.newBuilder()
             .setCustomModsecDetectionRulesBlob("env-scoped blob")

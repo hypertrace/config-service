@@ -6,7 +6,6 @@ import static ai.traceable.localprocessing.config.service.constants.LocalProcess
 import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.SAMPLING_POLICIES;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import ai.traceable.localprocessing.config.service.LocalProcessingConfigServiceConfig;
@@ -192,7 +191,7 @@ class LocalProcessingRulesServiceImplTest {
         localProcessingRulesStub
             .getDetectionRulesEnabled(GetDetectionRulesEnabledRequest.getDefaultInstance())
             .getDetectionRulesEnabled();
-    assertTrue(detectionRulesEnabled);
+    assertFalse(detectionRulesEnabled);
 
     detectionRulesEnabled =
         localProcessingRulesStub

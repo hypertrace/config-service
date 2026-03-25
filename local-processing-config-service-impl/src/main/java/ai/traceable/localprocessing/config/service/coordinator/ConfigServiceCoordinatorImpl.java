@@ -48,8 +48,8 @@ public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
         getSamplingPoliciesFromConfig(localProcessingConfigServiceConfig);
     this.defaultProtectionModeConfigStore = defaultProtectionModeConfigStore;
     this.defaultDetectionRulesEnabled =
-        !localProcessingConfig.hasPath(DETECTION_RULES_ENABLED)
-            || localProcessingConfig.getBoolean(DETECTION_RULES_ENABLED);
+        localProcessingConfig.hasPath(DETECTION_RULES_ENABLED)
+            && localProcessingConfig.getBoolean(DETECTION_RULES_ENABLED);
     this.detectionRulesConfigStore = detectionRulesConfigStore;
     this.localProcessingRulesConfigStore = localProcessingRulesConfigStore;
     this.defaultModsecConfig =
