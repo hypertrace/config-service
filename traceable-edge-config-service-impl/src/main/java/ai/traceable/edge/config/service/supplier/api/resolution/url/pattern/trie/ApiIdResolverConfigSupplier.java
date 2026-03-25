@@ -210,7 +210,7 @@ public class ApiIdResolverConfigSupplier implements TraceableEdgeConfigSupplier 
       // If upstream resolvedUrlPatterns incorrectly include method as the first segment (e.g.
       // "GET/admin/config"),
       // strip it so trie is created for "admin/config" and method stays only in HttpDetail.
-      if (segments.length > 0 && segments[0].equalsIgnoreCase(httpMethod)) {
+      if (segments.length > 0 && segments[0].equals(httpMethod)) {
         segments = Arrays.copyOfRange(segments, 1, segments.length);
       }
 
