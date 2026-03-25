@@ -398,7 +398,7 @@ class DetectionExclusionRulesValidatorTest {
                     .setName("name-6")
                     .setDescription("description-6")
                     .setRuleStatus(detectionExclusionRuleStatus)
-                    .addExclusionTargets(EXCLUSION_TARGET_ALLOW)
+                    .addExclusionTargets(EXCLUSION_TARGET_BLOCK)
                     .addConditions(
                         DetectionExclusionCondition.newBuilder()
                             .setRegionCondition(regionCondition))
@@ -560,7 +560,7 @@ class DetectionExclusionRulesValidatorTest {
                     .setRuleInfo(
                         DetectionExclusionRuleInfo.newBuilder()
                             .setRuleStatus(detectionExclusionRuleStatus)
-                            .addExclusionTargets(EXCLUSION_TARGET_ALLOW)
+                            .addExclusionTargets(EXCLUSION_TARGET_BLOCK)
                             .addConditions(
                                 DetectionExclusionCondition.newBuilder()
                                     .setRegionCondition(regionCondition))

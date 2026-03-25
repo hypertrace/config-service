@@ -311,8 +311,14 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
           .asRuntimeException();
     }
 
-    // not checking for the case of RULE_EVALUATION_POINT_PLATFORM since that gets added by default
-    // in migration
+    if (exclusionTargets.size() == 1
+        && exclusionTargets.contains(EXCLUSION_TARGET_ALLOW)
+        && ruleEvaluationPoints.contains(RULE_EVALUATION_POINT_PLATFORM)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              "RULE_EVALUATION_POINT_PLATFORM cannot be one of the rule evaluation points when EXCLUSION_TARGET_ALLOW is the only exclusion target.")
+          .asRuntimeException();
+    }
 
     if (ruleEvaluationPoints.contains(RULE_EVALUATION_POINT_EDGE)) {
       if (!checkForEdgeDecisionSupportedConditionsAndTargets(exclusionTargets, conditions)) {
