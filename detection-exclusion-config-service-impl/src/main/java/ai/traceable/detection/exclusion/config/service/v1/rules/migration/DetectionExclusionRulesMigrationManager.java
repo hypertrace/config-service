@@ -342,7 +342,7 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
 
   @Override
   public void migrateForExclusionTargetAnyMatchFixIfApplicable(RequestContext requestContext) {
-    requestContext = requestContext.withUserTrackingSuppressed();
+    requestContext = new RequestContext(requestContext).withUserTrackingSuppressed();
     if (config.isExclusionTargetAnyMatchFixMigrationDisabled()) {
       return;
     }

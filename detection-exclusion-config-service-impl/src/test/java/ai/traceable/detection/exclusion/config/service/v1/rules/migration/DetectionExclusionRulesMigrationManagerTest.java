@@ -1386,13 +1386,14 @@ class DetectionExclusionRulesMigrationManagerTest {
             .build();
 
     migrationManager.migrateForExclusionTargetAnyMatchFixIfApplicable(requestContext);
-    verify(migrationStore, times(1)).getData(requestContext);
-    verify(migrationStore, times(1)).upsertObject(requestContext, completedMigrationConfig);
-    verify(newRulesStore, times(1)).getAllConfigData(requestContext);
-    verify(newRulesStore, times(1)).upsertObjects(eq(requestContext), any());
+    verify(migrationStore, times(1)).getData(any(RequestContext.class));
+    verify(migrationStore, times(1))
+        .upsertObject(any(RequestContext.class), eq(completedMigrationConfig));
+    verify(newRulesStore, times(1)).getAllConfigData(any(RequestContext.class));
+    verify(newRulesStore, times(1)).upsertObjects(any(RequestContext.class), any());
     verify(newRulesStore, times(1))
         .upsertObjects(
-            eq(requestContext),
+            any(RequestContext.class),
             argThat(
                 list ->
                     list.size() == 1
@@ -1416,9 +1417,9 @@ class DetectionExclusionRulesMigrationManagerTest {
     mockMigrationStore(false, false, false, false, false, true, false, true);
 
     migrationManager.migrateForExclusionTargetAnyMatchFixIfApplicable(requestContext);
-    verify(migrationStore, times(1)).getData(requestContext);
-    verify(migrationStore, times(0)).upsertObject(eq(requestContext), any());
-    verify(newRulesStore, times(0)).getAllConfigData(requestContext);
+    verify(migrationStore, times(1)).getData(any(RequestContext.class));
+    verify(migrationStore, times(0)).upsertObject(any(RequestContext.class), any());
+    verify(newRulesStore, times(0)).getAllConfigData(any(RequestContext.class));
 
     resetStores();
     migrationManager.migrateForExclusionTargetAnyMatchFixIfApplicable(requestContext);
