@@ -15,6 +15,7 @@ import ai.traceable.edge.decision.config.service.aggregator.attributes.variable.
 import ai.traceable.edge.decision.config.service.aggregator.attributes.variable.enrich.fetcher.VariableFetcher;
 import ai.traceable.edge.decision.config.service.supplier.EdgeDecisionEngineConfigSupplier;
 import ai.traceable.edge.decision.config.service.supplier.StoredEdgeDecisionEngineConfigSupplier;
+import ai.traceable.edge.decision.config.service.supplier.abusepolicy.AbusePolicyEdgeDecisionEngineConfigSupplier;
 import ai.traceable.edge.decision.config.service.supplier.actor.ActorEdgeDecisionEngineConfigSupplier;
 import ai.traceable.edge.decision.config.service.supplier.actor.config.ActorServiceConfig;
 import ai.traceable.edge.decision.config.service.supplier.categorized.bots.CategorizedBotsEdgeDecisionEngineConfigSupplier;
@@ -23,6 +24,7 @@ import ai.traceable.edge.decision.config.service.supplier.detectionexclusion.Det
 import ai.traceable.edge.decision.config.service.supplier.jwt.JwtExtractionEdgeDecisionConfigSupplier;
 import ai.traceable.edge.decision.config.service.supplier.ratelimiting.RateLimitingEdgeDecisionEngineConfigSupplier;
 import ai.traceable.edge.decision.config.service.supplier.userattribution.UserAttributionEdgeDecisionConfigSupplier;
+import ai.traceable.fraud.policy.config.service.v1.FraudPolicyConfigServiceGrpc;
 import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionConfigServiceGrpc;
 import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionConfigServiceGrpc.JwtExtractionConfigServiceBlockingStub;
 import ai.traceable.platform.actor.v1.ActorServiceGrpc;
@@ -75,6 +77,7 @@ public class EdgeDecisionConfigServiceModule extends AbstractModule {
     configBinder.addBinding().to(DetectionExclusionEdgeDecisionConfigSupplier.class);
     configBinder.addBinding().to(CustomSignatureEdgeDecisionConfigSupplier.class);
     configBinder.addBinding().to(CategorizedBotsEdgeDecisionEngineConfigSupplier.class);
+    configBinder.addBinding().to(AbusePolicyEdgeDecisionEngineConfigSupplier.class);
 
     Multibinder<VariableEnricher> variableEnricherMultibinder =
         Multibinder.newSetBinder(binder(), VariableEnricher.class);
@@ -150,6 +153,14 @@ public class EdgeDecisionConfigServiceModule extends AbstractModule {
   @Provides
   JwtExtractionConfigServiceBlockingStub providesJwtExtractionConfigServiceBlockingStub() {
     return JwtExtractionConfigServiceGrpc.newBlockingStub(this.channel)
+        .withCallCredentials(
+            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  FraudPolicyConfigServiceGrpc.FraudPolicyConfigServiceBlockingStub
+      providesFraudPolicyConfigServiceBlockingStub() {
+    return FraudPolicyConfigServiceGrpc.newBlockingStub(this.channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

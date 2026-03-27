@@ -8,9 +8,11 @@ dependencies {
   implementation(projects.configProtoUtils)
   implementation(projects.configUtils)
   implementation(projects.fraudPolicyConfigServiceApi)
+  implementation(projects.traceableEdgeDecisionConfigServiceApi)
   implementation(projects.fraudDatamodelEventKindConfigServiceApi)
   implementation(projects.fraudDatamodelEventKindConfigServiceImpl)
   implementation(projects.fraudDatamodelDerivationConfigServiceApi)
+  implementation(projects.entityFetcherCache)
 
   implementation(commonLibs.grpc.api)
   implementation(commonLibs.typesafe.config)

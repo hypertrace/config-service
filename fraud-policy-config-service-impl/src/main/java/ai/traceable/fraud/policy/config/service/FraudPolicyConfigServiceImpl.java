@@ -1,5 +1,7 @@
 package ai.traceable.fraud.policy.config.service;
 
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
+import ai.traceable.fraud.policy.config.service.converter.AbusePolicyEdgeDecisionConverter;
 import ai.traceable.fraud.policy.config.service.store.AbusePolicyConfigStoreManager;
 import ai.traceable.fraud.policy.config.service.store.ApiAccessAnomalyConfigStoreManager;
 import ai.traceable.fraud.policy.config.service.store.FraudPolicyConfigStoreManager;
@@ -20,6 +22,8 @@ import ai.traceable.fraud.policy.config.service.v1.DeleteFraudPolicyResponse;
 import ai.traceable.fraud.policy.config.service.v1.FraudPolicyConfigServiceGrpc;
 import ai.traceable.fraud.policy.config.service.v1.GetAbusePoliciesRequest;
 import ai.traceable.fraud.policy.config.service.v1.GetAbusePoliciesResponse;
+import ai.traceable.fraud.policy.config.service.v1.GetAbusePolicyEdgeDecisionRulesRequest;
+import ai.traceable.fraud.policy.config.service.v1.GetAbusePolicyEdgeDecisionRulesResponse;
 import ai.traceable.fraud.policy.config.service.v1.GetAbusePolicyRequest;
 import ai.traceable.fraud.policy.config.service.v1.GetAbusePolicyResponse;
 import ai.traceable.fraud.policy.config.service.v1.GetApiAccessAnomalyConfigRequest;
@@ -44,6 +48,7 @@ import ai.traceable.fraud.policy.config.service.validation.FraudPolicyConfigRequ
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import jakarta.inject.Inject;
+import java.util.List;
 import java.util.function.BiFunction;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -58,6 +63,7 @@ class FraudPolicyConfigServiceImpl
   private final ApiAccessAnomalyConfigStoreManager apiAccessAnomalyConfigStoreManager;
   private final AbusePolicyConfigStoreManager abusePolicyConfigStoreManager;
   private final AbusePolicyConfigRequestValidator abusePolicyRequestValidator;
+  private final AbusePolicyEdgeDecisionConverter abusePolicyEdgeDecisionConverter;
   private final PolicyScopeEntityDerivationSyncer policyScopeEntityDerivationSyncer;
 
   @Inject
@@ -68,12 +74,14 @@ class FraudPolicyConfigServiceImpl
       ApiAccessAnomalyConfigServiceRequestValidator apiAccessAnomalyConfigServiceRequestValidator,
       AbusePolicyConfigStoreManager abusePolicyConfigStoreManager,
       AbusePolicyConfigRequestValidator abusePolicyRequestValidator,
+      AbusePolicyEdgeDecisionConverter abusePolicyEdgeDecisionConverter,
       PolicyScopeEntityDerivationSyncer policyScopeEntityDerivationSyncer) {
     this.fraudPolicyConfigStoreManager = fraudPolicyConfigStoreManager;
     this.requestValidator = requestValidator;
     this.apiAccessAnomalyConfigStoreManager = apiAccessAnomalyConfigStoreManager;
     this.abusePolicyConfigStoreManager = abusePolicyConfigStoreManager;
     this.abusePolicyRequestValidator = abusePolicyRequestValidator;
+    this.abusePolicyEdgeDecisionConverter = abusePolicyEdgeDecisionConverter;
     this.policyScopeEntityDerivationSyncer = policyScopeEntityDerivationSyncer;
   }
 
@@ -354,6 +362,37 @@ class FraudPolicyConfigServiceImpl
       Exception decoratedException = decorateException(requestContext, exception);
       log.warn(
           "Error while fetching abuse policy for request: {} with context {}",
+          request,
+          requestContext,
+          decoratedException);
+      responseObserver.onError(decoratedException);
+    }
+  }
+
+  @Override
+  public void getAbusePolicyEdgeDecisionRules(
+      GetAbusePolicyEdgeDecisionRulesRequest request,
+      StreamObserver<GetAbusePolicyEdgeDecisionRulesResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      abusePolicyRequestValidator.validateRequestContext(requestContext);
+      GetAbusePoliciesRequest abusePoliciesRequest =
+          GetAbusePoliciesRequest.newBuilder().setFilter(request.getRulesFilter()).build();
+      List<AbusePolicy> abusePolicies =
+          abusePolicyConfigStoreManager
+              .fetchAbusePolicies(requestContext, abusePoliciesRequest)
+              .getPoliciesList();
+      EdgeDecisionEngineConfig edgeDecisionEngineConfig =
+          abusePolicyEdgeDecisionConverter.convert(requestContext, abusePolicies);
+      responseObserver.onNext(
+          GetAbusePolicyEdgeDecisionRulesResponse.newBuilder()
+              .setEdgeDecisionEngineConfig(edgeDecisionEngineConfig)
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      Exception decoratedException = decorateException(requestContext, exception);
+      log.warn(
+          "Error while fetching abuse policy edge decision rules for request: {} with context {}",
           request,
           requestContext,
           decoratedException);

@@ -18,6 +18,7 @@ import ai.traceable.fraud.datamodel.event.kind.v1.AggregationFunctionType;
 import ai.traceable.fraud.datamodel.event.kind.v1.ComplexDataModelEventKind;
 import ai.traceable.fraud.datamodel.event.kind.v1.FraudDataModelEventKindRegistry;
 import ai.traceable.fraud.datamodel.event.kind.v1.OperatorType;
+import ai.traceable.fraud.policy.config.service.converter.AbusePolicyEdgeDecisionConverter;
 import ai.traceable.fraud.policy.config.service.store.AbusePolicyConfigStore;
 import ai.traceable.fraud.policy.config.service.store.AbusePolicyConfigStoreManager;
 import ai.traceable.fraud.policy.config.service.store.ApiAccessAnomalyConfigStore;
@@ -88,6 +89,7 @@ class FraudPolicyConfigServiceImplTest {
   @Mock private UuidGenerator uuidGenerator;
   @Mock private FraudDataModelEventKindRegistry fraudDataModelEventKindRegistry;
   @Mock private EntityDerivationConfigServiceBlockingStub entityDerivationConfigServiceStub;
+  @Mock private AbusePolicyEdgeDecisionConverter abusePolicyEdgeDecisionConverter;
 
   @BeforeEach
   void setUp(TestInfo testInfo) {
@@ -143,6 +145,7 @@ class FraudPolicyConfigServiceImplTest {
                 abusePolicyConfigStoreManager,
                 new AbusePolicyConfigRequestValidator(
                     fraudDataModelEventKindRegistry, entityDerivationConfigServiceStub),
+                abusePolicyEdgeDecisionConverter,
                 new PolicyScopeEntityDerivationSyncer(entityDerivationConfigServiceStub)))
         .start();
 
