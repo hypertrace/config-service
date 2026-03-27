@@ -383,8 +383,16 @@ message RegionExpression {
 
   message Region {
     oneof region {
-      string country_iso_code = 1;
+      string country_iso_code = 1 [deprecated = true];
+      GranularRegion granular_region = 2;
+      string region_regex = 3;
     }
+  }
+
+  message GranularRegion {
+    string country_iso_code = 1;
+    optional string state = 2;
+    optional string city = 3;
   }
 }
 
