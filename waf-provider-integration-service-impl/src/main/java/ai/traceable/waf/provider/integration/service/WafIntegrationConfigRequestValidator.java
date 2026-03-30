@@ -14,9 +14,12 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDef
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
 import ai.traceable.waf.integration.service.api.v1.AkamaiAuthCredentials;
+import ai.traceable.waf.integration.service.api.v1.AkamaiClientList;
 import ai.traceable.waf.integration.service.api.v1.AkamaiIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.AkamaiIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.AkamaiIntegrationUpdateParams;
+import ai.traceable.waf.integration.service.api.v1.AkamaiListConfig;
+import ai.traceable.waf.integration.service.api.v1.AkamaiNetworkList;
 import ai.traceable.waf.integration.service.api.v1.AkamaiPolicyDetails;
 import ai.traceable.waf.integration.service.api.v1.AuthCredentials;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationParams;
@@ -764,8 +767,37 @@ public class WafIntegrationConfigRequestValidator {
         akamaiPolicyDetails, AkamaiPolicyDetails.POLICY_ID_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
         akamaiPolicyDetails, AkamaiPolicyDetails.AKAMAI_POLICY_CONFIGURATION_ID_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(
-        akamaiPolicyDetails, AkamaiPolicyDetails.NETWORK_LIST_ID_FIELD_NUMBER);
+
+    boolean hasDeprecatedNetworkListId = !akamaiPolicyDetails.getNetworkListId().isEmpty();
+    boolean hasListConfig = akamaiPolicyDetails.hasListConfig();
+
+    if (!hasDeprecatedNetworkListId && !hasListConfig) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Either network_list_id or list_config must be set for Akamai policy")
+          .asRuntimeException();
+    }
+
+    if (hasListConfig) {
+      validateAkamaiListConfig(akamaiPolicyDetails.getListConfig());
+    }
+  }
+
+  private void validateAkamaiListConfig(AkamaiListConfig listConfig) {
+    switch (listConfig.getListTypeCase()) {
+      case NETWORK_LIST:
+        validateNonDefaultPresenceOrThrow(
+            listConfig.getNetworkList(), AkamaiNetworkList.ID_FIELD_NUMBER);
+        break;
+      case CLIENT_LIST:
+        validateNonDefaultPresenceOrThrow(
+            listConfig.getClientList(), AkamaiClientList.ID_FIELD_NUMBER);
+        break;
+      case LISTTYPE_NOT_SET:
+      default:
+        throw Status.INVALID_ARGUMENT
+            .withDescription("Either network_list or client_list must be set in list_config")
+            .asRuntimeException();
+    }
   }
 
   private void validateF5IntegrationDetailsNoDuplicatesOrThrow(

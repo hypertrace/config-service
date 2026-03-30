@@ -3,6 +3,9 @@ package ai.traceable.waf.provider.integration.service;
 import ai.traceable.waf.integration.service.api.v1.AkamaiIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.AkamaiIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.AkamaiIntegrationUpdateParams;
+import ai.traceable.waf.integration.service.api.v1.AkamaiListConfig;
+import ai.traceable.waf.integration.service.api.v1.AkamaiNetworkList;
+import ai.traceable.waf.integration.service.api.v1.AkamaiPolicyDetails;
 import ai.traceable.waf.integration.service.api.v1.AuthCredentials;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationUpdateParams;
@@ -547,6 +550,68 @@ public class WafIntegrationBuilderUtils {
                     .build())
             .build();
       case AKAMAI_INTEGRATION_PARAMS:
+        AkamaiIntegrationParams akamaiIntegrationParams =
+            wafIntegration.getWafIntegrationDetails().getAkamaiIntegrationParams();
+        AkamaiIntegrationParams.Builder convertedAkamaiIntegrationParamsBuilder =
+            akamaiIntegrationParams.toBuilder();
+
+        AkamaiIntegrationDetails.Builder akamaiDetailsBuilder =
+            akamaiIntegrationParams.getAkamaiIntegrationDetails().toBuilder();
+        AkamaiPolicyDetails.Builder policyDetailsBuilder =
+            akamaiDetailsBuilder.getAkamaiPolicyDetails().toBuilder();
+
+        if (!akamaiIntegrationParams
+                .getAkamaiIntegrationDetails()
+                .getAkamaiPolicyDetails()
+                .getNetworkListId()
+                .isEmpty()
+            && !akamaiIntegrationParams
+                .getAkamaiIntegrationDetails()
+                .getAkamaiPolicyDetails()
+                .hasListConfig()) {
+
+          String deprecatedNetworkListId =
+              akamaiIntegrationParams
+                  .getAkamaiIntegrationDetails()
+                  .getAkamaiPolicyDetails()
+                  .getNetworkListId();
+
+          AkamaiListConfig listConfig =
+              AkamaiListConfig.newBuilder()
+                  .setNetworkList(
+                      AkamaiNetworkList.newBuilder().setId(deprecatedNetworkListId).build())
+                  .build();
+
+          policyDetailsBuilder.setListConfig(listConfig);
+        }
+
+        if (akamaiIntegrationParams
+            .getAkamaiIntegrationDetails()
+            .getAkamaiPolicyDetails()
+            .hasListConfig()) {
+          AkamaiListConfig listConfig =
+              akamaiIntegrationParams
+                  .getAkamaiIntegrationDetails()
+                  .getAkamaiPolicyDetails()
+                  .getListConfig();
+
+          if (listConfig.getListTypeCase() == AkamaiListConfig.ListTypeCase.NETWORK_LIST) {
+            policyDetailsBuilder.setNetworkListId(listConfig.getNetworkList().getId());
+          }
+        }
+
+        akamaiDetailsBuilder.setAkamaiPolicyDetails(policyDetailsBuilder.build());
+        convertedAkamaiIntegrationParamsBuilder.setAkamaiIntegrationDetails(
+            akamaiDetailsBuilder.build());
+
+        return WafIntegration.newBuilder()
+            .setId(wafIntegration.getId())
+            .setWafIntegrationDetails(
+                populateAllTargetsIfEmptyList(
+                    detailsBuilder
+                        .setAkamaiIntegrationParams(convertedAkamaiIntegrationParamsBuilder.build())
+                        .build()))
+            .build();
       case FORTINET_INTEGRATION_PARAMS:
         return WafIntegration.newBuilder()
             .setId(wafIntegration.getId())

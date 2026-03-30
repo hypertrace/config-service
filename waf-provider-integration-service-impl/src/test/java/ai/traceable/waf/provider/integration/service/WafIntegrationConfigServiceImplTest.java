@@ -7,9 +7,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import ai.traceable.waf.integration.service.api.v1.AkamaiAuthCredentials;
+import ai.traceable.waf.integration.service.api.v1.AkamaiClientList;
 import ai.traceable.waf.integration.service.api.v1.AkamaiIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.AkamaiIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.AkamaiIntegrationUpdateParams;
+import ai.traceable.waf.integration.service.api.v1.AkamaiListConfig;
+import ai.traceable.waf.integration.service.api.v1.AkamaiNetworkList;
 import ai.traceable.waf.integration.service.api.v1.AkamaiPolicyDetails;
 import ai.traceable.waf.integration.service.api.v1.AuthCredentials;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationParams;
@@ -1679,6 +1682,19 @@ class WafIntegrationConfigServiceImplTest {
         expectedDetails.getAkamaiIntegrationParams().getAkamaiIntegrationDetails();
     AkamaiIntegrationDetails.Builder akamaiIntegrationDetailsBuilder =
         akamaiIntegrationDetails.toBuilder().clearAkamaiAuthCredentials();
+
+    // Add list_config if only network_list_id is present (for backward compatibility migration)
+    AkamaiPolicyDetails policyDetails = akamaiIntegrationDetails.getAkamaiPolicyDetails();
+    if (!policyDetails.getNetworkListId().isEmpty() && !policyDetails.hasListConfig()) {
+      AkamaiPolicyDetails.Builder policyDetailsBuilder = policyDetails.toBuilder();
+      policyDetailsBuilder.setListConfig(
+          AkamaiListConfig.newBuilder()
+              .setNetworkList(
+                  AkamaiNetworkList.newBuilder().setId(policyDetails.getNetworkListId()).build())
+              .build());
+      akamaiIntegrationDetailsBuilder.setAkamaiPolicyDetails(policyDetailsBuilder.build());
+    }
+
     AkamaiIntegrationParams updatedAkamaiIntegrationParams =
         expectedDetails.getAkamaiIntegrationParams().toBuilder()
             .setAkamaiIntegrationDetails(akamaiIntegrationDetailsBuilder.build())
@@ -2286,5 +2302,160 @@ class WafIntegrationConfigServiceImplTest {
         wafProviderServiceBlockingStub.createWafIntegration(request);
 
     assertTrue(response.getWafIntegration().getWafIntegrationDetails().getEnabled());
+  }
+
+  @Test
+  void akamaiBackwardCompatibility_OldNetworkListIdMigratesToNewFormat() {
+    WafIntegrationDetails details =
+        WafIntegrationDetails.newBuilder()
+            .setName("akamai-old-format")
+            .setDescription("test")
+            .setEnabled(true)
+            .setWafIntegrationScope(wafConfigScope)
+            .setAkamaiIntegrationParams(
+                AkamaiIntegrationParams.newBuilder()
+                    .setAkamaiIntegrationDetails(
+                        AkamaiIntegrationDetails.newBuilder()
+                            .setHost("https://localhost:9000")
+                            .setAkamaiPolicyDetails(
+                                AkamaiPolicyDetails.newBuilder()
+                                    .setPolicyId("policy1")
+                                    .setAkamaiPolicyConfigurationId("configId")
+                                    .setNetworkListId("old-network-list-id")
+                                    .build())
+                            .setAkamaiAuthCredentials(
+                                AkamaiAuthCredentials.newBuilder()
+                                    .setEncryptedClientSecret("secret")
+                                    .setEncryptedClientToken("token")
+                                    .setEncryptedAccessToken("access")
+                                    .setEncryptionKeyId("key-id"))))
+            .build();
+
+    CreateWafIntegrationRequest request =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(details).build();
+    CreateWafIntegrationResponse response =
+        wafProviderServiceBlockingStub.createWafIntegration(request);
+
+    AkamaiPolicyDetails responsePolicyDetails =
+        response
+            .getWafIntegration()
+            .getWafIntegrationDetails()
+            .getAkamaiIntegrationParams()
+            .getAkamaiIntegrationDetails()
+            .getAkamaiPolicyDetails();
+
+    assertEquals("old-network-list-id", responsePolicyDetails.getNetworkListId());
+    assertTrue(responsePolicyDetails.hasListConfig());
+    assertEquals(
+        AkamaiListConfig.ListTypeCase.NETWORK_LIST,
+        responsePolicyDetails.getListConfig().getListTypeCase());
+    assertEquals(
+        "old-network-list-id", responsePolicyDetails.getListConfig().getNetworkList().getId());
+  }
+
+  @Test
+  void akamaiNewFormat_NetworkListWithListConfig() {
+    WafIntegrationDetails details =
+        WafIntegrationDetails.newBuilder()
+            .setName("akamai-new-network-list")
+            .setDescription("test")
+            .setEnabled(true)
+            .setWafIntegrationScope(wafConfigScope)
+            .setAkamaiIntegrationParams(
+                AkamaiIntegrationParams.newBuilder()
+                    .setAkamaiIntegrationDetails(
+                        AkamaiIntegrationDetails.newBuilder()
+                            .setHost("https://localhost:9000")
+                            .setAkamaiPolicyDetails(
+                                AkamaiPolicyDetails.newBuilder()
+                                    .setPolicyId("policy2")
+                                    .setAkamaiPolicyConfigurationId("configId2")
+                                    .setListConfig(
+                                        AkamaiListConfig.newBuilder()
+                                            .setNetworkList(
+                                                AkamaiNetworkList.newBuilder()
+                                                    .setId("new-network-list-id")
+                                                    .build())
+                                            .build())
+                                    .build())
+                            .setAkamaiAuthCredentials(
+                                AkamaiAuthCredentials.newBuilder()
+                                    .setEncryptedClientSecret("secret")
+                                    .setEncryptedClientToken("token")
+                                    .setEncryptedAccessToken("access")
+                                    .setEncryptionKeyId("key-id"))))
+            .build();
+
+    CreateWafIntegrationRequest request =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(details).build();
+    CreateWafIntegrationResponse response =
+        wafProviderServiceBlockingStub.createWafIntegration(request);
+
+    AkamaiPolicyDetails responsePolicyDetails =
+        response
+            .getWafIntegration()
+            .getWafIntegrationDetails()
+            .getAkamaiIntegrationParams()
+            .getAkamaiIntegrationDetails()
+            .getAkamaiPolicyDetails();
+
+    assertEquals("new-network-list-id", responsePolicyDetails.getNetworkListId());
+    assertTrue(responsePolicyDetails.hasListConfig());
+    assertEquals(
+        "new-network-list-id", responsePolicyDetails.getListConfig().getNetworkList().getId());
+  }
+
+  @Test
+  void akamaiNewFormat_ClientListWithListConfig() {
+    WafIntegrationDetails details =
+        WafIntegrationDetails.newBuilder()
+            .setName("akamai-client-list")
+            .setDescription("test")
+            .setEnabled(true)
+            .setWafIntegrationScope(wafConfigScope)
+            .setAkamaiIntegrationParams(
+                AkamaiIntegrationParams.newBuilder()
+                    .setAkamaiIntegrationDetails(
+                        AkamaiIntegrationDetails.newBuilder()
+                            .setHost("https://localhost:9000")
+                            .setAkamaiPolicyDetails(
+                                AkamaiPolicyDetails.newBuilder()
+                                    .setPolicyId("policy3")
+                                    .setAkamaiPolicyConfigurationId("configId3")
+                                    .setListConfig(
+                                        AkamaiListConfig.newBuilder()
+                                            .setClientList(
+                                                AkamaiClientList.newBuilder()
+                                                    .setId("client-list-id")
+                                                    .build())
+                                            .build())
+                                    .build())
+                            .setAkamaiAuthCredentials(
+                                AkamaiAuthCredentials.newBuilder()
+                                    .setEncryptedClientSecret("secret")
+                                    .setEncryptedClientToken("token")
+                                    .setEncryptedAccessToken("access")
+                                    .setEncryptionKeyId("key-id"))))
+            .build();
+
+    CreateWafIntegrationRequest request =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(details).build();
+    CreateWafIntegrationResponse response =
+        wafProviderServiceBlockingStub.createWafIntegration(request);
+
+    AkamaiPolicyDetails responsePolicyDetails =
+        response
+            .getWafIntegration()
+            .getWafIntegrationDetails()
+            .getAkamaiIntegrationParams()
+            .getAkamaiIntegrationDetails()
+            .getAkamaiPolicyDetails();
+
+    assertTrue(responsePolicyDetails.getNetworkListId().isEmpty());
+    assertTrue(responsePolicyDetails.hasListConfig());
+    assertEquals(
+        AkamaiListConfig.ListTypeCase.CLIENT_LIST,
+        responsePolicyDetails.getListConfig().getListTypeCase());
+    assertEquals("client-list-id", responsePolicyDetails.getListConfig().getClientList().getId());
   }
 }
