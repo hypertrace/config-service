@@ -19,6 +19,7 @@ enum CertificateType {
   CERTIFICATE_TYPE_UNSPECIFIED = 0;
   CERTIFICATE_TYPE_HOSTED = 1;
   CERTIFICATE_TYPE_MANAGED = 2;
+  CERTIFICATE_TYPE_AUTO = 3;
 }
 
 message CertificateMetadata {

@@ -324,6 +324,14 @@ class CertificateConfigStoreTest {
             .setCertificateType(CertificateType.CERTIFICATE_TYPE_MANAGED)
             .build();
 
+    // Create an AUTO certificate
+    Certificate autoCertificate =
+        Certificate.newBuilder()
+            .setId("cert-auto")
+            .setMetadata(CertificateMetadata.newBuilder().addDomainNames("auto.example.com"))
+            .setCertificateType(CertificateType.CERTIFICATE_TYPE_AUTO)
+            .build();
+
     // Create a certificate with unspecified type
     Certificate unspecifiedCertificate =
         Certificate.newBuilder()
@@ -340,6 +348,7 @@ class CertificateConfigStoreTest {
 
     assertTrue(store.matchesFilter(hostedCertificate, hostedFilter));
     assertFalse(store.matchesFilter(managedCertificate, hostedFilter));
+    assertFalse(store.matchesFilter(autoCertificate, hostedFilter));
     assertFalse(store.matchesFilter(unspecifiedCertificate, hostedFilter));
 
     // Test filter for managed certificates
@@ -350,7 +359,19 @@ class CertificateConfigStoreTest {
 
     assertFalse(store.matchesFilter(hostedCertificate, managedFilter));
     assertTrue(store.matchesFilter(managedCertificate, managedFilter));
+    assertFalse(store.matchesFilter(autoCertificate, managedFilter));
     assertFalse(store.matchesFilter(unspecifiedCertificate, managedFilter));
+
+    // Test filter for AUTO certificates
+    CertificateFilter autoFilter =
+        CertificateFilter.newBuilder()
+            .setCertificateType(CertificateType.CERTIFICATE_TYPE_AUTO)
+            .build();
+
+    assertFalse(store.matchesFilter(hostedCertificate, autoFilter));
+    assertFalse(store.matchesFilter(managedCertificate, autoFilter));
+    assertTrue(store.matchesFilter(autoCertificate, autoFilter));
+    assertFalse(store.matchesFilter(unspecifiedCertificate, autoFilter));
 
     // Test filter with unspecified type (should match all certificates)
     CertificateFilter unspecifiedFilter =
@@ -360,6 +381,7 @@ class CertificateConfigStoreTest {
 
     assertTrue(store.matchesFilter(hostedCertificate, unspecifiedFilter));
     assertTrue(store.matchesFilter(managedCertificate, unspecifiedFilter));
+    assertTrue(store.matchesFilter(autoCertificate, unspecifiedFilter));
     assertTrue(store.matchesFilter(unspecifiedCertificate, unspecifiedFilter));
   }
 

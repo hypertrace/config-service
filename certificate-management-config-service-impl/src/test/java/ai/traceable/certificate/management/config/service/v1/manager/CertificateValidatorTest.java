@@ -10,6 +10,7 @@ import ai.traceable.certificate.management.config.service.v1.CertificateMetadata
 import ai.traceable.certificate.management.config.service.v1.CertificateStatus;
 import ai.traceable.certificate.management.config.service.v1.CertificateStatusDetails;
 import ai.traceable.certificate.management.config.service.v1.CertificateStorageDetails;
+import ai.traceable.certificate.management.config.service.v1.CertificateType;
 import ai.traceable.certificate.management.config.service.v1.CertificateUpdate;
 import ai.traceable.certificate.management.config.service.v1.CreateCertificateRequest;
 import ai.traceable.certificate.management.config.service.v1.DeleteCertificateRequest;
@@ -320,5 +321,53 @@ class CertificateValidatorTest {
                 .setArn("arn:aws:acm:us-east-1:12:certificate/12-34-56-78")
                 .setRegion("us-east-1"))
         .build();
+  }
+
+  @Test
+  void testValidateCreateCertificateRequest_AutoType() {
+    // AUTO certificates with all required fields
+    Status status =
+        validator.validate(
+            CreateCertificateRequest.newBuilder()
+                .setName("auto-cert")
+                .setCertificateType(CertificateType.CERTIFICATE_TYPE_AUTO)
+                .setMetadata(
+                    CertificateMetadata.newBuilder()
+                        .addDomainNames("api.example.com")
+                        .addDomainNames("www.example.com")
+                        .setKeyAlgorithm("RSA_2048")
+                        .putLabels("env", "prod"))
+                .setStatusDetails(
+                    CertificateStatusDetails.newBuilder()
+                        .setStatus(CertificateStatus.CERTIFICATE_STATUS_PENDING)
+                        .setExpirationTimestamp(
+                            Timestamp.newBuilder().setSeconds(System.currentTimeMillis() / 1000)))
+                .addStorage(createValidStorageDetails())
+                .build());
+    assertTrue(status.isOk(), "AUTO certificate should pass validation");
+  }
+
+  @Test
+  void testValidateCreateCertificateRequest_AutoType_MultipleDomains() {
+    // AUTO certificates can have multiple domains (CN + SANs)
+    Status status =
+        validator.validate(
+            CreateCertificateRequest.newBuilder()
+                .setName("auto-cert-multi")
+                .setCertificateType(CertificateType.CERTIFICATE_TYPE_AUTO)
+                .setMetadata(
+                    CertificateMetadata.newBuilder()
+                        .addDomainNames("api.example.com")
+                        .addDomainNames("www.example.com")
+                        .addDomainNames("app.example.com")
+                        .setKeyAlgorithm("RSA_2048"))
+                .setStatusDetails(
+                    CertificateStatusDetails.newBuilder()
+                        .setStatus(CertificateStatus.CERTIFICATE_STATUS_PENDING)
+                        .setExpirationTimestamp(
+                            Timestamp.newBuilder().setSeconds(System.currentTimeMillis() / 1000)))
+                .addStorage(createValidStorageDetails())
+                .build());
+    assertTrue(status.isOk(), "AUTO certificate with multiple domains should pass validation");
   }
 }

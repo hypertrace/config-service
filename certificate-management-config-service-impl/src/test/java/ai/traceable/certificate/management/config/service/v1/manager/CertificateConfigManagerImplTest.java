@@ -17,6 +17,7 @@ import ai.traceable.certificate.management.config.service.v1.CertificateMetadata
 import ai.traceable.certificate.management.config.service.v1.CertificateStatus;
 import ai.traceable.certificate.management.config.service.v1.CertificateStatusDetails;
 import ai.traceable.certificate.management.config.service.v1.CertificateStorageDetails;
+import ai.traceable.certificate.management.config.service.v1.CertificateType;
 import ai.traceable.certificate.management.config.service.v1.CertificateUpdate;
 import ai.traceable.certificate.management.config.service.v1.CreateCertificateRequest;
 import ai.traceable.certificate.management.config.service.v1.DeleteCertificateRequest;
@@ -636,6 +637,97 @@ class CertificateConfigManagerImplTest {
     verify(store).getCertificate(requestContext, id);
     verify(store, never()).deleteCertificate(any(), any());
     verify(certificateUsageValidator).validateCertificateNotInUse(eq(requestContext), eq(id));
+  }
+
+  @Test
+  void testCreateCertificate_AutoType() {
+    CertificateMetadata metadata = createValidMetadata();
+    CertificateStatusDetails statusDetails =
+        CertificateStatusDetails.newBuilder()
+            .setStatus(CertificateStatus.CERTIFICATE_STATUS_PENDING)
+            .setExpirationTimestamp(
+                Timestamp.newBuilder().setSeconds(System.currentTimeMillis() / 1000))
+            .build();
+    List<CertificateStorageDetails> storage =
+        Collections.singletonList(createValidStorageDetails());
+
+    when(validator.validate(any(CreateCertificateRequest.class))).thenReturn(Status.OK);
+    when(uuidGenerator.generateRandomId()).thenReturn("cert-auto-123");
+
+    Certificate expectedCertificate =
+        Certificate.newBuilder()
+            .setId("cert-auto-123")
+            .setName("auto-certificate")
+            .setMetadata(metadata)
+            .setStatusDetails(statusDetails)
+            .setCertificateType(CertificateType.CERTIFICATE_TYPE_AUTO)
+            .addAllStorage(storage)
+            .build();
+
+    when(store.createCertificate(eq(requestContext), any(Certificate.class)))
+        .thenReturn(expectedCertificate);
+
+    CreateCertificateRequest request =
+        CreateCertificateRequest.newBuilder()
+            .setName("auto-certificate")
+            .setMetadata(metadata)
+            .setStatusDetails(statusDetails)
+            .setCertificateType(CertificateType.CERTIFICATE_TYPE_AUTO)
+            .addAllStorage(storage)
+            .build();
+
+    Certificate result = manager.createCertificate(requestContext, request);
+
+    assertNotNull(result);
+    assertEquals("cert-auto-123", result.getId());
+    assertEquals(CertificateType.CERTIFICATE_TYPE_AUTO, result.getCertificateType());
+    assertEquals(metadata, result.getMetadata());
+    assertEquals(statusDetails, result.getStatusDetails());
+    assertEquals(storage, result.getStorageList());
+
+    verify(validator).validate(eq(request));
+    verify(store).createCertificate(eq(requestContext), any(Certificate.class));
+  }
+
+  @Test
+  void testGetCertificates_FilterByAutoType() {
+    CertificateFilter filter =
+        CertificateFilter.newBuilder()
+            .setCertificateType(CertificateType.CERTIFICATE_TYPE_AUTO)
+            .build();
+
+    Certificate autoCert1 =
+        Certificate.newBuilder()
+            .setId("cert-auto-1")
+            .setName("Auto Cert 1")
+            .setCertificateType(CertificateType.CERTIFICATE_TYPE_AUTO)
+            .setMetadata(createValidMetadata())
+            .addStorage(createValidStorageDetails())
+            .build();
+
+    Certificate autoCert2 =
+        Certificate.newBuilder()
+            .setId("cert-auto-2")
+            .setName("Auto Cert 2")
+            .setCertificateType(CertificateType.CERTIFICATE_TYPE_AUTO)
+            .setMetadata(createValidMetadata())
+            .addStorage(createValidStorageDetails())
+            .build();
+
+    List<Certificate> expectedCertificates = Arrays.asList(autoCert1, autoCert2);
+
+    when(store.getCertificates(requestContext, filter)).thenReturn(expectedCertificates);
+
+    List<Certificate> result = manager.getCertificates(requestContext, filter);
+
+    assertNotNull(result);
+    assertEquals(2, result.size());
+    assertEquals("cert-auto-1", result.get(0).getId());
+    assertEquals("cert-auto-2", result.get(1).getId());
+    assertEquals(CertificateType.CERTIFICATE_TYPE_AUTO, result.get(0).getCertificateType());
+    assertEquals(CertificateType.CERTIFICATE_TYPE_AUTO, result.get(1).getCertificateType());
+
+    verify(store).getCertificates(requestContext, filter);
   }
 
   private CertificateMetadata createValidMetadata() {
