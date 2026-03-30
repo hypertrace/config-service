@@ -26,8 +26,7 @@ dependencies {
   implementation(commonLibs.bundles.grpc.api)
   implementation(commonLibs.hypertrace.framework.metrics.jakarta)
 
-  testImplementation(commonLibs.junit.jupiter)
-  testImplementation(commonLibs.mockito.junit)
+  testImplementation(commonLibs.bundles.junit.mockito)
 }
 
 tasks.test {

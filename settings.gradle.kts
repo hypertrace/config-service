@@ -34,7 +34,7 @@ rootProject.name = "traceable-config-service-root"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 configure<DependencyPluginSettingExtension> {
-  catalogVersion.set("0.4.5403")
+  catalogVersion.set("0.4.5465")
   catalogGroup.set("ai.traceable.bom")
   catalogArtifact.set("traceable-version-catalog")
   bomArtifactName.set("traceable-bom")

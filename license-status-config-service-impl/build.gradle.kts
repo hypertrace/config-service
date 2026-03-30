@@ -23,8 +23,7 @@ dependencies {
   compileOnly(commonLibs.lombok)
   implementation(commonLibs.hypertrace.framework.metrics.jakarta)
 
-  testImplementation(commonLibs.junit.jupiter)
-  testImplementation(commonLibs.mockito.core)
+  testImplementation(commonLibs.bundles.junit.mockito)
   testImplementation(testFixtures(localLibs.hypertrace.configservice.api))
 }
 

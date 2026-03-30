@@ -38,9 +38,7 @@ dependencies {
   compileOnly(commonLibs.lombok)
   implementation(commonLibs.hypertrace.grpcutils.client)
 
-  testImplementation(commonLibs.junit.jupiter)
-  testImplementation(commonLibs.mockito.core)
-  testImplementation(commonLibs.mockito.junit)
+  testImplementation(commonLibs.bundles.junit.mockito)
   testImplementation(testFixtures(projects.fraudDatamodelConfigServiceApi))
   testImplementation(testFixtures(localLibs.hypertrace.configservice.api))
 }

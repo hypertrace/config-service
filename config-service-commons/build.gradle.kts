@@ -33,9 +33,7 @@ dependencies {
   api(commonLibs.bundles.grpc.api)
   api(commonLibs.hypertrace.framework.metrics)
 
-  testImplementation(commonLibs.junit.jupiter)
-  testImplementation(commonLibs.mockito.core)
-  testImplementation(commonLibs.mockito.junit)
+  testImplementation(commonLibs.bundles.junit.mockito)
 }
 
 sourceSets {

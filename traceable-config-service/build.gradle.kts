@@ -169,7 +169,7 @@ dependencies {
   integrationTestImplementation(commonLibs.traceable.licensemetering.api)
   integrationTestImplementation(commonLibs.traceable.apinaming.model)
   integrationTestImplementation(commonLibs.traceable.platform.trainingEvaluationFramework)
-  integrationTestImplementation(commonLibs.junit.jupiter)
+  integrationTestImplementation(commonLibs.bundles.junit.mockito)
   integrationTestImplementation(commonLibs.guava)
   integrationTestImplementation(commonLibs.hypertrace.integrationtest.framework)
   integrationTestImplementation(commonLibs.hypertrace.documentstore)
@@ -216,8 +216,6 @@ dependencies {
   integrationTestImplementation(localLibs.hypertrace.configservice.objectstore)
   integrationTestImplementation(testFixtures(localLibs.hypertrace.configservice.api))
   integrationTestImplementation(localLibs.hypertrace.configservice.changeeventgenerator)
-  integrationTestImplementation(commonLibs.mockito.core)
-  integrationTestImplementation(commonLibs.mockito.junit)
 }
 
 application {

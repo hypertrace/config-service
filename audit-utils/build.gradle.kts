@@ -15,9 +15,7 @@ dependencies {
 
   implementation(localLibs.hypertrace.configservice.objectstore)
 
-  testImplementation(commonLibs.junit.jupiter)
-  testImplementation(commonLibs.mockito.core)
-  testImplementation(commonLibs.mockito.junit)
+  testImplementation(commonLibs.bundles.junit.mockito)
 }
 
 tasks.test {

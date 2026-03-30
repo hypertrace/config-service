@@ -40,8 +40,7 @@ dependencies {
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)
 
-  testImplementation(commonLibs.junit.jupiter)
-  testImplementation(commonLibs.mockito.core)
+  testImplementation(commonLibs.bundles.junit.mockito)
   testImplementation(commonLibs.hypertrace.grpcutils.client)
   testImplementation(commonLibs.commons.lang)
   testImplementation(commonLibs.commons.io)

@@ -18,7 +18,7 @@ dependencies {
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)
 
-  testImplementation(commonLibs.junit.jupiter)
+  testImplementation(commonLibs.bundles.junit.mockito)
   testImplementation(commonLibs.commons.lang)
 }
 

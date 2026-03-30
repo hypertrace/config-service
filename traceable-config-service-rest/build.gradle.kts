@@ -36,9 +36,7 @@ dependencies {
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)
 
-  testImplementation(commonLibs.junit.jupiter)
-  testImplementation(commonLibs.mockito.core)
-  testImplementation(commonLibs.mockito.junit)
+  testImplementation(commonLibs.bundles.junit.mockito)
   // additional api modules that hold the rpc contracts
   testImplementation(commonLibs.traceable.edge.decision.engine.api)
   testImplementation(commonLibs.traceable.fraud.engine.api)

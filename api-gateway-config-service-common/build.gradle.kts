@@ -10,9 +10,7 @@ dependencies {
 
   implementation(commonLibs.guice7)
 
-  testImplementation(commonLibs.junit.jupiter)
-  testImplementation(commonLibs.mockito.core)
-  testImplementation(commonLibs.mockito.junit)
+  testImplementation(commonLibs.bundles.junit.mockito)
 }
 
 tasks.test {

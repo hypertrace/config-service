@@ -29,9 +29,7 @@ dependencies {
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)
 
-  testImplementation(commonLibs.junit.jupiter)
-  testImplementation(commonLibs.mockito.core)
-  testImplementation(commonLibs.mockito.junit)
+  testImplementation(commonLibs.bundles.junit.mockito)
   testImplementation(testFixtures(localLibs.hypertrace.configservice.api))
   testAnnotationProcessor(commonLibs.lombok)
   testCompileOnly(commonLibs.lombok)

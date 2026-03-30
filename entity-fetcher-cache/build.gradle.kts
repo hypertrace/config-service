@@ -26,9 +26,7 @@ dependencies {
   implementation(commonLibs.typesafe.config)
   implementation(commonLibs.slf4j2.api)
 
-  testImplementation(commonLibs.junit.jupiter)
-  testImplementation(commonLibs.mockito.core)
-  testImplementation(commonLibs.mockito.junit)
+  testImplementation(commonLibs.bundles.junit.mockito)
 }
 
 tasks.test {

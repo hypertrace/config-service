@@ -28,8 +28,7 @@ protobuf {
 dependencies {
   api(commonLibs.bundles.grpc.api)
 
-  testImplementation(commonLibs.junit.jupiter)
-  testImplementation(commonLibs.mockito.junit)
+  testImplementation(commonLibs.bundles.junit.mockito)
   testImplementation(commonLibs.protobuf.javautil)
   testImplementation(commonLibs.jackson.yaml)
 }
