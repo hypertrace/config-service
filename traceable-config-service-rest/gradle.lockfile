@@ -1,18 +1,18 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.4.5449=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.config.service:config-service-commons:0.37.1395=testCompileClasspath,testRuntimeClasspath
-ai.traceable.config.service:fraud-datamodel-config-service-api:0.37.1395=testCompileClasspath,testRuntimeClasspath
-ai.traceable.config.service:fraud-datamodel-derivation-config-service-api:0.37.1395=testCompileClasspath,testRuntimeClasspath
-ai.traceable.config.service:fraud-datamodel-event-kind-config-service-api:0.37.1395=testCompileClasspath,testRuntimeClasspath
-ai.traceable.config.service:fraud-policy-config-service-api:0.37.1395=testCompileClasspath,testRuntimeClasspath
-ai.traceable.config.service:graphql-autogen-schema-annotations:0.37.1395=testCompileClasspath,testRuntimeClasspath
-ai.traceable.config.service:traceable-datamodel-config-service-api:0.37.1395=testCompileClasspath,testRuntimeClasspath
-ai.traceable.config.service:traceable-edge-decision-config-service-api:0.37.1395=testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.5476=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.config.service:config-service-commons:0.37.1399=testCompileClasspath,testRuntimeClasspath
+ai.traceable.config.service:fraud-datamodel-config-service-api:0.37.1399=testCompileClasspath,testRuntimeClasspath
+ai.traceable.config.service:fraud-datamodel-derivation-config-service-api:0.37.1399=testCompileClasspath,testRuntimeClasspath
+ai.traceable.config.service:fraud-datamodel-event-kind-config-service-api:0.37.1399=testCompileClasspath,testRuntimeClasspath
+ai.traceable.config.service:fraud-policy-config-service-api:0.37.1399=testCompileClasspath,testRuntimeClasspath
+ai.traceable.config.service:graphql-autogen-schema-annotations:0.37.1399=testCompileClasspath,testRuntimeClasspath
+ai.traceable.config.service:traceable-datamodel-config-service-api:0.37.1399=testCompileClasspath,testRuntimeClasspath
+ai.traceable.config.service:traceable-edge-decision-config-service-api:0.37.1399=testCompileClasspath,testRuntimeClasspath
 ai.traceable.edge-decision-service:edge-decision-engine-model:0.2.111=testCompileClasspath,testRuntimeClasspath
-ai.traceable.fraud-engine:fraud-engine-api:0.1.1193=testCompileClasspath,testRuntimeClasspath
-ai.traceable.fraud-engine:fraud-engine-models:0.1.1193=testCompileClasspath,testRuntimeClasspath
+ai.traceable.fraud-engine:fraud-engine-api:0.1.1194=testCompileClasspath,testRuntimeClasspath
+ai.traceable.fraud-engine:fraud-engine-models:0.1.1194=testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform:view-generation-api:1.0.184=testCompileClasspath,testRuntimeClasspath
 aopalliance:aopalliance:1.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.auth0:java-jwt:4.4.0=runtimeClasspath,testRuntimeClasspath
@@ -126,7 +126,7 @@ org.junit.jupiter:junit-jupiter:5.14.3=testCompileClasspath,testRuntimeClasspath
 org.junit.platform:junit-platform-commons:1.14.3=testCompileClasspath,testRuntimeClasspath
 org.junit.platform:junit-platform-engine:1.14.3=testCompileClasspath,testRuntimeClasspath
 org.junit.platform:junit-platform-launcher:1.14.3=testCompileClasspath,testRuntimeClasspath
-org.junit:junit-bom:5.14.3=testCompileClasspath,testRuntimeClasspath
+org.junit:junit-bom:5.14.3=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.latencyutils:LatencyUtils:2.0.3=testRuntimeClasspath
 org.mockito:mockito-core:5.23.0=testCompileClasspath,testRuntimeClasspath
 org.mockito:mockito-junit-jupiter:5.23.0=testCompileClasspath,testRuntimeClasspath
