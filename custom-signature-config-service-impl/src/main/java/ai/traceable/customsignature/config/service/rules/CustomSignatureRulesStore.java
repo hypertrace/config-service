@@ -257,7 +257,8 @@ public class CustomSignatureRulesStore
 
     List<CustomSignatureRule> existingRules = extractRules(existingRecords);
     List<CustomSignatureRule> backwardCompatibleRules =
-        getCustomSignatureRules(context, existingRules);
+        getCustomSignatureRules(
+            new RequestContext(context).withUserTrackingSuppressed(), existingRules);
 
     Map<String, CustomSignatureRule> backwardCompatibleRulesById =
         indexRulesById(backwardCompatibleRules);
