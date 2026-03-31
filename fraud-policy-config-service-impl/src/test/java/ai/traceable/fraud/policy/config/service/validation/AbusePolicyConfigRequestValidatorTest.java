@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionType;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfig;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfigData;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfigServiceGrpc.EntityDerivationConfigServiceBlockingStub;
@@ -28,6 +29,7 @@ import ai.traceable.fraud.policy.config.service.v1.AbusePolicyDetectionFilter;
 import ai.traceable.fraud.policy.config.service.v1.AbusePolicyLiteralValues;
 import ai.traceable.fraud.policy.config.service.v1.AbusePolicyRelationalFilter;
 import ai.traceable.fraud.policy.config.service.v1.AbusePolicyScope;
+import ai.traceable.fraud.policy.config.service.v1.AbusePredefinedBrowserBypassPolicy;
 import ai.traceable.fraud.policy.config.service.v1.AbusePredefinedTemplateConfig;
 import ai.traceable.fraud.policy.config.service.v1.AbusePredefinedTemplateType;
 import ai.traceable.fraud.policy.config.service.v1.AbuseRiskSeverity;
@@ -35,6 +37,9 @@ import ai.traceable.fraud.policy.config.service.v1.AbuseSimpleAggregationTemplat
 import ai.traceable.fraud.policy.config.service.v1.AbuseThresholdConfig;
 import ai.traceable.fraud.policy.config.service.v1.AbuseThresholdOperator;
 import ai.traceable.fraud.policy.config.service.v1.AbuseTimeWindow;
+import ai.traceable.fraud.policy.config.service.v1.BrowserBypassPolicyGenerationConfig;
+import ai.traceable.fraud.policy.config.service.v1.BrowserBypassTrainingConfig;
+import ai.traceable.fraud.policy.config.service.v1.BrowserBypassTriageConfig;
 import ai.traceable.fraud.policy.config.service.v1.CreateAbusePolicyRequest;
 import ai.traceable.fraud.policy.config.service.v1.UpdateAbusePolicyRequest;
 import com.google.protobuf.Duration;
@@ -255,7 +260,8 @@ class AbusePolicyConfigRequestValidatorTest {
             StatusRuntimeException.class,
             () -> validator.validateCreateRequest(request, requestContext));
     assertEquals(
-        "INVALID_ARGUMENT: Either simple_aggregation_template or predefined_template must be specified",
+        "INVALID_ARGUMENT: One of simple_aggregation_template, predefined_template, or"
+            + " abuse_predefined_browser_bypass_policy must be specified",
         exception.getMessage());
   }
 
@@ -365,6 +371,14 @@ class AbusePolicyConfigRequestValidatorTest {
             () -> validator.validateCreateRequest(request, requestContext));
     assertEquals(
         "INVALID_ARGUMENT: Predefined template type must be specified", exception.getMessage());
+  }
+
+  @Test
+  void testValidatePredefinedTemplate_ValidBrowserBypassPolicy() {
+    AbusePolicyData data = createValidPolicyDataWithPredefinedBrowserBypass();
+    CreateAbusePolicyRequest request = CreateAbusePolicyRequest.newBuilder().setData(data).build();
+
+    assertDoesNotThrow(() -> validator.validateCreateRequest(request, requestContext));
   }
 
   @Test
@@ -541,6 +555,28 @@ class AbusePolicyConfigRequestValidatorTest {
                 .build())
         .setSimpleAggregationTemplate(createValidSimpleAggregationTemplate())
         .setMessageFormat("Abuse detected: {message}")
+        .build();
+  }
+
+  private AbusePolicyData createValidPolicyDataWithPredefinedBrowserBypass() {
+    return createValidPolicyData().toBuilder()
+        .clearSimpleAggregationTemplate()
+        .setAbusePredefinedBrowserBypassPolicy(
+            AbusePredefinedBrowserBypassPolicy.newBuilder()
+                .setTrainingConfig(
+                    BrowserBypassTrainingConfig.newBuilder()
+                        .addCorrelationKey("session_id")
+                        .setWindowSize(Duration.newBuilder().setSeconds(300).build())
+                        .build())
+                .setPolicyGenerationConfig(
+                    BrowserBypassPolicyGenerationConfig.newBuilder()
+                        .setMinOccurrenceRateForCorrelatedApis(0.1d)
+                        .build())
+                .setTriageConfig(
+                    BrowserBypassTriageConfig.newBuilder()
+                        .setAction(EdgeDecisionType.EDGE_DECISION_TYPE_BLOCK)
+                        .build())
+                .build())
         .build();
   }
 

@@ -2,6 +2,7 @@ package ai.traceable.fraud.policy.config.service.validation;
 
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionType;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfig;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfigServiceGrpc.EntityDerivationConfigServiceBlockingStub;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.GetEntityDerivationConfigsRequest;
@@ -12,11 +13,18 @@ import ai.traceable.fraud.datamodel.event.kind.v1.FraudDataModelEventKindRegistr
 import ai.traceable.fraud.datamodel.event.kind.v1.OperatorType;
 import ai.traceable.fraud.policy.config.service.v1.AbusePolicyData;
 import ai.traceable.fraud.policy.config.service.v1.AbusePolicyLiteralValues;
+import ai.traceable.fraud.policy.config.service.v1.AbusePredefinedBrowserBypassPolicy;
+import ai.traceable.fraud.policy.config.service.v1.AbusePredefinedTemplateConfig;
+import ai.traceable.fraud.policy.config.service.v1.AbusePredefinedTemplateType;
+import ai.traceable.fraud.policy.config.service.v1.BrowserBypassPolicyGenerationConfig;
+import ai.traceable.fraud.policy.config.service.v1.BrowserBypassTrainingConfig;
+import ai.traceable.fraud.policy.config.service.v1.BrowserBypassTriageConfig;
 import ai.traceable.fraud.policy.config.service.v1.CreateAbusePolicyRequest;
 import ai.traceable.fraud.policy.config.service.v1.UpdateAbusePolicyRequest;
 import com.cronutils.model.CronType;
 import com.cronutils.model.definition.CronDefinitionBuilder;
 import com.cronutils.parser.CronParser;
+import com.google.protobuf.Duration;
 import com.google.protobuf.Value;
 import io.grpc.Status;
 import jakarta.inject.Inject;
@@ -137,21 +145,27 @@ public class AbusePolicyConfigRequestValidator {
   }
 
   private void validatePolicyTemplate(AbusePolicyData data, RequestContext requestContext) {
-    if (!data.hasSimpleAggregationTemplate() && !data.hasPredefinedTemplate()) {
+    if (!data.hasSimpleAggregationTemplate()
+        && !data.hasPredefinedTemplate()
+        && !data.hasAbusePredefinedBrowserBypassPolicy()) {
       throw Status.INVALID_ARGUMENT
           .withDescription(
-              "Either simple_aggregation_template or predefined_template must be specified")
+              "One of simple_aggregation_template, predefined_template, or"
+                  + " abuse_predefined_browser_bypass_policy must be specified")
           .asRuntimeException(requestContext.buildTrailers());
     }
 
-    // Validate simple aggregation template if present
     if (data.hasSimpleAggregationTemplate()) {
       validateSimpleAggregationTemplate(data.getSimpleAggregationTemplate(), requestContext);
     }
 
-    // Validate predefined template if present
     if (data.hasPredefinedTemplate()) {
       validatePredefinedTemplate(data.getPredefinedTemplate(), requestContext);
+    }
+
+    if (data.hasAbusePredefinedBrowserBypassPolicy()) {
+      validateAbusePredefinedBrowserBypassPolicy(
+          data.getAbusePredefinedBrowserBypassPolicy(), requestContext);
     }
   }
 
@@ -406,12 +420,9 @@ public class AbusePolicyConfigRequestValidator {
   }
 
   private void validatePredefinedTemplate(
-      ai.traceable.fraud.policy.config.service.v1.AbusePredefinedTemplateConfig template,
-      RequestContext requestContext) {
-
+      AbusePredefinedTemplateConfig template, RequestContext requestContext) {
     if (template.getTemplateType()
-        == ai.traceable.fraud.policy.config.service.v1.AbusePredefinedTemplateType
-            .ABUSE_PREDEFINED_TEMPLATE_TYPE_UNSPECIFIED) {
+        == AbusePredefinedTemplateType.ABUSE_PREDEFINED_TEMPLATE_TYPE_UNSPECIFIED) {
       throw Status.INVALID_ARGUMENT
           .withDescription("Predefined template type must be specified")
           .asRuntimeException(requestContext.buildTrailers());
@@ -420,6 +431,90 @@ public class AbusePolicyConfigRequestValidator {
     if (template.getParametersCount() == 0) {
       throw Status.INVALID_ARGUMENT
           .withDescription("Parameters are required for predefined template")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+  }
+
+  private void validateAbusePredefinedBrowserBypassPolicy(
+      AbusePredefinedBrowserBypassPolicy policy, RequestContext requestContext) {
+    if (!policy.hasTrainingConfig()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Browser bypass policy requires training_config")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+    validateBrowserBypassTrainingConfig(policy.getTrainingConfig(), requestContext);
+
+    if (!policy.hasPolicyGenerationConfig()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Browser bypass policy requires policy_generation_config")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+    validateBrowserBypassPolicyGenerationConfig(policy.getPolicyGenerationConfig(), requestContext);
+
+    if (!policy.hasTriageConfig()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Browser bypass policy requires triage_config")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+    validateBrowserBypassTriageConfig(policy.getTriageConfig(), requestContext);
+  }
+
+  private void validateBrowserBypassTrainingConfig(
+      BrowserBypassTrainingConfig config, RequestContext requestContext) {
+    if (config.getCorrelationKeyCount() == 0) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              "training_config requires at least one correlation_key for browser bypass")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+    boolean hasNonBlankKey =
+        config.getCorrelationKeyList().stream().anyMatch(key -> !key.isBlank());
+    if (!hasNonBlankKey) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("training_config correlation_key entries must not be blank")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+
+    if (!config.hasWindowSize()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("training_config requires window_size")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+    validatePositiveDuration(config.getWindowSize(), "training_config.window_size", requestContext);
+  }
+
+  private void validateBrowserBypassPolicyGenerationConfig(
+      BrowserBypassPolicyGenerationConfig config, RequestContext requestContext) {
+    double rate = config.getMinOccurrenceRateForCorrelatedApis();
+    if (Double.isNaN(rate) || rate < 0.0d || rate > 1.0d) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              "policy_generation_config.min_occurrence_rate_for_correlated_apis must be between 0 and 1")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+  }
+
+  private void validateBrowserBypassTriageConfig(
+      BrowserBypassTriageConfig config, RequestContext requestContext) {
+    EdgeDecisionType action = config.getAction();
+    if (action == EdgeDecisionType.EDGE_DECISION_TYPE_UNSPECIFIED
+        || action == EdgeDecisionType.UNRECOGNIZED) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("triage_config.action must be specified")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+  }
+
+  private void validatePositiveDuration(
+      Duration duration, String fieldName, RequestContext requestContext) {
+    if (duration.getSeconds() < 0 || duration.getNanos() < 0) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(fieldName + " must not be negative")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+    if (duration.getSeconds() == 0 && duration.getNanos() == 0) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(fieldName + " must be positive")
           .asRuntimeException(requestContext.buildTrailers());
     }
   }

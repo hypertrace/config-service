@@ -4,6 +4,7 @@ package ai.traceable.fraud.policy.config.service.v1;
 
 import "ai/traceable/fraud/datamodel/event/kind/v1/aggregation_function.proto";
 import "ai/traceable/fraud/datamodel/event/kind/v1/operator.proto";
+import "ai/traceable/fraud/policy/config/service/v1/abuse_predefined_browser_bypass_policy.proto";
 import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/struct.proto";
@@ -29,8 +30,12 @@ message AbusePolicyData {
 
   // Template-specific configuration (one of the following)
   oneof template_config {
+    // Configuration for simple aggregation template
     AbuseSimpleAggregationTemplateConfig simple_aggregation_template = 6;
+    // Configuration for predefined templates with simple kv structure
     AbusePredefinedTemplateConfig predefined_template = 7;
+    // Configuration for browser bypass policy template
+    ai.traceable.fraud.policy.config.service.v1.AbusePredefinedBrowserBypassPolicy abuse_predefined_browser_bypass_policy = 13;
   }
 
   // Optional: Description of the policy
@@ -108,7 +113,6 @@ enum AbuseActionType {
   ABUSE_ACTION_TYPE_BLOCK = 2;
 }
 
-// Configuration for simple aggregation template
 message AbuseSimpleAggregationTemplateConfig {
   // Required: Aggregation configuration
   AbuseAggregationConfig aggregation = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Aggregation configuration"];
@@ -144,7 +148,6 @@ message AbuseGroupByConfig {
 message AbusePredefinedTemplateConfig {
   // Required: Predefined template type
   AbusePredefinedTemplateType template_type = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Required. Predefined template type"];
-
   // Required: Parameters to pass to the backend template
   map<string, google.protobuf.Value> parameters = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Required. Parameters to pass to the backend template. At least one parameter"];
 }
