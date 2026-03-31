@@ -378,21 +378,45 @@ message EmailDomainExpression {
 }
 
 message RegionExpression {
-  repeated Region region_identifiers = 1;
+  repeated Region region_identifiers = 1 [deprecated = true];
   bool exclude = 2;
+  repeated RegionIdentifier regions = 3;
 
   message Region {
+    option deprecated = true;
     oneof region {
-      string country_iso_code = 1 [deprecated = true];
-      GranularRegion granular_region = 2;
-      string region_regex = 3;
+      string country_iso_code = 1;
     }
   }
+}
 
-  message GranularRegion {
-    string country_iso_code = 1;
-    optional string state = 2;
-    optional string city = 3;
+message RegionIdentifier {
+  oneof region {
+    CountryRegionIdentifier country = 1;
+    StateRegionIdentifier state = 2;
+    CityRegionIdentifier city = 3;
+  }
+}
+
+message CountryRegionIdentifier {
+  oneof country {
+    string iso_code = 1;
+  }
+}
+
+message StateRegionIdentifier {
+  optional CountryRegionIdentifier country = 1;
+  oneof state {
+    string name = 2;
+    string name_regex = 3;
+  }
+}
+
+message CityRegionIdentifier {
+  optional StateRegionIdentifier state = 1;
+  oneof city {
+    string name = 2;
+    string name_regex = 3;
   }
 }
 
