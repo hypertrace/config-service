@@ -86,7 +86,7 @@ class DetectionExclusionConfigServiceConfigTest {
 
   private void assertDetectionExclusionRules(List<DetectionExclusionRule> detectionExclusionRules) {
     int detectionExclusionRulesCount = detectionExclusionRules.size();
-    assertEquals(18, detectionExclusionRulesCount);
+    assertEquals(19, detectionExclusionRulesCount);
     assertTrue(
         detectionExclusionRules.stream()
             .allMatch(
