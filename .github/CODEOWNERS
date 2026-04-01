@@ -56,9 +56,10 @@ genai-system-discovery-config-service-impl/src @aaron-steinfeld @skjindal93 @san
 genai-system-discovery-client/src @aaron-steinfeld @skjindal93 @sanket-mundra @Vaibhav090420
 cloud-bot-deployment-config-service-api @singhalprerana @avinashkolluru @saxenakshitiz @bhubam @abhishek-yadav-tracable
 cloud-bot-deployment-config-service-impl @avinashkolluru @saxenakshitiz @bhubam @abhishek-yadav-tracable
-cloud-edge-deployment-config-service-impl @singhalprerana @avinashkolluru @saxenakshitiz @bhubam
-certificate-management-config-service-api @singhalprerana @avinashkolluru @saxenakshitiz @bhubam
-certificate-management-config-service-impl @singhalprerana @avinashkolluru @saxenakshitiz @bhubam
+cloud-edge-deployment-config-service-api @singhalprerana @avinashkolluru @saxenakshitiz @bhubam @Gg-harness
+cloud-edge-deployment-config-service-impl @singhalprerana @avinashkolluru @saxenakshitiz @bhubam @Gg-harness
+certificate-management-config-service-api @singhalprerana @avinashkolluru @saxenakshitiz @bhubam @Gg-harness
+certificate-management-config-service-impl @singhalprerana @avinashkolluru @saxenakshitiz @bhubam @Gg-harness
 session-identification-config-service-api @singhalprerana @avinashkolluru @aaron-steinfeld @bhubam
 session-identification-config-service-impl @singhalprerana @avinashkolluru @aaron-steinfeld @bhubam
 threat-scoring-config-service-api @singhalprerana @avinashkolluru @bhubam
