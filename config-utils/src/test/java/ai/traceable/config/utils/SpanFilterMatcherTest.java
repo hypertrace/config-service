@@ -225,6 +225,62 @@ class SpanFilterMatcherTest {
     assertTrue(
         this.spanFilterMatcher.matchesServiceName(
             buildSpanFilter(LogicalOperator.LOGICAL_OPERATOR_OR, List.of()), "serviceName"));
+
+    // OR with mixed field types: non-matching service name should not be masked by other fields
+    assertFalse(
+        this.spanFilterMatcher.matchesServiceName(
+            buildSpanFilter(
+                LogicalOperator.LOGICAL_OPERATOR_OR,
+                List.of(
+                    buildRelationalSpanFilter(
+                        Field.FIELD_SERVICE_NAME,
+                        RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
+                        buildSpanFilterValue("random-svc")),
+                    buildRelationalSpanFilter(
+                        Field.FIELD_ENVIRONMENT_NAME,
+                        RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
+                        buildSpanFilterValue("random-env")),
+                    buildRelationalSpanFilter(
+                        Field.FIELD_URL,
+                        RelationalOperator.RELATIONAL_OPERATOR_CONTAINS,
+                        buildSpanFilterValue("/wildcardendpoint/url-A")))),
+            "non-blocking-api"));
+
+    // OR with mixed field types: matching service name should still pass
+    assertTrue(
+        this.spanFilterMatcher.matchesServiceName(
+            buildSpanFilter(
+                LogicalOperator.LOGICAL_OPERATOR_OR,
+                List.of(
+                    buildRelationalSpanFilter(
+                        Field.FIELD_SERVICE_NAME,
+                        RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
+                        buildSpanFilterValue("non-blocking-api")),
+                    buildRelationalSpanFilter(
+                        Field.FIELD_ENVIRONMENT_NAME,
+                        RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
+                        buildSpanFilterValue("random-env")),
+                    buildRelationalSpanFilter(
+                        Field.FIELD_URL,
+                        RelationalOperator.RELATIONAL_OPERATOR_CONTAINS,
+                        buildSpanFilterValue("/wildcardendpoint/url-A")))),
+            "non-blocking-api"));
+
+    // OR with no service name fields at all: should return true (no service name constraint)
+    assertTrue(
+        this.spanFilterMatcher.matchesServiceName(
+            buildSpanFilter(
+                LogicalOperator.LOGICAL_OPERATOR_OR,
+                List.of(
+                    buildRelationalSpanFilter(
+                        Field.FIELD_ENVIRONMENT_NAME,
+                        RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
+                        buildSpanFilterValue("random-env")),
+                    buildRelationalSpanFilter(
+                        Field.FIELD_URL,
+                        RelationalOperator.RELATIONAL_OPERATOR_CONTAINS,
+                        buildSpanFilterValue("/wildcardendpoint/url-A")))),
+            "non-blocking-api"));
   }
 
   @Test
@@ -319,6 +375,62 @@ class SpanFilterMatcherTest {
     assertTrue(
         this.spanFilterMatcher.matchesEnvironment(
             buildSpanFilter(LogicalOperator.LOGICAL_OPERATOR_OR, List.of()), Optional.of("env")));
+
+    // OR with mixed field types: non-matching environment should not be masked by other fields
+    assertFalse(
+        this.spanFilterMatcher.matchesEnvironment(
+            buildSpanFilter(
+                LogicalOperator.LOGICAL_OPERATOR_OR,
+                List.of(
+                    buildRelationalSpanFilter(
+                        Field.FIELD_SERVICE_NAME,
+                        RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
+                        buildSpanFilterValue("random-svc")),
+                    buildRelationalSpanFilter(
+                        Field.FIELD_ENVIRONMENT_NAME,
+                        RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
+                        buildSpanFilterValue("random-env")),
+                    buildRelationalSpanFilter(
+                        Field.FIELD_URL,
+                        RelationalOperator.RELATIONAL_OPERATOR_CONTAINS,
+                        buildSpanFilterValue("/wildcardendpoint/url-A")))),
+            Optional.of("azure-apim-mats")));
+
+    // OR with mixed field types: matching environment should still pass
+    assertTrue(
+        this.spanFilterMatcher.matchesEnvironment(
+            buildSpanFilter(
+                LogicalOperator.LOGICAL_OPERATOR_OR,
+                List.of(
+                    buildRelationalSpanFilter(
+                        Field.FIELD_SERVICE_NAME,
+                        RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
+                        buildSpanFilterValue("random-svc")),
+                    buildRelationalSpanFilter(
+                        Field.FIELD_ENVIRONMENT_NAME,
+                        RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
+                        buildSpanFilterValue("azure-apim-mats")),
+                    buildRelationalSpanFilter(
+                        Field.FIELD_URL,
+                        RelationalOperator.RELATIONAL_OPERATOR_CONTAINS,
+                        buildSpanFilterValue("/wildcardendpoint/url-A")))),
+            Optional.of("azure-apim-mats")));
+
+    // OR with no environment fields at all: should return true (no environment constraint)
+    assertTrue(
+        this.spanFilterMatcher.matchesEnvironment(
+            buildSpanFilter(
+                LogicalOperator.LOGICAL_OPERATOR_OR,
+                List.of(
+                    buildRelationalSpanFilter(
+                        Field.FIELD_SERVICE_NAME,
+                        RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
+                        buildSpanFilterValue("random-svc")),
+                    buildRelationalSpanFilter(
+                        Field.FIELD_URL,
+                        RelationalOperator.RELATIONAL_OPERATOR_CONTAINS,
+                        buildSpanFilterValue("/wildcardendpoint/url-A")))),
+            Optional.of("azure-apim-mats")));
   }
 
   @Test

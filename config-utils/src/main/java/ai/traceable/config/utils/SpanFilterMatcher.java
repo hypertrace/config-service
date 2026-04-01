@@ -64,8 +64,15 @@ public class SpanFilterMatcher {
         if (spanFilter.getLogicalSpanFilter().getOperandsCount() == 0) {
           return true;
         }
-        return spanFilter.getLogicalSpanFilter().getOperandsList().stream()
-            .filter(SpanFilter::hasRelationalSpanFilter)
+        List<SpanFilter> envFilters =
+            spanFilter.getLogicalSpanFilter().getOperandsList().stream()
+                .filter(SpanFilter::hasRelationalSpanFilter)
+                .filter(filter -> hasEnvironmentFilter(filter.getRelationalSpanFilter()))
+                .collect(Collectors.toList());
+        if (envFilters.isEmpty()) {
+          return true;
+        }
+        return envFilters.stream()
             .anyMatch(filter -> matchesEnvironment(filter.getRelationalSpanFilter(), environment));
       }
     }
@@ -86,8 +93,15 @@ public class SpanFilterMatcher {
         if (spanFilter.getLogicalSpanFilter().getOperandsCount() == 0) {
           return true;
         }
-        return spanFilter.getLogicalSpanFilter().getOperandsList().stream()
-            .filter(SpanFilter::hasRelationalSpanFilter)
+        List<SpanFilter> svcFilters =
+            spanFilter.getLogicalSpanFilter().getOperandsList().stream()
+                .filter(SpanFilter::hasRelationalSpanFilter)
+                .filter(filter -> hasServiceNameFilter(filter.getRelationalSpanFilter()))
+                .collect(Collectors.toList());
+        if (svcFilters.isEmpty()) {
+          return true;
+        }
+        return svcFilters.stream()
             .anyMatch(filter -> matchesServiceName(filter.getRelationalSpanFilter(), serviceName));
       }
     }
