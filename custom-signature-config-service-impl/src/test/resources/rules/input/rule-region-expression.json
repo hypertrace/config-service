@@ -6,10 +6,14 @@
       "clauseOperator": "CLAUSE_OPERATOR_AND",
       "clauses": [{
         "regionExpression": {
-          "regionIdentifiers": [{
-            "countryIsoCode": "us"
+          "regions": [{
+            "country": {
+              "isoCode": "us"
+            }
           }, {
-            "countryIsoCode": "in"
+            "country": {
+              "isoCode": "in"
+            }
           }]
         }
       }]

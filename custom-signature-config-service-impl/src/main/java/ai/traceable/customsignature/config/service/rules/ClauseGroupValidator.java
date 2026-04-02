@@ -33,6 +33,7 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDef
 
 import ai.traceable.config.utils.RegexValidator;
 import ai.traceable.customsignature.config.service.v1.AttributeKeyValueExpression;
+import ai.traceable.customsignature.config.service.v1.CityRegionIdentifier;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.ClauseOperator;
@@ -57,8 +58,10 @@ import ai.traceable.customsignature.config.service.v1.MatchExpression;
 import ai.traceable.customsignature.config.service.v1.MatchKey;
 import ai.traceable.customsignature.config.service.v1.MatchOperator;
 import ai.traceable.customsignature.config.service.v1.RegionExpression;
+import ai.traceable.customsignature.config.service.v1.RegionIdentifier;
 import ai.traceable.customsignature.config.service.v1.RequestScannerTypeExpression;
 import ai.traceable.customsignature.config.service.v1.ScopeExpression;
+import ai.traceable.customsignature.config.service.v1.StateRegionIdentifier;
 import ai.traceable.customsignature.config.service.v1.StringCondition;
 import ai.traceable.customsignature.config.service.v1.UserAgentExpression;
 import ai.traceable.customsignature.config.service.v1.UserIdExpression;
@@ -289,12 +292,16 @@ public class ClauseGroupValidator {
   }
 
   private Status validateRegionExpression(RegionExpression regionExpression) {
-    if (regionExpression.getRegionIdentifiersList().isEmpty()) {
+    boolean hasDeprecated = !regionExpression.getRegionIdentifiersList().isEmpty();
+    boolean hasNew = !regionExpression.getRegionsList().isEmpty();
+
+    if (!hasDeprecated && !hasNew) {
       return Status.INVALID_ARGUMENT.withDescription(
           String.format(
               "At least one region id should be provided for region expression : %s",
               regionExpression));
     }
+
     for (RegionExpression.Region region : regionExpression.getRegionIdentifiersList()) {
       if (region.getCountryIsoCode().isEmpty()) {
         return Status.INVALID_ARGUMENT.withDescription(
@@ -302,7 +309,73 @@ public class ClauseGroupValidator {
                 "Region value cannot be empty for region expression : %s", regionExpression));
       }
     }
+
+    for (RegionIdentifier regionIdentifier : regionExpression.getRegionsList()) {
+      Status status = validateRegionIdentifier(regionIdentifier, regionExpression);
+      if (!status.isOk()) {
+        return status;
+      }
+    }
     return Status.OK;
+  }
+
+  private Status validateRegionIdentifier(
+      RegionIdentifier regionIdentifier, RegionExpression regionExpression) {
+    switch (regionIdentifier.getRegionCase()) {
+      case COUNTRY:
+        if (regionIdentifier.getCountry().getIsoCode().isEmpty()) {
+          return Status.INVALID_ARGUMENT.withDescription(
+              String.format(
+                  "Country ISO code cannot be empty for region expression : %s", regionExpression));
+        }
+        return Status.OK;
+      case STATE:
+        return validateStateRegionIdentifier(regionIdentifier.getState(), regionExpression);
+      case CITY:
+        return validateCityRegionIdentifier(regionIdentifier.getCity(), regionExpression);
+      default:
+        return Status.INVALID_ARGUMENT.withDescription(
+            String.format(
+                "Region identifier type not set for region expression : %s", regionExpression));
+    }
+  }
+
+  private Status validateStateRegionIdentifier(
+      StateRegionIdentifier state, RegionExpression regionExpression) {
+    switch (state.getStateCase()) {
+      case NAME:
+        if (state.getName().isEmpty()) {
+          return Status.INVALID_ARGUMENT.withDescription(
+              String.format(
+                  "State name cannot be empty for region expression : %s", regionExpression));
+        }
+        return Status.OK;
+      case NAME_REGEX:
+        RegexValidator.validateRegexesWithNonWide(List.of(state.getNameRegex()));
+        return Status.OK;
+      default:
+        return Status.INVALID_ARGUMENT.withDescription(
+            String.format("State identifier not set for region expression : %s", regionExpression));
+    }
+  }
+
+  private Status validateCityRegionIdentifier(
+      CityRegionIdentifier city, RegionExpression regionExpression) {
+    switch (city.getCityCase()) {
+      case NAME:
+        if (city.getName().isEmpty()) {
+          return Status.INVALID_ARGUMENT.withDescription(
+              String.format(
+                  "City name cannot be empty for region expression : %s", regionExpression));
+        }
+        return Status.OK;
+      case NAME_REGEX:
+        RegexValidator.validateRegexesWithNonWide(List.of(city.getNameRegex()));
+        return Status.OK;
+      default:
+        return Status.INVALID_ARGUMENT.withDescription(
+            String.format("City identifier not set for region expression : %s", regionExpression));
+    }
   }
 
   private Status validateIpAbuseVelocityExpression(

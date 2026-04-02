@@ -13,10 +13,13 @@ import ai.traceable.customsignature.config.service.v1.AttributeKeyValueExpressio
 import ai.traceable.customsignature.config.service.v1.Category;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
+import ai.traceable.customsignature.config.service.v1.CountryRegionIdentifier;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRuleRecord;
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import ai.traceable.customsignature.config.service.v1.MatchOperator;
+import ai.traceable.customsignature.config.service.v1.RegionExpression;
+import ai.traceable.customsignature.config.service.v1.RegionIdentifier;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
@@ -263,7 +266,7 @@ public class CustomSignatureRulesStore
     Map<String, CustomSignatureRule> backwardCompatibleRulesById =
         indexRulesById(backwardCompatibleRules);
 
-    return updateRecordsWithBackwardCompatibleRules(existingRecords, backwardCompatibleRulesById);
+    return makeRecordsBackwardCompatible(existingRecords, backwardCompatibleRulesById);
   }
 
   private List<CustomSignatureRuleRecord> fetchExistingRecords(
@@ -281,7 +284,7 @@ public class CustomSignatureRulesStore
         .collect(Collectors.toMap(CustomSignatureRule::getId, Function.identity()));
   }
 
-  private List<CustomSignatureRuleRecord> updateRecordsWithBackwardCompatibleRules(
+  private List<CustomSignatureRuleRecord> makeRecordsBackwardCompatible(
       List<CustomSignatureRuleRecord> records,
       Map<String, CustomSignatureRule> backwardCompatibleRulesById) {
     return records.stream()
@@ -294,6 +297,7 @@ public class CustomSignatureRulesStore
                   : null;
             })
         .filter(java.util.Objects::nonNull)
+        .map(this::mergeRegionFieldsBackwardCompatible)
         .collect(Collectors.toList());
   }
 
@@ -401,5 +405,70 @@ public class CustomSignatureRulesStore
 
   private StringCondition getStringCondition(String value, MatchOperator operator) {
     return StringCondition.newBuilder().setValue(value).setOperator(operator).build();
+  }
+
+  private CustomSignatureRuleRecord mergeRegionFieldsBackwardCompatible(
+      CustomSignatureRuleRecord ruleRecord) {
+    CustomSignatureRule rule = ruleRecord.getRule();
+    if (!rule.hasDefinition()) {
+      return ruleRecord;
+    }
+    ClauseGroup expanded = expandClauseGroupRegions(rule.getDefinition().getClauseGroup());
+    CustomSignatureRule expandedRule =
+        rule.toBuilder()
+            .setDefinition(rule.getDefinition().toBuilder().setClauseGroup(expanded))
+            .build();
+    return ruleRecord.toBuilder().setRule(expandedRule).build();
+  }
+
+  private ClauseGroup expandClauseGroupRegions(ClauseGroup clauseGroup) {
+    return ClauseGroup.newBuilder()
+        .setClauseOperator(clauseGroup.getClauseOperator())
+        .addAllClauses(
+            clauseGroup.getClausesList().stream()
+                .map(this::expandClauseRegion)
+                .collect(Collectors.toUnmodifiableList()))
+        .build();
+  }
+
+  private Clause expandClauseRegion(Clause clause) {
+    if (clause.hasClauseGroup()) {
+      return clause.toBuilder()
+          .setClauseGroup(expandClauseGroupRegions(clause.getClauseGroup()))
+          .build();
+    }
+    if (clause.getClauseCase() != Clause.ClauseCase.REGION_EXPRESSION) {
+      return clause;
+    }
+    RegionExpression regionExpression = clause.getRegionExpression();
+    RegionExpression.Builder regionBuilder = regionExpression.toBuilder();
+
+    Set<String> existingNewIsoCodes =
+        regionExpression.getRegionsList().stream()
+            .filter(RegionIdentifier::hasCountry)
+            .map(RegionIdentifier::getCountry)
+            .map(CountryRegionIdentifier::getIsoCode)
+            .collect(Collectors.toUnmodifiableSet());
+
+    regionExpression.getRegionIdentifiersList().stream()
+        .map(RegionExpression.Region::getCountryIsoCode)
+        .filter(iso -> !iso.isEmpty() && !existingNewIsoCodes.contains(iso))
+        .map(
+            iso ->
+                RegionIdentifier.newBuilder()
+                    .setCountry(CountryRegionIdentifier.newBuilder().setIsoCode(iso))
+                    .build())
+        .forEach(regionBuilder::addRegions);
+
+    regionBuilder.clearRegionIdentifiers();
+    for (RegionIdentifier regionIdentifier : regionBuilder.getRegionsList()) {
+      if (regionIdentifier.hasCountry()) {
+        regionBuilder.addRegionIdentifiers(
+            RegionExpression.Region.newBuilder()
+                .setCountryIsoCode(regionIdentifier.getCountry().getIsoCode()));
+      }
+    }
+
+    return clause.toBuilder().setRegionExpression(regionBuilder).build();
   }
 }

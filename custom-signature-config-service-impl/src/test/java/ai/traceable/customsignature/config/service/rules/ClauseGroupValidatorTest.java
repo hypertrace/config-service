@@ -4,7 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import ai.traceable.customsignature.config.service.v1.CityRegionIdentifier;
 import ai.traceable.customsignature.config.service.v1.Clause;
+import ai.traceable.customsignature.config.service.v1.CountryRegionIdentifier;
 import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.IpAbuseVelocity;
 import ai.traceable.customsignature.config.service.v1.IpAbuseVelocityExpression;
@@ -22,8 +24,10 @@ import ai.traceable.customsignature.config.service.v1.MatchExpression;
 import ai.traceable.customsignature.config.service.v1.MatchKey;
 import ai.traceable.customsignature.config.service.v1.MatchOperator;
 import ai.traceable.customsignature.config.service.v1.RegionExpression;
+import ai.traceable.customsignature.config.service.v1.RegionIdentifier;
 import ai.traceable.customsignature.config.service.v1.RequestScannerTypeExpression;
 import ai.traceable.customsignature.config.service.v1.ScopeExpression;
+import ai.traceable.customsignature.config.service.v1.StateRegionIdentifier;
 import ai.traceable.customsignature.config.service.v1.StringCondition;
 import com.google.protobuf.Value;
 import io.grpc.Status;
@@ -137,6 +141,105 @@ class ClauseGroupValidatorTest {
                         RegionExpression.Region.newBuilder().setCountryIsoCode("ssfsd")))
             .build();
     status = clauseGroupValidator.validateClause(validClause, EventType.EVENT_TYPE_ALLOW);
+    assertEquals(Status.OK.getCode(), status.getCode());
+  }
+
+  @Test
+  void testRegionClauseWithRegionsField() {
+    Clause invalidEmpty =
+        Clause.newBuilder()
+            .setRegionExpression(
+                RegionExpression.newBuilder().addRegions(RegionIdentifier.getDefaultInstance()))
+            .build();
+    Status status = clauseGroupValidator.validateClause(invalidEmpty, EventType.EVENT_TYPE_ALLOW);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    Clause invalidEmptyIso =
+        Clause.newBuilder()
+            .setRegionExpression(
+                RegionExpression.newBuilder()
+                    .addRegions(
+                        RegionIdentifier.newBuilder()
+                            .setCountry(CountryRegionIdentifier.newBuilder().setIsoCode(""))))
+            .build();
+    status = clauseGroupValidator.validateClause(invalidEmptyIso, EventType.EVENT_TYPE_ALLOW);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    Clause validCountry =
+        Clause.newBuilder()
+            .setRegionExpression(
+                RegionExpression.newBuilder()
+                    .addRegions(
+                        RegionIdentifier.newBuilder()
+                            .setCountry(CountryRegionIdentifier.newBuilder().setIsoCode("US"))))
+            .build();
+    status = clauseGroupValidator.validateClause(validCountry, EventType.EVENT_TYPE_ALLOW);
+    assertEquals(Status.OK.getCode(), status.getCode());
+
+    Clause validState =
+        Clause.newBuilder()
+            .setRegionExpression(
+                RegionExpression.newBuilder()
+                    .addRegions(
+                        RegionIdentifier.newBuilder()
+                            .setState(StateRegionIdentifier.newBuilder().setName("California"))))
+            .build();
+    status = clauseGroupValidator.validateClause(validState, EventType.EVENT_TYPE_ALLOW);
+    assertEquals(Status.OK.getCode(), status.getCode());
+
+    Clause validCity =
+        Clause.newBuilder()
+            .setRegionExpression(
+                RegionExpression.newBuilder()
+                    .addRegions(
+                        RegionIdentifier.newBuilder()
+                            .setCity(CityRegionIdentifier.newBuilder().setName("Mumbai"))))
+            .build();
+    status = clauseGroupValidator.validateClause(validCity, EventType.EVENT_TYPE_ALLOW);
+    assertEquals(Status.OK.getCode(), status.getCode());
+
+    Clause invalidEmptyStateName =
+        Clause.newBuilder()
+            .setRegionExpression(
+                RegionExpression.newBuilder()
+                    .addRegions(
+                        RegionIdentifier.newBuilder()
+                            .setState(StateRegionIdentifier.newBuilder().setName(""))))
+            .build();
+    status = clauseGroupValidator.validateClause(invalidEmptyStateName, EventType.EVENT_TYPE_ALLOW);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    Clause validStateRegex =
+        Clause.newBuilder()
+            .setRegionExpression(
+                RegionExpression.newBuilder()
+                    .addRegions(
+                        RegionIdentifier.newBuilder()
+                            .setState(StateRegionIdentifier.newBuilder().setNameRegex("Cal.*"))))
+            .build();
+    status = clauseGroupValidator.validateClause(validStateRegex, EventType.EVENT_TYPE_ALLOW);
+    assertEquals(Status.OK.getCode(), status.getCode());
+
+    Clause invalidEmptyCityName =
+        Clause.newBuilder()
+            .setRegionExpression(
+                RegionExpression.newBuilder()
+                    .addRegions(
+                        RegionIdentifier.newBuilder()
+                            .setCity(CityRegionIdentifier.newBuilder().setName(""))))
+            .build();
+    status = clauseGroupValidator.validateClause(invalidEmptyCityName, EventType.EVENT_TYPE_ALLOW);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    Clause validCityRegex =
+        Clause.newBuilder()
+            .setRegionExpression(
+                RegionExpression.newBuilder()
+                    .addRegions(
+                        RegionIdentifier.newBuilder()
+                            .setCity(CityRegionIdentifier.newBuilder().setNameRegex("Mum.*"))))
+            .build();
+    status = clauseGroupValidator.validateClause(validCityRegex, EventType.EVENT_TYPE_ALLOW);
     assertEquals(Status.OK.getCode(), status.getCode());
   }
 

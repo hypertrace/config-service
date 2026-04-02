@@ -7,6 +7,7 @@ import static ai.traceable.edge.decision.converter.utils.Constants.COUNTRY_ISO_C
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.Clause.ClauseCase;
 import ai.traceable.customsignature.config.service.v1.RegionExpression;
+import ai.traceable.customsignature.config.service.v1.RegionIdentifier;
 import ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping;
 import ai.traceable.datamodel.data.transformation.config.v1.BinaryOperator;
 import ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig;
@@ -24,9 +25,12 @@ public class RegionExpressionConverter implements CustomSignatureExpressionConve
   public MatchCondition buildMatchCondition(Clause clause) {
     RegionExpression regionExpression = clause.getRegionExpression();
 
+    // TODO(AAP-11983): Support state/city region matching for edge conversion.
     ListValue.Builder countryIsoCodes = ListValue.newBuilder();
-    regionExpression.getRegionIdentifiersList().stream()
-        .map(RegionExpression.Region::getCountryIsoCode)
+    regionExpression.getRegionsList().stream()
+        .filter(RegionIdentifier::hasCountry)
+        .map(regionIdentifier -> regionIdentifier.getCountry().getIsoCode())
+        .filter(isoCode -> !isoCode.isEmpty())
         .map(isoCode -> Value.newBuilder().setStringValue(isoCode).build())
         .forEach(countryIsoCodes::addValues);
     StructuredMatchCondition structuredMatchCondition =
