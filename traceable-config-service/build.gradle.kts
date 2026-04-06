@@ -28,7 +28,7 @@ tasks.register<DockerRemoveNetwork>("removeIntegrationTestNetwork") {
 }
 
 tasks.register<DockerPullImage>("pullMongoImage") {
-  image.set(docker.registryCredentials.url.get() + "/traceable/mongodb-curl:1.0.1")
+  image.set(docker.registryCredentials.url.get() + "/traceable/mongodb-curl:1.0.10")
 }
 
 tasks.register<DockerPullImage>("pullEntityServiceImage") {
