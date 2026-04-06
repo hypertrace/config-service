@@ -6,7 +6,6 @@ import ai.traceable.ast.hooks.config.service.handlers.UpdateAstHookHandler;
 import ai.traceable.ast.hooks.config.service.store.AstHooksConfigStore;
 import ai.traceable.ast.hooks.config.service.store.AstHooksTestConfigStore;
 import ai.traceable.ast.hooks.config.service.v1.AstHook;
-import ai.traceable.ast.hooks.config.service.v1.AstHookTest;
 import ai.traceable.ast.hooks.config.service.v1.AstHookTestResult;
 import ai.traceable.ast.hooks.config.service.v1.AstHooksConfigServiceGrpc.AstHooksConfigServiceImplBase;
 import ai.traceable.ast.hooks.config.service.v1.CreateAstHookRequest;
@@ -227,16 +226,19 @@ public class AstHooksConfigServiceImpl extends AstHooksConfigServiceImplBase {
     RequestContext requestContext = RequestContext.CURRENT.get();
     try {
       requestValidator.validateOrThrow(requestContext, request);
-      final AstHookTest astHookTest =
-          astHooksTestConfigStore.getData(requestContext, request.getId()).orElseThrow();
-      final AstHookTestResult astHookTestResult =
-          AstHookTestResult.newBuilder()
-              .setId(astHookTest.getId())
-              .setTestStatus(astHookTest.getTestStatus())
-              .addAllLogs(astHookTest.getLogsList())
-              .build();
-      responseObserver.onNext(
-          GetAstHookTestResultResponse.newBuilder().setHookTestResult(astHookTestResult).build());
+      final GetAstHookTestResultResponse.Builder responseBuilder =
+          GetAstHookTestResultResponse.newBuilder();
+      astHooksTestConfigStore
+          .getData(requestContext, request.getId())
+          .ifPresent(
+              astHookTest ->
+                  responseBuilder.setHookTestResult(
+                      AstHookTestResult.newBuilder()
+                          .setId(astHookTest.getId())
+                          .setTestStatus(astHookTest.getTestStatus())
+                          .addAllLogs(astHookTest.getLogsList())
+                          .build()));
+      responseObserver.onNext(responseBuilder.build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error(
