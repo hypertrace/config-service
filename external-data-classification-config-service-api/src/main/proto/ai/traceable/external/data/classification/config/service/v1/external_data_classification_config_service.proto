@@ -49,4 +49,5 @@ message GetDataClassificationConfigResponse {
   repeated DataParsingRule data_parsing_rules = 3;
   bool enabled = 4;
   ObfuscationStrategy obfuscation_strategy = 5;
+  repeated FullValueRegexDataType full_value_regex_data_types = 6;
 }

@@ -35,10 +35,16 @@ message DataTypeRule {
       StringPattern leaf_key_pattern = 12;
       KeyValuePattern key_value_pattern = 7;
       KeyValuePattern leaf_key_value_pattern = 9;
+      // currently value_pattern is only applicable to Location PATH, constraint in impl
+      ValuePattern value_pattern = 13; // only the value, no key. Applied on the attribute value directly with minimal/no parsing
     }
     Action action = 8;
     optional string name = 10;
     UrlMatchScope url_match_scope = 11;
+  }
+
+  message ValuePattern {
+    StringPattern value_pattern = 1;
   }
 
   message GlobalScope {}

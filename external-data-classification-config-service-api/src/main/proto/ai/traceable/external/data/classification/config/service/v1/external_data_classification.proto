@@ -64,6 +64,37 @@ message DataType {
   }
 }
 
+// FullValueRegexDataType matches the whole attribute's value without using parsed values
+message FullValueRegexDataType {
+  string data_type_id = 1;
+  SpanFilter span_filter = 2;
+  AttributeFilter attribute_filter = 3;
+  // Regex pattern used to identify capture groups to suppress (obfuscate or redact)
+  // e.g. (.*)@(?:.*) to suppress an email address but not the domain. person@host.com -> ***@host.com
+  //
+  // String pattern used to match and suppress
+  // e.g. "password123" to suppress exactly this string. "User's password is password123" -> "User's password is ***"
+  //
+  // If omitted, suppress full value
+  // If given but not matched, leave unredacted
+  optional StringPredicate suppression_pattern = 4;
+  Result result = 5;
+  optional DataTransformation transformation = 6;
+  bool session_identifier = 7;
+
+  enum Result {
+    RESULT_UNSPECIFIED = 0;
+    RESULT_MATCH = 1;
+    RESULT_IGNORE = 2;
+  }
+
+  enum DataTransformation {
+    DATA_TRANSFORMATION_UNSPECIFIED = 0;
+    DATA_TRANSFORMATION_REDACT = 1;
+    DATA_TRANSFORMATION_OBFUSCATE = 2;
+  }
+}
+
 message SpanFilter {
   // TODO - this could include things like API scoping in the future
   // This supports things like matching a url before checking for a particular param name
