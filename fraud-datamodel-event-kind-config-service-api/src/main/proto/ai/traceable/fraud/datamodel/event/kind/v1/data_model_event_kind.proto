@@ -36,7 +36,7 @@ message DataModelEventKind {
   Validation validation = 5 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Validation rule for data of this kind"];
 
   // Storage data type for Pinot/Trino table columns
-  DataType data_type = 6 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_skip) = true];
+  DataType data_type = 6 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Storage data type for Pinot/Trino table columns"];
 }
 
 // Validation rule for a data kind

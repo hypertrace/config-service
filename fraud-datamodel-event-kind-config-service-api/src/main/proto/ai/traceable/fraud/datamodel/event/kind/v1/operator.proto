@@ -21,7 +21,7 @@ message Operator {
 
   // List of kinds this operator accepts as input
   // Operators are valid for these kinds AND all their descendants
-  repeated ComplexDataModelEventKind input_kinds = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_skip) = true];
+  repeated ComplexDataModelEventKind input_kinds = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of kinds this operator accepts as input"];
 
   // Output kind - what type does this operator produce?
   ComplexDataModelEventKind output_kind = 5 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Output kind produced by this operator"];
