@@ -66,7 +66,8 @@ public class AbusePolicyConfigStore
         .filter(policy -> filterByEnvironmentIds(policy, filter))
         .filter(policy -> filterBySeverities(policy, filter))
         .filter(policy -> filterByApiIds(policy, filter))
-        .filter(policy -> filterByActionTypes(policy, filter));
+        .filter(policy -> filterByActionTypes(policy, filter))
+        .filter(policy -> filterByTemplateConfig(policy, filter));
   }
 
   @Override
@@ -128,5 +129,21 @@ public class AbusePolicyConfigStore
       return true;
     }
     return filter.getActionTypesList().contains(policy.getData().getAction().getActionType());
+  }
+
+  private boolean filterByTemplateConfig(AbusePolicy policy, AbusePolicyFilter filter) {
+    switch (filter.getTemplateConfigKind()) {
+      case ABUSE_POLICY_TEMPLATE_CONFIG_KIND_UNSPECIFIED:
+        return true;
+      case ABUSE_POLICY_TEMPLATE_CONFIG_KIND_SIMPLE_AGGREGATION_TEMPLATE:
+        return policy.getData().hasSimpleAggregationTemplate();
+      case ABUSE_POLICY_TEMPLATE_CONFIG_KIND_PREDEFINED_TEMPLATE:
+        return policy.getData().hasPredefinedTemplate();
+      case ABUSE_POLICY_TEMPLATE_CONFIG_KIND_PREDEFINED_BROWSER_BYPASS_POLICY:
+        return policy.getData().hasAbusePredefinedBrowserBypassPolicy();
+      case UNRECOGNIZED:
+      default:
+        return true;
+    }
   }
 }
