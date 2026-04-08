@@ -3333,6 +3333,7 @@ anomalyConfigServiceConfig:
     apiGlobalConfig:
       defaultConfigsType: API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED
       exitSpansEvalEnabled: true
+      nonHeadEntrySpansDetectionEnabled: true
       # ruleVersion:
       #   newApiProtectionStableVersion: "2.0.0"
       #   newApiProtectionStableVersionPublishedDate: "2020-01-01T00:00:00Z"
@@ -3341,6 +3342,7 @@ anomalyConfigServiceConfig:
     modsecGlobalConfig:
       defaultConfigsType: MODSEC_DEFAULT_CONFIGS_TYPE_STANDARD
       exitSpansEvalEnabled: true
+      nonHeadEntrySpansDetectionEnabled: true
       # ruleVersion:
       #   newWebAppStableVersion: "1.4.0"
       #   newWebAppStableVersionPublishedDate: "2026-02-02T00:00:00Z"

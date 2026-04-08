@@ -168,6 +168,8 @@ public class GlobalAnomalyConfigStatusManagerImpl
                       .setMinConfidenceLevel(config.getMinConfidenceLevel())
                       .setDefaultConfigsType(config.getModsecDefaultConfigsType())
                       .setEnabledForExitSpans(config.isModsecExitSpansEvalEnabled())
+                      .setEnabledDetectionForNonHeadEntrySpans(
+                          config.isModsecNonHeadEntrySpansDetectionEnabled())
                       .setRuleVersionData(
                           RuleVersionData.newBuilder()
                               .setCurrentVersion(config.getNewWebAppStableVersion())
@@ -180,6 +182,8 @@ public class GlobalAnomalyConfigStatusManagerImpl
                       .setDisabled(configStatus.getDisabled())
                       .setDefaultConfigsType(config.getApiDefaultConfigsType())
                       .setEnabledForExitSpans(config.isApiExitSpansEvalEnabled())
+                      .setEnabledDetectionForNonHeadEntrySpans(
+                          config.isApiNonHeadEntrySpansDetectionEnabled())
                       .setRuleVersionData(
                           RuleVersionData.newBuilder()
                               .setCurrentVersion(config.getNewApiProtectionStableVersion())
@@ -502,6 +506,21 @@ public class GlobalAnomalyConfigStatusManagerImpl
       builder
           .getApiGlobalConfigBuilder()
           .setEnabledForExitSpans(config.isApiExitSpansEvalEnabled());
+    }
+    if (!scopedAnomalyConfigStatusChange
+        .getGlobalModsecConfigChange()
+        .hasEnabledDetectionForNonHeadEntrySpans()) {
+      builder
+          .getGlobalModsecConfigChangeBuilder()
+          .setEnabledDetectionForNonHeadEntrySpans(
+              config.isModsecNonHeadEntrySpansDetectionEnabled());
+    }
+    if (!scopedAnomalyConfigStatusChange
+        .getGlobalApiConfigChange()
+        .hasEnabledDetectionForNonHeadEntrySpans()) {
+      builder
+          .getGlobalApiConfigChangeBuilder()
+          .setEnabledDetectionForNonHeadEntrySpans(config.isApiNonHeadEntrySpansDetectionEnabled());
     }
 
     if (scopedAnomalyConfigStatusChange.hasMinConfidenceLevel()) {

@@ -433,6 +433,7 @@ data:
       modsecGlobalConfig {
         defaultConfigsType = {{ .Values.anomalyConfigServiceConfig.global.modsecGlobalConfig.defaultConfigsType }}
         exitSpansEvalEnabled = {{ .Values.anomalyConfigServiceConfig.global.modsecGlobalConfig.exitSpansEvalEnabled }}
+        nonHeadEntrySpansDetectionEnabled = {{ .Values.anomalyConfigServiceConfig.global.modsecGlobalConfig.nonHeadEntrySpansDetectionEnabled }}
         ruleVersion {
           {{- if .Values.anomalyConfigServiceConfig.global.modsecGlobalConfig.ruleVersion }}
             newWebAppStableVersion = {{ .Values.anomalyConfigServiceConfig.global.modsecGlobalConfig.ruleVersion.newWebAppStableVersion | quote }}
@@ -447,6 +448,7 @@ data:
       apiGlobalConfig {
         defaultConfigsType = {{ .Values.anomalyConfigServiceConfig.global.apiGlobalConfig.defaultConfigsType }}
         exitSpansEvalEnabled = {{ .Values.anomalyConfigServiceConfig.global.apiGlobalConfig.exitSpansEvalEnabled }}
+        nonHeadEntrySpansDetectionEnabled = {{ .Values.anomalyConfigServiceConfig.global.apiGlobalConfig.nonHeadEntrySpansDetectionEnabled }}
         ruleVersion {
           {{- if .Values.anomalyConfigServiceConfig.global.apiGlobalConfig.ruleVersion }}
             newApiProtectionStableVersion = {{ .Values.anomalyConfigServiceConfig.global.apiGlobalConfig.ruleVersion.newApiProtectionStableVersion | quote }}

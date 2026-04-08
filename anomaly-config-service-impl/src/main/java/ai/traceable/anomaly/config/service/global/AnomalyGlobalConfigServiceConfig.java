@@ -25,6 +25,8 @@ public class AnomalyGlobalConfigServiceConfig {
   private static final String MODSEC_DEFAULT_CONFIG_TYPE = "modsecGlobalConfig.defaultConfigsType";
   private static final String MODSEC_EXIT_SPANS_EVAL_ENABLED_PATH =
       "modsecGlobalConfig.exitSpansEvalEnabled";
+  private static final String MODSEC_NON_HEAD_ENTRY_SPANS_DETECTION_ENABLED_PATH =
+      "modsecGlobalConfig.nonHeadEntrySpansDetectionEnabled";
   private static final String NEW_WEBAPP_STABLE_VERSION =
       "modsecGlobalConfig.ruleVersion.newWebAppStableVersion";
   private static final String OLD_WEBAPP_STABLE_VERSION =
@@ -41,6 +43,8 @@ public class AnomalyGlobalConfigServiceConfig {
   private static final String API_DEFAULT_CONFIG_TYPE = "apiGlobalConfig.defaultConfigsType";
   private static final String API_EXIT_SPANS_EVAL_ENABLED_PATH =
       "apiGlobalConfig.exitSpansEvalEnabled";
+  private static final String API_NON_HEAD_ENTRY_SPANS_DETECTION_ENABLED_PATH =
+      "apiGlobalConfig.nonHeadEntrySpansDetectionEnabled";
   private static final String NEW_API_PROTECTION_STABLE_VERSION =
       "apiGlobalConfig.ruleVersion.newApiProtectionStableVersion";
   private static final String NEW_API_PROTECTION_STABLE_VERSION_PUBLISHED_DATE =
@@ -57,6 +61,7 @@ public class AnomalyGlobalConfigServiceConfig {
   private final Map<LicenseInfo.Tier, Boolean> licenseTiersConfigStatusMap;
   @Getter private final ModsecDefaultConfigsType modsecDefaultConfigsType;
   @Getter private final boolean modsecExitSpansEvalEnabled;
+  @Getter private final boolean modsecNonHeadEntrySpansDetectionEnabled;
   @Getter private final RuleVersion newWebAppStableVersion;
   @Getter private final RuleVersion oldWebAppStableVersion;
   @Getter private final RuleVersion newApiProtectionStableVersion;
@@ -65,6 +70,7 @@ public class AnomalyGlobalConfigServiceConfig {
   @Getter private final ModsecDefaultConfigsType envScopeModsecDefaultConfigsType;
   @Getter private final ApiDefaultConfigsType apiDefaultConfigsType;
   @Getter private final boolean apiExitSpansEvalEnabled;
+  @Getter private final boolean apiNonHeadEntrySpansDetectionEnabled;
   @Getter private final boolean genAiDisabled;
 
   public AnomalyGlobalConfigServiceConfig(Config config) {
@@ -75,6 +81,9 @@ public class AnomalyGlobalConfigServiceConfig {
             ? config.getEnum(ModsecDefaultConfigsType.class, MODSEC_DEFAULT_CONFIG_TYPE)
             : ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_STANDARD_MONITORING;
     this.modsecExitSpansEvalEnabled = config.getBoolean(MODSEC_EXIT_SPANS_EVAL_ENABLED_PATH);
+    this.modsecNonHeadEntrySpansDetectionEnabled =
+        config.hasPath(MODSEC_NON_HEAD_ENTRY_SPANS_DETECTION_ENABLED_PATH)
+            && config.getBoolean(MODSEC_NON_HEAD_ENTRY_SPANS_DETECTION_ENABLED_PATH);
     this.newWebAppStableVersion =
         RuleVersion.newBuilder()
             .setVersion(config.getString(NEW_WEBAPP_STABLE_VERSION))
@@ -114,6 +123,9 @@ public class AnomalyGlobalConfigServiceConfig {
             ? config.getEnum(ApiDefaultConfigsType.class, API_DEFAULT_CONFIG_TYPE)
             : ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED;
     this.apiExitSpansEvalEnabled = config.getBoolean(API_EXIT_SPANS_EVAL_ENABLED_PATH);
+    this.apiNonHeadEntrySpansDetectionEnabled =
+        config.hasPath(API_NON_HEAD_ENTRY_SPANS_DETECTION_ENABLED_PATH)
+            && config.getBoolean(API_NON_HEAD_ENTRY_SPANS_DETECTION_ENABLED_PATH);
     this.genAiDisabled =
         config.hasPath(GEN_AI_DEFAULT_DISABLED) && config.getBoolean(GEN_AI_DEFAULT_DISABLED);
     if (config.hasPath(CONFIDENCE_CONFIG_PATH)) {
