@@ -49,5 +49,53 @@ public class AnomalyGlobalConfigServiceConfigTest {
       assertFalse(configStatus.getDisabled());
     }
     assertEquals(ANOMALY_CONFIDENCE_LEVEL_MEDIUM, config.getMinConfidenceLevel());
+    assertFalse(config.isModsecNonHeadEntrySpansDetectionEnabled());
+    assertFalse(config.isApiNonHeadEntrySpansDetectionEnabled());
+  }
+
+  @Test
+  public void testNonHeadEntrySpansExplicitTrue() {
+    AnomalyGlobalConfigServiceConfig config =
+        new AnomalyGlobalConfigServiceConfig(
+            ConfigFactory.parseString(
+                "disabled = false\n"
+                    + "internal = false\n"
+                    + "modsecGlobalConfig.exitSpansEvalEnabled = false\n"
+                    + "modsecGlobalConfig.nonHeadEntrySpansDetectionEnabled = true\n"
+                    + "modsecGlobalConfig.ruleVersion.newWebAppStableVersion = \"1.0.0\"\n"
+                    + "modsecGlobalConfig.ruleVersion.newWebAppStableVersionPublishedDate = \"2023-01-01T00:00:00Z\"\n"
+                    + "modsecGlobalConfig.ruleVersion.oldWebAppStableVersion = \"1.0.0\"\n"
+                    + "modsecGlobalConfig.ruleVersion.oldWebAppStableVersionPublishedDate = \"2023-01-01T00:00:00Z\"\n"
+                    + "apiGlobalConfig.exitSpansEvalEnabled = false\n"
+                    + "apiGlobalConfig.nonHeadEntrySpansDetectionEnabled = true\n"
+                    + "apiGlobalConfig.ruleVersion.newApiProtectionStableVersion = \"1.0.0\"\n"
+                    + "apiGlobalConfig.ruleVersion.newApiProtectionStableVersionPublishedDate = \"2023-01-01T00:00:00Z\"\n"
+                    + "apiGlobalConfig.ruleVersion.oldApiProtectionStableVersion = \"1.0.0\"\n"
+                    + "apiGlobalConfig.ruleVersion.oldApiProtectionStableVersionPublishedDate = \"2023-01-01T00:00:00Z\"\n"));
+    assertTrue(config.isModsecNonHeadEntrySpansDetectionEnabled());
+    assertTrue(config.isApiNonHeadEntrySpansDetectionEnabled());
+  }
+
+  @Test
+  public void testNonHeadEntrySpansExplicitFalse() {
+    AnomalyGlobalConfigServiceConfig config =
+        new AnomalyGlobalConfigServiceConfig(
+            ConfigFactory.parseString(
+                "disabled = false\n"
+                    + "internal = false\n"
+                    + "modsecGlobalConfig.exitSpansEvalEnabled = false\n"
+                    + "modsecGlobalConfig.nonHeadEntrySpansDetectionEnabled = false\n"
+                    + "modsecGlobalConfig.ruleVersion.newWebAppStableVersion = \"1.0.0\"\n"
+                    + "modsecGlobalConfig.ruleVersion.newWebAppStableVersionPublishedDate = \"2023-01-01T00:00:00Z\"\n"
+                    + "modsecGlobalConfig.ruleVersion.oldWebAppStableVersion = \"1.0.0\"\n"
+                    + "modsecGlobalConfig.ruleVersion.oldWebAppStableVersionPublishedDate = \"2023-01-01T00:00:00Z\"\n"
+                    + "apiGlobalConfig.exitSpansEvalEnabled = false\n"
+                    + "apiGlobalConfig.nonHeadEntrySpansDetectionEnabled = false\n"
+                    + "apiGlobalConfig.ruleVersion.newApiProtectionStableVersion = \"1.0.0\"\n"
+                    + "apiGlobalConfig.ruleVersion.newApiProtectionStableVersionPublishedDate = \"2023-01-01T00:00:00Z\"\n"
+                    + "apiGlobalConfig.ruleVersion.oldApiProtectionStableVersion = \"1.0.0\"\n"
+                    + "apiGlobalConfig.ruleVersion.oldApiProtectionStableVersionPublishedDate = \"2023-01-01T00:00:00Z\"\n"));
+    assertFalse(config.isModsecNonHeadEntrySpansDetectionEnabled());
+    assertFalse(config.isApiNonHeadEntrySpansDetectionEnabled());
   }
 }

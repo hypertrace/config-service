@@ -1,6 +1,7 @@
 package ai.traceable.anomaly.config.service.global.status;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -18,6 +19,7 @@ import ai.traceable.anomaly.config.service.v1.RuleVersion;
 import ai.traceable.anomaly.config.service.v1.RuleVersionDataChange;
 import ai.traceable.anomaly.config.service.v1.RuleVersionType;
 import ai.traceable.anomaly.config.service.v1.global.ApiDefaultConfigsType;
+import ai.traceable.anomaly.config.service.v1.global.GlobalApiConfigChange;
 import ai.traceable.anomaly.config.service.v1.global.GlobalModsecConfig;
 import ai.traceable.anomaly.config.service.v1.global.GlobalModsecConfigChange;
 import ai.traceable.anomaly.config.service.v1.global.ModsecDefaultConfigsType;
@@ -220,6 +222,40 @@ public class ScopedGlobalConfigStatusChangeConverterTest {
 
     assertEquals(v3, result.getGlobalModsecConfig().getRuleVersionData().getCurrentVersion());
     assertEquals(v2, result.getGlobalModsecConfig().getRuleVersionData().getPreviousVersion());
+  }
+
+  @Test
+  void testConvertScopedConfig_nonHeadEntrySpans_fromServiceDefaultsAndOverrides() {
+    when(defaultConfig.isModsecNonHeadEntrySpansDetectionEnabled()).thenReturn(true);
+    when(defaultConfig.isApiNonHeadEntrySpansDetectionEnabled()).thenReturn(true);
+
+    ScopedAnomalyConfigStatusChange onlyScope =
+        ScopedAnomalyConfigStatusChange.newBuilder()
+            .setConfigScope(getSampleScopes().get(0))
+            .build();
+    ScopedAnomalyConfigStatus resolved =
+        converter.convertScopedConfig(
+            onlyScope, defaultConfig, AnomalyConfigStatus.getDefaultInstance());
+    assertTrue(resolved.getGlobalModsecConfig().getEnabledDetectionForNonHeadEntrySpans());
+    assertTrue(resolved.getGlobalApiConfig().getEnabledDetectionForNonHeadEntrySpans());
+
+    ScopedAnomalyConfigStatusChange explicitFalse =
+        ScopedAnomalyConfigStatusChange.newBuilder()
+            .setConfigScope(getSampleScopes().get(0))
+            .setGlobalModsecConfigChange(
+                GlobalModsecConfigChange.newBuilder()
+                    .setEnabledDetectionForNonHeadEntrySpans(false)
+                    .build())
+            .setGlobalApiConfigChange(
+                GlobalApiConfigChange.newBuilder()
+                    .setEnabledDetectionForNonHeadEntrySpans(false)
+                    .build())
+            .build();
+    ScopedAnomalyConfigStatus overridden =
+        converter.convertScopedConfig(
+            explicitFalse, defaultConfig, AnomalyConfigStatus.getDefaultInstance());
+    assertFalse(overridden.getGlobalModsecConfig().getEnabledDetectionForNonHeadEntrySpans());
+    assertFalse(overridden.getGlobalApiConfig().getEnabledDetectionForNonHeadEntrySpans());
   }
 
   private List<AnomalyConfigScope> getSampleScopes() {

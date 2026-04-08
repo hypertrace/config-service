@@ -164,6 +164,8 @@ public class GlobalAnomalyConfigStatusManagerTest {
                     + "  internal = false\n"
                     + "  minConfidenceLevel = ANOMALY_CONFIDENCE_LEVEL_MEDIUM\n"
                     + "  modsecGlobalConfig.exitSpansEvalEnabled = false\n"
+                    + "  modsecGlobalConfig.nonHeadEntrySpansDetectionEnabled = true\n"
+                    + "  apiGlobalConfig.nonHeadEntrySpansDetectionEnabled = true\n"
                     + "  modsecGlobalConfig.ruleVersion.newWebAppStableVersion = \"1.0.0\"\n"
                     + "  modsecGlobalConfig.ruleVersion.newWebAppStableVersionPublishedDate = \"2023-01-01T00:00:00Z\"\n"
                     + "  modsecGlobalConfig.ruleVersion.oldWebAppStableVersion = \"1.0.0\"\n"

@@ -79,7 +79,8 @@ public class ScopedGlobalConfigStatusChangeConverter {
                 .setEnabledForExitSpans(
                     config.getModsecGlobalConfig().hasEnabledForExitSpans()
                         ? config.getModsecGlobalConfig().getEnabledForExitSpans()
-                        : defaultConfig.isModsecExitSpansEvalEnabled()))
+                        : defaultConfig.isModsecExitSpansEvalEnabled())
+                .build())
         .setGlobalModsecConfig(getGlobalModsecConfig(config, defaultConfig))
         .setApiGlobalConfig(
             config.toBuilder()
@@ -172,6 +173,8 @@ public class ScopedGlobalConfigStatusChangeConverter {
               modsecGlobalConfig.hasEnabledForExitSpans()
                   ? modsecGlobalConfig.getEnabledForExitSpans()
                   : defaultConfig.isModsecExitSpansEvalEnabled())
+          .setEnabledDetectionForNonHeadEntrySpans(
+              defaultConfig.isModsecNonHeadEntrySpansDetectionEnabled())
           .setModsecEvaluationEngineConfig(modsecGlobalConfig.getModsecEvaluationEngineConfig());
       ModsecDefaultConfigsType defaultConfigsType =
           getModsecDefaultConfigsType(
@@ -196,6 +199,10 @@ public class ScopedGlobalConfigStatusChangeConverter {
               globalModsecConfigChange.hasEnabledForExitSpans()
                   ? globalModsecConfigChange.getEnabledForExitSpans()
                   : defaultConfig.isModsecExitSpansEvalEnabled())
+          .setEnabledDetectionForNonHeadEntrySpans(
+              globalModsecConfigChange.hasEnabledDetectionForNonHeadEntrySpans()
+                  ? globalModsecConfigChange.getEnabledDetectionForNonHeadEntrySpans()
+                  : defaultConfig.isModsecNonHeadEntrySpansDetectionEnabled())
           .setModsecEvaluationEngineConfig(
               globalModsecConfigChange.getModsecEvaluationEngineConfig());
       ModsecDefaultConfigsType defaultConfigsType =
@@ -246,7 +253,9 @@ public class ScopedGlobalConfigStatusChangeConverter {
           .setEnabledForExitSpans(
               apiGlobalConfig.hasEnabledForExitSpans()
                   ? apiGlobalConfig.getEnabledForExitSpans()
-                  : defaultConfig.isModsecExitSpansEvalEnabled())
+                  : defaultConfig.isApiExitSpansEvalEnabled())
+          .setEnabledDetectionForNonHeadEntrySpans(
+              defaultConfig.isApiNonHeadEntrySpansDetectionEnabled())
           .setDefaultConfigsType(
               apiGlobalConfig.getDefaultConfigsType()
                       == ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_UNSPECIFIED
@@ -261,7 +270,11 @@ public class ScopedGlobalConfigStatusChangeConverter {
           .setEnabledForExitSpans(
               globalApiConfigChange.hasEnabledForExitSpans()
                   ? globalApiConfigChange.getEnabledForExitSpans()
-                  : defaultConfig.isModsecExitSpansEvalEnabled())
+                  : defaultConfig.isApiExitSpansEvalEnabled())
+          .setEnabledDetectionForNonHeadEntrySpans(
+              globalApiConfigChange.hasEnabledDetectionForNonHeadEntrySpans()
+                  ? globalApiConfigChange.getEnabledDetectionForNonHeadEntrySpans()
+                  : defaultConfig.isApiNonHeadEntrySpansDetectionEnabled())
           .setDefaultConfigsType(
               globalApiConfigChange.getDefaultConfigsType()
                       == ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_UNSPECIFIED
