@@ -65,6 +65,7 @@ import ai.traceable.customsignature.config.service.v1.StateRegionIdentifier;
 import ai.traceable.customsignature.config.service.v1.StringCondition;
 import ai.traceable.customsignature.config.service.v1.UserAgentExpression;
 import ai.traceable.customsignature.config.service.v1.UserIdExpression;
+import ai.traceable.modsecurity.utils.ModsecRuleEngineUtils;
 import ai.traceable.platform.utils.ip.IpValidationUtils;
 import com.google.protobuf.Message;
 import com.google.protobuf.Value;
@@ -705,6 +706,17 @@ public class ClauseGroupValidator {
       return Status.INVALID_ARGUMENT.withDescription(
           "Sanitized Sec Rule should be empty in create/update request");
     }
+
+    Status modsecStatus = ModsecRuleEngineUtils.modsecValidate(inputSecRule);
+    if (Status.INVALID_ARGUMENT.getCode().equals(modsecStatus.getCode())) {
+      return modsecStatus;
+    }
+
+    Status corazaStatus = ModsecRuleEngineUtils.corazaValidate(inputSecRule);
+    if (Status.INVALID_ARGUMENT.getCode().equals(corazaStatus.getCode())) {
+      return corazaStatus;
+    }
+
     return Status.OK;
   }
 

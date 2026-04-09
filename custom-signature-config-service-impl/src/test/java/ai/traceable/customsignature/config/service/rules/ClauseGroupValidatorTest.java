@@ -3,10 +3,13 @@ package ai.traceable.customsignature.config.service.rules;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mockStatic;
 
 import ai.traceable.customsignature.config.service.v1.CityRegionIdentifier;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.CountryRegionIdentifier;
+import ai.traceable.customsignature.config.service.v1.CustomSecRule;
 import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.IpAbuseVelocity;
 import ai.traceable.customsignature.config.service.v1.IpAbuseVelocityExpression;
@@ -29,21 +32,36 @@ import ai.traceable.customsignature.config.service.v1.RequestScannerTypeExpressi
 import ai.traceable.customsignature.config.service.v1.ScopeExpression;
 import ai.traceable.customsignature.config.service.v1.StateRegionIdentifier;
 import ai.traceable.customsignature.config.service.v1.StringCondition;
+import ai.traceable.modsecurity.utils.ModsecRuleEngineUtils;
 import com.google.protobuf.Value;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.util.Collections;
 import java.util.List;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 class ClauseGroupValidatorTest {
 
+  private static final String VALID_SEC_RULE =
+      "SecRule REQUEST_URI \"@rx test\" \"id:1001,phase:1,deny,msg:'test'\"";
+
   private ClauseGroupValidator clauseGroupValidator;
+  private MockedStatic<ModsecRuleEngineUtils> mockedModsecRuleEngineUtils;
 
   @BeforeEach
   public void setUp() {
     clauseGroupValidator = new ClauseGroupValidator();
+  }
+
+  @AfterEach
+  void tearDown() {
+    if (mockedModsecRuleEngineUtils != null) {
+      mockedModsecRuleEngineUtils.close();
+      mockedModsecRuleEngineUtils = null;
+    }
   }
 
   @Test
@@ -750,6 +768,86 @@ class ClauseGroupValidatorTest {
         clauseGroupValidator.validateClause(
             lhsRhsKeysExpressionClause12, EventType.EVENT_TYPE_NORMAL_DETECTION);
     assertEquals(Status.OK.getCode(), status.getCode());
+  }
+
+  @Test
+  void testCustomSecRuleValidation() {
+    // missing SecRule keyword
+    Clause missingKeyword =
+        getCustomSecRuleClause("REQUEST_URI \"@rx test\" \"id:1001,phase:1,deny,msg:'test'\"", "");
+    Status status =
+        clauseGroupValidator.validateClause(
+            missingKeyword, EventType.EVENT_TYPE_DETECTION_AND_BLOCKING);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    // missing id action
+    Clause missingId =
+        getCustomSecRuleClause("SecRule REQUEST_URI \"@rx test\" \"phase:1,deny,msg:'test'\"", "");
+    status =
+        clauseGroupValidator.validateClause(missingId, EventType.EVENT_TYPE_DETECTION_AND_BLOCKING);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    // sanitised_sec_rule must be empty in create/update requests
+    Clause nonEmptySanitised =
+        getCustomSecRuleClause(VALID_SEC_RULE, "SecRule ARGS \"@rx x\" \"id:1002,phase:1,pass\"");
+    status =
+        clauseGroupValidator.validateClause(
+            nonEmptySanitised, EventType.EVENT_TYPE_DETECTION_AND_BLOCKING);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    // modsec validation failure is propagated
+    mockedModsecRuleEngineUtils = mockStatic(ModsecRuleEngineUtils.class);
+    mockedModsecRuleEngineUtils
+        .when(() -> ModsecRuleEngineUtils.modsecValidate(anyString()))
+        .thenReturn(Status.INVALID_ARGUMENT.withDescription("Validation failed for Modsec Rule"));
+    mockedModsecRuleEngineUtils
+        .when(() -> ModsecRuleEngineUtils.corazaValidate(anyString()))
+        .thenReturn(Status.OK);
+
+    Clause modsecFailClause = getCustomSecRuleClause(VALID_SEC_RULE, "");
+    status =
+        clauseGroupValidator.validateClause(
+            modsecFailClause, EventType.EVENT_TYPE_DETECTION_AND_BLOCKING);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    // coraza validation failure is propagated
+    mockedModsecRuleEngineUtils
+        .when(() -> ModsecRuleEngineUtils.modsecValidate(anyString()))
+        .thenReturn(Status.OK);
+    mockedModsecRuleEngineUtils
+        .when(() -> ModsecRuleEngineUtils.corazaValidate(anyString()))
+        .thenReturn(
+            Status.INVALID_ARGUMENT.withDescription("Exception while validating Rule with Coraza"));
+
+    Clause corazaFailClause = getCustomSecRuleClause(VALID_SEC_RULE, "");
+    status =
+        clauseGroupValidator.validateClause(
+            corazaFailClause, EventType.EVENT_TYPE_DETECTION_AND_BLOCKING);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    // both engines pass -> OK
+    mockedModsecRuleEngineUtils
+        .when(() -> ModsecRuleEngineUtils.modsecValidate(anyString()))
+        .thenReturn(Status.OK);
+    mockedModsecRuleEngineUtils
+        .when(() -> ModsecRuleEngineUtils.corazaValidate(anyString()))
+        .thenReturn(Status.OK);
+
+    Clause validClause = getCustomSecRuleClause(VALID_SEC_RULE, "");
+    status =
+        clauseGroupValidator.validateClause(
+            validClause, EventType.EVENT_TYPE_DETECTION_AND_BLOCKING);
+    assertEquals(Status.OK.getCode(), status.getCode());
+  }
+
+  private Clause getCustomSecRuleClause(String inputSecRule, String sanitisedSecRule) {
+    return Clause.newBuilder()
+        .setCustomSecRule(
+            CustomSecRule.newBuilder()
+                .setInputSecRule(inputSecRule)
+                .setSanitisedSecRule(sanitisedSecRule)
+                .build())
+        .build();
   }
 
   private Clause getLhsRhsKeysExpressionClause(

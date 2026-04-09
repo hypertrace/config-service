@@ -1,7 +1,14 @@
+import com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer
+import com.bmuschko.gradle.docker.tasks.container.DockerStartContainer
+import com.bmuschko.gradle.docker.tasks.container.DockerStopContainer
+import com.bmuschko.gradle.docker.tasks.image.DockerPullImage
+
 plugins {
   `java-library`
   jacoco
   alias(commonLibs.plugins.hypertrace.jacoco)
+  alias(commonLibs.plugins.hypertrace.docker.application)
+  alias(commonLibs.plugins.traceable.docker)
 }
 
 dependencies {
@@ -51,6 +58,40 @@ dependencies {
   testImplementation(testFixtures(localLibs.hypertrace.configservice.api))
 }
 
+tasks.register<DockerPullImage>("pullCorazaImage") {
+  group = "docker"
+  description = "Pulls the Coraza WAF service Docker image."
+  image.set(docker.registryCredentials.url.get() + "/traceable/coraza-waf-service:${commonLibs.versions.traceable.corazaWafService.get()}")
+}
+
+val corazaContainer = "coraza-local"
+tasks.register<DockerCreateContainer>("createCorazaContainer") {
+  group = "docker"
+  description = "Creates the Coraza WAF service container for tests."
+  dependsOn("pullCorazaImage")
+  containerName.set(corazaContainer)
+  targetImageId(tasks.named<DockerPullImage>("pullCorazaImage").get().image)
+  hostConfig.apply {
+    portBindings.set(listOf("9000:9000"))
+    autoRemove.set(true)
+  }
+}
+
+tasks.register<DockerStartContainer>("startCorazaContainer") {
+  group = "docker"
+  description = "Starts the Coraza WAF service container before tests."
+  dependsOn("createCorazaContainer")
+  targetContainerId(tasks.named<DockerCreateContainer>("createCorazaContainer").get().containerId)
+}
+
+tasks.register<DockerStopContainer>("stopCorazaContainer") {
+  group = "docker"
+  description = "Stops the Coraza WAF service container after tests."
+  targetContainerId(tasks.named<DockerCreateContainer>("createCorazaContainer").get().containerId)
+}
+
 tasks.test {
   useJUnitPlatform()
+  dependsOn("startCorazaContainer")
+  finalizedBy("stopCorazaContainer")
 }
