@@ -1,10 +1,10 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.4.5558=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:cache-provider:0.8.144=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:event-invalidation-cache:0.8.144=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:ip-utils:0.8.144=runtimeClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.5601=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:cache-provider:0.8.145=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:event-invalidation-cache:0.8.145=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:ip-utils:0.8.145=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:coraza-waf-service-api:0.3.50=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:coraza-waf-service-client:0.3.50=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:jni-modsecurity-v2:0.1.149=runtimeClasspath,testRuntimeClasspath
@@ -145,8 +145,8 @@ org.hypertrace.core.grpcutils:grpc-context-utils:0.13.22=compileClasspath,runtim
 org.hypertrace.core.kafkastreams.framework:kafka-bom:0.6.4=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.kafkastreams.framework:kafka-event-listener:0.6.2=runtimeClasspath,testRuntimeClasspath
 org.hypertrace.core.serviceframework:platform-metrics:0.1.92=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-org.hypertrace.entity.service:entity-service-api:0.12.12=runtimeClasspath,testRuntimeClasspath
-org.hypertrace.entity.service:entity-service-change-event-api:0.12.12=runtimeClasspath,testRuntimeClasspath
+org.hypertrace.entity.service:entity-service-api:0.12.16=runtimeClasspath,testRuntimeClasspath
+org.hypertrace.entity.service:entity-service-change-event-api:0.12.16=runtimeClasspath,testRuntimeClasspath
 org.jsoup:jsoup:1.15.3=runtimeClasspath,testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-api:5.14.3=testCompileClasspath,testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-engine:5.14.3=testRuntimeClasspath
