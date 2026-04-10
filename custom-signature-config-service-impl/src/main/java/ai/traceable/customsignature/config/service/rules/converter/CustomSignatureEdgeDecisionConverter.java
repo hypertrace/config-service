@@ -10,6 +10,12 @@ import static ai.traceable.edge.decision.config.service.v1.EdgeDecisionType.EDGE
 import static ai.traceable.edge.decision.config.service.v1.EdgeDecisionType.EDGE_DECISION_TYPE_BLOCK;
 import static ai.traceable.edge.decision.config.service.v1.EdgeDecisionType.EDGE_DECISION_TYPE_MARK_FOR_TESTING;
 import static ai.traceable.edge.decision.config.service.v1.EdgeInputKind.EDGE_INPUT_KIND_HTTP_REQUEST;
+import static ai.traceable.edge.decision.converter.utils.Constants.CITY_NAME_JEXL_EXP;
+import static ai.traceable.edge.decision.converter.utils.Constants.COUNTRY_ISO_CODE_JEXL_EXP;
+import static ai.traceable.edge.decision.converter.utils.Constants.STATE_NAME_JEXL_EXP;
+import static ai.traceable.edge.decision.converter.utils.Constants.VAR_REGION_CITY_NAME;
+import static ai.traceable.edge.decision.converter.utils.Constants.VAR_REGION_COUNTRY_ISO;
+import static ai.traceable.edge.decision.converter.utils.Constants.VAR_REGION_STATE_NAME;
 import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toMap;
@@ -28,9 +34,12 @@ import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import ai.traceable.customsignature.config.service.v1.RuleEffectWithModifications;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig;
+import ai.traceable.datamodel.data.transformation.config.v1.DerivationRule;
+import ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig;
 import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchCondition;
 import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchOperator;
 import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
+import ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMapping;
 import ai.traceable.edge.decision.config.service.RuleInfoDecorationsHandler;
 import ai.traceable.edge.decision.config.service.v1.ConfigTtl;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecision;
@@ -93,8 +102,6 @@ public class CustomSignatureEdgeDecisionConverter {
       final CustomSignatureRule customSignatureRule) {
     try {
       EdgeDecisionRule.Builder builder = EdgeDecisionRule.newBuilder();
-      final Optional<MatchCondition> mayBeMatchCondition =
-          buildMatchCondition(customSignatureRule.getDefinition().getClauseGroup());
       builder.setId(customSignatureRule.getId());
       builder.setPolicyId(customSignatureRule.getId());
       builder.setPolicyKind(PolicyKind.POLICY_KIND_WAF);
@@ -103,7 +110,7 @@ public class CustomSignatureEdgeDecisionConverter {
       builder.setRuleCategory(EDGE_DECISION_RULE_CATEGORY_CUSTOM_SIGNATURE);
       buildRuleScope(customSignatureRule).ifPresent(builder::setRuleScope);
       builder.setRuleDecision(buildEdgeDecision(customSignatureRule));
-      builder.setRuleDefinition(buildRuleDefinition(mayBeMatchCondition));
+      builder.setRuleDefinition(buildRuleDefinition(customSignatureRule));
       return Optional.of(builder.build());
     } catch (Exception e) {
       log.error("Unable to convert custom signature rule: {}", customSignatureRule, e);
@@ -184,6 +191,18 @@ public class CustomSignatureEdgeDecisionConverter {
                   "Failed to build match condition for nested clause group"));
     }
     return getConditionConverter(clause.getClauseCase()).buildMatchCondition(clause);
+  }
+
+  private static boolean hasRegionExpression(ClauseGroup clauseGroup) {
+    for (Clause clause : clauseGroup.getClausesList()) {
+      if (clause.hasRegionExpression()) {
+        return true;
+      }
+      if (clause.hasClauseGroup() && hasRegionExpression(clause.getClauseGroup())) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private CustomSignatureExpressionConverter getConditionConverter(Clause.ClauseCase clauseCase) {
@@ -301,12 +320,34 @@ public class CustomSignatureEdgeDecisionConverter {
         .collect(Collectors.toUnmodifiableList()); // Collect results in a single unmodifiable list
   }
 
-  private EdgeDecisionRuleDefinition buildRuleDefinition(
-      Optional<MatchCondition> mayBeMatchCondition) {
+  private EdgeDecisionRuleDefinition buildRuleDefinition(CustomSignatureRule customSignatureRule) {
     EdgeDecisionRuleDefinition.Builder builder = EdgeDecisionRuleDefinition.newBuilder();
     builder.setEdgeInputKind(EDGE_INPUT_KIND_HTTP_REQUEST);
-    mayBeMatchCondition.ifPresent(
-        matchCondition -> builder.getSignatureRuleBuilder().setMatchCondition(matchCondition));
+
+    ClauseGroup clauseGroup = customSignatureRule.getDefinition().getClauseGroup();
+    if (hasRegionExpression(clauseGroup)) {
+      builder.addRuleVariables(
+          buildVarDerivation(COUNTRY_ISO_CODE_JEXL_EXP, VAR_REGION_COUNTRY_ISO));
+      builder.addRuleVariables(buildVarDerivation(STATE_NAME_JEXL_EXP, VAR_REGION_STATE_NAME));
+      builder.addRuleVariables(buildVarDerivation(CITY_NAME_JEXL_EXP, VAR_REGION_CITY_NAME));
+    }
+
+    buildMatchCondition(clauseGroup)
+        .ifPresent(
+            matchCondition -> builder.getSignatureRuleBuilder().setMatchCondition(matchCondition));
     return builder.build();
+  }
+
+  private static VariableDerivationMapping buildVarDerivation(String jexlExpr, String varName) {
+    return VariableDerivationMapping.newBuilder()
+        .setName(varName)
+        .addRules(
+            DerivationRule.newBuilder()
+                .setTransformationConfig(
+                    DataTransformationConfig.newBuilder()
+                        .setOutputType(FIELD_TYPE_STR)
+                        .setJexlExpression(
+                            JexlExpressionConfig.newBuilder().setJexlExpression(jexlExpr))))
+        .build();
   }
 }

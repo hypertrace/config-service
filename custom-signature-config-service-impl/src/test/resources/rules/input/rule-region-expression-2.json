@@ -1,0 +1,26 @@
+{
+  "id": "rule-id",
+  "name": "rule-name",
+  "definition": {
+    "clauseGroup": {
+      "clauseOperator": "CLAUSE_OPERATOR_AND",
+      "clauses": [{
+        "regionExpression": {
+          "regions": [{
+            "state": {
+              "name": "California",
+              "country": {
+                "isoCode": "us"
+              }
+            }
+          }]
+        }
+      }]
+    }
+  },
+  "effect": {
+    "eventType": "EVENT_TYPE_DETECTION_AND_BLOCKING",
+    "eventSeverity": "EVENT_SEVERITY_MEDIUM",
+    "ruleEvaluationPoints": ["RULE_EVALUATION_POINT_EDGE"]
+  }
+}

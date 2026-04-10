@@ -44,15 +44,15 @@
             "operator": "LOGICAL_MATCH_OPERATOR_AND",
             "conditions": [{
               "logical_match_condition": {
-                "operator": "LOGICAL_MATCH_OPERATOR_OR",
+                "operator": "LOGICAL_MATCH_OPERATOR_AND",
                 "conditions": [{
                   "structured_match_condition": {
                     "lhs": {
-                      "name": "region.country_iso",
+                      "name": "region.state_name",
                       "type": "FIELD_TYPE_STR"
                     },
                     "binary_operator": {
-                      "string_value": "us",
+                      "string_value": "California",
                       "match_operator": "MATCH_OPERATOR_EQ"
                     }
                   }
@@ -63,7 +63,7 @@
                       "type": "FIELD_TYPE_STR"
                     },
                     "binary_operator": {
-                      "string_value": "in",
+                      "string_value": "us",
                       "match_operator": "MATCH_OPERATOR_EQ"
                     }
                   }
