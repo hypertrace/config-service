@@ -532,7 +532,7 @@ public class RateLimitingRulesValidator implements RulesValidator {
     if (ruleEvaluationPoints.contains(
             RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT)
         && !ModsecRuleSupportChecker.meetsInlineTracingAgentActionRequirements(
-            transactionActionConfig)) {
+            transactionActionConfig, thresholdActionConfigs)) {
       validatorUtils.throwInvalidArgumentException(
           "Rule evaluation point inline tracing agent is not supported for the given transaction action configuration.");
     }

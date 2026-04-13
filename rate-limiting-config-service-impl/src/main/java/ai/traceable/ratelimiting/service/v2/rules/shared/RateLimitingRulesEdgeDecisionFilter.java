@@ -76,10 +76,6 @@ public class RateLimitingRulesEdgeDecisionFilter {
   }
 
   public static boolean meetsEdgeDecisionRequirements(RateLimitingRuleData rateLimitingRuleData) {
-    boolean isEdgeTypeOfRuleData =
-        isCategorySupported(rateLimitingRuleData)
-            && RateLimitingRulesEdgeDecisionValidator.isCompatibleCondition(
-                rateLimitingRuleData.getCondition());
     List<ThresholdActionConfig> filteredThresholdActionConfigs =
         rateLimitingRuleData.getThresholdActionConfigsList().stream()
             .filter(
@@ -88,7 +84,7 @@ public class RateLimitingRulesEdgeDecisionFilter {
                             thresholdActionConfig)
                         .isPresent())
             .collect(Collectors.toUnmodifiableList());
-    return isEdgeTypeOfRuleData && !filteredThresholdActionConfigs.isEmpty();
+    return !filteredThresholdActionConfigs.isEmpty();
   }
 
   private static boolean isCategorySupported(RateLimitingRuleData rateLimitingRuleData) {
