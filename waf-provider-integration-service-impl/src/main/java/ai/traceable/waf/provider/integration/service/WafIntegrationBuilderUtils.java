@@ -36,7 +36,6 @@ import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.WafIntegration;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails.Builder;
-import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails.IntegrationParamsCase;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationTarget;
 import ai.traceable.waf.integration.service.api.v1.WebIdentityAuthenticationCredentials;
 import io.grpc.Status;
@@ -298,15 +297,17 @@ public class WafIntegrationBuilderUtils {
         .clearIntegrationTargets()
         .addAllIntegrationTargets(
             request.getUpdatedWafIntegrationDetails().getIntegrationTargetsList());
-    if (builder.getIntegrationParamsCase() == IntegrationParamsCase.AKAMAI_INTEGRATION_PARAMS
-        || builder.getIntegrationParamsCase()
-            == IntegrationParamsCase.FORTINET_INTEGRATION_PARAMS) {
-      return populateAllTargetsIfEmptyList(builder.build()).toBuilder();
+
+    switch (builder.getIntegrationParamsCase()) {
+      case AWS_INTEGRATION_PARAMS:
+        return builder;
+      case AKAMAI_INTEGRATION_PARAMS:
+      case FORTINET_INTEGRATION_PARAMS:
+      case GCP_INTEGRATION_PARAMS:
+        return populateAllTargetsIfEmptyList(builder.build()).toBuilder();
+      default:
+        return populateTargetsIfEmptyList(builder.build()).toBuilder();
     }
-    if (builder.getIntegrationParamsCase() != IntegrationParamsCase.AWS_INTEGRATION_PARAMS) {
-      return populateTargetsIfEmptyList(builder.build()).toBuilder();
-    }
-    return builder;
   }
 
   private static void updateScope(

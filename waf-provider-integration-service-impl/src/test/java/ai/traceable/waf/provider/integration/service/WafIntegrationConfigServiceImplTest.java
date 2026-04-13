@@ -51,6 +51,7 @@ import ai.traceable.waf.integration.service.api.v1.FortinetRuleDetails;
 import ai.traceable.waf.integration.service.api.v1.GcpAuthCredentials;
 import ai.traceable.waf.integration.service.api.v1.GcpIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.GcpIntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.GcpIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationResponse;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsDetailsRequest;
@@ -2457,5 +2458,58 @@ class WafIntegrationConfigServiceImplTest {
         AkamaiListConfig.ListTypeCase.CLIENT_LIST,
         responsePolicyDetails.getListConfig().getListTypeCase());
     assertEquals("client-list-id", responsePolicyDetails.getListConfig().getClientList().getId());
+  }
+
+  @Test
+  void updateGcpWafIntegrationEnabledStatusTest() {
+    WafIntegrationDetails details =
+        createWafIntegrationDetails(
+                "gcp-enabled-test", "email", IntegrationParamsCase.GCP_INTEGRATION_PARAMS)
+            .toBuilder()
+            .setEnabled(true)
+            .build();
+    CreateWafIntegrationRequest createRequest =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(details).build();
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(createRequest);
+    String integrationId = createResponse.getWafIntegration().getId();
+
+    assertTrue(createResponse.getWafIntegration().getWafIntegrationDetails().getEnabled());
+
+    UpdatedWafIntegrationDetails updatedDetails =
+        UpdatedWafIntegrationDetails.newBuilder()
+            .setName("gcp-enabled-test-updated")
+            .setDescription("des")
+            .setWafIntegrationScope(wafConfigScope)
+            .setUpdatedGcpIntegrationParams(
+                GcpIntegrationUpdateParams.newBuilder()
+                    .setGcpIntegrationDetails(
+                        GcpIntegrationDetails.newBuilder()
+                            .setProjectId("project-1")
+                            .setSecurityPolicyName("policy-1")
+                            .setDenyActionResponseCodeValue(400)
+                            .setGlobalSecurityPolicyScope(
+                                GlobalSecurityPolicyScope.getDefaultInstance())
+                            .build())
+                    .build())
+            .setEnabled(false)
+            .build();
+
+    UpdateWafIntegrationRequest updateRequest =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId(integrationId)
+            .setUpdatedWafIntegrationDetails(updatedDetails)
+            .build();
+    UpdateWafIntegrationResponse updateResponse =
+        wafProviderServiceBlockingStub.updateWafIntegration(updateRequest);
+
+    assertFalse(updateResponse.getWafIntegration().getWafIntegrationDetails().getEnabled());
+
+    GetWafIntegrationRequest getRequest =
+        GetWafIntegrationRequest.newBuilder().setId(integrationId).build();
+    GetWafIntegrationResponse getResponse =
+        wafProviderServiceBlockingStub.getWafIntegration(getRequest);
+
+    assertFalse(getResponse.getWafIntegration().getWafIntegrationDetails().getEnabled());
   }
 }
