@@ -4,6 +4,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.external.data.classification.config.service.v1.DataType;
+import ai.traceable.external.data.classification.config.service.v1.FullValueRegexDataType;
 import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigRequest.PredicateSupportLevel;
 import jakarta.inject.Inject;
 import java.util.List;
@@ -45,5 +46,12 @@ class PlatformDataTypeManager {
           .collect(toUnmodifiableList());
     }
     return this.dataClassificationConfig.getDefaultExternalDataTypes();
+  }
+
+  List<FullValueRegexDataType> getFullValueRegexDataTypes(
+      RequestContext requestContext, Optional<String> environmentName) {
+    return this.rulesTranslator.translateFullValueRegexDataTypes(
+        this.dataClassificationRulesDao.getResolvedDataTypesInEvaluationOrder(requestContext),
+        environmentName);
   }
 }

@@ -15,6 +15,7 @@ import ai.traceable.external.data.classification.config.service.v1.DataType;
 import ai.traceable.external.data.classification.config.service.v1.DataType.DataTransformation;
 import ai.traceable.external.data.classification.config.service.v1.DataType.DataTypeMatchRule;
 import ai.traceable.external.data.classification.config.service.v1.DataType.Result;
+import ai.traceable.external.data.classification.config.service.v1.FullValueRegexDataType;
 import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigRequest.PredicateSupportLevel;
 import ai.traceable.external.data.classification.config.service.v1.Operator;
 import ai.traceable.external.data.classification.config.service.v1.PathPredicate;
@@ -84,12 +85,26 @@ class DataClassificationRulesTranslator {
         .collect(Collectors.toUnmodifiableList());
   }
 
+  List<FullValueRegexDataType> translateFullValueRegexDataTypes(
+      List<ai.traceable.data.classification.config.service.v1.DataType> resolvedDataTypes,
+      Optional<String> environmentName) {
+    return resolvedDataTypes.stream()
+        .flatMap(
+            resolvedDataType ->
+                translateFullValueRegexDataType(resolvedDataType, environmentName).stream())
+        .collect(Collectors.toUnmodifiableList());
+  }
+
   private Optional<DataType> translateDataType(
       ai.traceable.data.classification.config.service.v1.DataType resolvedDataType,
       Optional<String> environmentName,
       PredicateSupportLevel predicateSupportLevel) {
     List<DataTypeMatchRule> matchRules =
         resolvedDataType.getRule().getScopedPatternsList().stream()
+            // ValuePattern rules will go as FullValueRegexDataType rules
+            .filter(
+                scopedPattern ->
+                    scopedPattern.getPatternCase() != ScopedPattern.PatternCase.VALUE_PATTERN)
             .filter(scopedPattern -> matchScope(scopedPattern, environmentName))
             .map(scopedPattern -> translateScopedPattern(scopedPattern, predicateSupportLevel))
             .flatMap(Optional::stream)
@@ -320,6 +335,102 @@ class DataClassificationRulesTranslator {
   }
 
   boolean shouldDataTransformationBeSetOnDataType(DataTransformation dataTransformation) {
+    switch (dataTransformation) {
+      case UNRECOGNIZED:
+      case DATA_TRANSFORMATION_UNSPECIFIED:
+        return false;
+      default:
+        return true;
+    }
+  }
+
+  private List<FullValueRegexDataType> translateFullValueRegexDataType(
+      ai.traceable.data.classification.config.service.v1.DataType resolvedDataType,
+      Optional<String> environmentName) {
+    // Extract VALUE_PATTERN scoped patterns that match the environment and convert each to
+    // FullValueRegexDataType
+    return resolvedDataType.getRule().getScopedPatternsList().stream()
+        .filter(
+            scopedPattern ->
+                scopedPattern.getPatternCase() == ScopedPattern.PatternCase.VALUE_PATTERN)
+        .filter(scopedPattern -> matchScope(scopedPattern, environmentName))
+        .map(
+            scopedPattern ->
+                translateScopedPatternToFullValueRegex(scopedPattern, resolvedDataType))
+        .flatMap(Optional::stream)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  private Optional<FullValueRegexDataType> translateScopedPatternToFullValueRegex(
+      ScopedPattern valuePattern,
+      ai.traceable.data.classification.config.service.v1.DataType resolvedDataType) {
+    FullValueRegexDataType.Builder builder = FullValueRegexDataType.newBuilder();
+    builder.setDataTypeId(resolvedDataType.getId());
+
+    // Set span filter from URL match scope
+    translateSpanFilters(valuePattern).ifPresent(builder::setSpanFilter);
+
+    // Set attribute filter - use HTTP_URL_QUERY_LIST for LOCATION_PATH
+    translateLocations(valuePattern.getLocationsList())
+        .or(
+            () ->
+                Optional.of(
+                    AttributeFilter.newBuilder().addAllPrefixes(HTTP_URL_QUERY_LIST).build()))
+        .ifPresent(builder::setAttributeFilter);
+
+    // Set suppression pattern from value pattern
+    // Only regex match is used, so create StringPredicate with the regex value
+    builder.setSuppressionPattern(
+        StringPredicate.newBuilder()
+            .setOperator(Operator.OPERATOR_MATCHES_REGEX)
+            .setValue(valuePattern.getValuePattern().getValuePattern().getValue())
+            .build());
+
+    // Set result from action
+    builder.setResult(translateActionToFullValueResult(valuePattern.getAction()));
+
+    // Set transformation from data suppression
+    FullValueRegexDataType.DataTransformation transformation =
+        translateDataSuppressionToFullValue(resolvedDataType.getRule().getDataSuppression());
+    if (shouldDataTransformationBeSetOnFullValueType(transformation)) {
+      builder.setTransformation(transformation);
+    }
+
+    return Optional.of(builder.build());
+  }
+
+  private FullValueRegexDataType.Result translateActionToFullValueResult(Action action) {
+    switch (action) {
+      case ACTION_MATCH:
+        return FullValueRegexDataType.Result.RESULT_MATCH;
+      case ACTION_IGNORE:
+        return FullValueRegexDataType.Result.RESULT_IGNORE;
+      case ACTION_UNSPECIFIED:
+      case UNRECOGNIZED:
+      default:
+        return FullValueRegexDataType.Result.RESULT_UNSPECIFIED;
+    }
+  }
+
+  private FullValueRegexDataType.DataTransformation translateDataSuppressionToFullValue(
+      DataSuppression dataSuppression) {
+    switch (dataSuppression) {
+      case DATA_SUPPRESSION_REDACT:
+        return FullValueRegexDataType.DataTransformation.DATA_TRANSFORMATION_REDACT;
+      case DATA_SUPPRESSION_OBFUSCATE:
+        return FullValueRegexDataType.DataTransformation.DATA_TRANSFORMATION_OBFUSCATE;
+      case DATA_SUPPRESSION_RAW:
+      case DATA_SUPPRESSION_UNSPECIFIED:
+        return FullValueRegexDataType.DataTransformation.DATA_TRANSFORMATION_UNSPECIFIED;
+      case UNRECOGNIZED:
+      default:
+        log.error("Received unsupported data suppression mode : {}", dataSuppression);
+        return FullValueRegexDataType.DataTransformation.UNRECOGNIZED;
+    }
+  }
+
+  private boolean shouldDataTransformationBeSetOnFullValueType(
+      FullValueRegexDataType.DataTransformation dataTransformation) {
     switch (dataTransformation) {
       case UNRECOGNIZED:
       case DATA_TRANSFORMATION_UNSPECIFIED:

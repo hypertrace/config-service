@@ -1,5 +1,6 @@
 package ai.traceable.config.service;
 
+import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_PATH;
 import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_QUERY;
 import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_REQUEST_BODY;
 import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_REQUEST_HEADER;
@@ -23,10 +24,14 @@ import ai.traceable.data.classification.config.service.v1.DataTypeRule.Location;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.Operator;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ScopedPattern;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.StringPattern;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule.ValuePattern;
 import ai.traceable.data.classification.config.service.v1.DeleteDataSetRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesResponse;
 import ai.traceable.data.classification.config.service.v1.UpdateDataTypeRequest;
+import ai.traceable.external.data.classification.config.service.v1.ExternalDataClassificationServiceGrpc;
+import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigRequest;
+import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigResponse;
 import ai.traceable.sensitivedata.config.service.v1.CreateRedactionRuleRequest;
 import ai.traceable.sensitivedata.config.service.v1.DropUnparsedJsonPolicy;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest;
@@ -69,6 +74,8 @@ class SensitiveDataConfigServiceIntegrationTest extends TraceableConfigServiceIn
   private static SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceStub;
   private static PiiFilterConfigServiceBlockingStub piiFilterConfigServiceStub;
   private static DataClassificationConfigServiceBlockingStub dataClassificationConfigServiceStub;
+  private static ExternalDataClassificationServiceGrpc.ExternalDataClassificationServiceBlockingStub
+      externalDataClassificationServiceStub;
   private RequestContext requestContext;
 
   @BeforeAll
@@ -83,6 +90,10 @@ class SensitiveDataConfigServiceIntegrationTest extends TraceableConfigServiceIn
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
     dataClassificationConfigServiceStub =
         DataClassificationConfigServiceGrpc.newBlockingStub(channelForInternalServices)
+            .withCallCredentials(
+                RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+    externalDataClassificationServiceStub =
+        ExternalDataClassificationServiceGrpc.newBlockingStub(channelForExternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }
@@ -539,5 +550,208 @@ class SensitiveDataConfigServiceIntegrationTest extends TraceableConfigServiceIn
       return piiElement;
     }
     return piiElement.toBuilder().setRuleId("placeholder-id").build();
+  }
+
+  @Test
+  void testValuePatternConversionToFullValueRegexDataType() {
+    requestContext = RequestContext.forTenantId("testValuePatternConversion-tenant");
+
+    // Disable automatic secret redaction to avoid extra DataType in count
+    updateAutomaticSecretRedactionStrategy(false);
+
+    // Create DataType with ValuePattern (LOCATION_PATH)
+    DataType dataTypeWithValuePattern =
+        DataType.newBuilder()
+            .setId("value-pattern-datatype-id")
+            .setRule(
+                DataTypeRule.newBuilder()
+                    .setName("value-pattern-rule")
+                    .setDescription("DataType with ValuePattern")
+                    .setDataSuppression(DataSuppression.DATA_SUPPRESSION_REDACT)
+                    .setSensitivity(DataSetInfo.Sensitivity.SENSITIVITY_HIGH)
+                    .setEnabled(true)
+                    .addScopedPatterns(
+                        ScopedPattern.newBuilder()
+                            .setGlobalScope(GlobalScope.getDefaultInstance())
+                            .addLocations(LOCATION_PATH)
+                            .setValuePattern(
+                                ValuePattern.newBuilder()
+                                    .setValuePattern(
+                                        StringPattern.newBuilder()
+                                            .setValue("\\d{3}-\\d{2}-\\d{4}")
+                                            .setOperator(Operator.OPERATOR_MATCHES_REGEX)))
+                            .setAction(Action.ACTION_MATCH)))
+            .build();
+
+    // Create DataType without ValuePattern (regular pattern)
+    DataType dataTypeWithoutValuePattern =
+        DataType.newBuilder()
+            .setId("regular-datatype-id")
+            .setRule(
+                DataTypeRule.newBuilder()
+                    .setName("regular-rule")
+                    .setDescription("DataType without ValuePattern")
+                    .setDataSuppression(DataSuppression.DATA_SUPPRESSION_OBFUSCATE)
+                    .setSensitivity(DataSetInfo.Sensitivity.SENSITIVITY_MEDIUM)
+                    .setEnabled(true)
+                    .addScopedPatterns(
+                        ScopedPattern.newBuilder()
+                            .setGlobalScope(GlobalScope.getDefaultInstance())
+                            .addLocations(LOCATION_REQUEST_HEADER)
+                            .setKeyPattern(
+                                StringPattern.newBuilder()
+                                    .setValue("^authorization$")
+                                    .setOperator(Operator.OPERATOR_MATCHES_REGEX))
+                            .setAction(Action.ACTION_MATCH)))
+            .build();
+
+    // Create another DataType with multiple patterns including ValuePattern
+    DataType dataTypeWithMixedPatterns =
+        DataType.newBuilder()
+            .setId("mixed-pattern-datatype-id")
+            .setRule(
+                DataTypeRule.newBuilder()
+                    .setName("mixed-pattern-rule")
+                    .setDescription("DataType with mixed patterns")
+                    .setDataSuppression(DataSuppression.DATA_SUPPRESSION_REDACT)
+                    .setSensitivity(DataSetInfo.Sensitivity.SENSITIVITY_CRITICAL)
+                    .setEnabled(true)
+                    .addScopedPatterns(
+                        ScopedPattern.newBuilder()
+                            .setGlobalScope(GlobalScope.getDefaultInstance())
+                            .addLocations(LOCATION_PATH)
+                            .setValuePattern(
+                                ValuePattern.newBuilder()
+                                    .setValuePattern(
+                                        StringPattern.newBuilder()
+                                            .setValue(
+                                                "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}\\b")
+                                            .setOperator(Operator.OPERATOR_MATCHES_REGEX)))
+                            .setAction(Action.ACTION_MATCH))
+                    .addScopedPatterns(
+                        ScopedPattern.newBuilder()
+                            .setGlobalScope(GlobalScope.getDefaultInstance())
+                            .addLocations(LOCATION_REQUEST_BODY)
+                            .setKeyPattern(
+                                StringPattern.newBuilder()
+                                    .setValue("^email$")
+                                    .setOperator(Operator.OPERATOR_MATCHES_REGEX))
+                            .setAction(Action.ACTION_MATCH)))
+            .build();
+
+    // Create the DataTypes
+    DataType createdValuePattern =
+        requestContext
+            .call(
+                () ->
+                    dataClassificationConfigServiceStub.createDataType(
+                        CreateDataTypeRequest.newBuilder()
+                            .setRule(dataTypeWithValuePattern.getRule())
+                            .build()))
+            .getDataType();
+
+    DataType createdRegular =
+        requestContext
+            .call(
+                () ->
+                    dataClassificationConfigServiceStub.createDataType(
+                        CreateDataTypeRequest.newBuilder()
+                            .setRule(dataTypeWithoutValuePattern.getRule())
+                            .build()))
+            .getDataType();
+
+    DataType createdMixed =
+        requestContext
+            .call(
+                () ->
+                    dataClassificationConfigServiceStub.createDataType(
+                        CreateDataTypeRequest.newBuilder()
+                            .setRule(dataTypeWithMixedPatterns.getRule())
+                            .build()))
+            .getDataType();
+
+    // Verify the DataTypes were created
+    GetDataTypesResponse dataTypesResponse =
+        requestContext.call(
+            () ->
+                dataClassificationConfigServiceStub.getDataTypes(
+                    GetDataTypesRequest.getDefaultInstance()));
+
+    assertEquals(3, dataTypesResponse.getDataTypesCount());
+
+    // Now check the external data classification service
+    GetDataClassificationConfigResponse externalResponse =
+        requestContext.call(
+            () ->
+                externalDataClassificationServiceStub.getDataClassificationConfig(
+                    GetDataClassificationConfigRequest.getDefaultInstance()));
+
+    // Verify FullValueRegexDataTypes are present
+    // Should have 2 FullValueRegexDataTypes (one from createdValuePattern, one from createdMixed)
+    assertTrue(
+        externalResponse.getFullValueRegexDataTypesCount() >= 2,
+        "Expected at least 2 FullValueRegexDataTypes");
+
+    // Find our created FullValueRegexDataTypes
+    long valuePatternCount =
+        externalResponse.getFullValueRegexDataTypesList().stream()
+            .filter(
+                fv ->
+                    fv.getDataTypeId().equals(createdValuePattern.getId())
+                        || fv.getDataTypeId().equals(createdMixed.getId()))
+            .count();
+
+    assertEquals(
+        2, valuePatternCount, "Expected 2 FullValueRegexDataTypes from our created DataTypes");
+
+    // Verify the suppression pattern is set correctly for ValuePattern datatype
+    externalResponse.getFullValueRegexDataTypesList().stream()
+        .filter(fv -> fv.getDataTypeId().equals(createdValuePattern.getId()))
+        .findFirst()
+        .ifPresent(
+            fv -> {
+              assertTrue(fv.hasSuppressionPattern(), "SuppressionPattern should be set");
+              assertEquals(
+                  "\\d{3}-\\d{2}-\\d{4}",
+                  fv.getSuppressionPattern().getValue(), "Suppression pattern value should match");
+              assertEquals(
+                  ai.traceable.external.data.classification.config.service.v1.Operator
+                      .OPERATOR_MATCHES_REGEX,
+                  fv.getSuppressionPattern().getOperator(),
+                  "Suppression pattern operator should be MATCHES_REGEX");
+            });
+
+    // Verify regular DataTypes are present
+    // Should have at least 2 regular DataTypes (one from createdRegular, one from createdMixed)
+    long regularDataTypeCount =
+        externalResponse.getDataTypesList().stream()
+            .filter(
+                dt ->
+                    dt.getDataTypeId().equals(createdRegular.getId())
+                        || dt.getDataTypeId().equals(createdMixed.getId()))
+            .count();
+
+    assertTrue(
+        regularDataTypeCount >= 1,
+        "Expected at least 1 regular DataType (from createdRegular or createdMixed)");
+
+    // Verify that the ValuePattern-only DataType does NOT appear in regular DataTypes
+    boolean valuePatternInRegularDataTypes =
+        externalResponse.getDataTypesList().stream()
+            .anyMatch(dt -> dt.getDataTypeId().equals(createdValuePattern.getId()));
+
+    assertFalse(
+        valuePatternInRegularDataTypes,
+        "DataType with only ValuePattern should not appear in regular DataTypes");
+
+    // Verify that the mixed pattern DataType appears in regular DataTypes (for non-ValuePattern
+    // rules)
+    boolean mixedPatternInRegularDataTypes =
+        externalResponse.getDataTypesList().stream()
+            .anyMatch(dt -> dt.getDataTypeId().equals(createdMixed.getId()));
+
+    assertTrue(
+        mixedPatternInRegularDataTypes,
+        "DataType with mixed patterns should appear in regular DataTypes");
   }
 }

@@ -49,7 +49,7 @@ public class ExternalDataClassificationRuleResponseBuilderTest {
 
     GetDataClassificationConfigResponse response =
         this.responseBuilder.buildEnabledResponse(
-            mockRequest, mockRequestContext, List.of(mockDataType), List.of());
+            mockRequest, mockRequestContext, List.of(mockDataType), List.of(), List.of());
     assertEquals(0, response.getDataParsingRulesCount());
     assertEquals(0, response.getDataTypesCount());
     assertEquals(mockRequest.getChangeFilter().getPreviousHash(), response.getHash());
@@ -67,7 +67,7 @@ public class ExternalDataClassificationRuleResponseBuilderTest {
 
     GetDataClassificationConfigResponse response =
         this.responseBuilder.buildEnabledResponse(
-            mockRequest, mockRequestContext, List.of(mockDataType), List.of());
+            mockRequest, mockRequestContext, List.of(mockDataType), List.of(), List.of());
     assertSame(mockDataType, response.getDataTypes(0));
     assertEquals(0, response.getDataParsingRulesCount());
     assertEquals(differentHash, response.getHash());
@@ -86,7 +86,8 @@ public class ExternalDataClassificationRuleResponseBuilderTest {
         .thenReturn("some-hash");
     assertFalse(
         this.responseBuilder
-            .buildEnabledResponse(mockRequest, mockRequestContext, List.of(mockDataType), List.of())
+            .buildEnabledResponse(
+                mockRequest, mockRequestContext, List.of(mockDataType), List.of(), List.of())
             .hasObfuscationStrategy());
 
     when(this.mockFeatureClient.isDataClassificationEnhancedObfuscationEnabled(mockRequestContext))
@@ -104,7 +105,8 @@ public class ExternalDataClassificationRuleResponseBuilderTest {
             .setSalt(mockRequestContext.getTenantId().orElseThrow())
             .build(),
         this.responseBuilder
-            .buildEnabledResponse(mockRequest, mockRequestContext, List.of(mockDataType), List.of())
+            .buildEnabledResponse(
+                mockRequest, mockRequestContext, List.of(mockDataType), List.of(), List.of())
             .getObfuscationStrategy());
   }
 }

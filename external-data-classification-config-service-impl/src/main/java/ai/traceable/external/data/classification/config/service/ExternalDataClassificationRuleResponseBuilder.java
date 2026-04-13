@@ -5,6 +5,7 @@ import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.external.data.classification.config.service.obfuscation.DataObfuscationRulesManager;
 import ai.traceable.external.data.classification.config.service.v1.DataParsingRule;
 import ai.traceable.external.data.classification.config.service.v1.DataType;
+import ai.traceable.external.data.classification.config.service.v1.FullValueRegexDataType;
 import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigRequest;
 import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigResponse;
 import jakarta.inject.Inject;
@@ -26,12 +27,14 @@ class ExternalDataClassificationRuleResponseBuilder {
       GetDataClassificationConfigRequest request,
       RequestContext requestContext,
       List<DataType> dataTypes,
-      List<DataParsingRule> dataParsingRules) {
+      List<DataParsingRule> dataParsingRules,
+      List<FullValueRegexDataType> fullValueRegexDataTypes) {
     GetDataClassificationConfigResponse.Builder responseBuilder =
         GetDataClassificationConfigResponse.newBuilder()
             .setEnabled(true)
             .addAllDataTypes(dataTypes)
-            .addAllDataParsingRules(dataParsingRules);
+            .addAllDataParsingRules(dataParsingRules)
+            .addAllFullValueRegexDataTypes(fullValueRegexDataTypes);
     if (this.featureClient.isDataClassificationEnhancedObfuscationEnabled(requestContext)) {
       responseBuilder.setObfuscationStrategy(
           this.dataObfuscationRulesManager.getObfuscationStrategy(requestContext));

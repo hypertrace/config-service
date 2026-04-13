@@ -15,11 +15,13 @@ import ai.traceable.data.classification.config.service.v1.DataTypeRule.Operator;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ScopedPattern;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.StringPattern;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.UrlMatchScope;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule.ValuePattern;
 import ai.traceable.external.data.classification.config.service.v1.AttributeFilter;
 import ai.traceable.external.data.classification.config.service.v1.AttributePredicate;
 import ai.traceable.external.data.classification.config.service.v1.DataType.DataTransformation;
 import ai.traceable.external.data.classification.config.service.v1.DataType.DataTypeMatchRule;
 import ai.traceable.external.data.classification.config.service.v1.DataType.Result;
+import ai.traceable.external.data.classification.config.service.v1.FullValueRegexDataType;
 import ai.traceable.external.data.classification.config.service.v1.PathPredicate;
 import ai.traceable.external.data.classification.config.service.v1.PathValuePredicate;
 import ai.traceable.external.data.classification.config.service.v1.SpanFilter;
@@ -457,5 +459,181 @@ public class DataClassificationRulesTranslatorTest {
         List.of(expectedOutput),
         dataClassificationRulesTranslator.translateDataTypes(
             List.of(inputType), Optional.empty(), PREDICATE_SUPPORT_LEVEL_UNSPECIFIED));
+  }
+
+  @Test
+  void testTranslateValuePatternToFullValueRegexDataType() {
+    // Create a DataType with VALUE_PATTERN
+    DataType inputType =
+        DataType.newBuilder()
+            .setId("id-1")
+            .setRule(
+                DataTypeRule.newBuilder()
+                    .setName("datatype-1")
+                    .setDataSuppression(DataSuppression.DATA_SUPPRESSION_REDACT)
+                    .addScopedPatterns(
+                        ScopedPattern.newBuilder()
+                            .setGlobalScope(DataTypeRule.GlobalScope.getDefaultInstance())
+                            .addLocations(Location.LOCATION_PATH)
+                            .setValuePattern(
+                                ValuePattern.newBuilder()
+                                    .setValuePattern(
+                                        StringPattern.newBuilder()
+                                            .setValue("\\d{3}-\\d{2}-\\d{4}")
+                                            .setOperator(Operator.OPERATOR_MATCHES_REGEX)))
+                            .setAction(Action.ACTION_MATCH)))
+            .build();
+
+    FullValueRegexDataType expectedOutput =
+        FullValueRegexDataType.newBuilder()
+            .setDataTypeId("id-1")
+            .setTransformation(FullValueRegexDataType.DataTransformation.DATA_TRANSFORMATION_REDACT)
+            .setAttributeFilter(
+                AttributeFilter.newBuilder()
+                    .addAllPrefixes(
+                        List.of("http.url", "http.target", "http.path", "url.full", "url.query")))
+            .setSuppressionPattern(
+                StringPredicate.newBuilder()
+                    .setOperator(
+                        ai.traceable.external.data.classification.config.service.v1.Operator
+                            .OPERATOR_MATCHES_REGEX)
+                    .setValue("\\d{3}-\\d{2}-\\d{4}"))
+            .setResult(FullValueRegexDataType.Result.RESULT_MATCH)
+            .build();
+
+    List<FullValueRegexDataType> result =
+        dataClassificationRulesTranslator.translateFullValueRegexDataTypes(
+            List.of(inputType), Optional.empty());
+
+    assertEquals(1, result.size());
+    assertEquals(expectedOutput, result.get(0));
+
+    // Verify that VALUE_PATTERN does not create DataType rules
+    List<ai.traceable.external.data.classification.config.service.v1.DataType> dataTypes =
+        dataClassificationRulesTranslator.translateDataTypes(
+            List.of(inputType), Optional.empty(), PREDICATE_SUPPORT_LEVEL_UNSPECIFIED);
+    assertEquals(0, dataTypes.size());
+  }
+
+  @Test
+  void testTranslateMultipleValuePatternsToFullValueRegexDataType() {
+    // Create a DataType with multiple VALUE_PATTERNs
+    DataType inputType =
+        DataType.newBuilder()
+            .setId("id-1")
+            .setRule(
+                DataTypeRule.newBuilder()
+                    .setName("datatype-1")
+                    .setDataSuppression(DataSuppression.DATA_SUPPRESSION_OBFUSCATE)
+                    .addScopedPatterns(
+                        ScopedPattern.newBuilder()
+                            .setGlobalScope(DataTypeRule.GlobalScope.getDefaultInstance())
+                            .addLocations(Location.LOCATION_PATH)
+                            .setValuePattern(
+                                ValuePattern.newBuilder()
+                                    .setValuePattern(
+                                        StringPattern.newBuilder()
+                                            .setValue("pattern1")
+                                            .setOperator(Operator.OPERATOR_EQUALS)))
+                            .setAction(Action.ACTION_MATCH))
+                    .addScopedPatterns(
+                        ScopedPattern.newBuilder()
+                            .setGlobalScope(DataTypeRule.GlobalScope.getDefaultInstance())
+                            .addLocations(Location.LOCATION_PATH)
+                            .setValuePattern(
+                                ValuePattern.newBuilder()
+                                    .setValuePattern(
+                                        StringPattern.newBuilder()
+                                            .setValue("pattern2")
+                                            .setOperator(Operator.OPERATOR_MATCHES_REGEX)))
+                            .setAction(Action.ACTION_IGNORE)))
+            .build();
+
+    FullValueRegexDataType expectedOutput1 =
+        FullValueRegexDataType.newBuilder()
+            .setDataTypeId("id-1")
+            .setTransformation(
+                FullValueRegexDataType.DataTransformation.DATA_TRANSFORMATION_OBFUSCATE)
+            .setAttributeFilter(
+                AttributeFilter.newBuilder()
+                    .addAllPrefixes(
+                        List.of("http.url", "http.target", "http.path", "url.full", "url.query")))
+            .setSuppressionPattern(
+                StringPredicate.newBuilder()
+                    .setOperator(
+                        ai.traceable.external.data.classification.config.service.v1.Operator
+                            .OPERATOR_MATCHES_REGEX)
+                    .setValue("pattern1"))
+            .setResult(FullValueRegexDataType.Result.RESULT_MATCH)
+            .build();
+
+    FullValueRegexDataType expectedOutput2 =
+        FullValueRegexDataType.newBuilder()
+            .setDataTypeId("id-1")
+            .setTransformation(
+                FullValueRegexDataType.DataTransformation.DATA_TRANSFORMATION_OBFUSCATE)
+            .setAttributeFilter(
+                AttributeFilter.newBuilder()
+                    .addAllPrefixes(
+                        List.of("http.url", "http.target", "http.path", "url.full", "url.query")))
+            .setSuppressionPattern(
+                StringPredicate.newBuilder()
+                    .setOperator(
+                        ai.traceable.external.data.classification.config.service.v1.Operator
+                            .OPERATOR_MATCHES_REGEX)
+                    .setValue("pattern2"))
+            .setResult(FullValueRegexDataType.Result.RESULT_IGNORE)
+            .build();
+
+    List<FullValueRegexDataType> result =
+        dataClassificationRulesTranslator.translateFullValueRegexDataTypes(
+            List.of(inputType), Optional.empty());
+
+    assertEquals(2, result.size());
+    assertEquals(expectedOutput1, result.get(0));
+    assertEquals(expectedOutput2, result.get(1));
+  }
+
+  @Test
+  void testTranslateValuePatternWithEnvironmentScopeToFullValueRegexDataType() {
+    // Create a DataType with VALUE_PATTERN and environment scope
+    DataType inputType =
+        DataType.newBuilder()
+            .setId("id-1")
+            .setRule(
+                DataTypeRule.newBuilder()
+                    .setName("datatype-1")
+                    .setDataSuppression(DataSuppression.DATA_SUPPRESSION_REDACT)
+                    .addScopedPatterns(
+                        ScopedPattern.newBuilder()
+                            .setEnvironmentScope(
+                                EnvironmentScope.newBuilder().addEnvironmentIds("env-1"))
+                            .addLocations(Location.LOCATION_PATH)
+                            .setValuePattern(
+                                ValuePattern.newBuilder()
+                                    .setValuePattern(
+                                        StringPattern.newBuilder()
+                                            .setValue("pattern-env1")
+                                            .setOperator(Operator.OPERATOR_EQUALS)))
+                            .setAction(Action.ACTION_MATCH)))
+            .build();
+
+    // Test with matching environment
+    List<FullValueRegexDataType> resultWithEnv =
+        dataClassificationRulesTranslator.translateFullValueRegexDataTypes(
+            List.of(inputType), Optional.of("env-1"));
+    assertEquals(1, resultWithEnv.size());
+
+    // Test with non-matching environment
+    List<FullValueRegexDataType> resultWithoutEnv =
+        dataClassificationRulesTranslator.translateFullValueRegexDataTypes(
+            List.of(inputType), Optional.of("env-2"));
+    assertEquals(0, resultWithoutEnv.size());
+
+    // Test with empty environment (should not match environment-scoped patterns)
+    List<FullValueRegexDataType> resultEmptyEnv =
+        dataClassificationRulesTranslator.translateFullValueRegexDataTypes(
+            List.of(inputType), Optional.empty());
+    assertEquals(0, resultEmptyEnv.size());
   }
 }

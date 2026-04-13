@@ -126,6 +126,9 @@ class DataTypeConfigRequestValidator {
       case LEAF_KEY_PATTERN:
         this.validateStringPattern(scopedPattern.getLeafKeyPattern());
         break;
+      case VALUE_PATTERN:
+        this.validateValuePattern(scopedPattern);
+        break;
       case PATTERN_NOT_SET:
       default:
         throw Status.INVALID_ARGUMENT
@@ -149,6 +152,32 @@ class DataTypeConfigRequestValidator {
             .withDescription(String.format("Invalid regex : %s", pattern.getValue()))
             .asRuntimeException();
       }
+    }
+  }
+
+  private void validateValuePattern(ScopedPattern scopedPattern) {
+    // ValuePattern is only applicable to LOCATION_PATH
+    List<Location> locations = scopedPattern.getLocationsList();
+    if (locations.size() != 1 || !locations.get(0).equals(Location.LOCATION_PATH)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              "ValuePattern is only applicable to LOCATION_PATH: " + printMessage(scopedPattern))
+          .asRuntimeException();
+    }
+    if (!scopedPattern.hasValuePattern() || !scopedPattern.getValuePattern().hasValuePattern()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              "ValuePattern must have a value_pattern field: " + printMessage(scopedPattern))
+          .asRuntimeException();
+    }
+    StringPattern pattern = scopedPattern.getValuePattern().getValuePattern();
+    validateStringPattern(pattern);
+    // ValuePattern only supports regex matching
+    if (!pattern.getOperator().equals(DataTypeRule.Operator.OPERATOR_MATCHES_REGEX)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              "ValuePattern only supports OPERATOR_MATCHES_REGEX: " + printMessage(scopedPattern))
+          .asRuntimeException();
     }
   }
 

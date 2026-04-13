@@ -1,6 +1,7 @@
 package ai.traceable.data.classification.config.service;
 
 import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_ANY;
+import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_PATH;
 import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_QUERY;
 import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_REQUEST_HEADER;
 import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_UNSPECIFIED;
@@ -18,6 +19,7 @@ import ai.traceable.data.classification.config.service.v1.DataTypeRule.KeyValueP
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.Operator;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ScopedPattern;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.StringPattern;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule.ValuePattern;
 import io.grpc.StatusRuntimeException;
 import java.util.List;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -447,5 +449,114 @@ class DataTypeConfigRequestValidatorTest {
 
   private KeyValuePattern createKeyValuePatternNoKeyPattern() {
     return KeyValuePattern.newBuilder().setValuePattern(createStringPattern()).build();
+  }
+
+  @Test
+  void validateOrThrowCorrectValuePattern() {
+    DataTypeRule rule =
+        DataTypeRule.newBuilder()
+            .setName("name-1")
+            .addScopedPatterns(
+                ScopedPattern.newBuilder()
+                    .setApiScope(createApiScope())
+                    .addLocations(LOCATION_PATH)
+                    .setValuePattern(createValuePattern())
+                    .setActionValue(1))
+            .build();
+    CreateDataTypeRequest request = CreateDataTypeRequest.newBuilder().setRule(rule).build();
+    dataTypeConfigRequestValidator.validateOrThrow(REQUEST_CONTEXT, request);
+  }
+
+  @Test
+  void validateOrThrowValuePatternWithWrongLocation() {
+    DataTypeRule rule =
+        DataTypeRule.newBuilder()
+            .setName("name-1")
+            .addScopedPatterns(
+                ScopedPattern.newBuilder()
+                    .setApiScope(createApiScope())
+                    .addLocations(LOCATION_REQUEST_HEADER)
+                    .setValuePattern(createValuePattern())
+                    .setActionValue(1))
+            .build();
+    CreateDataTypeRequest request = CreateDataTypeRequest.newBuilder().setRule(rule).build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> {
+          dataTypeConfigRequestValidator.validateOrThrow(REQUEST_CONTEXT, request);
+        });
+  }
+
+  @Test
+  void validateOrThrowValuePatternWithMultipleLocations() {
+    DataTypeRule rule =
+        DataTypeRule.newBuilder()
+            .setName("name-1")
+            .addScopedPatterns(
+                ScopedPattern.newBuilder()
+                    .setApiScope(createApiScope())
+                    .addLocations(LOCATION_PATH)
+                    .addLocations(LOCATION_QUERY)
+                    .setValuePattern(createValuePattern())
+                    .setActionValue(1))
+            .build();
+    CreateDataTypeRequest request = CreateDataTypeRequest.newBuilder().setRule(rule).build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> {
+          dataTypeConfigRequestValidator.validateOrThrow(REQUEST_CONTEXT, request);
+        });
+  }
+
+  @Test
+  void validateOrThrowValuePatternWithoutValuePattern() {
+    DataTypeRule rule =
+        DataTypeRule.newBuilder()
+            .setName("name-1")
+            .addScopedPatterns(
+                ScopedPattern.newBuilder()
+                    .setApiScope(createApiScope())
+                    .addLocations(LOCATION_PATH)
+                    .setValuePattern(ValuePattern.newBuilder().build())
+                    .setActionValue(1))
+            .build();
+    CreateDataTypeRequest request = CreateDataTypeRequest.newBuilder().setRule(rule).build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> {
+          dataTypeConfigRequestValidator.validateOrThrow(REQUEST_CONTEXT, request);
+        });
+  }
+
+  private ValuePattern createValuePattern() {
+    return ValuePattern.newBuilder()
+        .setValuePattern(
+            StringPattern.newBuilder().setOperator(Operator.OPERATOR_MATCHES_REGEX).setValue(".*"))
+        .build();
+  }
+
+  @Test
+  void validateOrThrowValuePatternWithNonRegexOperator() {
+    DataTypeRule rule =
+        DataTypeRule.newBuilder()
+            .setName("name-1")
+            .addScopedPatterns(
+                ScopedPattern.newBuilder()
+                    .setApiScope(createApiScope())
+                    .addLocations(LOCATION_PATH)
+                    .setValuePattern(
+                        ValuePattern.newBuilder()
+                            .setValuePattern(
+                                StringPattern.newBuilder()
+                                    .setOperator(Operator.OPERATOR_EQUALS)
+                                    .setValue("value")))
+                    .setActionValue(1))
+            .build();
+    CreateDataTypeRequest request = CreateDataTypeRequest.newBuilder().setRule(rule).build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> {
+          dataTypeConfigRequestValidator.validateOrThrow(REQUEST_CONTEXT, request);
+        });
   }
 }

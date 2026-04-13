@@ -192,6 +192,7 @@ dependencies {
   integrationTestImplementation(projects.riskConfigServiceApi)
   integrationTestImplementation(projects.sensitiveDataConfigServiceApi)
   integrationTestImplementation(projects.dataClassificationConfigServiceApi)
+  integrationTestImplementation(projects.externalDataClassificationConfigServiceApi)
   integrationTestImplementation(projects.maliciousSourcesConfigServiceApi)
   integrationTestImplementation(projects.detectionExclusionConfigServiceApi)
   integrationTestImplementation(projects.splunkIntegrationConfigServiceApi)
