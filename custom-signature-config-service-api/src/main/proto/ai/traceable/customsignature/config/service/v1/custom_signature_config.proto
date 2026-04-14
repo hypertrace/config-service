@@ -87,6 +87,10 @@ message GetCustomSignatureModsecRulesResponse {
   repeated CustomSignatureInlineRule inline_rules = 3;
   string modsec_directives_blob = 4;
   repeated ModsecBlobData modsec_blobs_data = 5;
+  // Maps the assigned/generated modsec rule ID to a composite value of "customSignatureRuleId::originalSecRuleId".
+  // Example: {"10000000" -> "rule-uuid-123::92100120"} indicates that assigned modsec ID 10000000
+  // corresponds to CustomSignatureRule with ID "rule-uuid-123" and original sec rule ID "92100120".
+  map<string, string> modsec_id_mappings = 6;
 }
 
 message GetCustomSignatureEdgeDecisionRulesRequest {
