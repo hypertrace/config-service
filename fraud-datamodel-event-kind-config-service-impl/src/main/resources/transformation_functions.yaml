@@ -10,29 +10,7 @@ functions:
       - kind_id: "system_event_kind_value"
     output_kind:
       kind_id: "system_event_kind_string"
-    jexl_template: "String.valueOf(${input})"
-
-  - id: "system_defined_function_hash"
-    display_name: "hash"
-    description: "Computes a hash of the value"
-    input_kinds:
-      - kind_id: "system_event_kind_value"
-    output_kind:
-      kind_id: "system_event_kind_string"
-    jexl_template: "hash(${input}, '${algorithm}')"
-    parameters:
-      - name: "algorithm"
-        description: "Hash algorithm to use"
-        type: PARAMETER_TYPE_ENUM
-        required: false
-        default_value: "SHA256"
-        allowed_values:
-          - value: "MD5"
-            display_name: "MD5"
-          - value: "SHA256"
-            display_name: "SHA-256"
-          - value: "SHA512"
-            display_name: "SHA-512"
+    jexl_template: "('' + ${input})"
 
   # String functions
   - id: "system_defined_function_split"
@@ -48,7 +26,23 @@ functions:
       - name: "delimiter"
         description: "Delimiter to split by (e.g., ':', ',', ' ')"
         type: PARAMETER_TYPE_STRING
-        required: true
+        required: false
+        default_value: ","
+        allowed_values:
+          - value: ","
+            display_name: "Comma (,)"
+          - value: ":"
+            display_name: "Colon (:)"
+          - value: " "
+            display_name: "Space ( )"
+          - value: "\\."
+            display_name: "Dot (.)"
+          - value: "\\|"
+            display_name: "Pipe (|)"
+          - value: "/"
+            display_name: "Slash (/)"
+          - value: "\\$"
+            display_name: "Dollar ($)"
 
   # Array functions - use type_parameter_ref for compile-time type safety
   - id: "system_defined_function_get"
@@ -88,7 +82,7 @@ functions:
           kind_id: "system_event_kind_value"
     output_kind:
       kind_id: "system_event_kind_string"
-    jexl_template: "String.join('${delimiter}', ${input})"
+    jexl_template: "string:join(${input}, '${delimiter}')"
     parameters:
       - name: "delimiter"
         description: "Delimiter to join with (e.g., ':', ',', ' ')"
@@ -170,63 +164,63 @@ functions:
         required: true
 
   # Masking functions
-  - id: "system_defined_function_last_4_digits"
-    display_name: "last4Digits"
-    description: "Returns only the last 4 digits, masking the rest"
-    input_kinds:
-      - kind_id: "system_event_kind_phone_number"
-      - kind_id: "system_event_kind_credit_card"
-    output_kind:
-      kind_id: "system_event_kind_string"
-    jexl_template: "last4Digits(${input})"
+  #  - id: "system_defined_function_last_4_digits"
+  #    display_name: "last4Digits"
+  #    description: "Returns only the last 4 digits, masking the rest"
+  #    input_kinds:
+  #      - kind_id: "system_event_kind_phone_number"
+  #      - kind_id: "system_event_kind_credit_card"
+  #    output_kind:
+  #      kind_id: "system_event_kind_string"
+  #    jexl_template: "last4Digits(${input})"
 
-  - id: "system_defined_function_mask"
-    display_name: "mask"
-    description: "Masks the value with asterisks, showing only specified characters"
-    input_kinds:
-      - kind_id: "system_event_kind_string"
-    output_kind:
-      kind_id: "system_event_kind_string"
-    jexl_template: "mask(${input}, ${showFirst}, ${showLast})"
-    parameters:
-      - name: "showFirst"
-        description: "Number of characters to show at start"
-        type: PARAMETER_TYPE_NUMBER
-        required: false
-        default_value: "0"
-      - name: "showLast"
-        description: "Number of characters to show at end"
-        type: PARAMETER_TYPE_NUMBER
-        required: false
-        default_value: "4"
+  #  - id: "system_defined_function_mask"
+  #    display_name: "mask"
+  #    description: "Masks the value with asterisks, showing only specified characters"
+  #    input_kinds:
+  #      - kind_id: "system_event_kind_string"
+  #    output_kind:
+  #      kind_id: "system_event_kind_string"
+  #    jexl_template: "mask(${input}, ${showFirst}, ${showLast})"
+  #    parameters:
+  #      - name: "showFirst"
+  #        description: "Number of characters to show at start"
+  #        type: PARAMETER_TYPE_NUMBER
+  #        required: false
+  #        default_value: "0"
+  #      - name: "showLast"
+  #        description: "Number of characters to show at end"
+  #        type: PARAMETER_TYPE_NUMBER
+  #        required: false
+  #        default_value: "4"
 
   # IP Address functions
-  - id: "system_defined_function_is_ip_tor"
-    display_name: "isIPTor"
-    description: "Checks if the IP address is a TOR exit node"
-    input_kinds:
-      - kind_id: "system_event_kind_ip_address"
-    output_kind:
-      kind_id: "system_event_kind_boolean"
-    jexl_template: "isIPTor(${input})"
+  #  - id: "system_defined_function_is_ip_tor"
+  #    display_name: "isIPTor"
+  #    description: "Checks if the IP address is a TOR exit node"
+  #    input_kinds:
+  #      - kind_id: "system_event_kind_ip_address"
+  #    output_kind:
+  #      kind_id: "system_event_kind_boolean"
+  #    jexl_template: "isIPTor(${input})"
 
-  - id: "system_defined_function_is_private_ip"
-    display_name: "isPrivateIP"
-    description: "Checks if the IP address is in a private range"
-    input_kinds:
-      - kind_id: "system_event_kind_ip_address"
-    output_kind:
-      kind_id: "system_event_kind_boolean"
-    jexl_template: "isPrivateIP(${input})"
+  #  - id: "system_defined_function_is_private_ip"
+  #    display_name: "isPrivateIP"
+  #    description: "Checks if the IP address is in a private range"
+  #    input_kinds:
+  #      - kind_id: "system_event_kind_ip_address"
+  #    output_kind:
+  #      kind_id: "system_event_kind_boolean"
+  #    jexl_template: "isPrivateIP(${input})"
 
-  - id: "system_defined_function_get_card_type"
-    display_name: "getCardType"
-    description: "Returns the credit card type (Visa, Mastercard, Amex, etc.)"
-    input_kinds:
-      - kind_id: "system_event_kind_credit_card"
-    output_kind:
-      kind_id: "system_event_kind_string"
-    jexl_template: "getCardType(${input})"
+  #  - id: "system_defined_function_get_card_type"
+  #    display_name: "getCardType"
+  #    description: "Returns the credit card type (Visa, Mastercard, Amex, etc.)"
+  #    input_kinds:
+  #      - kind_id: "system_event_kind_credit_card"
+  #    output_kind:
+  #      kind_id: "system_event_kind_string"
+  #    jexl_template: "getCardType(${input})"
 
   # Email functions
   - id: "system_defined_function_get_email_domain"
@@ -238,33 +232,75 @@ functions:
       kind_id: "system_event_kind_string"
     jexl_template: "${input}.split('@')[1]"
 
-  # JSON functions
-  # - id: "system_defined_function_parse_json"
-  #   display_name: "parseJson"
-  #   description: "Parses a JSON string into a map object for field extraction"
-  #   input_kinds:
-  #     - kind_id: "system_event_kind_string"
-  #   output_kind:
-  #     string_map_of:
-  #       kind_id: "system_event_kind_value"
-  #   jexl_template: "traceable:parseJson(${input})"
+  - id: "system_defined_function_to_detumbled_email"
+    display_name: "toDetumbledEmail"
+    description: "Removes tumbling from an email address by stripping +, -, . suffixes and trailing digits from the handle"
+    input_kinds:
+      - kind_id: "system_event_kind_email"
+    output_kind:
+      kind_id: "system_event_kind_string"
+    jexl_template: "email:toDetumbledEmail(${input})"
 
-  # - id: "system_defined_function_get_entry"
-  #   display_name: "getEntry"
-  #   description: "Gets a value from a map by key name"
-  #   # Input: MAP<string, T>
-  #   input_kinds:
-  #     - string_map_of:
-  #         type_parameter_ref: "T"
-  #   # Output: T (preserves value type)
-  #   output_kind:
-  #     type_parameter_ref: "T"
-  #   jexl_template: "${input}['${key}']"
-  #   parameters:
-  #     - name: "key"
-  #       description: "Key name to extract from the map"
-  #       type: PARAMETER_TYPE_STRING
-  #       required: true
+  - id: "system_defined_function_to_email_handle_pattern"
+    display_name: "toEmailHandlePattern"
+    description: "Converts an email handle into a 10-digit structural pattern encoding the lengths of alternating alpha and non-alpha groups"
+    input_kinds:
+      - kind_id: "system_event_kind_email"
+    output_kind:
+      kind_id: "system_event_kind_string"
+    jexl_template: "email:toEmailHandlePattern(${input})"
+
+  - id: "system_defined_function_is_abnormal_email_handle"
+    display_name: "isAbnormalEmailHandle"
+    description: "Checks if an email handle has abnormal character distribution based on consonant/vowel ratios"
+    input_kinds:
+      - kind_id: "system_event_kind_email"
+    output_kind:
+      kind_id: "system_event_kind_boolean"
+    jexl_template: "email:isAbnormalEmailHandle(${input})"
+
+  - id: "system_defined_function_entropy"
+    display_name: "entropy"
+    description: "Calculates the Shannon metric entropy of an email handle to detect randomly generated addresses"
+    input_kinds:
+      - kind_id: "system_event_kind_email"
+    output_kind:
+      kind_id: "system_event_kind_numeric"
+    jexl_template: "email:entropy(${input}, ${lengthThreshold})"
+    parameters:
+      - name: "lengthThreshold"
+        description: "Minimum handle length to compute entropy (handles shorter than this return NaN)"
+        type: PARAMETER_TYPE_NUMBER
+        required: false
+        default_value: "10"
+
+  # JSON functions
+  - id: "system_defined_function_parse_json"
+    display_name: "parseJson"
+    description: "Parses a JSON string into a map object for field extraction"
+    input_kinds:
+      - kind_id: "system_event_kind_string"
+    output_kind:
+      string_map_of:
+        kind_id: "system_event_kind_value"
+    jexl_template: "traceable:parseJson(${input})"
+
+  - id: "system_defined_function_get_entry"
+    display_name: "getEntry"
+    description: "Gets a value from a map by key name"
+    # Input: MAP<string, T>
+    input_kinds:
+      - string_map_of:
+          type_parameter_ref: "T"
+    # Output: T (preserves value type)
+    output_kind:
+      type_parameter_ref: "T"
+    jexl_template: "${input}['${key}']"
+    parameters:
+      - name: "key"
+        description: "Key name to extract from the map"
+        type: PARAMETER_TYPE_STRING
+        required: true
 
   - id: "system_defined_function_json_path"
     display_name: "getJsonPath"
@@ -288,7 +324,7 @@ functions:
       - kind_id: "system_event_kind_string"
     output_kind:
       kind_id: "system_event_kind_string"
-    jexl_template: "base64Encode(${input})"
+    jexl_template: "traceableTransformUtils:base64Encode(${input})"
 
   - id: "system_defined_function_base64_decode"
     display_name: "base64Decode"
@@ -297,7 +333,7 @@ functions:
       - kind_id: "system_event_kind_string"
     output_kind:
       kind_id: "system_event_kind_string"
-    jexl_template: "base64Decode(${input})"
+    jexl_template: "traceableTransformUtils:base64Decode(${input})"
 
   - id: "system_defined_function_url_encode"
     display_name: "urlEncode"
@@ -306,7 +342,7 @@ functions:
       - kind_id: "system_event_kind_string"
     output_kind:
       kind_id: "system_event_kind_string"
-    jexl_template: "urlEncode(${input})"
+    jexl_template: "traceableTransformUtils:urlEncode(${input})"
 
   - id: "system_defined_function_url_decode"
     display_name: "urlDecode"
@@ -315,4 +351,4 @@ functions:
       - kind_id: "system_event_kind_string"
     output_kind:
       kind_id: "system_event_kind_string"
-    jexl_template: "urlDecode(${input})"
+    jexl_template: "traceableTransformUtils:urlDecode(${input})"

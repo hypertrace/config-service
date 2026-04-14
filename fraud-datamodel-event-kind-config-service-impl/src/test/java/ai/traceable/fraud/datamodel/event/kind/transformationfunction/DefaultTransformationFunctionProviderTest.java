@@ -41,7 +41,7 @@ class DefaultTransformationFunctionProviderTest {
     // String-specific function
     assertTrue(functionIds.contains("system_defined_function_base64_decode"));
     // Inherited from value kind
-    assertTrue(functionIds.contains("system_defined_function_hash"));
+    assertTrue(functionIds.contains("system_defined_function_to_string"));
   }
 
   @Test
