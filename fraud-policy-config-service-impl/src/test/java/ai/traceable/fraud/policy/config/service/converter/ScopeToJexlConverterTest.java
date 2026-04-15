@@ -14,14 +14,17 @@ import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.Extracti
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.ExtractionLocationType;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.FilterOperator;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.JexlScope;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.KeyMatchType;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.Scope;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.SpanBasedFilter;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.SpanBasedScope;
+import com.google.protobuf.NullValue;
 import com.google.protobuf.Value;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -417,5 +420,166 @@ class ScopeToJexlConverterTest {
   private static ApiIdentifierEntity apiEntity(String urlRegex, String method, String service) {
     return new ApiIdentifierEntity(
         "api-1", "api-1", "/api-1", List.of(urlRegex), List.of(), method, service);
+  }
+
+  @Test
+  void convert_spanBasedScope_requestBody_noKey_returnsFullBody() {
+    Scope scope =
+        Scope.newBuilder()
+            .setSpanBasedScope(
+                SpanBasedScope.newBuilder()
+                    .addFilters(
+                        SpanBasedFilter.newBuilder()
+                            .setOperator(FilterOperator.FILTER_OPERATOR_EQ)
+                            .setLocation(
+                                ExtractionLocation.newBuilder()
+                                    .setLocationType(
+                                        ExtractionLocationType
+                                            .EXTRACTION_LOCATION_TYPE_REQUEST_BODY))
+                            .setValue(Value.newBuilder().setStringValue("test"))))
+            .build();
+
+    String result = convert(scope);
+
+    assertEquals("$s.getParsedRequestBodyJson().equals('test')", result);
+  }
+
+  // --- KeyMatchType tests ---
+
+  @Test
+  void convert_spanBasedScope_regexKeyMatch_header() {
+    Scope scope =
+        Scope.newBuilder()
+            .setSpanBasedScope(
+                SpanBasedScope.newBuilder()
+                    .addFilters(
+                        SpanBasedFilter.newBuilder()
+                            .setOperator(FilterOperator.FILTER_OPERATOR_NEQ)
+                            .setLocation(
+                                ExtractionLocation.newBuilder()
+                                    .setLocationType(
+                                        ExtractionLocationType
+                                            .EXTRACTION_LOCATION_TYPE_REQUEST_HEADER)
+                                    .setKey("x-custom-.*")
+                                    .setKeyMatchType(KeyMatchType.KEY_MATCH_TYPE_REGEX))
+                            .setValue(Value.newBuilder().setNullValue(NullValue.NULL_VALUE))))
+            .build();
+
+    String result = convert(scope);
+
+    assertEquals(
+        "map:matchingValue($s.getRequestHeaders(), predicate:matchesRegex('x-custom-.*')) != null",
+        result);
+  }
+
+  @Test
+  void convert_spanBasedScope_prefixKeyMatch_cookie() {
+    Scope scope =
+        Scope.newBuilder()
+            .setSpanBasedScope(
+                SpanBasedScope.newBuilder()
+                    .addFilters(
+                        SpanBasedFilter.newBuilder()
+                            .setOperator(FilterOperator.FILTER_OPERATOR_NEQ)
+                            .setLocation(
+                                ExtractionLocation.newBuilder()
+                                    .setLocationType(
+                                        ExtractionLocationType
+                                            .EXTRACTION_LOCATION_TYPE_REQUEST_COOKIE)
+                                    .setKey("session")
+                                    .setKeyMatchType(KeyMatchType.KEY_MATCH_TYPE_PREFIX))
+                            .setValue(Value.newBuilder().setNullValue(NullValue.NULL_VALUE))))
+            .build();
+
+    String result = convert(scope);
+
+    assertEquals(
+        "map:matchingValue($s.getRequestCookies(), predicate:startsWith('session')) != null",
+        result);
+  }
+
+  @Test
+  void convert_spanBasedScope_containsKeyMatch_queryParam() {
+    Scope scope =
+        Scope.newBuilder()
+            .setSpanBasedScope(
+                SpanBasedScope.newBuilder()
+                    .addFilters(
+                        SpanBasedFilter.newBuilder()
+                            .setOperator(FilterOperator.FILTER_OPERATOR_EQ)
+                            .setLocation(
+                                ExtractionLocation.newBuilder()
+                                    .setLocationType(
+                                        ExtractionLocationType
+                                            .EXTRACTION_LOCATION_TYPE_REQUEST_QUERY_PARAM)
+                                    .setKey("token")
+                                    .setKeyMatchType(KeyMatchType.KEY_MATCH_TYPE_CONTAINS))
+                            .setValue(Value.newBuilder().setStringValue("abc"))))
+            .build();
+
+    String result = convert(scope);
+
+    assertEquals(
+        "map:matchingValue($s.getRequestQueryParams(), predicate:contains('token')).equals('abc')",
+        result);
+  }
+
+  @Test
+  void convert_spanBasedScope_bodyNonExactKeyMatch_throws() {
+    Scope scope =
+        Scope.newBuilder()
+            .setSpanBasedScope(
+                SpanBasedScope.newBuilder()
+                    .addFilters(
+                        SpanBasedFilter.newBuilder()
+                            .setOperator(FilterOperator.FILTER_OPERATOR_EQ)
+                            .setLocation(
+                                ExtractionLocation.newBuilder()
+                                    .setLocationType(
+                                        ExtractionLocationType
+                                            .EXTRACTION_LOCATION_TYPE_REQUEST_BODY)
+                                    .setKey("field")
+                                    .setKeyMatchType(KeyMatchType.KEY_MATCH_TYPE_REGEX))
+                            .setValue(Value.newBuilder().setStringValue("val"))))
+            .build();
+
+    Assertions.assertThrows(IllegalArgumentException.class, () -> convert(scope));
+  }
+
+  @Test
+  void convert_spanBasedScope_exactKeyMatch_sameAsDefault() {
+    Scope exactScope =
+        Scope.newBuilder()
+            .setSpanBasedScope(
+                SpanBasedScope.newBuilder()
+                    .addFilters(
+                        SpanBasedFilter.newBuilder()
+                            .setOperator(FilterOperator.FILTER_OPERATOR_EQ)
+                            .setLocation(
+                                ExtractionLocation.newBuilder()
+                                    .setLocationType(
+                                        ExtractionLocationType
+                                            .EXTRACTION_LOCATION_TYPE_REQUEST_HEADER)
+                                    .setKey("x-api-key")
+                                    .setKeyMatchType(KeyMatchType.KEY_MATCH_TYPE_EXACT))
+                            .setValue(Value.newBuilder().setStringValue("secret"))))
+            .build();
+    Scope defaultScope =
+        Scope.newBuilder()
+            .setSpanBasedScope(
+                SpanBasedScope.newBuilder()
+                    .addFilters(
+                        SpanBasedFilter.newBuilder()
+                            .setOperator(FilterOperator.FILTER_OPERATOR_EQ)
+                            .setLocation(
+                                ExtractionLocation.newBuilder()
+                                    .setLocationType(
+                                        ExtractionLocationType
+                                            .EXTRACTION_LOCATION_TYPE_REQUEST_HEADER)
+                                    .setKey("x-api-key"))
+                            .setValue(Value.newBuilder().setStringValue("secret"))))
+            .build();
+
+    assertEquals(convert(defaultScope), convert(exactScope));
   }
 }

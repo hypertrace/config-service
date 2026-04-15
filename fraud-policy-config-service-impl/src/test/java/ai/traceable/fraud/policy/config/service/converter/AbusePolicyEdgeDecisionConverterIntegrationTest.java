@@ -333,7 +333,7 @@ class AbusePolicyEdgeDecisionConverterIntegrationTest {
 
     // Rule 1: REQUEST_BODY $.AuthTokenValue
     assertEquals(
-        "$s.getParsedRequestBodyJson()['AuthTokenValue'].toString()",
+        "$s.getParsedRequestBodyJson().get('AuthTokenValue')",
         getTransformJexl(authTokenVar.getRules(0)));
     String mc1 = getMatchConditionJexl(authTokenVar.getRules(0));
     assertTrue(mc1.contains("$s.getUrl() =~ '/api/v1/beta/.*'"));
@@ -341,7 +341,7 @@ class AbusePolicyEdgeDecisionConverterIntegrationTest {
 
     // Rule 2: REQUEST_BODY $.authToken with pipeline (hash→to_string→split)
     assertEquals(
-        "String.valueOf(hash($s.getParsedRequestBodyJson()['authToken'].toString(), 'SHA256')).split('.')",
+        "String.valueOf(hash($s.getParsedRequestBodyJson().get('authToken'), 'SHA256')).split('.')",
         getTransformJexl(authTokenVar.getRules(1)));
     String mc2 = getMatchConditionJexl(authTokenVar.getRules(1));
     assertTrue(mc2.contains("$s.getUrl() =~ '/api/v1/gamma/.*'"));
@@ -351,10 +351,9 @@ class AbusePolicyEdgeDecisionConverterIntegrationTest {
     // --- auth_code: 2 derivation rules ---
     assertEquals(2, authCodeVar.getRulesCount());
     assertEquals(
-        "$s.getParsedRequestBodyJson()['AuthCode'].toString()",
-        getTransformJexl(authCodeVar.getRules(0)));
+        "$s.getParsedRequestBodyJson().get('AuthCode')", getTransformJexl(authCodeVar.getRules(0)));
     assertEquals(
-        "$s.getParsedRequestBodyJson()['inputData']['Request']['AuthCode'].toString()",
+        "$s.getParsedRequestBodyJson().get('inputData').get('Request').get('AuthCode')",
         getTransformJexl(authCodeVar.getRules(1)));
 
     // --- ip_address: 1 rule, no match_condition ---

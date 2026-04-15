@@ -1,5 +1,7 @@
 package ai.traceable.fraud.policy.config.service.converter;
 
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.ExtractionLocationType;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.KeyMatchType;
 import com.google.protobuf.Value;
 import java.util.List;
 import java.util.Set;
@@ -68,10 +70,13 @@ public final class JexlExpressionUtils {
   }
 
   /**
-   * Converts a JSON path key (e.g. "$.inputParameters.Request.SecurityHint") into chained bracket
-   * notation (e.g. "['inputParameters']['Request']['SecurityHint']").
+   * Converts a JSON path key (e.g. "$.inputParameters.Request.SecurityHint") into chained .get()
+   * calls (e.g. ".get('inputParameters').get('Request').get('SecurityHint')").
    */
-  public static String jsonPathToChainedBrackets(String jsonPath) {
+  public static String toChainedGetAccess(String jsonPath) {
+    if (jsonPath == null || jsonPath.isEmpty()) {
+      throw new IllegalArgumentException("Path must not be null or empty");
+    }
     String path = jsonPath;
     if (path.startsWith("$.")) {
       path = path.substring(2);
@@ -81,13 +86,13 @@ public final class JexlExpressionUtils {
       path = path.substring(1);
     }
     if (path.isEmpty()) {
-      return "";
+      throw new IllegalArgumentException("Path must not be null or empty");
     }
     String[] segments = path.split("\\.");
     StringBuilder sb = new StringBuilder();
     for (String segment : segments) {
       if (!segment.isEmpty()) {
-        sb.append("['").append(escapeJexlString(segment)).append("']");
+        sb.append(".get('").append(escapeJexlString(segment)).append("')");
       }
     }
     return sb.toString();
@@ -113,5 +118,48 @@ public final class JexlExpressionUtils {
   /** Converts arbitrary text to snake_case. e.g. "Auth Token" → "auth_token" */
   public static String toSnakeCase(String input) {
     return input.trim().toLowerCase().replaceAll("[^a-z0-9]+", "_").replaceAll("(^_)|(_$)", "");
+  }
+
+  // --- KeyMatchType helpers ---
+
+  public static boolean isExactMatch(KeyMatchType keyMatchType) {
+    return keyMatchType == KeyMatchType.KEY_MATCH_TYPE_UNSPECIFIED
+        || keyMatchType == KeyMatchType.KEY_MATCH_TYPE_EXACT;
+  }
+
+  public static String keyMatchTypeToPredicateFunc(KeyMatchType keyMatchType) {
+    switch (keyMatchType) {
+      case KEY_MATCH_TYPE_REGEX:
+        return "matchesRegex";
+      case KEY_MATCH_TYPE_PREFIX:
+        return "startsWith";
+      case KEY_MATCH_TYPE_CONTAINS:
+        return "contains";
+      default:
+        throw new IllegalArgumentException("Unsupported key match type: " + keyMatchType);
+    }
+  }
+
+  public static void validateExactMatchOnly(
+      KeyMatchType keyMatchType, ExtractionLocationType locationType) {
+    if (!isExactMatch(keyMatchType)) {
+      throw new IllegalArgumentException(
+          "Non-exact key match type " + keyMatchType + " is not supported for " + locationType);
+    }
+  }
+
+  /**
+   * Builds a JEXL map access expression that respects KeyMatchType.
+   *
+   * <p>For exact match: {@code mapExpr.get('key')} For non-exact: {@code map:matchingValue(mapExpr,
+   * predicate:func('key'))}
+   */
+  public static String buildMapAccessJexl(String mapExpr, String key, KeyMatchType keyMatchType) {
+    if (isExactMatch(keyMatchType)) {
+      return String.format("%s.get('%s')", mapExpr, escapeJexlString(key));
+    }
+    String predicateFunc = keyMatchTypeToPredicateFunc(keyMatchType);
+    return String.format(
+        "map:matchingValue(%s, predicate:%s('%s'))", mapExpr, predicateFunc, escapeJexlString(key));
   }
 }

@@ -82,37 +82,50 @@ class JexlExpressionUtilsTest {
         "$s.getUrl() =~ '/api/v1/.*'", JexlExpressionUtils.toUrlRegexExpr(Set.of("/api/v1/.*")));
   }
 
-  // --- jsonPathToChainedBrackets ---
+  // --- toChainedGetAccess ---
 
   @Test
-  void jsonPathToChainedBrackets_standardPath() {
+  void toChainedGetAccess_standardPath() {
     assertEquals(
-        "['inputData']['Request']['AuthToken']",
-        JexlExpressionUtils.jsonPathToChainedBrackets("$.inputData.Request.AuthToken"));
+        ".get('inputData').get('Request').get('AuthToken')",
+        JexlExpressionUtils.toChainedGetAccess("$.inputData.Request.AuthToken"));
   }
 
   @Test
-  void jsonPathToChainedBrackets_simpleKey() {
-    assertEquals("['key']", JexlExpressionUtils.jsonPathToChainedBrackets("$.key"));
+  void toChainedGetAccess_simpleKey() {
+    assertEquals(".get('key')", JexlExpressionUtils.toChainedGetAccess("$.key"));
   }
 
   @Test
-  void jsonPathToChainedBrackets_leadingDot() {
+  void toChainedGetAccess_leadingDot() {
     assertEquals(
-        "['inputData']['Request']",
-        JexlExpressionUtils.jsonPathToChainedBrackets(".inputData.Request"));
+        ".get('inputData').get('Request')",
+        JexlExpressionUtils.toChainedGetAccess(".inputData.Request"));
   }
 
   @Test
-  void jsonPathToChainedBrackets_barePath() {
+  void toChainedGetAccess_barePath() {
     assertEquals(
-        "['inputData']['Request']",
-        JexlExpressionUtils.jsonPathToChainedBrackets("inputData.Request"));
+        ".get('inputData').get('Request')",
+        JexlExpressionUtils.toChainedGetAccess("inputData.Request"));
   }
 
   @Test
-  void jsonPathToChainedBrackets_emptyAfterPrefix() {
-    assertEquals("", JexlExpressionUtils.jsonPathToChainedBrackets("$"));
+  void toChainedGetAccess_nullPath_throws() {
+    org.junit.jupiter.api.Assertions.assertThrows(
+        IllegalArgumentException.class, () -> JexlExpressionUtils.toChainedGetAccess(null));
+  }
+
+  @Test
+  void toChainedGetAccess_emptyPath_throws() {
+    org.junit.jupiter.api.Assertions.assertThrows(
+        IllegalArgumentException.class, () -> JexlExpressionUtils.toChainedGetAccess(""));
+  }
+
+  @Test
+  void toChainedGetAccess_dollarOnly_throws() {
+    org.junit.jupiter.api.Assertions.assertThrows(
+        IllegalArgumentException.class, () -> JexlExpressionUtils.toChainedGetAccess("$"));
   }
 
   // --- toPascalCase ---

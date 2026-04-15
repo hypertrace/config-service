@@ -1,7 +1,10 @@
 package ai.traceable.fraud.policy.config.service.converter;
 
 import static ai.traceable.fraud.policy.config.service.converter.JexlExpressionUtils.SPAN_VAR;
+import static ai.traceable.fraud.policy.config.service.converter.JexlExpressionUtils.buildMapAccessJexl;
 import static ai.traceable.fraud.policy.config.service.converter.JexlExpressionUtils.escapeJexlString;
+import static ai.traceable.fraud.policy.config.service.converter.JexlExpressionUtils.toChainedGetAccess;
+import static ai.traceable.fraud.policy.config.service.converter.JexlExpressionUtils.validateExactMatchOnly;
 import static ai.traceable.fraud.policy.config.service.converter.JexlExpressionUtils.valueToString;
 
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
@@ -9,7 +12,9 @@ import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider.ApiIdentifierE
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityScope;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityType;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.ExtractionLocation;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.ExtractionLocationType;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.FilterOperator;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.KeyMatchType;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.Scope;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.SpanBasedFilter;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.SpanBasedScope;
@@ -145,7 +150,7 @@ public class ScopeToJexlConverter {
 
   private static String convertSpanBasedScope(SpanBasedScope spanBasedScope) {
     List<SpanBasedFilter> filters = spanBasedScope.getFiltersList();
-    if (filters == null || filters.isEmpty()) {
+    if (filters.isEmpty()) {
       return "";
     }
     String expr =
@@ -162,13 +167,20 @@ public class ScopeToJexlConverter {
 
   private static String resolveFieldPath(ExtractionLocation location) {
     String base;
-    switch (location.getLocationType()) {
+    ExtractionLocationType locationType = location.getLocationType();
+    KeyMatchType keyMatchType = location.getKeyMatchType();
+
+    switch (locationType) {
       case EXTRACTION_LOCATION_TYPE_REQUEST_HEADER:
         base = "getRequestHeaders()";
         break;
       case EXTRACTION_LOCATION_TYPE_REQUEST_BODY:
-        base = "getParsedRequestBodyJson()";
-        break;
+        validateExactMatchOnly(keyMatchType, locationType);
+        String bodyKey = location.getKey();
+        if (bodyKey.isEmpty()) {
+          return SPAN_VAR + ".getParsedRequestBodyJson()";
+        }
+        return SPAN_VAR + ".getParsedRequestBodyJson()" + toChainedGetAccess(bodyKey);
       case EXTRACTION_LOCATION_TYPE_REQUEST_QUERY_PARAM:
         base = "getRequestQueryParams()";
         break;
@@ -177,15 +189,16 @@ public class ScopeToJexlConverter {
         break;
       case EXTRACTION_LOCATION_TYPE_RESPONSE_HEADER:
       case EXTRACTION_LOCATION_TYPE_RESPONSE_BODY:
+      case EXTRACTION_LOCATION_TYPE_RESPONSE_COOKIE:
       default:
-        log.warn("Unsupported extraction location type in scope: {}", location.getLocationType());
+        log.warn("Unsupported extraction location type in scope: {}", locationType);
         return SPAN_VAR;
     }
     String key = location.getKey();
-    if (key == null || key.isEmpty()) {
+    if (key.isEmpty()) {
       return SPAN_VAR + "." + base;
     }
-    return SPAN_VAR + "." + base + ".get('" + escapeJexlString(key) + "')";
+    return buildMapAccessJexl(SPAN_VAR + "." + base, key, keyMatchType);
   }
 
   private static String applyOperator(String fieldPath, FilterOperator operator, Value value) {

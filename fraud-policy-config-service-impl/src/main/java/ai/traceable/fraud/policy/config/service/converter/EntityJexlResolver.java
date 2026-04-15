@@ -1,9 +1,10 @@
 package ai.traceable.fraud.policy.config.service.converter;
 
 import static ai.traceable.fraud.policy.config.service.converter.JexlExpressionUtils.SPAN_VAR;
-import static ai.traceable.fraud.policy.config.service.converter.JexlExpressionUtils.escapeJexlString;
-import static ai.traceable.fraud.policy.config.service.converter.JexlExpressionUtils.jsonPathToChainedBrackets;
+import static ai.traceable.fraud.policy.config.service.converter.JexlExpressionUtils.buildMapAccessJexl;
+import static ai.traceable.fraud.policy.config.service.converter.JexlExpressionUtils.toChainedGetAccess;
 import static ai.traceable.fraud.policy.config.service.converter.JexlExpressionUtils.toPascalCase;
+import static ai.traceable.fraud.policy.config.service.converter.JexlExpressionUtils.validateExactMatchOnly;
 
 import ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig;
 import ai.traceable.datamodel.data.transformation.config.v1.DerivationRule;
@@ -18,6 +19,7 @@ import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.Extracti
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.ExtractionLocationType;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.GetEntityDerivationConfigsRequest;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.GetEntityDerivationConfigsResponse;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.KeyMatchType;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.SpanBasedExtraction;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -246,27 +248,26 @@ public class EntityJexlResolver {
   private String convertSpanBasedExtractionToJexl(SpanBasedExtraction extraction) {
     ExtractionLocation location = extraction.getLocation();
     ExtractionLocationType locationType = location.getLocationType();
+    KeyMatchType keyMatchType = location.getKeyMatchType();
     String rawKey = location.getKey();
 
     switch (locationType) {
       case EXTRACTION_LOCATION_TYPE_REQUEST_HEADER:
-        return SPAN_VAR + ".getRequestHeaders().get('" + escapeJexlString(rawKey) + "')";
+        return buildMapAccessJexl(SPAN_VAR + ".getRequestHeaders()", rawKey, keyMatchType);
       case EXTRACTION_LOCATION_TYPE_REQUEST_BODY:
-        return SPAN_VAR
-            + ".getParsedRequestBodyJson()"
-            + jsonPathToChainedBrackets(rawKey)
-            + ".toString()";
+        validateExactMatchOnly(keyMatchType, locationType);
+        return SPAN_VAR + ".getParsedRequestBodyJson()" + toChainedGetAccess(rawKey);
       case EXTRACTION_LOCATION_TYPE_REQUEST_COOKIE:
-        return SPAN_VAR + ".getRequestCookies().get('" + escapeJexlString(rawKey) + "')";
+        return buildMapAccessJexl(SPAN_VAR + ".getRequestCookies()", rawKey, keyMatchType);
       case EXTRACTION_LOCATION_TYPE_REQUEST_QUERY_PARAM:
-        return SPAN_VAR + ".getRequestQueryParams().get('" + escapeJexlString(rawKey) + "')";
+        return buildMapAccessJexl(SPAN_VAR + ".getRequestQueryParams()", rawKey, keyMatchType);
       case EXTRACTION_LOCATION_TYPE_RESPONSE_HEADER:
-        return SPAN_VAR + ".getResponseHeaders().get('" + escapeJexlString(rawKey) + "')";
+        return buildMapAccessJexl(SPAN_VAR + ".getResponseHeaders()", rawKey, keyMatchType);
       case EXTRACTION_LOCATION_TYPE_RESPONSE_BODY:
-        return SPAN_VAR
-            + ".getParsedResponseBodyJson()"
-            + jsonPathToChainedBrackets(rawKey)
-            + ".toString()";
+        validateExactMatchOnly(keyMatchType, locationType);
+        return SPAN_VAR + ".getParsedResponseBodyJson()" + toChainedGetAccess(rawKey);
+      case EXTRACTION_LOCATION_TYPE_RESPONSE_COOKIE:
+        return buildMapAccessJexl(SPAN_VAR + ".getResponseCookies()", rawKey, keyMatchType);
       default:
         log.warn("Unsupported extraction location type: {}", locationType);
         return "";

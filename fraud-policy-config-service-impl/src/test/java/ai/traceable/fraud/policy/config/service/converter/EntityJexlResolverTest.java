@@ -20,6 +20,7 @@ import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EventDer
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.ExtractionLocation;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.ExtractionLocationType;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.GetEntityDerivationConfigsResponse;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.KeyMatchType;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.ParentDerivation;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.PrepopulatedSpanAttribute;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.Scope;
@@ -30,6 +31,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -157,7 +159,7 @@ class EntityJexlResolverTest {
 
     Map<String, List<DerivationRule>> result = resolve(Set.of("entity_body"));
     assertEquals(
-        "$s.getParsedRequestBodyJson()['firstName'].toString()",
+        "$s.getParsedRequestBodyJson().get('firstName')",
         getJexl(result.get("entity_body").get(0)));
   }
 
@@ -210,7 +212,7 @@ class EntityJexlResolverTest {
 
     Map<String, List<DerivationRule>> result = resolve(Set.of("entity_resp_body"));
     assertEquals(
-        "$s.getParsedResponseBodyJson()['error_code'].toString()",
+        "$s.getParsedResponseBodyJson().get('error_code')",
         getJexl(result.get("entity_resp_body").get(0)));
   }
 
@@ -543,5 +545,109 @@ class EntityJexlResolverTest {
   private static ApiIdentifierEntity apiEntity(
       String id, String urlRegex, String method, String service) {
     return new ApiIdentifierEntity(id, id, "/" + id, List.of(urlRegex), List.of(), method, service);
+  }
+
+  // --- KeyMatchType tests ---
+
+  private EntityDerivationConfig buildSpanExtractionEntityWithKeyMatchType(
+      String id, ExtractionLocationType locationType, String key, KeyMatchType keyMatchType) {
+    return EntityDerivationConfig.newBuilder()
+        .setId(id)
+        .setData(
+            EntityDerivationConfigData.newBuilder()
+                .setSpanProjection(
+                    SpanProjection.newBuilder()
+                        .addEventDerivationConfigs(
+                            EventDerivationConfigDetails.newBuilder()
+                                .setSpanExtraction(
+                                    SpanBasedExtraction.newBuilder()
+                                        .setLocation(
+                                            ExtractionLocation.newBuilder()
+                                                .setLocationType(locationType)
+                                                .setKey(key)
+                                                .setKeyMatchType(keyMatchType))))))
+        .build();
+  }
+
+  @Test
+  void resolveAll_spanBasedExtraction_regexKeyMatch_header() {
+    mockEntityConfigs(
+        buildSpanExtractionEntityWithKeyMatchType(
+            "entity_regex",
+            ExtractionLocationType.EXTRACTION_LOCATION_TYPE_REQUEST_HEADER,
+            "x-custom-.*",
+            KeyMatchType.KEY_MATCH_TYPE_REGEX));
+
+    Map<String, List<DerivationRule>> result = resolve(Set.of("entity_regex"));
+    assertEquals(
+        "map:matchingValue($s.getRequestHeaders(), predicate:matchesRegex('x-custom-.*'))",
+        getJexl(result.get("entity_regex").get(0)));
+  }
+
+  @Test
+  void resolveAll_spanBasedExtraction_prefixKeyMatch_cookie() {
+    mockEntityConfigs(
+        buildSpanExtractionEntityWithKeyMatchType(
+            "entity_prefix",
+            ExtractionLocationType.EXTRACTION_LOCATION_TYPE_REQUEST_COOKIE,
+            "session",
+            KeyMatchType.KEY_MATCH_TYPE_PREFIX));
+
+    Map<String, List<DerivationRule>> result = resolve(Set.of("entity_prefix"));
+    assertEquals(
+        "map:matchingValue($s.getRequestCookies(), predicate:startsWith('session'))",
+        getJexl(result.get("entity_prefix").get(0)));
+  }
+
+  @Test
+  void resolveAll_spanBasedExtraction_containsKeyMatch_queryParam() {
+    mockEntityConfigs(
+        buildSpanExtractionEntityWithKeyMatchType(
+            "entity_contains",
+            ExtractionLocationType.EXTRACTION_LOCATION_TYPE_REQUEST_QUERY_PARAM,
+            "token",
+            KeyMatchType.KEY_MATCH_TYPE_CONTAINS));
+
+    Map<String, List<DerivationRule>> result = resolve(Set.of("entity_contains"));
+    assertEquals(
+        "map:matchingValue($s.getRequestQueryParams(), predicate:contains('token'))",
+        getJexl(result.get("entity_contains").get(0)));
+  }
+
+  @Test
+  void resolveAll_spanBasedExtraction_bodyNonExactKeyMatch_throws() {
+    mockEntityConfigs(
+        buildSpanExtractionEntityWithKeyMatchType(
+            "entity_body_regex",
+            ExtractionLocationType.EXTRACTION_LOCATION_TYPE_REQUEST_BODY,
+            "field",
+            KeyMatchType.KEY_MATCH_TYPE_REGEX));
+
+    Assertions.assertThrows(
+        IllegalArgumentException.class, () -> resolve(Set.of("entity_body_regex")));
+  }
+
+  @Test
+  void resolveAll_spanBasedExtraction_exactKeyMatch_sameAsDefault() {
+    mockEntityConfigs(
+        buildSpanExtractionEntityWithKeyMatchType(
+            "entity_exact",
+            ExtractionLocationType.EXTRACTION_LOCATION_TYPE_REQUEST_HEADER,
+            "accept-language",
+            KeyMatchType.KEY_MATCH_TYPE_EXACT));
+
+    Map<String, List<DerivationRule>> exactResult = resolve(Set.of("entity_exact"));
+
+    mockEntityConfigs(
+        buildSpanExtractionEntity(
+            "entity_exact",
+            ExtractionLocationType.EXTRACTION_LOCATION_TYPE_REQUEST_HEADER,
+            "accept-language"));
+
+    Map<String, List<DerivationRule>> defaultResult = resolve(Set.of("entity_exact"));
+
+    assertEquals(
+        getJexl(defaultResult.get("entity_exact").get(0)),
+        getJexl(exactResult.get("entity_exact").get(0)));
   }
 }
