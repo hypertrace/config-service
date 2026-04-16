@@ -127,6 +127,22 @@ message ScopedAnomalyDetectionConfig {
   repeated AnomalyDetectionConfig anomaly_detection_configs = 2;
 }
 
+enum ParamFilterMode {
+  PARAM_FILTER_MODE_UNSPECIFIED = 0;
+  PARAM_FILTER_MODE_INCLUDE = 1;
+  PARAM_FILTER_MODE_EXCLUDE = 2;
+}
+
+message ParamKeyConfig {
+  ParamFilterMode filter_mode = 1;
+  repeated string param_key_regexes = 2;
+}
+
+message ParamValueConfig {
+  ParamFilterMode filter_mode = 1;
+  repeated string param_key_regexes = 2;
+}
+
 message AnomalyDetectionConfig {
   AnomalyConfigStatusChange config_status = 1;
   AnomalyCategoryConfig category_config = 2;

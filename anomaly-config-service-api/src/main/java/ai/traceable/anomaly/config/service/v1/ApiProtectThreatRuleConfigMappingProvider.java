@@ -61,6 +61,8 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
   private static final String REQUEST_PARAM_VALUES_NOT_ALLOWED = "request_param_values_not_allowed";
   private static final String MULTI_VALUED_STRING_PARAM_RULES = "multi_valued_string_param_rules";
   private static final String SANITIZE_PARAM_VALUES = "sanitize_param_value";
+  private static final String PARAM_KEY_CONFIG = "param_key_config";
+  private static final String PARAM_VALUE_CONFIG = "param_value_config";
   private static final String USER_ID_SOURCE = "user_id_source";
   private static final String USER_ID_DATA_LIST = "user_id_data_list";
   private static final String IP_TYPES = "ip_types";
@@ -607,6 +609,24 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
                     .build())
             .build();
 
+    ConfigMetadata bolaDetectionParamKeyConfigMetadata =
+        ConfigMetadata.newBuilder()
+            .setKey(PARAM_KEY_CONFIG)
+            .setConfigValueMetadata(
+                ConfigValueMetadata.newBuilder()
+                    .setType(ConfigValueType.CONFIG_VALUE_TYPE_OBJECT)
+                    .build())
+            .build();
+
+    ConfigMetadata bolaDetectionParamValueConfigMetadata =
+        ConfigMetadata.newBuilder()
+            .setKey(PARAM_VALUE_CONFIG)
+            .setConfigValueMetadata(
+                ConfigValueMetadata.newBuilder()
+                    .setType(ConfigValueType.CONFIG_VALUE_TYPE_OBJECT)
+                    .build())
+            .build();
+
     ConfigMetadata userIdDataListConfigMetadata =
         ConfigMetadata.newBuilder()
             .setKey(USER_ID_DATA_LIST)
@@ -832,6 +852,8 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
             sanitizeParamValuesConfigMetadata,
             precedingEventLookAheadTimeWindowConfigMetadata,
             requestParamValuesNotAllowedConfigMetadata,
+            bolaDetectionParamKeyConfigMetadata,
+            bolaDetectionParamValueConfigMetadata,
             multiValuedStringParamRulesConfigMetadata));
 
     // authzv_bfla mapping
