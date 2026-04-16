@@ -699,6 +699,126 @@ class SavedFilterRequestValidatorTest {
                 mockRequestContext, DeleteSavedFilterRequest.newBuilder().setId("123").build()));
   }
 
+  @Test
+  void testApiScopedFieldAllowedInSpanScopedFilter() {
+    when(mockRequestContext.getUserId()).thenReturn(Optional.of(TEST_USER_ID));
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+    when(mockAttributeServiceCachedClient.get(mockRequestContext, "API", "apiId"))
+        .thenReturn(Optional.of(AttributeMetadata.newBuilder().setValueKind(TYPE_STRING).build()));
+
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateSavedFilterRequest.newBuilder()
+                    .setName("f1")
+                    .setScope("SPAN")
+                    .setVisibility(
+                        Visibility.newBuilder()
+                            .setPublic(PublicVisibility.newBuilder().build())
+                            .build())
+                    .setFilterCriteria(
+                        FilterCriteria.newBuilder()
+                            .setRelationalFilter(
+                                RelationalFilterCondition.newBuilder()
+                                    .setLhsExpression(
+                                        Expression.newBuilder()
+                                            .setField(
+                                                Field.newBuilder().setKey("apiId").setScope("API"))
+                                            .build())
+                                    .setOperator(RelationalOperator.RELATIONAL_OPERATOR_EQ)
+                                    .setRhsExpression(
+                                        Expression.newBuilder()
+                                            .setValue(
+                                                Value.newBuilder()
+                                                    .setStringValue("some-api-id")
+                                                    .build())
+                                            .build())
+                                    .build()))
+                    .build()));
+  }
+
+  @Test
+  void testSpanFieldWithEmptyMetadataAllowedInSpanScopedFilter() {
+    when(mockRequestContext.getUserId()).thenReturn(Optional.of(TEST_USER_ID));
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+    when(mockAttributeServiceCachedClient.get(mockRequestContext, "SPAN", "httpStatusCode"))
+        .thenReturn(Optional.empty());
+
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateSavedFilterRequest.newBuilder()
+                    .setName("f1")
+                    .setScope("SPAN")
+                    .setVisibility(
+                        Visibility.newBuilder()
+                            .setPublic(PublicVisibility.newBuilder().build())
+                            .build())
+                    .setFilterCriteria(
+                        FilterCriteria.newBuilder()
+                            .setRelationalFilter(
+                                RelationalFilterCondition.newBuilder()
+                                    .setLhsExpression(
+                                        Expression.newBuilder()
+                                            .setField(Field.newBuilder().setKey("httpStatusCode"))
+                                            .build())
+                                    .setOperator(RelationalOperator.RELATIONAL_OPERATOR_EQ)
+                                    .setRhsExpression(
+                                        Expression.newBuilder()
+                                            .setValue(
+                                                Value.newBuilder().setStringValue("200").build())
+                                            .build())
+                                    .build()))
+                    .build()));
+  }
+
+  @Test
+  void testUnsupportedCrossScopeJoinRejected() {
+    when(mockRequestContext.getUserId()).thenReturn(Optional.of(TEST_USER_ID));
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+
+    StatusRuntimeException statusRuntimeException =
+        assertThrows(
+            StatusRuntimeException.class,
+            () ->
+                validator.validateOrThrow(
+                    mockRequestContext,
+                    CreateSavedFilterRequest.newBuilder()
+                        .setName("f1")
+                        .setScope("API")
+                        .setVisibility(
+                            Visibility.newBuilder()
+                                .setPublic(PublicVisibility.newBuilder().build())
+                                .build())
+                        .setFilterCriteria(
+                            FilterCriteria.newBuilder()
+                                .setRelationalFilter(
+                                    RelationalFilterCondition.newBuilder()
+                                        .setLhsExpression(
+                                            Expression.newBuilder()
+                                                .setField(
+                                                    Field.newBuilder()
+                                                        .setKey("httpUrlPath")
+                                                        .setScope("SPAN"))
+                                                .build())
+                                        .setOperator(RelationalOperator.RELATIONAL_OPERATOR_EQ)
+                                        .setRhsExpression(
+                                            Expression.newBuilder()
+                                                .setValue(
+                                                    Value.newBuilder()
+                                                        .setStringValue("/api/v1")
+                                                        .build())
+                                                .build())
+                                        .build()))
+                        .build()));
+
+    assertEquals(
+        "INVALID_ARGUMENT: Join is not possible with source (API) and target (SPAN)",
+        statusRuntimeException.getMessage());
+  }
+
   private static FilterCriteria buildFilterCriteria() {
     return FilterCriteria.newBuilder()
         .setRelationalFilter(

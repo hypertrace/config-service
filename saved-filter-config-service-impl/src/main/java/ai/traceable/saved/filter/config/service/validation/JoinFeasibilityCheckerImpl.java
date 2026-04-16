@@ -1,6 +1,5 @@
 package ai.traceable.saved.filter.config.service.validation;
 
-import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 
 import io.grpc.Status;
@@ -8,7 +7,8 @@ import java.util.Map;
 import java.util.Set;
 
 public class JoinFeasibilityCheckerImpl implements JoinFeasibilityChecker {
-  private static final Map<String, Set<String>> JOIN_FEASIBILITY_MAP = emptyMap();
+  private static final Map<String, Set<String>> JOIN_FEASIBILITY_MAP =
+      Map.of("SPAN", Set.of("API"));
 
   @Override
   public void validate(String source, String target) {
