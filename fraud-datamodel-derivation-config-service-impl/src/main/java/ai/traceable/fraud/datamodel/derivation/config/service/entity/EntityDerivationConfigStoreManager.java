@@ -107,7 +107,6 @@ public class EntityDerivationConfigStoreManager {
                         .setDisplayName(config.getData().getDisplayName())
                         .setEventKind(config.getData().getEventKind())
                         .setDescription(config.getData().getDescription())
-                        .setFilterOnly(config.getData().getFilterOnly())
                         .build())
             .collect(Collectors.toList());
 
