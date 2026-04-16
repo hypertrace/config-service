@@ -158,6 +158,8 @@ enum AbusePolicyTemplateConfigKind {
   ABUSE_POLICY_TEMPLATE_CONFIG_KIND_PREDEFINED_TEMPLATE = 2;
   // Policy must set template_config.abuse_predefined_browser_bypass_policy.
   ABUSE_POLICY_TEMPLATE_CONFIG_KIND_PREDEFINED_BROWSER_BYPASS_POLICY = 3;
+  // Policy must set template_config.abuse_predefined_distributed_attack_policy.
+  ABUSE_POLICY_TEMPLATE_CONFIG_KIND_PREDEFINED_DISTRIBUTED_ATTACK_POLICY = 4;
 }
 
 message AbusePolicyFilter {

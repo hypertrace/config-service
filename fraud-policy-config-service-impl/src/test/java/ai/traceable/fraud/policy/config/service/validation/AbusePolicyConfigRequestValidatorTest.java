@@ -30,6 +30,7 @@ import ai.traceable.fraud.policy.config.service.v1.AbusePolicyLiteralValues;
 import ai.traceable.fraud.policy.config.service.v1.AbusePolicyRelationalFilter;
 import ai.traceable.fraud.policy.config.service.v1.AbusePolicyScope;
 import ai.traceable.fraud.policy.config.service.v1.AbusePredefinedBrowserBypassPolicy;
+import ai.traceable.fraud.policy.config.service.v1.AbusePredefinedDistributedAttackPolicy;
 import ai.traceable.fraud.policy.config.service.v1.AbusePredefinedTemplateConfig;
 import ai.traceable.fraud.policy.config.service.v1.AbusePredefinedTemplateType;
 import ai.traceable.fraud.policy.config.service.v1.AbuseRiskSeverity;
@@ -41,6 +42,7 @@ import ai.traceable.fraud.policy.config.service.v1.BrowserBypassPolicyGeneration
 import ai.traceable.fraud.policy.config.service.v1.BrowserBypassTrainingConfig;
 import ai.traceable.fraud.policy.config.service.v1.BrowserBypassTriageConfig;
 import ai.traceable.fraud.policy.config.service.v1.CreateAbusePolicyRequest;
+import ai.traceable.fraud.policy.config.service.v1.DistributedAttackThresholds;
 import ai.traceable.fraud.policy.config.service.v1.UpdateAbusePolicyRequest;
 import com.google.protobuf.Duration;
 import io.grpc.StatusRuntimeException;
@@ -260,8 +262,9 @@ class AbusePolicyConfigRequestValidatorTest {
             StatusRuntimeException.class,
             () -> validator.validateCreateRequest(request, requestContext));
     assertEquals(
-        "INVALID_ARGUMENT: One of simple_aggregation_template, predefined_template, or"
-            + " abuse_predefined_browser_bypass_policy must be specified",
+        "INVALID_ARGUMENT: One of simple_aggregation_template, predefined_template,"
+            + " abuse_predefined_browser_bypass_policy, or"
+            + " abuse_predefined_distributed_attack_policy must be specified",
         exception.getMessage());
   }
 
@@ -577,6 +580,153 @@ class AbusePolicyConfigRequestValidatorTest {
                         .setAction(EdgeDecisionType.EDGE_DECISION_TYPE_BLOCK)
                         .build())
                 .build())
+        .build();
+  }
+
+  @Test
+  void testValidateDistributedAttackPolicy_Valid() {
+    AbusePolicyData data = createValidPolicyDataWithDistributedAttack();
+    CreateAbusePolicyRequest request = CreateAbusePolicyRequest.newBuilder().setData(data).build();
+
+    assertDoesNotThrow(() -> validator.validateCreateRequest(request, requestContext));
+  }
+
+  @Test
+  void testValidateDistributedAttackPolicy_UnspecifiedAction() {
+    AbusePolicyData data =
+        createValidPolicyData().toBuilder()
+            .clearSimpleAggregationTemplate()
+            .setAbusePredefinedDistributedAttackPolicy(
+                AbusePredefinedDistributedAttackPolicy.newBuilder()
+                    .setThresholds(createValidDistributedAttackThresholds())
+                    .build())
+            .build();
+    CreateAbusePolicyRequest request = CreateAbusePolicyRequest.newBuilder().setData(data).build();
+
+    StatusRuntimeException exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> validator.validateCreateRequest(request, requestContext));
+    assertEquals(
+        "INVALID_ARGUMENT: Distributed attack policy action must be specified",
+        exception.getMessage());
+  }
+
+  @Test
+  void testValidateDistributedAttackPolicy_MissingThresholds() {
+    AbusePolicyData data =
+        createValidPolicyData().toBuilder()
+            .clearSimpleAggregationTemplate()
+            .setAbusePredefinedDistributedAttackPolicy(
+                AbusePredefinedDistributedAttackPolicy.newBuilder()
+                    .setAction(EdgeDecisionType.EDGE_DECISION_TYPE_ALERT)
+                    .build())
+            .build();
+    CreateAbusePolicyRequest request = CreateAbusePolicyRequest.newBuilder().setData(data).build();
+
+    StatusRuntimeException exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> validator.validateCreateRequest(request, requestContext));
+    assertEquals(
+        "INVALID_ARGUMENT: Distributed attack policy requires thresholds", exception.getMessage());
+  }
+
+  @Test
+  void testValidateDistributedAttackPolicy_ZeroThreshold() {
+    AbusePolicyData data =
+        createValidPolicyData().toBuilder()
+            .clearSimpleAggregationTemplate()
+            .setAbusePredefinedDistributedAttackPolicy(
+                AbusePredefinedDistributedAttackPolicy.newBuilder()
+                    .setAction(EdgeDecisionType.EDGE_DECISION_TYPE_ALERT)
+                    .setThresholds(
+                        createValidDistributedAttackThresholds().toBuilder()
+                            .setDailyBaselineThreshold(0)
+                            .build())
+                    .build())
+            .build();
+    CreateAbusePolicyRequest request = CreateAbusePolicyRequest.newBuilder().setData(data).build();
+
+    StatusRuntimeException exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> validator.validateCreateRequest(request, requestContext));
+    assertEquals(
+        "INVALID_ARGUMENT: thresholds.daily_baseline_threshold must be a positive finite number",
+        exception.getMessage());
+  }
+
+  @Test
+  void testValidateDistributedAttackPolicy_NaNThreshold() {
+    AbusePolicyData data =
+        createValidPolicyData().toBuilder()
+            .clearSimpleAggregationTemplate()
+            .setAbusePredefinedDistributedAttackPolicy(
+                AbusePredefinedDistributedAttackPolicy.newBuilder()
+                    .setAction(EdgeDecisionType.EDGE_DECISION_TYPE_ALERT)
+                    .setThresholds(
+                        createValidDistributedAttackThresholds().toBuilder()
+                            .setWeeklyBaselineDeviationThreshold(Double.NaN)
+                            .build())
+                    .build())
+            .build();
+    CreateAbusePolicyRequest request = CreateAbusePolicyRequest.newBuilder().setData(data).build();
+
+    StatusRuntimeException exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> validator.validateCreateRequest(request, requestContext));
+    assertEquals(
+        "INVALID_ARGUMENT: thresholds.weekly_baseline_deviation_threshold must be a positive finite number",
+        exception.getMessage());
+  }
+
+  @Test
+  void testValidateDistributedAttackPolicy_InfinityThreshold() {
+    AbusePolicyData data =
+        createValidPolicyData().toBuilder()
+            .clearSimpleAggregationTemplate()
+            .setAbusePredefinedDistributedAttackPolicy(
+                AbusePredefinedDistributedAttackPolicy.newBuilder()
+                    .setAction(EdgeDecisionType.EDGE_DECISION_TYPE_ALERT)
+                    .setThresholds(
+                        createValidDistributedAttackThresholds().toBuilder()
+                            .setIpCountDeviationThreshold(Double.POSITIVE_INFINITY)
+                            .build())
+                    .build())
+            .build();
+    CreateAbusePolicyRequest request = CreateAbusePolicyRequest.newBuilder().setData(data).build();
+
+    StatusRuntimeException exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> validator.validateCreateRequest(request, requestContext));
+    assertEquals(
+        "INVALID_ARGUMENT: thresholds.ip_count_deviation_threshold must be a positive finite number",
+        exception.getMessage());
+  }
+
+  private AbusePolicyData createValidPolicyDataWithDistributedAttack() {
+    return createValidPolicyData().toBuilder()
+        .clearSimpleAggregationTemplate()
+        .setAbusePredefinedDistributedAttackPolicy(
+            AbusePredefinedDistributedAttackPolicy.newBuilder()
+                .setAction(EdgeDecisionType.EDGE_DECISION_TYPE_ALERT)
+                .setThresholds(createValidDistributedAttackThresholds())
+                .build())
+        .build();
+  }
+
+  private DistributedAttackThresholds createValidDistributedAttackThresholds() {
+    return DistributedAttackThresholds.newBuilder()
+        .setDailyBaselineThreshold(2.0)
+        .setWeeklyBaselineDeviationThreshold(2.0)
+        .setDailySeasonalityBaselineDeviationThreshold(2.0)
+        .setIpCountDeviationThreshold(3.0)
+        .setRequestDensityPerIpDeviationThreshold(1.5)
+        .setRequestDensityPerUaDeviationThreshold(2.0)
+        .setAnomalyScoreThreshold(70)
         .build();
   }
 

@@ -141,6 +141,8 @@ public class AbusePolicyConfigStore
         return policy.getData().hasPredefinedTemplate();
       case ABUSE_POLICY_TEMPLATE_CONFIG_KIND_PREDEFINED_BROWSER_BYPASS_POLICY:
         return policy.getData().hasAbusePredefinedBrowserBypassPolicy();
+      case ABUSE_POLICY_TEMPLATE_CONFIG_KIND_PREDEFINED_DISTRIBUTED_ATTACK_POLICY:
+        return policy.getData().hasAbusePredefinedDistributedAttackPolicy();
       case UNRECOGNIZED:
       default:
         return true;

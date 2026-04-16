@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package ai.traceable.fraud.policy.config.service.v1;
+
+import "ai/traceable/edge/decision/config/service/v1/edge_decision_rule.proto";
+import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
+
+option java_multiple_files = true;
+
+message AbusePredefinedDistributedAttackPolicy {
+  // Edge decision action to enforce when a distributed attack anomaly is detected
+  ai.traceable.edge.decision.config.service.v1.EdgeDecisionType action = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Edge decision action to enforce when distributed attack anomaly is detected"];
+  // Detection deviation thresholds applied uniformly across all APIs in the policy's api_scope
+  DistributedAttackThresholds thresholds = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Detection deviation thresholds for distributed attack analysis"];
+}
+
+message DistributedAttackThresholds {
+  // Ratio of current span count to 1-day EWMA baseline that triggers an anomaly
+  double daily_baseline_threshold = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Daily baseline deviation threshold (default >= 2)"];
+  // Ratio of current span count to 1-week EWMA baseline that triggers an anomaly
+  double weekly_baseline_deviation_threshold = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Weekly baseline deviation threshold (default >= 2)"];
+  // Ratio of current span count to same-time-of-day lagged baseline that triggers an anomaly
+  double daily_seasonality_baseline_deviation_threshold = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Daily seasonality baseline deviation threshold (default >= 2)"];
+  // Multiplier on unique IP baseline that triggers an anomaly
+  double ip_count_deviation_threshold = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "IP count deviation threshold (default >= 3)"];
+  // Multiplier on spans-to-IP-ratio baseline that triggers an anomaly
+  double request_density_per_ip_deviation_threshold = 5 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Request density per IP address deviation threshold (default >= 1.5)"];
+  // Multiplier on spans-to-user-agent-ratio baseline that triggers an anomaly
+  double request_density_per_ua_deviation_threshold = 6 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Request density per user agent deviation threshold (default >= 2)"];
+  // Anomaly score threshold that triggers an anomaly
+  double anomaly_score_threshold = 7 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Anomaly score threshold (default >= 70)"];
+}

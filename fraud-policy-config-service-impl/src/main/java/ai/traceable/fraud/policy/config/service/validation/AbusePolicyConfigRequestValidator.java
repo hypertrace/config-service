@@ -14,12 +14,14 @@ import ai.traceable.fraud.datamodel.event.kind.v1.OperatorType;
 import ai.traceable.fraud.policy.config.service.v1.AbusePolicyData;
 import ai.traceable.fraud.policy.config.service.v1.AbusePolicyLiteralValues;
 import ai.traceable.fraud.policy.config.service.v1.AbusePredefinedBrowserBypassPolicy;
+import ai.traceable.fraud.policy.config.service.v1.AbusePredefinedDistributedAttackPolicy;
 import ai.traceable.fraud.policy.config.service.v1.AbusePredefinedTemplateConfig;
 import ai.traceable.fraud.policy.config.service.v1.AbusePredefinedTemplateType;
 import ai.traceable.fraud.policy.config.service.v1.BrowserBypassPolicyGenerationConfig;
 import ai.traceable.fraud.policy.config.service.v1.BrowserBypassTrainingConfig;
 import ai.traceable.fraud.policy.config.service.v1.BrowserBypassTriageConfig;
 import ai.traceable.fraud.policy.config.service.v1.CreateAbusePolicyRequest;
+import ai.traceable.fraud.policy.config.service.v1.DistributedAttackThresholds;
 import ai.traceable.fraud.policy.config.service.v1.UpdateAbusePolicyRequest;
 import com.cronutils.model.CronType;
 import com.cronutils.model.definition.CronDefinitionBuilder;
@@ -147,11 +149,13 @@ public class AbusePolicyConfigRequestValidator {
   private void validatePolicyTemplate(AbusePolicyData data, RequestContext requestContext) {
     if (!data.hasSimpleAggregationTemplate()
         && !data.hasPredefinedTemplate()
-        && !data.hasAbusePredefinedBrowserBypassPolicy()) {
+        && !data.hasAbusePredefinedBrowserBypassPolicy()
+        && !data.hasAbusePredefinedDistributedAttackPolicy()) {
       throw Status.INVALID_ARGUMENT
           .withDescription(
-              "One of simple_aggregation_template, predefined_template, or"
-                  + " abuse_predefined_browser_bypass_policy must be specified")
+              "One of simple_aggregation_template, predefined_template,"
+                  + " abuse_predefined_browser_bypass_policy, or"
+                  + " abuse_predefined_distributed_attack_policy must be specified")
           .asRuntimeException(requestContext.buildTrailers());
     }
 
@@ -166,6 +170,11 @@ public class AbusePolicyConfigRequestValidator {
     if (data.hasAbusePredefinedBrowserBypassPolicy()) {
       validateAbusePredefinedBrowserBypassPolicy(
           data.getAbusePredefinedBrowserBypassPolicy(), requestContext);
+    }
+
+    if (data.hasAbusePredefinedDistributedAttackPolicy()) {
+      validateAbusePredefinedDistributedAttackPolicy(
+          data.getAbusePredefinedDistributedAttackPolicy(), requestContext);
     }
   }
 
@@ -501,6 +510,66 @@ public class AbusePolicyConfigRequestValidator {
         || action == EdgeDecisionType.UNRECOGNIZED) {
       throw Status.INVALID_ARGUMENT
           .withDescription("triage_config.action must be specified")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+  }
+
+  private void validateAbusePredefinedDistributedAttackPolicy(
+      AbusePredefinedDistributedAttackPolicy policy, RequestContext requestContext) {
+    EdgeDecisionType action = policy.getAction();
+    if (action == EdgeDecisionType.EDGE_DECISION_TYPE_UNSPECIFIED
+        || action == EdgeDecisionType.UNRECOGNIZED) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Distributed attack policy action must be specified")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+
+    if (!policy.hasThresholds()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Distributed attack policy requires thresholds")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+
+    validateDistributedAttackThresholds(policy.getThresholds(), requestContext);
+  }
+
+  private void validateDistributedAttackThresholds(
+      DistributedAttackThresholds thresholds, RequestContext requestContext) {
+    validatePositiveThreshold(
+        thresholds.getDailyBaselineThreshold(),
+        "thresholds.daily_baseline_threshold",
+        requestContext);
+    validatePositiveThreshold(
+        thresholds.getWeeklyBaselineDeviationThreshold(),
+        "thresholds.weekly_baseline_deviation_threshold",
+        requestContext);
+    validatePositiveThreshold(
+        thresholds.getDailySeasonalityBaselineDeviationThreshold(),
+        "thresholds.daily_seasonality_baseline_deviation_threshold",
+        requestContext);
+    validatePositiveThreshold(
+        thresholds.getIpCountDeviationThreshold(),
+        "thresholds.ip_count_deviation_threshold",
+        requestContext);
+    validatePositiveThreshold(
+        thresholds.getRequestDensityPerIpDeviationThreshold(),
+        "thresholds.request_density_per_ip_deviation_threshold",
+        requestContext);
+    validatePositiveThreshold(
+        thresholds.getRequestDensityPerUaDeviationThreshold(),
+        "thresholds.request_density_per_ua_deviation_threshold",
+        requestContext);
+    validatePositiveThreshold(
+        thresholds.getAnomalyScoreThreshold(),
+        "thresholds.anomaly_score_threshold",
+        requestContext);
+  }
+
+  private void validatePositiveThreshold(
+      double value, String fieldName, RequestContext requestContext) {
+    if (Double.isNaN(value) || Double.isInfinite(value) || value <= 0) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(fieldName + " must be a positive finite number")
           .asRuntimeException(requestContext.buildTrailers());
     }
   }

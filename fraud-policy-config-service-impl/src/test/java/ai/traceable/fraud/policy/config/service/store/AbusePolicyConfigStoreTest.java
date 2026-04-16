@@ -20,6 +20,7 @@ import ai.traceable.fraud.policy.config.service.v1.AbusePolicyFilter;
 import ai.traceable.fraud.policy.config.service.v1.AbusePolicyScope;
 import ai.traceable.fraud.policy.config.service.v1.AbusePolicyTemplateConfigKind;
 import ai.traceable.fraud.policy.config.service.v1.AbusePredefinedBrowserBypassPolicy;
+import ai.traceable.fraud.policy.config.service.v1.AbusePredefinedDistributedAttackPolicy;
 import ai.traceable.fraud.policy.config.service.v1.AbusePredefinedTemplateConfig;
 import ai.traceable.fraud.policy.config.service.v1.AbusePredefinedTemplateType;
 import ai.traceable.fraud.policy.config.service.v1.AbuseRiskSeverity;
@@ -28,6 +29,7 @@ import ai.traceable.fraud.policy.config.service.v1.AbuseThresholdConfig;
 import ai.traceable.fraud.policy.config.service.v1.AbuseThresholdOperator;
 import ai.traceable.fraud.policy.config.service.v1.AbuseTimeWindow;
 import ai.traceable.fraud.policy.config.service.v1.BrowserBypassTriageConfig;
+import ai.traceable.fraud.policy.config.service.v1.DistributedAttackThresholds;
 import ai.traceable.fraud.policy.config.service.v1.GetAbusePoliciesRequest;
 import com.google.protobuf.Duration;
 import com.google.protobuf.Value;
@@ -299,6 +301,22 @@ class AbusePolicyConfigStoreTest {
   }
 
   @Test
+  void filterConfigData_templateConfigKind_distributedAttack_matchesOnlyThatBranch() {
+    AbusePolicy simple = policy("p1", simpleAggregationData());
+    AbusePolicy volumetric = policy("p2", distributedAttackData());
+
+    AbusePolicyFilter filter =
+        AbusePolicyFilter.newBuilder()
+            .setTemplateConfigKind(
+                AbusePolicyTemplateConfigKind
+                    .ABUSE_POLICY_TEMPLATE_CONFIG_KIND_PREDEFINED_DISTRIBUTED_ATTACK_POLICY)
+            .build();
+
+    assertFalse(store.filterConfigData(simple, requestWithFilter(filter)).isPresent());
+    assertTrue(store.filterConfigData(volumetric, requestWithFilter(filter)).isPresent());
+  }
+
+  @Test
   void filterConfigData_combinesMultipleCriteria() {
     AbusePolicy policy =
         policy(POLICY_ID, simpleAggregationData().toBuilder().setEnabled(false).build());
@@ -378,6 +396,26 @@ class AbusePolicyConfigStoreTest {
                 .setTriageConfig(
                     BrowserBypassTriageConfig.newBuilder()
                         .setAction(EdgeDecisionType.EDGE_DECISION_TYPE_BLOCK)
+                        .build())
+                .build())
+        .build();
+  }
+
+  private static AbusePolicyData distributedAttackData() {
+    return simpleAggregationData().toBuilder()
+        .clearSimpleAggregationTemplate()
+        .setAbusePredefinedDistributedAttackPolicy(
+            AbusePredefinedDistributedAttackPolicy.newBuilder()
+                .setAction(EdgeDecisionType.EDGE_DECISION_TYPE_ALERT)
+                .setThresholds(
+                    DistributedAttackThresholds.newBuilder()
+                        .setDailyBaselineThreshold(2.0)
+                        .setWeeklyBaselineDeviationThreshold(2.0)
+                        .setDailySeasonalityBaselineDeviationThreshold(2.0)
+                        .setIpCountDeviationThreshold(3.0)
+                        .setRequestDensityPerIpDeviationThreshold(1.5)
+                        .setRequestDensityPerUaDeviationThreshold(2.0)
+                        .setAnomalyScoreThreshold(70)
                         .build())
                 .build())
         .build();

@@ -5,6 +5,7 @@ package ai.traceable.fraud.policy.config.service.v1;
 import "ai/traceable/fraud/datamodel/event/kind/v1/aggregation_function.proto";
 import "ai/traceable/fraud/datamodel/event/kind/v1/operator.proto";
 import "ai/traceable/fraud/policy/config/service/v1/abuse_predefined_browser_bypass_policy.proto";
+import "ai/traceable/fraud/policy/config/service/v1/abuse_predefined_distributed_attack_policy.proto";
 import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/struct.proto";
@@ -36,6 +37,8 @@ message AbusePolicyData {
     AbusePredefinedTemplateConfig predefined_template = 7;
     // Configuration for browser bypass policy template
     ai.traceable.fraud.policy.config.service.v1.AbusePredefinedBrowserBypassPolicy abuse_predefined_browser_bypass_policy = 13;
+    // Configuration for distributed attack policy template
+    ai.traceable.fraud.policy.config.service.v1.AbusePredefinedDistributedAttackPolicy abuse_predefined_distributed_attack_policy = 14;
   }
 
   // Optional: Description of the policy
