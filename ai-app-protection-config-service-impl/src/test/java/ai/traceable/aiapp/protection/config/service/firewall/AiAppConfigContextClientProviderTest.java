@@ -7,6 +7,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.aiapp.protection.config.service.firewall.cache.AiAppConfigContextClientProvider;
+import ai.traceable.aiapp.protection.config.service.firewall.cache.ProtectionEngineDataTypeTranslator;
 import ai.traceable.aiapp.protection.config.service.v1.GetAiAppEvaluationConfigContextRequest;
 import ai.traceable.aiapp.protection.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigManager;
@@ -19,6 +20,7 @@ import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfigMap;
 import ai.traceable.anomaly.config.service.v1.detector.GenAiAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
+import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
 import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
 import ai.traceable.protection.engine.config.aifirewall.v1.AiFirewallConfigContext;
@@ -63,12 +65,22 @@ class AiAppConfigContextClientProviderTest {
         mock(CachedServiceMappingProvider.class);
     CachedApiMappingProvider cachedApiMappingProvider = mock(CachedApiMappingProvider.class);
 
+    DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub
+        dataClassificationConfigServiceStub =
+            mock(
+                DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub
+                    .class);
+    ProtectionEngineDataTypeTranslator protectionEngineDataTypeTranslator =
+        new ProtectionEngineDataTypeTranslator();
+
     provider =
         new AiAppConfigContextClientProvider(
             anomalyDetectionConfigManager,
             aiAppRulesProvider,
             cachedServiceMappingProvider,
-            cachedApiMappingProvider);
+            cachedApiMappingProvider,
+            dataClassificationConfigServiceStub,
+            protectionEngineDataTypeTranslator);
 
     requestContext = RequestContext.forTenantId(TENANT_ID);
   }

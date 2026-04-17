@@ -6,6 +6,7 @@ import ai.traceable.anomaly.config.service.AnomalyConfigServiceConfig;
 import ai.traceable.anomaly.config.service.v1.detector.DetectorConfigServiceGrpc;
 import ai.traceable.anomaly.config.service.v1.global.AnomalyGlobalConfigServiceGrpc;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc;
+import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingConfigServiceGrpc;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
@@ -66,6 +67,15 @@ public class AiAppProtectionConfigServiceModule extends AbstractModule {
   @Singleton
   DetectorConfigServiceGrpc.DetectorConfigServiceBlockingStub provideDetectorConfigService() {
     return DetectorConfigServiceGrpc.newBlockingStub(this.channel)
+        .withCallCredentials(
+            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  @Singleton
+  DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub
+      provideDataClassificationConfigServiceStub() {
+    return DataClassificationConfigServiceGrpc.newBlockingStub(this.channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

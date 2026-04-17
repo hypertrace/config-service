@@ -5,6 +5,7 @@ import ai.traceable.aiapp.protection.config.service.v1.GetAiAppEvaluationConfigC
 import ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigManager;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatusChange;
+import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
 import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
 import ai.traceable.protection.engine.config.aifirewall.v1.AiFirewallConfigContext;
@@ -41,12 +42,17 @@ public class AiAppConfigContextCacheProvider extends AiAppConfigContextClientPro
       AnomalyDetectionConfigManager anomalyDetectionConfigManager,
       AiAppRulesProvider aiAppRulesProvider,
       CachedServiceMappingProvider cachedServiceMappingProvider,
-      CachedApiMappingProvider cachedApiMappingProvider) {
+      CachedApiMappingProvider cachedApiMappingProvider,
+      DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub
+          dataClassificationConfigServiceStub,
+      ProtectionEngineDataTypeTranslator protectionEngineDataTypeTranslator) {
     super(
         anomalyDetectionConfigManager,
         aiAppRulesProvider,
         cachedServiceMappingProvider,
-        cachedApiMappingProvider);
+        cachedApiMappingProvider,
+        dataClassificationConfigServiceStub,
+        protectionEngineDataTypeTranslator);
     this.cache = buildCache(config);
     try {
       kafkaLiveEventListener.registerCallback(this::handleConfigChangeEvent);

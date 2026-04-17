@@ -16,12 +16,19 @@ import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfigTyp
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.GetAnomalyDetectionConfigsFilter;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
+import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc;
+import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
+import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest.DataTypeFilter;
+import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest.DataTypeOrdering;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
 import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
 import ai.traceable.protection.engine.config.aifirewall.v1.AiFirewallConfigContext;
 import ai.traceable.protection.engine.config.aifirewall.v1.AiFirewallScopedConfigContext;
 import ai.traceable.protection.engine.config.aifirewall.v1.SecRulesEvaluationConfig;
+import ai.traceable.protection.engine.config.customsignature.v1.CustomSignatureConfigContext;
+import ai.traceable.protection.engine.config.customsignature.v1.CustomSignatureRulesContext;
 import ai.traceable.protection.processing.common.v1.ScopeContext;
+import ai.traceable.protection.processor.datatype.v1.DataType;
 import ai.traceable.protection.rules.aiapp.v1.AiAppRules;
 import ai.traceable.protection.rules.aiapp.v1.AiAppRulesProvider;
 import ai.traceable.protection.rules.aiapp.v1.AiAppThreatRule;
@@ -54,6 +61,9 @@ public class AiAppConfigContextClientProvider implements AiAppConfigContextProvi
   protected final AiAppRulesProvider aiAppRulesProvider;
   protected final CachedServiceMappingProvider cachedServiceMappingProvider;
   protected final CachedApiMappingProvider cachedApiMappingProvider;
+  protected final DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub
+      dataClassificationConfigServiceStub;
+  protected final ProtectionEngineDataTypeTranslator protectionEngineDataTypeTranslator;
 
   @Override
   public AiFirewallConfigContext getAiFirewallConfigContext(
@@ -115,10 +125,56 @@ public class AiAppConfigContextClientProvider implements AiAppConfigContextProvi
         scopedConfigContextList.add(scopedConfigContext);
       }
     }
-    return AiFirewallConfigContext.newBuilder()
-        .addAllScopedConfigContexts(scopedConfigContextList)
-        .setSecRulesBlob(aiAppRules.getAiAppRulesBlob())
-        .build();
+    AiFirewallConfigContext.Builder configContextBuilder =
+        AiFirewallConfigContext.newBuilder()
+            .addAllScopedConfigContexts(scopedConfigContextList)
+            .setSecRulesBlob(aiAppRules.getAiAppRulesBlob());
+
+    fetchDataTypesAndSetCustomSignatureContext(requestContext, request, configContextBuilder);
+
+    return configContextBuilder.build();
+  }
+
+  private void fetchDataTypesAndSetCustomSignatureContext(
+      RequestContext requestContext,
+      GetAiAppEvaluationConfigContextRequest request,
+      AiFirewallConfigContext.Builder configContextBuilder) {
+    try {
+      Optional<String> environmentName =
+          request.getRuleScope().hasEnvironmentScope()
+                  && !request.getRuleScope().getEnvironmentScope().getEnvironmentIdsList().isEmpty()
+              ? Optional.of(
+                  request.getRuleScope().getEnvironmentScope().getEnvironmentIdsList().get(0))
+              : Optional.empty();
+
+      List<ai.traceable.data.classification.config.service.v1.DataType> resolvedDataTypes =
+          requestContext
+              .call(
+                  () ->
+                      dataClassificationConfigServiceStub.getDataTypes(
+                          GetDataTypesRequest.newBuilder()
+                              .setResolveInheritedDetails(true)
+                              .setOrdering(DataTypeOrdering.DATA_TYPE_ORDERING_EVALUATION_PRIORITY)
+                              .setFilter(
+                                  DataTypeFilter.newBuilder()
+                                      .setEnabled(true)
+                                      .setLegacyTypes(false))
+                              .build()))
+              .getDataTypesList();
+
+      List<DataType> dataTypes =
+          protectionEngineDataTypeTranslator.translateDataTypes(resolvedDataTypes, environmentName);
+
+      if (!dataTypes.isEmpty()) {
+        CustomSignatureRulesContext rulesContext =
+            CustomSignatureRulesContext.newBuilder().addAllDataTypes(dataTypes).build();
+        CustomSignatureConfigContext customSignatureConfigContext =
+            CustomSignatureConfigContext.newBuilder().addRuleContexts(rulesContext).build();
+        configContextBuilder.setCustomSignatureConfigContext(customSignatureConfigContext);
+      }
+    } catch (Exception e) {
+      log.error("Failed to fetch data types for tenant: {}", requestContext.getTenantId(), e);
+    }
   }
 
   private Set<String> getSecRuleEvaluatedRuleIds(AiAppRules aiAppRules) {

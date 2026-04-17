@@ -15,6 +15,9 @@ dependencies {
   implementation(projects.anomalyConfigServiceApi)
   implementation(projects.anomalyConfigServiceImpl)
   implementation(projects.entityFetcherCache)
+  implementation(projects.dataClassificationConfigServiceApi)
+  implementation(commonLibs.traceable.protection.engine.processor.data.type)
+  implementation(commonLibs.traceable.protection.engine.config.customsignature)
 
   implementation(commonLibs.guice7)
   implementation(commonLibs.guava)
