@@ -65,16 +65,21 @@ class AstHooksConfigServiceImplTest {
         ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
     final AstHooksTestConfigStore astHooksTestConfigStore =
         new AstHooksTestConfigStore(configServiceBlockingStub, mockConfigChangeEventGenerator);
+    final AstHooksConfigStore astHooksConfigStore =
+        new AstHooksConfigStore(configServiceBlockingStub, mockConfigChangeEventGenerator);
     mockGenericConfigService
         .addService(
             new AstHooksConfigServiceImpl(
                 mockValidator,
                 mockCreateAstHookHandler,
                 mockUpdateAstHookHandler,
-                new AstHooksConfigStore(configServiceBlockingStub, mockConfigChangeEventGenerator),
+                astHooksConfigStore,
                 astHooksTestConfigStore,
                 new AstHookTestManager(
-                    mockUuidGenerator, astHooksTestConfigStore, mockUpdateAstHookConfigHandler)))
+                    mockUuidGenerator,
+                    astHooksTestConfigStore,
+                    mockUpdateAstHookConfigHandler,
+                    astHooksConfigStore)))
         .start();
     stub = AstHooksConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
   }

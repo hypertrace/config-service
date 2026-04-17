@@ -45,15 +45,6 @@ message RunnerInfo {
   repeated string labels = 2;
 }
 
-enum TestStatus {
-  TEST_STATUS_UNSPECIFIED = 0;
-  TEST_STATUS_PASSED = 1;
-  TEST_STATUS_FAILED = 2;
-  TEST_STATUS_PENDING = 3;
-  TEST_STATUS_ABORTED = 4;
-  TEST_STATUS_RUNNER_ASSIGNED = 5;
-}
-
 message AstHookTestFilter {
   oneof filter {
     TestStatusFilter test_status_filter = 1;

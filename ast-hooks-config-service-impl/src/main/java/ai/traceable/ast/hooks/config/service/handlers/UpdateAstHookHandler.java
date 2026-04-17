@@ -1,5 +1,7 @@
 package ai.traceable.ast.hooks.config.service.handlers;
 
+import static ai.traceable.ast.hooks.config.service.v1.TestStatus.TEST_STATUS_PENDING;
+
 import ai.traceable.ast.hooks.config.service.store.AstHooksConfigStore;
 import ai.traceable.ast.hooks.config.service.v1.AstHook;
 import ai.traceable.ast.hooks.config.service.v1.AstHookDetails;
@@ -32,6 +34,7 @@ public class UpdateAstHookHandler {
         oldHook.toBuilder().setHookDetails(updatedHookDetailsBuilder.build());
     if (request.hasHookTestId()) {
       updatedHookBuilder.setAstHookTestId(request.getHookTestId());
+      updatedHookBuilder.setLastTestStatus(TEST_STATUS_PENDING);
     }
     return configStore.upsertObject(requestContext, updatedHookBuilder.build()).getData();
   }
