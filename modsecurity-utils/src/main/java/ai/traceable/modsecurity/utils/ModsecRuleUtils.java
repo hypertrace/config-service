@@ -1,5 +1,9 @@
 package ai.traceable.modsecurity.utils;
 
+import static ai.traceable.modsecurity.rule.secrule.ModsecRuleConstants.SEC_RULE_ID_REGEX;
+
+import java.util.regex.Matcher;
+
 public class ModsecRuleUtils {
 
   public static final String MODSEC_RULE_PREFIX = "crs_";
@@ -25,5 +29,24 @@ public class ModsecRuleUtils {
 
   public String getModsecParentRuleId(String modsecRuleId) {
     return modsecRuleId.substring(0, MODSEC_PARENT_RULE_ID_LENGTH);
+  }
+
+  /**
+   * Extracts the ModSec rule ID from a SecRule string. The ID is in the format "id:12345," Uses the
+   * SEC_RULE_ID_REGEX pattern for extraction.
+   *
+   * @param secRule the SecRule string containing an ID
+   * @return the extracted ID
+   * @throws IllegalArgumentException if no valid ID is found in the SecRule
+   */
+  public static long extractModsecIdFromSecRule(String secRule) {
+    Matcher matcher = SEC_RULE_ID_REGEX.matcher(secRule);
+    if (matcher.find()) {
+      String matchedText = matcher.group(0); // e.g., "id:9500,"
+      String idStr = matchedText.replaceAll("[^0-9]", ""); // Extract "9500"
+      return Long.parseLong(idStr);
+    }
+    throw new IllegalArgumentException(
+        "No valid ModSec rule ID found in SecRule. Expected format 'id:<number>,' in: " + secRule);
   }
 }

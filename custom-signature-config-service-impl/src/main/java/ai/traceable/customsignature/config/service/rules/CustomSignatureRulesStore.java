@@ -247,11 +247,25 @@ public class CustomSignatureRulesStore
     if (!filter.hasContainsSecRuleClause()) {
       return true;
     }
+    // Recursively check for CustomSecRule in nested clause groups
     boolean hasCustomSecRule =
-        rule.getDefinition().getClauseGroup().getClausesList().stream()
-            .anyMatch(Clause::hasCustomSecRule);
+        containsCustomSecRuleRecursive(rule.getDefinition().getClauseGroup());
     return (hasCustomSecRule && filter.getContainsSecRuleClause())
         || (!hasCustomSecRule && !filter.getContainsSecRuleClause());
+  }
+
+  /** Recursively checks if a clause group contains CustomSecRule at any nesting level. */
+  private boolean containsCustomSecRuleRecursive(ClauseGroup clauseGroup) {
+    for (Clause clause : clauseGroup.getClausesList()) {
+      if (clause.hasCustomSecRule()) {
+        return true;
+      }
+      // Recursively check nested clause groups
+      if (clause.hasClauseGroup() && containsCustomSecRuleRecursive(clause.getClauseGroup())) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private List<CustomSignatureRuleRecord> getBackwardCompatibleExistingRuleRecords(
@@ -348,24 +362,58 @@ public class CustomSignatureRulesStore
   }
 
   // processing Clause with AttributeKeyValueExpression to have key and value condition for backward
-  // compatibility.
+  // compatibility. Handles nested clause groups recursively.
   private Optional<CustomSignatureRule> updateCustomSignatureRuleIfApplicable(
       CustomSignatureRule rule) {
+    ClauseGroupUpdateResult result =
+        updateClauseGroupRecursive(rule.getDefinition().getClauseGroup());
+    if (result.isUpdated()) {
+      ClauseGroup updatedClauseGroup = result.getClauseGroup();
+      RuleDefinition ruleDefinition =
+          rule.getDefinition().toBuilder().setClauseGroup(updatedClauseGroup).build();
+      return Optional.of(rule.toBuilder().setDefinition(ruleDefinition).build());
+    }
+    return Optional.empty();
+  }
+
+  /**
+   * Recursively updates clause groups to process AttributeKeyValueExpression. Returns both the
+   * updated clause group and whether any changes were made.
+   */
+  private ClauseGroupUpdateResult updateClauseGroupRecursive(ClauseGroup clauseGroup) {
     boolean anyClauseUpdated = false;
-    List<Clause> clauses = new ArrayList<>();
-    for (Clause clause : rule.getDefinition().getClauseGroup().getClausesList()) {
+    List<Clause> updatedClauses = new ArrayList<>();
+
+    for (Clause clause : clauseGroup.getClausesList()) {
       if (clause.hasAttributeKeyValueExpression()
           && !clause.getAttributeKeyValueExpression().hasKeyCondition()) {
-        clauses.add(
+        // Process this clause
+        updatedClauses.add(
             clause.toBuilder()
                 .setAttributeKeyValueExpression(processAttributeKeyValueExpression(clause))
                 .build());
         anyClauseUpdated = true;
+      } else if (clause.hasClauseGroup()) {
+        // Recursively process nested clause group
+        ClauseGroupUpdateResult nestedResult = updateClauseGroupRecursive(clause.getClauseGroup());
+        if (nestedResult.isUpdated()) {
+          updatedClauses.add(
+              clause.toBuilder().setClauseGroup(nestedResult.getClauseGroup()).build());
+          anyClauseUpdated = true;
+        } else {
+          updatedClauses.add(clause);
+        }
       } else {
-        clauses.add(clause);
+        updatedClauses.add(clause);
       }
     }
-    return anyClauseUpdated ? Optional.of(processRuleDefinition(rule, clauses)) : Optional.empty();
+
+    ClauseGroup resultClauseGroup =
+        anyClauseUpdated
+            ? clauseGroup.toBuilder().clearClauses().addAllClauses(updatedClauses).build()
+            : clauseGroup;
+
+    return new ClauseGroupUpdateResult(resultClauseGroup, anyClauseUpdated);
   }
 
   private AttributeKeyValueExpression processAttributeKeyValueExpression(Clause clause) {

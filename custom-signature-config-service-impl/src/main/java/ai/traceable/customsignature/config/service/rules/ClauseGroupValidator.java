@@ -28,6 +28,7 @@ import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH
 import static ai.traceable.modsecurity.rule.secrule.ModsecRuleConstants.SEC_RULE;
 import static ai.traceable.modsecurity.rule.secrule.ModsecRuleConstants.SEC_RULE_DIRECTIVES_WITH_CHAIN_KEYWORDS_REGEX;
 import static ai.traceable.modsecurity.rule.secrule.ModsecRuleConstants.SEC_RULE_ID_REGEX;
+import static ai.traceable.modsecurity.utils.ModsecRuleUtils.extractModsecIdFromSecRule;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 
@@ -73,6 +74,7 @@ import com.google.re2j.Matcher;
 import com.google.re2j.Pattern;
 import com.google.re2j.PatternSyntaxException;
 import io.grpc.Status;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -152,12 +154,21 @@ public class ClauseGroupValidator {
     // examples of such rules:
     //  - (SecRuleClause) OR (KeyValueExpression)
     // - (SecRuleClause) AND (KeyValueExpression OR IpAddressExpression)
-    if (containsSecRuleClause(clauseGroup)
-        && (containsNestedClause(clauseGroup)
-            || clauseGroup.getClauseOperator().equals(ClauseOperator.CLAUSE_OPERATOR_OR))) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "Custom Signature Rule Definition clause group with sec rule clause "
-              + "should not have nested clauses or OR operator.");
+
+    // Commenting this out since platform will support nesting and OR operator
+    //        if (containsSecRuleClause(clauseGroup)
+    //            && (containsNestedClause(clauseGroup)
+    //                || clauseGroup.getClauseOperator().equals(ClauseOperator.CLAUSE_OPERATOR_OR)))
+    // {
+    //          return Status.INVALID_ARGUMENT.withDescription(
+    //              "Custom Signature Rule Definition clause group with sec rule clause "
+    //                  + "should not have nested clauses or OR operator.");
+    //        }
+
+    // Validate sec_rule ID uniqueness
+    Status uniquenessStatus = validateSecRuleIdUniqueness(clauseGroup);
+    if (uniquenessStatus != Status.OK) {
+      return uniquenessStatus;
     }
 
     return Status.OK;
@@ -930,5 +941,65 @@ public class ClauseGroupValidator {
 
   private boolean validateValue(Value value) {
     return value.hasStringValue() || value.hasNumberValue();
+  }
+
+  /**
+   * Validates that all sec_rule IDs within the clause group are unique, including nested clause
+   * groups.
+   *
+   * @param clauseGroup the clause group to validate
+   * @return Status.OK if all IDs are unique, Status.INVALID_ARGUMENT if duplicates found or if any
+   *     sec_rule has no valid ID
+   */
+  private Status validateSecRuleIdUniqueness(ClauseGroup clauseGroup) {
+    Set<Long> seenIds = new HashSet<>();
+    try {
+      Optional<Long> duplicateId = collectAllSecRuleIds(clauseGroup, seenIds);
+
+      return duplicateId
+          .map(
+              aLong ->
+                  Status.INVALID_ARGUMENT.withDescription(
+                      String.format(
+                          "Duplicate sec_rule ID '%d' found within the rule. Each sec_rule must have a unique "
+                              + "ID within the same custom signature rule.",
+                          aLong)))
+          .orElse(Status.OK);
+    } catch (IllegalArgumentException e) {
+      return Status.INVALID_ARGUMENT.withDescription("Invalid sec_rule format: " + e.getMessage());
+    }
+  }
+
+  /**
+   * Recursively collects all sec_rule IDs from the clause group including nested clause groups.
+   * Returns the first duplicate ID found, or Optional.empty() if all IDs are unique.
+   *
+   * @param clauseGroup the clause group to traverse
+   * @param seenIds set to track already seen IDs (modified in place)
+   * @return Optional containing the first duplicate ID found, or empty if all unique
+   * @throws IllegalArgumentException if any sec_rule has no valid ID
+   */
+  private Optional<Long> collectAllSecRuleIds(ClauseGroup clauseGroup, Set<Long> seenIds) {
+    for (Clause clause : clauseGroup.getClausesList()) {
+      if (clause.hasCustomSecRule()) {
+        String inputSecRule = clause.getCustomSecRule().getInputSecRule();
+        long id = extractModsecIdFromSecRule(inputSecRule);
+
+        if (seenIds.contains(id)) {
+          return Optional.of(id);
+        }
+        seenIds.add(id);
+      }
+
+      // Recursively process nested clause groups
+      if (clause.hasClauseGroup()) {
+        Optional<Long> duplicateId = collectAllSecRuleIds(clause.getClauseGroup(), seenIds);
+        if (duplicateId.isPresent()) {
+          return duplicateId;
+        }
+      }
+    }
+
+    return Optional.empty();
   }
 }

@@ -1,6 +1,7 @@
 package ai.traceable.customsignature.config.service.modsec;
 
 import static ai.traceable.customsignature.config.service.v1.Clause.ClauseCase.SCOPE_EXPRESSION;
+import static ai.traceable.modsecurity.utils.ModsecRuleUtils.extractModsecIdFromSecRule;
 
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesTarget;
@@ -81,6 +82,17 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
       boolean includeAllPartialModsecRules,
       ModsecCrsRulesTarget modsecCrsRulesTarget,
       List<String> serviceNames) {
+
+    // Use V2 flow with nested clause support for PLATFORM_DETECTION
+    if (modsecCrsRulesTarget == ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_PLATFORM_DETECTION) {
+      return getModsecRulesV2(
+          requestContext,
+          customSignatureRules,
+          customModsecRuleVersion,
+          includeAllPartialModsecRules,
+          serviceNames);
+    }
+
     /*
      * This filters out rules with source-based or target-based clauses in case the crs rules target
      * is of type TPA.
@@ -227,6 +239,199 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
         .build();
   }
 
+  /**
+   * V2 implementation that supports nested clause groups. This implementation recursively traverses
+   * all nested ClauseGroups to extract convertible clauses, service details, and filter rules
+   * appropriately. Currently used for PLATFORM_DETECTION target.
+   */
+  private GetCustomSignatureModsecRulesResponse getModsecRulesV2(
+      RequestContext requestContext,
+      List<CustomSignatureRule> customSignatureRules,
+      CustomModsecRuleVersion customModsecRuleVersion,
+      boolean includeAllPartialModsecRules,
+      List<String> serviceNames) {
+
+    List<CustomSignatureInlineRule> inlineRuleList = new ArrayList<>();
+    List<String> allowModsecRules = new ArrayList<>();
+    List<String> violationModsecRules = new ArrayList<>();
+    Map<String, String> modsecIdMappings = new LinkedHashMap<>();
+
+    long modsecIdAssignment = MODSEC_ID_SEED;
+
+    Map<String, List<ModsecBlobResult>> serviceToModsecBlobDataMap = new LinkedHashMap<>();
+    serviceNames.forEach(
+        serviceName ->
+            serviceToModsecBlobDataMap.computeIfAbsent(serviceName, k -> new ArrayList<>()));
+
+    for (CustomSignatureRule customSignatureRule : customSignatureRules) {
+      if (!includeAllPartialModsecRules
+          && !containsCustomSecRule(customSignatureRule.getDefinition().getClauseGroup())) {
+        log.debug(
+            "Custom SecRule not found for rule - rule ID: {} tenant ID: {}",
+            customSignatureRule.getId(),
+            requestContext.getTenantId().orElse("Unknown"));
+        continue;
+      }
+
+      try {
+        String modsecBlob = null;
+        // Extract the applicable services using recursive method
+        List<String> applicableServices =
+            servicesOnWhichRuleIsApplicableRecursive(
+                requestContext, customSignatureRule, serviceNames);
+
+        // Filter out clauses which can't be converted into modsec rule - recursive
+        List<Clause> modsecConvertibleClauses =
+            getModsecConvertibleClausesRecursive(
+                customSignatureRule.getDefinition().getClauseGroup());
+
+        for (Clause clause : modsecConvertibleClauses) {
+          long assignedModsecId = modsecIdAssignment++;
+
+          if (clause.hasCustomSecRule()) {
+            long extractedId =
+                extractModsecIdFromSecRule(clause.getCustomSecRule().getInputSecRule());
+            String mappingValue = customSignatureRule.getId() + "::" + extractedId;
+            modsecIdMappings.put(String.valueOf(assignedModsecId), mappingValue);
+          }
+
+          ModsecBlobResult modsecBlobResult =
+              getModsecBlobResult(
+                  customSignatureRule.getId(),
+                  List.of(clause),
+                  assignedModsecId,
+                  customModsecRuleVersion);
+          modsecBlob = modsecBlobResult.getModsecBlob();
+
+          applicableServices.forEach(
+              applicableService ->
+                  serviceToModsecBlobDataMap.get(applicableService).add(modsecBlobResult));
+          if (modsecBlob == null || modsecBlob.isBlank()) {
+            continue;
+          }
+          if (customSignatureRule.getEffect().getEventType() == EventType.EVENT_TYPE_ALLOW) {
+            allowModsecRules.add(modsecBlob);
+          } else {
+            violationModsecRules.add(modsecBlob);
+          }
+        }
+        inlineRuleList.add(
+            CustomSignatureInlineRule.newBuilder().setRule(customSignatureRule).build());
+      } catch (Exception ex) {
+        log.warn(
+            "For tenant id - {} Modsec rule could not be created for rule: {}, exception: {}",
+            requestContext.getTenantId().orElse("Unknown"),
+            customSignatureRule.getName(),
+            ex);
+        continue;
+      }
+    }
+    if (inlineRuleList.isEmpty()) {
+      return GetCustomSignatureModsecRulesResponse.getDefaultInstance();
+    }
+    String modsecRulesBlob = "";
+    if (!(allowModsecRules.isEmpty() && violationModsecRules.isEmpty())) {
+      modsecRulesBlob =
+          getModsecDirective(customModsecRuleVersion)
+              + Stream.concat(allowModsecRules.stream(), violationModsecRules.stream())
+                  .collect(Collectors.joining(NEW_LINES_DELIMITER));
+    }
+
+    List<ModsecBlobData> modsecBlobDataList =
+        serviceToModsecBlobDataMap.entrySet().stream()
+            .collect(
+                Collectors.groupingBy(
+                    entry -> createCombinedBlob(requestContext, entry.getKey(), entry.getValue()),
+                    LinkedHashMap::new,
+                    Collectors.mapping(Map.Entry::getKey, Collectors.toList())))
+            .entrySet()
+            .stream()
+            .map(entry -> entry.getKey().toBuilder().addAllServiceNames(entry.getValue()).build())
+            .collect(Collectors.toUnmodifiableList());
+
+    return GetCustomSignatureModsecRulesResponse.newBuilder()
+        .setModsecRulesBlob(modsecRulesBlob)
+        .addAllInlineRules(inlineRuleList)
+        .setModsecDirectivesBlob(
+            modsecRulesRegistry.getModsecHeader(
+                ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS_DETECTION_ONLY_MODE))
+        .addAllModsecBlobsData(modsecBlobDataList)
+        .putAllModsecIdMappings(modsecIdMappings)
+        .build();
+  }
+
+  /**
+   * Recursively extracts all modsec-convertible clauses from nested clause groups. This only
+   * includes clauses with CustomSecRule.
+   */
+  private List<Clause> getModsecConvertibleClausesRecursive(ClauseGroup clauseGroup) {
+    List<Clause> result = new ArrayList<>();
+    for (Clause clause : clauseGroup.getClausesList()) {
+      if (clause.hasCustomSecRule()) {
+        result.add(clause);
+      }
+      // Recursively process nested clause groups
+      if (clause.hasClauseGroup()) {
+        result.addAll(getModsecConvertibleClausesRecursive(clause.getClauseGroup()));
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Recursively extracts service details from all nested clause groups and determines which
+   * services the rule is applicable to.
+   */
+  private List<String> servicesOnWhichRuleIsApplicableRecursive(
+      RequestContext requestContext,
+      CustomSignatureRule customSignatureRule,
+      List<String> serviceNames) {
+    List<ServiceDetail> serviceDetails =
+        getServiceDetailsRecursive(
+            requestContext, customSignatureRule.getDefinition().getClauseGroup());
+
+    if (serviceDetails.isEmpty()) {
+      return serviceNames;
+    }
+
+    List<String> servicesToBeIncluded =
+        serviceDetails.stream()
+            .filter(Predicate.not(ServiceDetail::isExclude))
+            .map(ServiceDetail::getServiceName)
+            .collect(Collectors.toUnmodifiableList());
+    List<String> servicesToBeExcluded =
+        serviceDetails.stream()
+            .filter(ServiceDetail::isExclude)
+            .map(ServiceDetail::getServiceName)
+            .collect(Collectors.toUnmodifiableList());
+
+    if (!servicesToBeIncluded.isEmpty()) {
+      return serviceNames.stream()
+          .filter(servicesToBeIncluded::contains)
+          .collect(Collectors.toUnmodifiableList());
+    }
+
+    return serviceNames.stream()
+        .filter(Predicate.not(servicesToBeExcluded::contains))
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  /** Recursively extracts service details from nested clause groups. */
+  private List<ServiceDetail> getServiceDetailsRecursive(
+      RequestContext requestContext, ClauseGroup clauseGroup) {
+    List<ServiceDetail> result = new ArrayList<>();
+    for (Clause clause : clauseGroup.getClausesList()) {
+      if (isClauseServiceScoped(clause)) {
+        result.addAll(convertToServiceDetails(requestContext, clause.getScopeExpression()));
+      }
+      // Recursively process nested clause groups
+      if (clause.hasClauseGroup()) {
+        result.addAll(getServiceDetailsRecursive(requestContext, clause.getClauseGroup()));
+      }
+    }
+    return result;
+  }
+
   @Override
   public Status validateModsecRule(String ruleName, RuleDefinition ruleDefinition) {
     try {
@@ -266,9 +471,22 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
   }
 
   /**
+   * Recursively checks if the clause group contains any CustomSecRule. This method traverses nested
+   * clause groups to find CustomSecRule expressions.
+   */
+  private boolean containsCustomSecRule(ClauseGroup clauseGroup) {
+    return clauseGroup.getClausesList().stream()
+        .anyMatch(
+            clause ->
+                clause.hasCustomSecRule()
+                    || (clause.hasClauseGroup() && containsCustomSecRule(clause.getClauseGroup())));
+  }
+
+  /**
    * Checks if the clause group contains IP-related or region-related clauses that should be tracked
    * in ModsecBlobData even though they can't be converted to ModSec format. These clauses are
-   * handled outside ModSec (in blocking config).
+   * handled outside ModSec (in blocking config). This method recursively checks nested clause
+   * groups.
    */
   private boolean containsNonModsecTrackableClauses(ClauseGroup clauseGroup) {
     return clauseGroup.getClausesList().stream().anyMatch(this::isNonModsecTrackableClause);

@@ -8,6 +8,8 @@ import static org.mockito.Mockito.mockStatic;
 
 import ai.traceable.customsignature.config.service.v1.CityRegionIdentifier;
 import ai.traceable.customsignature.config.service.v1.Clause;
+import ai.traceable.customsignature.config.service.v1.ClauseGroup;
+import ai.traceable.customsignature.config.service.v1.ClauseOperator;
 import ai.traceable.customsignature.config.service.v1.CountryRegionIdentifier;
 import ai.traceable.customsignature.config.service.v1.CustomSecRule;
 import ai.traceable.customsignature.config.service.v1.EventType;
@@ -932,5 +934,215 @@ class ClauseGroupValidatorTest {
         .setIpAsnExpression(
             IpAsnExpression.newBuilder().setExclude(exclude).addAllIpAsnRegexes(regexes).build())
         .build();
+  }
+
+  @Test
+  void testSecRuleIdUniqueness_NoSecRules() {
+    ClauseGroup clauseGroup =
+        ClauseGroup.newBuilder()
+            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+            .addClauses(
+                Clause.newBuilder()
+                    .setMatchExpression(
+                        MatchExpression.newBuilder()
+                            .setMatchKey(MatchKey.MATCH_KEY_URL)
+                            .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                            .setMatchCategory(MatchCategory.MATCH_CATEGORY_REQUEST)
+                            .setValue(Value.newBuilder().setStringValue("/api/test"))))
+            .build();
+
+    Status status =
+        clauseGroupValidator.validateClauseGroup(clauseGroup, EventType.EVENT_TYPE_ALLOW);
+    assertEquals(Status.OK.getCode(), status.getCode());
+  }
+
+  @Test
+  void testSecRuleIdUniqueness_SingleSecRule() {
+    ClauseGroup clauseGroup =
+        ClauseGroup.newBuilder()
+            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+            .addClauses(
+                Clause.newBuilder()
+                    .setCustomSecRule(
+                        CustomSecRule.newBuilder()
+                            .setInputSecRule(
+                                "SecRule FILES \"@rx \\\\.exe$\" \"id:9500,phase:2,deny\"")))
+            .build();
+
+    Status status =
+        clauseGroupValidator.validateClauseGroup(clauseGroup, EventType.EVENT_TYPE_ALLOW);
+    assertEquals(Status.OK.getCode(), status.getCode());
+  }
+
+  @Test
+  void testSecRuleIdUniqueness_MultipleSecRulesWithDifferentIds() {
+    ClauseGroup clauseGroup =
+        ClauseGroup.newBuilder()
+            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+            .addClauses(
+                Clause.newBuilder()
+                    .setCustomSecRule(
+                        CustomSecRule.newBuilder()
+                            .setInputSecRule(
+                                "SecRule FILES \"@rx \\\\.exe$\" \"id:9500,phase:2,deny\"")))
+            .addClauses(
+                Clause.newBuilder()
+                    .setCustomSecRule(
+                        CustomSecRule.newBuilder()
+                            .setInputSecRule(
+                                "SecRule FILES \"@rx \\\\.sh$\" \"id:9501,phase:2,deny\"")))
+            .addClauses(
+                Clause.newBuilder()
+                    .setCustomSecRule(
+                        CustomSecRule.newBuilder()
+                            .setInputSecRule(
+                                "SecRule ARGS \"@contains malicious\" \"id:9502,phase:2,block\"")))
+            .build();
+
+    Status status =
+        clauseGroupValidator.validateClauseGroup(clauseGroup, EventType.EVENT_TYPE_ALLOW);
+    assertEquals(Status.OK.getCode(), status.getCode());
+  }
+
+  @Test
+  void testSecRuleIdUniqueness_DuplicateIdsAtSameLevel() {
+    ClauseGroup clauseGroup =
+        ClauseGroup.newBuilder()
+            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+            .addClauses(
+                Clause.newBuilder()
+                    .setCustomSecRule(
+                        CustomSecRule.newBuilder()
+                            .setInputSecRule(
+                                "SecRule FILES \"@rx \\\\.exe$\" \"id:9500,phase:2,deny\"")))
+            .addClauses(
+                Clause.newBuilder()
+                    .setCustomSecRule(
+                        CustomSecRule.newBuilder()
+                            .setInputSecRule(
+                                "SecRule FILES \"@rx \\\\.sh$\" \"id:9500,phase:2,deny\"")))
+            .build();
+
+    Status status =
+        clauseGroupValidator.validateClauseGroup(clauseGroup, EventType.EVENT_TYPE_ALLOW);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertEquals(
+        "Duplicate sec_rule ID '9500' found within the rule. Each sec_rule must have a unique ID within the same custom signature rule.",
+        status.getDescription());
+  }
+
+  @Test
+  void testSecRuleIdUniqueness_DuplicateIdsAcrossNestingLevels() {
+    ClauseGroup clauseGroup =
+        ClauseGroup.newBuilder()
+            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+            .addClauses(
+                Clause.newBuilder()
+                    .setCustomSecRule(
+                        CustomSecRule.newBuilder()
+                            .setInputSecRule(
+                                "SecRule FILES \"@rx \\\\.exe$\" \"id:9500,phase:2,deny\"")))
+            .addClauses(
+                Clause.newBuilder()
+                    .setClauseGroup(
+                        ClauseGroup.newBuilder()
+                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_OR)
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setMatchExpression(
+                                        MatchExpression.newBuilder()
+                                            .setMatchKey(MatchKey.MATCH_KEY_URL)
+                                            .setMatchOperator(
+                                                MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
+                                            .setMatchCategory(MatchCategory.MATCH_CATEGORY_REQUEST)
+                                            .setValue(
+                                                Value.newBuilder().setStringValue("^/upload"))))
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setCustomSecRule(
+                                        CustomSecRule.newBuilder()
+                                            .setInputSecRule(
+                                                "SecRule FILES \"@rx \\\\.sh$\" \"id:9500,phase:2,deny\"")))))
+            .build();
+
+    Status status =
+        clauseGroupValidator.validateClauseGroup(clauseGroup, EventType.EVENT_TYPE_ALLOW);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertEquals(
+        "Duplicate sec_rule ID '9500' found within the rule. Each sec_rule must have a unique ID within the same custom signature rule.",
+        status.getDescription());
+  }
+
+  @Test
+  void testSecRuleIdUniqueness_NestedClauseGroupsWithDifferentIds() {
+    ClauseGroup clauseGroup =
+        ClauseGroup.newBuilder()
+            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+            .addClauses(
+                Clause.newBuilder()
+                    .setCustomSecRule(
+                        CustomSecRule.newBuilder()
+                            .setInputSecRule(
+                                "SecRule FILES \"@rx \\\\.exe$\" \"id:9500,phase:2,deny\"")))
+            .addClauses(
+                Clause.newBuilder()
+                    .setClauseGroup(
+                        ClauseGroup.newBuilder()
+                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_OR)
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setCustomSecRule(
+                                        CustomSecRule.newBuilder()
+                                            .setInputSecRule(
+                                                "SecRule FILES \"@rx \\\\.sh$\" \"id:9501,phase:2,deny\"")))
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setClauseGroup(
+                                        ClauseGroup.newBuilder()
+                                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+                                            .addClauses(
+                                                Clause.newBuilder()
+                                                    .setCustomSecRule(
+                                                        CustomSecRule.newBuilder()
+                                                            .setInputSecRule(
+                                                                "SecRule ARGS \"@contains test\" \"id:9502,phase:2,block\"")))))))
+            .build();
+
+    Status status =
+        clauseGroupValidator.validateClauseGroup(clauseGroup, EventType.EVENT_TYPE_ALLOW);
+    assertEquals(Status.OK.getCode(), status.getCode());
+  }
+
+  @Test
+  void testSecRuleIdUniqueness_ThreeSecRulesWithOneDuplicate() {
+    ClauseGroup clauseGroup =
+        ClauseGroup.newBuilder()
+            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+            .addClauses(
+                Clause.newBuilder()
+                    .setCustomSecRule(
+                        CustomSecRule.newBuilder()
+                            .setInputSecRule(
+                                "SecRule FILES \"@rx \\\\.exe$\" \"id:9500,phase:2,deny\"")))
+            .addClauses(
+                Clause.newBuilder()
+                    .setCustomSecRule(
+                        CustomSecRule.newBuilder()
+                            .setInputSecRule(
+                                "SecRule FILES \"@rx \\\\.sh$\" \"id:9501,phase:2,deny\"")))
+            .addClauses(
+                Clause.newBuilder()
+                    .setCustomSecRule(
+                        CustomSecRule.newBuilder()
+                            .setInputSecRule(
+                                "SecRule ARGS \"@contains test\" \"id:9500,phase:2,block\"")))
+            .build();
+
+    Status status =
+        clauseGroupValidator.validateClauseGroup(clauseGroup, EventType.EVENT_TYPE_ALLOW);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertEquals(
+        "Duplicate sec_rule ID '9500' found within the rule. Each sec_rule must have a unique ID within the same custom signature rule.",
+        status.getDescription());
   }
 }
