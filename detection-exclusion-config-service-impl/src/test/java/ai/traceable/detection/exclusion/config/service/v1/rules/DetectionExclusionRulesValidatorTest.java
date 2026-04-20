@@ -3,6 +3,8 @@ package ai.traceable.detection.exclusion.config.service.v1.rules;
 import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_ALERT;
 import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_ALLOW;
 import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_BLOCK;
+import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_THREAT_ACTOR_CREATION;
+import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_THREAT_SCORE_CONTRIBUTION;
 import static ai.traceable.detection.exclusion.config.service.v1.RuleIntent.RULE_INTENT_INTERNAL_TO_EXTERNAL;
 import static ai.traceable.detection.exclusion.config.service.v1.RuleSource.RULE_SOURCE_TRACEABLE;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -36,6 +38,22 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+/**
+ * Compatibility Matrix (Source of Truth):
+ *
+ * <pre>
+ * | Exclusion Target                          | Platform | Edge | Inline Tracing Agent |
+ * |-------------------------------------------|:--------:|:----:|:--------------------:|
+ * | Exclude from Monitoring (ALERT)           |    ✓     |      |                      |
+ * | Exclude from Threat Actor Creation        |    ✓     |      |                      |
+ * | Exclude from Threat Actor Scoring         |    ✓     |      |                      |
+ * | Exclude from Blocking (BLOCK)             |    ✓ (rate-limiting)     |  ✓   |          ✓           |
+ * | Exclude from Allow (ALLOW)                |          |  ✓   |          ✓           |
+ * </pre>
+ *
+ * <p>Agreed semantics: When multiple targets are selected, supported eval points = UNION of each
+ * target's supported points.
+ */
 class DetectionExclusionRulesValidatorTest {
 
   private DetectionExclusionRulesValidator detectionExclusionRulesValidator;
@@ -121,6 +139,7 @@ class DetectionExclusionRulesValidatorTest {
               .setRuleInfo(
                   DetectionExclusionRuleInfo.newBuilder()
                       .setName("rule")
+                      .addExclusionTargets(EXCLUSION_TARGET_ALERT)
                       .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
                       .addConditions(getDefaultEventCondition()))
               .setRuleScope(
@@ -167,6 +186,7 @@ class DetectionExclusionRulesValidatorTest {
               .setRuleInfo(
                   DetectionExclusionRuleInfo.newBuilder()
                       .setName("ruleName1")
+                      .addExclusionTargets(EXCLUSION_TARGET_ALERT)
                       .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
                       .addConditions(getDefaultEventCondition()))
               .build();
@@ -251,6 +271,7 @@ class DetectionExclusionRulesValidatorTest {
                       .setRuleInfo(
                           DetectionExclusionRuleInfo.newBuilder()
                               .setName("ruleName1")
+                              .addExclusionTargets(EXCLUSION_TARGET_ALERT)
                               .addConditions(getDefaultEventCondition())
                               .addRuleEvaluationPoints(
                                   RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
@@ -270,6 +291,9 @@ class DetectionExclusionRulesValidatorTest {
     }
   }
 
+  /**
+   * @see DetectionExclusionRulesValidatorTest class-level Javadoc for Compatibility Matrix.
+   */
   @Test
   void testCreateDetectionExclusionRuleRequestWithRuleEvaluationPoints() {
     DetectionExclusionRuleScope detectionExclusionRuleScope =
@@ -389,7 +413,7 @@ class DetectionExclusionRulesValidatorTest {
             detectionExclusionRulesValidator.validateOrThrow(
                 REQUEST_CONTEXT, createDetectionExclusionRuleRequest5, List.of()));
 
-    // valid case
+    // BLOCK + [PLATFORM, EDGE, AGENT] should PASS — BLOCK supports PLATFORM for rate-limiting
     CreateDetectionExclusionRuleRequest createDetectionExclusionRuleRequest6 =
         CreateDetectionExclusionRuleRequest.newBuilder()
             .setRuleScope(detectionExclusionRuleScope)
@@ -411,8 +435,33 @@ class DetectionExclusionRulesValidatorTest {
         () ->
             detectionExclusionRulesValidator.validateOrThrow(
                 REQUEST_CONTEXT, createDetectionExclusionRuleRequest6, List.of()));
+
+    // valid case — BLOCK + [EDGE, AGENT] (no PLATFORM)
+    CreateDetectionExclusionRuleRequest createDetectionExclusionRuleRequest7 =
+        CreateDetectionExclusionRuleRequest.newBuilder()
+            .setRuleScope(detectionExclusionRuleScope)
+            .setRuleInfo(
+                DetectionExclusionRuleInfo.newBuilder()
+                    .setName("name-7")
+                    .setDescription("description-7")
+                    .setRuleStatus(detectionExclusionRuleStatus)
+                    .addExclusionTargets(EXCLUSION_TARGET_BLOCK)
+                    .addConditions(
+                        DetectionExclusionCondition.newBuilder()
+                            .setRegionCondition(regionCondition))
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+                    .addRuleEvaluationPoints(
+                        RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT))
+            .build();
+    assertDoesNotThrow(
+        () ->
+            detectionExclusionRulesValidator.validateOrThrow(
+                REQUEST_CONTEXT, createDetectionExclusionRuleRequest7, List.of()));
   }
 
+  /**
+   * @see DetectionExclusionRulesValidatorTest class-level Javadoc for Compatibility Matrix.
+   */
   @Test
   void testUpdateDetectionExclusionRuleRequestWithRuleEvaluationPoints() {
     DetectionExclusionRuleScope detectionExclusionRuleScope =
@@ -552,7 +601,7 @@ class DetectionExclusionRulesValidatorTest {
             detectionExclusionRulesValidator.validateOrThrow(
                 REQUEST_CONTEXT, updateDetectionExclusionRuleRequest5, List.of()));
 
-    // valid case
+    // BLOCK + [PLATFORM, EDGE, AGENT] should PASS — BLOCK supports PLATFORM for rate-limiting
     UpdateDetectionExclusionRuleRequest updateDetectionExclusionRuleRequest6 =
         UpdateDetectionExclusionRuleRequest.newBuilder()
             .setRule(
@@ -578,6 +627,137 @@ class DetectionExclusionRulesValidatorTest {
         () ->
             detectionExclusionRulesValidator.validateOrThrow(
                 REQUEST_CONTEXT, updateDetectionExclusionRuleRequest6, List.of()));
+
+    // valid case — BLOCK + [EDGE, AGENT] (no PLATFORM)
+    UpdateDetectionExclusionRuleRequest updateDetectionExclusionRuleRequest7 =
+        UpdateDetectionExclusionRuleRequest.newBuilder()
+            .setRule(
+                DetectionExclusionRule.newBuilder()
+                    .setRuleInfo(
+                        DetectionExclusionRuleInfo.newBuilder()
+                            .setRuleStatus(detectionExclusionRuleStatus)
+                            .addExclusionTargets(EXCLUSION_TARGET_BLOCK)
+                            .addConditions(
+                                DetectionExclusionCondition.newBuilder()
+                                    .setRegionCondition(regionCondition))
+                            .setName("name-7")
+                            .setDescription("description-7")
+                            .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+                            .addRuleEvaluationPoints(
+                                RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT))
+                    .setRuleScope(detectionExclusionRuleScope)
+                    .setId("rule-id-7"))
+            .build();
+    assertDoesNotThrow(
+        () ->
+            detectionExclusionRulesValidator.validateOrThrow(
+                REQUEST_CONTEXT, updateDetectionExclusionRuleRequest7, List.of()));
+  }
+
+  /**
+   * @see DetectionExclusionRulesValidatorTest class-level Javadoc for Compatibility Matrix.
+   */
+  @Test
+  void testMixedTargetRuleEvaluationPointValidation() {
+    RegionCondition regionCondition =
+        RegionCondition.newBuilder()
+            .addRegions(RegionCondition.Region.newBuilder().setCountryIsoCode("iso"))
+            .build();
+    DetectionExclusionCondition supportedCondition =
+        DetectionExclusionCondition.newBuilder().setRegionCondition(regionCondition).build();
+
+    // [THREAT_SCORE_CONTRIBUTION, BLOCK] + [PLATFORM, EDGE] → should PASS (union semantics)
+    assertDoesNotThrow(
+        () ->
+            detectionExclusionRulesValidator.validateRuleInfo(
+                DetectionExclusionRuleInfo.newBuilder()
+                    .setName("mixed-1")
+                    .addExclusionTargets(EXCLUSION_TARGET_THREAT_SCORE_CONTRIBUTION)
+                    .addExclusionTargets(EXCLUSION_TARGET_BLOCK)
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+                    .addConditions(supportedCondition)
+                    .build()));
+
+    // [THREAT_ACTOR_CREATION, ALLOW] + [PLATFORM, INLINE_TRACING_AGENT] → should PASS
+    assertDoesNotThrow(
+        () ->
+            detectionExclusionRulesValidator.validateRuleInfo(
+                DetectionExclusionRuleInfo.newBuilder()
+                    .setName("mixed-2")
+                    .addExclusionTargets(EXCLUSION_TARGET_THREAT_ACTOR_CREATION)
+                    .addExclusionTargets(EXCLUSION_TARGET_ALLOW)
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+                    .addRuleEvaluationPoints(
+                        RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT)
+                    .addConditions(supportedCondition)
+                    .build()));
+
+    // [THREAT_SCORE_CONTRIBUTION] + [PLATFORM, EDGE] → should FAIL (no BLOCK/ALLOW to justify EDGE)
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            detectionExclusionRulesValidator.validateRuleInfo(
+                DetectionExclusionRuleInfo.newBuilder()
+                    .setName("mixed-3")
+                    .addExclusionTargets(EXCLUSION_TARGET_THREAT_SCORE_CONTRIBUTION)
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+                    .addConditions(supportedCondition)
+                    .build()));
+
+    // [ALERT, BLOCK, ALLOW, THREAT_SCORE_CONTRIBUTION] + [PLATFORM, EDGE, AGENT] → should PASS
+    // (exact Jira reproduction case AAP-11773)
+    assertDoesNotThrow(
+        () ->
+            detectionExclusionRulesValidator.validateRuleInfo(
+                DetectionExclusionRuleInfo.newBuilder()
+                    .setName("mixed-4")
+                    .addExclusionTargets(EXCLUSION_TARGET_ALERT)
+                    .addExclusionTargets(EXCLUSION_TARGET_BLOCK)
+                    .addExclusionTargets(EXCLUSION_TARGET_ALLOW)
+                    .addExclusionTargets(EXCLUSION_TARGET_THREAT_SCORE_CONTRIBUTION)
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+                    .addRuleEvaluationPoints(
+                        RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT)
+                    .addConditions(supportedCondition)
+                    .build()));
+
+    // [ALLOW, BLOCK] + [PLATFORM] → should PASS (BLOCK supports PLATFORM for rate-limiting)
+    assertDoesNotThrow(
+        () ->
+            detectionExclusionRulesValidator.validateRuleInfo(
+                DetectionExclusionRuleInfo.newBuilder()
+                    .setName("mixed-5")
+                    .addExclusionTargets(EXCLUSION_TARGET_ALLOW)
+                    .addExclusionTargets(EXCLUSION_TARGET_BLOCK)
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+                    .addConditions(supportedCondition)
+                    .build()));
+
+    // [BLOCK] + [PLATFORM] → should PASS (BLOCK supports PLATFORM for rate-limiting)
+    assertDoesNotThrow(
+        () ->
+            detectionExclusionRulesValidator.validateRuleInfo(
+                DetectionExclusionRuleInfo.newBuilder()
+                    .setName("mixed-6")
+                    .addExclusionTargets(EXCLUSION_TARGET_BLOCK)
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+                    .addConditions(supportedCondition)
+                    .build()));
+
+    // [ALLOW] + [PLATFORM] → should FAIL (ALLOW does not support PLATFORM)
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            detectionExclusionRulesValidator.validateRuleInfo(
+                DetectionExclusionRuleInfo.newBuilder()
+                    .setName("mixed-7")
+                    .addExclusionTargets(EXCLUSION_TARGET_ALLOW)
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+                    .addConditions(supportedCondition)
+                    .build()));
   }
 
   private DetectionExclusionCondition getDefaultEventCondition() {

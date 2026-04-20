@@ -123,6 +123,7 @@ public class DetectionExclusionRuleEdgeDecisionConverter {
   private List<EdgeDecisionTarget> getEdgeDecisionTargets(
       List<EventCondition> eventConditions, List<ExclusionTarget> exclusionTargets) {
     return exclusionTargets.stream()
+        .filter(ExclusionEdgeDecisionRulesSupportChecker::isEdgeDecisionTargetSupported)
         .map(
             exclusionTarget ->
                 EdgeDecisionTarget.newBuilder()

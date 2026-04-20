@@ -1,5 +1,6 @@
 package ai.traceable.detection.exclusion.config.service.v1.rules;
 
+import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_ALERT;
 import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_ALLOW;
 import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_BLOCK;
 import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_THREAT_ACTOR_CREATION;
@@ -166,8 +167,15 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
           .asRuntimeException();
     }
 
-    if ((ruleInfo.getExclusionTargetsList().contains(EXCLUSION_TARGET_THREAT_SCORE_CONTRIBUTION)
-            || ruleInfo.getExclusionTargetsList().contains(EXCLUSION_TARGET_THREAT_ACTOR_CREATION))
+    boolean hasPlatformTarget =
+        ruleInfo.getExclusionTargetsList().stream()
+            .anyMatch(DetectionExclusionRulesValidator::isPlatformSupportingTarget);
+    boolean hasAgentSideTarget =
+        ruleInfo.getExclusionTargetsList().contains(EXCLUSION_TARGET_BLOCK)
+            || ruleInfo.getExclusionTargetsList().contains(EXCLUSION_TARGET_ALLOW);
+
+    if (hasPlatformTarget
+        && !hasAgentSideTarget
         && !ruleInfo.getRuleEvaluationPointsList().isEmpty()
         && !(ruleInfo.getRuleEvaluationPointsList().size() == 1
             && ruleInfo.getRuleEvaluationPointsList().contains(RULE_EVALUATION_POINT_PLATFORM))) {
@@ -311,13 +319,16 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
           .asRuntimeException();
     }
 
-    if (exclusionTargets.size() == 1
-        && exclusionTargets.contains(EXCLUSION_TARGET_ALLOW)
-        && ruleEvaluationPoints.contains(RULE_EVALUATION_POINT_PLATFORM)) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription(
-              "RULE_EVALUATION_POINT_PLATFORM cannot be one of the rule evaluation points when EXCLUSION_TARGET_ALLOW is the only exclusion target.")
-          .asRuntimeException();
+    if (ruleEvaluationPoints.contains(RULE_EVALUATION_POINT_PLATFORM)) {
+      boolean hasPlatformSupportingTarget =
+          exclusionTargets.stream()
+              .anyMatch(DetectionExclusionRulesValidator::isPlatformSupportingTarget);
+      if (!hasPlatformSupportingTarget) {
+        throw Status.INVALID_ARGUMENT
+            .withDescription(
+                "RULE_EVALUATION_POINT_PLATFORM cannot be one of the rule evaluation points as no exclusion target supports platform evaluation.")
+            .asRuntimeException();
+      }
     }
 
     if (ruleEvaluationPoints.contains(RULE_EVALUATION_POINT_EDGE)) {
@@ -376,5 +387,12 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
             .anyMatch(ExclusionModsecRulesSupportChecker::isModsecExclusionTargetSupported);
 
     return hasSupportedModsecConditions && hasSupportedModsecExclusionTargets;
+  }
+
+  private static boolean isPlatformSupportingTarget(ExclusionTarget target) {
+    return target == EXCLUSION_TARGET_ALERT
+        || target == EXCLUSION_TARGET_THREAT_SCORE_CONTRIBUTION
+        || target == EXCLUSION_TARGET_THREAT_ACTOR_CREATION
+        || target == EXCLUSION_TARGET_BLOCK;
   }
 }

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -28,6 +29,7 @@ import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
 import ai.traceable.detection.exclusion.config.service.v1.IpAddressCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpConnectionType;
 import ai.traceable.detection.exclusion.config.service.v1.IpConnectionTypeCondition;
+import ai.traceable.detection.exclusion.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.detection.exclusion.config.service.v1.RuleSource;
 import ai.traceable.detection.exclusion.config.service.v1.UpsertDetectionExclusionRuleData;
 import ai.traceable.detection.exclusion.config.service.v1.rules.migration.DetectionExclusionRulesMigrationManager;
@@ -43,6 +45,7 @@ import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 class DetectionExclusionRulesManagerTest {
 
@@ -356,6 +359,53 @@ class DetectionExclusionRulesManagerTest {
     assertFalse(
         testContext.isUserTrackingSuppressed(),
         "Original RequestContext should NOT have user tracking suppressed after update");
+  }
+
+  // -------------------------------------------------------------------------
+  // Finding 2 from FINDINGS-Post-Validation-Converter-Gap.md:
+  // getDetectionExclusionModsecRules() passes ALL rules to the modsec pipeline
+  // without filtering by ruleEvaluationPoints. Platform-only rules (e.g.,
+  // [ALERT] + [PLATFORM]) are unnecessarily processed by the modsec pipeline.
+  // -------------------------------------------------------------------------
+
+  @SuppressWarnings("unchecked")
+  @Test
+  void testModsecRulesFetch_platformOnlyRulesNotFilteredByEvalPoint() {
+    // Create a platform-only rule: ALERT + PLATFORM eval point
+    // This rule should ONLY be relevant for the PLATFORM evaluation point,
+    // not for INLINE_TRACING_AGENT (modsec).
+    DetectionExclusionRuleInfo platformOnlyRuleInfo =
+        DetectionExclusionRuleInfo.newBuilder()
+            .setName("platform-only-rule")
+            .addExclusionTargets(EXCLUSION_TARGET_ALERT)
+            .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+            .setRuleStatus(DetectionExclusionRuleStatus.newBuilder().build())
+            .build();
+    DetectionExclusionRuleScope ruleScope = DetectionExclusionRuleScope.getDefaultInstance();
+
+    when(uuidGenerator.generateRandomId()).thenReturn("platform-only-id");
+    rulesManager.createDetectionExclusionRule(requestContext, ruleScope, platformOnlyRuleInfo);
+
+    // Fetch modsec rules
+    rulesManager.getDetectionExclusionModsecRules(
+        requestContext,
+        GetExclusionModsecRulesRequest.newBuilder()
+            .setRulesFilter(GetRulesFilter.getDefaultInstance())
+            .addServiceNames("service-1")
+            .build());
+
+    // BUG: The platform-only rule (ALERT + PLATFORM) is passed to the modsec pipeline
+    // without any eval-point filtering. It should be filtered out since its eval point
+    // is PLATFORM, not INLINE_TRACING_AGENT.
+    ArgumentCaptor<List<DetectionExclusionRule>> rulesCaptor = ArgumentCaptor.forClass(List.class);
+    verify(exclusionModsecRulesManager)
+        .getModsecRules(eq(requestContext), rulesCaptor.capture(), eq(List.of("service-1")));
+    List<DetectionExclusionRule> passedRules = rulesCaptor.getValue();
+
+    assertTrue(
+        passedRules.stream().anyMatch(r -> r.getId().equals("platform-only-id")),
+        "Platform-only rule (ALERT + PLATFORM eval point) is passed to modsec pipeline "
+            + "without eval-point filtering (proving the post-validation converter gap)");
   }
 
   @Test

@@ -4,7 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleInfo;
+import ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget;
+import ai.traceable.detection.exclusion.config.service.v1.RegionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.rules.edge.decision.condition.DetectionExclusionRuleConditionConverter;
 import ai.traceable.detection.exclusion.config.service.v1.rules.edge.decision.condition.DetectionExclusionRuleConditionModule;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
@@ -30,6 +34,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -117,6 +122,135 @@ class DetectionExclusionRuleEdgeDecisionConverterTest {
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
+  }
+
+  // -------------------------------------------------------------------------
+  // Mixed-target rules: the converter filters to edge-supported targets
+  // (ALLOW, BLOCK) and converts the rule with only those targets.
+  // Non-edge targets (ALERT, THREAT_SCORE, THREAT_ACTOR) are skipped.
+  // -------------------------------------------------------------------------
+
+  @Test
+  void testMixedTargetRule_threatScoreAndBlock_convertedWithBlockOnly() {
+    // Rule: [THREAT_SCORE_CONTRIBUTION, BLOCK] — only BLOCK is edge-supported.
+    // The converter should produce the rule with a single BLOCK edge decision target.
+    DetectionExclusionRule mixedTargetRule =
+        DetectionExclusionRule.newBuilder()
+            .setId("mixed-target-rule-1")
+            .setRuleInfo(
+                DetectionExclusionRuleInfo.newBuilder()
+                    .setName("mixed-target-rule")
+                    .addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_THREAT_SCORE_CONTRIBUTION)
+                    .addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_BLOCK)
+                    .addConditions(
+                        DetectionExclusionCondition.newBuilder()
+                            .setRegionCondition(
+                                RegionCondition.newBuilder()
+                                    .addRegions(
+                                        RegionCondition.Region.newBuilder()
+                                            .setCountryIsoCode("IND")))))
+            .build();
+
+    EdgeDecisionEngineConfig result = converter.convert(REQUEST_CONTEXT, List.of(mixedTargetRule));
+
+    assertEquals(1, result.getDecisionRulesList().size(), "Rule should be converted, not dropped");
+    assertEquals("mixed-target-rule-1", result.getDecisionRules(0).getId());
+    assertEquals(
+        1,
+        result.getDecisionRules(0).getRuleDecision().getEdgeDecisionTargetsList().size(),
+        "Only BLOCK target should be present in edge decision targets");
+  }
+
+  @Test
+  void testBlockOnlyRule_notDropped() {
+    // Control: same condition with only BLOCK target → correctly converted
+    DetectionExclusionRule blockOnlyRule =
+        DetectionExclusionRule.newBuilder()
+            .setId("block-only-rule-1")
+            .setRuleInfo(
+                DetectionExclusionRuleInfo.newBuilder()
+                    .setName("block-only-rule")
+                    .addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_BLOCK)
+                    .addConditions(
+                        DetectionExclusionCondition.newBuilder()
+                            .setRegionCondition(
+                                RegionCondition.newBuilder()
+                                    .addRegions(
+                                        RegionCondition.Region.newBuilder()
+                                            .setCountryIsoCode("IND")))))
+            .build();
+
+    EdgeDecisionEngineConfig result = converter.convert(REQUEST_CONTEXT, List.of(blockOnlyRule));
+
+    assertEquals(
+        1,
+        result.getDecisionRulesList().size(),
+        "BLOCK-only rule should be successfully converted to edge decision rule");
+    assertEquals("block-only-rule-1", result.getDecisionRules(0).getId());
+  }
+
+  @Test
+  void testMixedTargetRule_alertAndBlock_convertedWithBlockOnly() {
+    // Rule: [ALERT, BLOCK] — ALERT is not edge-supported, BLOCK is.
+    // The converter should produce the rule with only the BLOCK target.
+    DetectionExclusionRule mixedRule =
+        DetectionExclusionRule.newBuilder()
+            .setId("alert-block-rule-1")
+            .setRuleInfo(
+                DetectionExclusionRuleInfo.newBuilder()
+                    .setName("alert-block-rule")
+                    .addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_ALERT)
+                    .addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_BLOCK)
+                    .addConditions(
+                        DetectionExclusionCondition.newBuilder()
+                            .setRegionCondition(
+                                RegionCondition.newBuilder()
+                                    .addRegions(
+                                        RegionCondition.Region.newBuilder()
+                                            .setCountryIsoCode("IND")))))
+            .build();
+
+    EdgeDecisionEngineConfig result = converter.convert(REQUEST_CONTEXT, List.of(mixedRule));
+
+    assertEquals(1, result.getDecisionRulesList().size(), "Rule should be converted, not dropped");
+    assertEquals("alert-block-rule-1", result.getDecisionRules(0).getId());
+    assertEquals(
+        1,
+        result.getDecisionRules(0).getRuleDecision().getEdgeDecisionTargetsList().size(),
+        "Only BLOCK target should be present in edge decision targets");
+  }
+
+  @Test
+  void testMixedTargetRule_jiraReproduction_allTargets_convertedWithBlockAndAllow() {
+    // Exact Jira reproduction: [ALERT, BLOCK, ALLOW, THREAT_SCORE_CONTRIBUTION]
+    // Converter should retain only edge-supported targets: BLOCK and ALLOW.
+    DetectionExclusionRule jiraRule =
+        DetectionExclusionRule.newBuilder()
+            .setId("jira-repro-rule-1")
+            .setRuleInfo(
+                DetectionExclusionRuleInfo.newBuilder()
+                    .setName("jira-repro-rule")
+                    .addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_ALERT)
+                    .addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_BLOCK)
+                    .addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_ALLOW)
+                    .addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_THREAT_SCORE_CONTRIBUTION)
+                    .addConditions(
+                        DetectionExclusionCondition.newBuilder()
+                            .setRegionCondition(
+                                RegionCondition.newBuilder()
+                                    .addRegions(
+                                        RegionCondition.Region.newBuilder()
+                                            .setCountryIsoCode("IND")))))
+            .build();
+
+    EdgeDecisionEngineConfig result = converter.convert(REQUEST_CONTEXT, List.of(jiraRule));
+
+    assertEquals(1, result.getDecisionRulesList().size(), "Rule should be converted, not dropped");
+    assertEquals("jira-repro-rule-1", result.getDecisionRules(0).getId());
+    assertEquals(
+        2,
+        result.getDecisionRules(0).getRuleDecision().getEdgeDecisionTargetsList().size(),
+        "BLOCK and ALLOW targets should be present in edge decision targets");
   }
 
   static class DetectionExclusionRuleEdgeDecisionConverterTestModule extends AbstractModule {
