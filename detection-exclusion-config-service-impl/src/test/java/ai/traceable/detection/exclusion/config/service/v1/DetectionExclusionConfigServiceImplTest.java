@@ -688,6 +688,94 @@ class DetectionExclusionConfigServiceImplTest {
   }
 
   @Test
+  void testInlineOnlyExclusionRulesFilteredOutForEdgeDecisionService() {
+    DetectionExclusionRule inlineOnlyRule =
+        getRule(
+            "inline-only-rule-id",
+            List.of(RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT));
+    DetectionExclusionRule edgeRule =
+        getRule("edge-rule-id", List.of(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE));
+    DetectionExclusionRule edgeAndInlineRule =
+        getRule(
+            "edge-and-inline-rule-id",
+            List.of(
+                RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE,
+                RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT));
+    DetectionExclusionRule platformOnlyRule =
+        getRule(
+            "platform-only-rule-id", List.of(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM));
+    List<DetectionExclusionRule> allRules =
+        List.of(inlineOnlyRule, edgeRule, edgeAndInlineRule, platformOnlyRule);
+
+    when(featureCachingClient.isEdgeDecisionEnabledForTenant(eq(requestContext))).thenReturn(true);
+    when(edgeDecisionConverter.convert(eq(requestContext), any()))
+        .thenAnswer(
+            invocation -> {
+              List<DetectionExclusionRule> rules = invocation.getArgument(1);
+              return EdgeDecisionEngineConfig.newBuilder()
+                  .setId("edge-config-with-" + rules.size() + "-rules")
+                  .build();
+            });
+    when(rulesManager.getDetectionExclusionRules(eq(requestContext), any()))
+        .thenAnswer(
+            invocation -> {
+              GetRulesFilter filter = invocation.getArgument(1);
+              if (filter.getRuleEvaluationPointsList().isEmpty()) {
+                return allRules;
+              }
+              return allRules.stream()
+                  .filter(
+                      rule ->
+                          rule.getRuleInfo().getRuleEvaluationPointsList().stream()
+                              .anyMatch(filter.getRuleEvaluationPointsList()::contains))
+                  .collect(Collectors.toList());
+            });
+    doNothing()
+        .when(rulesValidator)
+        .validateOrThrow(
+            eq(requestContext), any(GetDetectionExclusionEdgeDecisionRulesRequest.class));
+
+    // Simulate what DetectionExclusionEdgeDecisionConfigSupplier sends:
+    // filter with RULE_EVALUATION_POINT_EDGE only
+    StreamObserver<GetDetectionExclusionEdgeDecisionRulesResponse> edgeObserver =
+        mock(StreamObserver.class);
+    GetDetectionExclusionEdgeDecisionRulesRequest edgeSupplierRequest =
+        GetDetectionExclusionEdgeDecisionRulesRequest.newBuilder()
+            .setFilter(
+                GetRulesFilter.newBuilder()
+                    .addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_BLOCK)
+                    .addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_ALLOW)
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+                    .setDisabled(false)
+                    .build())
+            .build();
+    requestContext.run(
+        () ->
+            detectionExclusionConfigService.getDetectionExclusionEdgeDecisionRules(
+                edgeSupplierRequest, edgeObserver));
+
+    // Only edgeRule and edgeAndInlineRule should reach the converter.
+    // inlineOnlyRule and platformOnlyRule must be filtered out.
+    verify(edgeDecisionConverter, times(1))
+        .convert(
+            eq(requestContext),
+            argThat(
+                rules ->
+                    rules.size() == 2
+                        && rules.contains(edgeRule)
+                        && rules.contains(edgeAndInlineRule)
+                        && !rules.contains(inlineOnlyRule)
+                        && !rules.contains(platformOnlyRule)));
+    verify(edgeObserver, times(1))
+        .onNext(
+            GetDetectionExclusionEdgeDecisionRulesResponse.newBuilder()
+                .setEdgeDecisionEngineConfig(
+                    EdgeDecisionEngineConfig.newBuilder().setId("edge-config-with-2-rules").build())
+                .build());
+    verify(edgeObserver, times(1)).onCompleted();
+  }
+
+  @Test
   void testBulkDeleteDetectionExclusionRules() {
     BulkDeleteDetectionExclusionRulesRequest request =
         BulkDeleteDetectionExclusionRulesRequest.getDefaultInstance();

@@ -4,6 +4,7 @@ import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConf
 import ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget;
 import ai.traceable.detection.exclusion.config.service.v1.GetDetectionExclusionEdgeDecisionRulesRequest;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
+import ai.traceable.detection.exclusion.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.edge.decision.config.service.supplier.EdgeDecisionEngineConfigSupplier;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
 import ai.traceable.edge.decision.config.service.v1.EdgeInputKind;
@@ -23,6 +24,7 @@ public class DetectionExclusionEdgeDecisionConfigSupplier
       GetRulesFilter.newBuilder()
           .addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_BLOCK)
           .addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_ALLOW)
+          .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
           .setDisabled(false)
           .build();
   private final DetectionExclusionConfigServiceGrpc.DetectionExclusionConfigServiceBlockingStub

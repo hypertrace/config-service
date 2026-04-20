@@ -16,6 +16,8 @@ import ai.traceable.blocking.config.service.v2.IpResolutionStrategy;
 import ai.traceable.blocking.config.service.v2.blockingpolicy.exclusion.ExclusionRuleConverter;
 import ai.traceable.config.utils.SemanticVersioningComparator;
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionModsecRule;
+import ai.traceable.detection.exclusion.config.service.v1.RuleEvaluationPoint;
 import com.google.inject.Inject;
 import java.util.AbstractMap;
 import java.util.Collections;
@@ -109,6 +111,13 @@ public class BlockingPolicyConfigurationManager implements BlockingConfigManager
                     Map.Entry::getKey,
                     entry ->
                         entry.getValue().stream()
+                            .filter(
+                                // When LibtraceableVersion is present, the caller is the inline
+                                // agent — only include exclusion rules scoped to
+                                // INLINE_TRACING_AGENT evaluation point
+                                rule ->
+                                    !minLibtraceableVersion.isEmpty()
+                                        && isInlineAgentExclusionRule(rule))
                             .map(exclusionRuleConverter::convert)
                             .collect(Collectors.toList())));
 
@@ -235,5 +244,12 @@ public class BlockingPolicyConfigurationManager implements BlockingConfigManager
         .map(Component::getServiceName)
         .findAny()
         .orElse("");
+  }
+
+  private static boolean isInlineAgentExclusionRule(DetectionExclusionModsecRule rule) {
+    return rule.getRule()
+        .getRuleInfo()
+        .getRuleEvaluationPointsList()
+        .contains(RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT);
   }
 }

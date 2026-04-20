@@ -25,6 +25,9 @@ import ai.traceable.blocking.config.service.v2.blockingpolicy.exclusion.Exclusio
 import ai.traceable.config.utils.SemanticVersioningComparator;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionModsecRule;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleInfo;
+import ai.traceable.detection.exclusion.config.service.v1.RuleEvaluationPoint;
 import com.google.common.collect.ImmutableList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -300,9 +303,9 @@ class BlockingPolicyConfigurationManagerTest {
         .thenReturn(new BlockingPolicyAggregate<>(blockingDetailsList));
 
     DetectionExclusionModsecRule detectionExclusionModsecRule1 =
-        mock(DetectionExclusionModsecRule.class);
+        buildInlineExclusionModsecRule("rule-1");
     DetectionExclusionModsecRule detectionExclusionModsecRule2 =
-        mock(DetectionExclusionModsecRule.class);
+        buildInlineExclusionModsecRule("rule-2");
     ExclusionRule exclusionRule1 = mock(ExclusionRule.class);
     ExclusionRule exclusionRule2 = mock(ExclusionRule.class);
     when(mockExclusionRuleConverter.convert(detectionExclusionModsecRule1))
@@ -361,9 +364,9 @@ class BlockingPolicyConfigurationManagerTest {
         .thenReturn(new BlockingPolicyAggregate<>(blockingDetailsList));
 
     DetectionExclusionModsecRule detectionExclusionModsecRule1 =
-        mock(DetectionExclusionModsecRule.class);
+        buildInlineExclusionModsecRule("rule-1");
     DetectionExclusionModsecRule detectionExclusionModsecRule2 =
-        mock(DetectionExclusionModsecRule.class);
+        buildInlineExclusionModsecRule("rule-2");
     ExclusionRule exclusionRule1 = mock(ExclusionRule.class);
     ExclusionRule exclusionRule2 = mock(ExclusionRule.class);
     when(mockExclusionRuleConverter.convert(detectionExclusionModsecRule1))
@@ -447,9 +450,9 @@ class BlockingPolicyConfigurationManagerTest {
         .thenReturn(new BlockingPolicyAggregate<>(serviceBlockingDetails));
 
     DetectionExclusionModsecRule detectionExclusionModsecRule1 =
-        mock(DetectionExclusionModsecRule.class);
+        buildInlineExclusionModsecRule("rule-1");
     DetectionExclusionModsecRule detectionExclusionModsecRule2 =
-        mock(DetectionExclusionModsecRule.class);
+        buildInlineExclusionModsecRule("rule-2");
     ExclusionRule exclusionRule1 = mock(ExclusionRule.class);
     ExclusionRule exclusionRule2 = mock(ExclusionRule.class);
     when(mockExclusionRuleConverter.convert(detectionExclusionModsecRule1))
@@ -518,6 +521,97 @@ class BlockingPolicyConfigurationManagerTest {
     assertEquals(
         ImmutableList.of(exclusionRule2),
         responseElement.getBlockingPolicyConfiguration().getExclusionRulesList());
+  }
+
+  @Test
+  void testEdgeOnlyExclusionRulesFilteredOutForInlineAgent() {
+    BlockingDetails blockingDetails1 = mock(BlockingDetails.class);
+    List<BlockingDetails> blockingDetailsList = ImmutableList.of(blockingDetails1);
+
+    when(mockBlockingDetailsAggregator.getBlockingDetails(any(), any(), any()))
+        .thenReturn(new BlockingPolicyAggregate<>(blockingDetailsList));
+
+    DetectionExclusionModsecRule inlineRule = buildInlineExclusionModsecRule("inline-rule");
+    DetectionExclusionModsecRule edgeOnlyRule =
+        buildExclusionModsecRule(
+            "edge-only-rule", List.of(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE));
+    DetectionExclusionModsecRule platformOnlyRule =
+        buildExclusionModsecRule(
+            "platform-only-rule", List.of(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM));
+    DetectionExclusionModsecRule inlineAndEdgeRule =
+        buildExclusionModsecRule(
+            "inline-and-edge-rule",
+            List.of(
+                RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT,
+                RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE));
+
+    ExclusionRule convertedInlineRule = mock(ExclusionRule.class);
+    ExclusionRule convertedInlineAndEdgeRule = mock(ExclusionRule.class);
+    when(mockExclusionRuleConverter.convert(inlineRule)).thenReturn(convertedInlineRule);
+    when(mockExclusionRuleConverter.convert(inlineAndEdgeRule))
+        .thenReturn(convertedInlineAndEdgeRule);
+
+    Map<String, List<DetectionExclusionModsecRule>> exclusionRules =
+        Map.of("s1", List.of(inlineRule, edgeOnlyRule, platformOnlyRule, inlineAndEdgeRule));
+    when(mockBlockingRulesSupplier.getExclusionRules(any())).thenReturn(exclusionRules);
+
+    doReturn("hash-filtered")
+        .when(mockUuidGenerator)
+        .generateId(
+            BlockingPolicyConfiguration.newBuilder()
+                .addBlockingDetailsList(blockingDetails1)
+                .addExclusionRules(convertedInlineRule)
+                .addExclusionRules(convertedInlineAndEdgeRule)
+                .build());
+
+    BlockingPolicyConfigurationManager blockingPolicyConfigurationManager =
+        new BlockingPolicyConfigurationManager(
+            mockBlockingDetailsAggregator,
+            mockExclusionRuleConverter,
+            new SemanticVersioningComparator(),
+            mockUuidGenerator);
+
+    // Request with LibtraceableVersion → inline agent caller
+    List<BlockingConfigResponseElement> responseElements =
+        blockingPolicyConfigurationManager.generateBlockingElements(
+            requestContext,
+            Collections.singletonList(buildRequestElement("previousHash", "1.0.0", "s1")),
+            mockBlockingRulesSupplier);
+
+    assertEquals(1, responseElements.size());
+    BlockingConfigResponseElement responseElement = responseElements.get(0);
+    // Only inlineRule and inlineAndEdgeRule should be present; edgeOnlyRule and platformOnlyRule
+    // should be filtered out
+    assertEquals(
+        ImmutableList.of(convertedInlineRule, convertedInlineAndEdgeRule),
+        responseElement.getBlockingPolicyConfiguration().getExclusionRulesList());
+    // edgeOnlyRule and platformOnlyRule converter should never be called
+    Mockito.verify(mockExclusionRuleConverter, Mockito.never()).convert(edgeOnlyRule);
+    Mockito.verify(mockExclusionRuleConverter, Mockito.never()).convert(platformOnlyRule);
+  }
+
+  private static DetectionExclusionModsecRule buildExclusionModsecRule(
+      String ruleId, List<RuleEvaluationPoint> evaluationPoints) {
+    return DetectionExclusionModsecRule.newBuilder()
+        .setRule(
+            DetectionExclusionRule.newBuilder()
+                .setId(ruleId)
+                .setRuleInfo(
+                    DetectionExclusionRuleInfo.newBuilder()
+                        .addAllRuleEvaluationPoints(evaluationPoints)))
+        .build();
+  }
+
+  private static DetectionExclusionModsecRule buildInlineExclusionModsecRule(String ruleId) {
+    return DetectionExclusionModsecRule.newBuilder()
+        .setRule(
+            DetectionExclusionRule.newBuilder()
+                .setId(ruleId)
+                .setRuleInfo(
+                    DetectionExclusionRuleInfo.newBuilder()
+                        .addRuleEvaluationPoints(
+                            RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT)))
+        .build();
   }
 
   private static BlockingConfigRequestElement buildRequestElement(
