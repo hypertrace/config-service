@@ -1931,6 +1931,38 @@ class WafIntegrationConfigRequestValidatorTest {
             wafIntegrationConfigRequestValidator.validateOrThrow(
                 request4, REQUEST_CONTEXT, existingWafIntegrations));
 
+    // non-numeric akamai policy configuration id
+    CreateWafIntegrationRequest request5 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setAkamaiIntegrationParams(
+                        AkamaiIntegrationParams.newBuilder()
+                            .setAkamaiIntegrationDetails(
+                                AkamaiIntegrationDetails.newBuilder()
+                                    .setHost("https://localhost:9000")
+                                    .setAkamaiPolicyDetails(
+                                        AkamaiPolicyDetails.newBuilder()
+                                            .setPolicyId("policy1")
+                                            .setAkamaiPolicyConfigurationId(
+                                                "275316_TESTCLIENTLIST01")
+                                            .setNetworkListId("network-list-id")
+                                            .build())
+                                    .setAkamaiAuthCredentials(
+                                        AkamaiAuthCredentials.newBuilder()
+                                            .setEncryptedAccessToken("access-token")
+                                            .setEncryptedClientToken("client-token")
+                                            .setEncryptedClientSecret("client-secret")
+                                            .setEncryptionKeyId("key-id"))))
+                    .build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                request5, REQUEST_CONTEXT, existingWafIntegrations));
+
     // valid request
     CreateWafIntegrationRequest validRequest =
         CreateWafIntegrationRequest.newBuilder()
@@ -1945,7 +1977,7 @@ class WafIntegrationConfigRequestValidatorTest {
                                     .setAkamaiPolicyDetails(
                                         AkamaiPolicyDetails.newBuilder()
                                             .setPolicyId("policy1")
-                                            .setAkamaiPolicyConfigurationId("config1")
+                                            .setAkamaiPolicyConfigurationId("1")
                                             .setNetworkListId("network-list-id")
                                             .build())
                                     .setAkamaiAuthCredentials(
@@ -1976,7 +2008,7 @@ class WafIntegrationConfigRequestValidatorTest {
                                     .setAkamaiPolicyDetails(
                                         AkamaiPolicyDetails.newBuilder()
                                             .setPolicyId(EXISTING_POLICY_ID)
-                                            .setAkamaiPolicyConfigurationId("config1")
+                                            .setAkamaiPolicyConfigurationId("1")
                                             .build())
                                     .setAkamaiAuthCredentials(
                                         AkamaiAuthCredentials.newBuilder()

@@ -1242,7 +1242,7 @@ class WafIntegrationConfigServiceImplTest {
                             .setAkamaiPolicyDetails(
                                 AkamaiPolicyDetails.newBuilder()
                                     .setPolicyId("policy2")
-                                    .setAkamaiPolicyConfigurationId("config2")
+                                    .setAkamaiPolicyConfigurationId("2")
                                     .setNetworkListId("network2")
                                     .build()))
                     .build())
@@ -1268,7 +1268,7 @@ class WafIntegrationConfigServiceImplTest {
             .getAkamaiPolicyDetails()
             .getPolicyId());
     assertEquals(
-        "config2",
+        "2",
         akamaiIntegrationParams
             .getAkamaiIntegrationDetails()
             .getAkamaiPolicyDetails()
@@ -1915,7 +1915,7 @@ class WafIntegrationConfigServiceImplTest {
                             .setAkamaiPolicyDetails(
                                 AkamaiPolicyDetails.newBuilder()
                                     .setPolicyId("policy1")
-                                    .setAkamaiPolicyConfigurationId("configId")
+                                    .setAkamaiPolicyConfigurationId("1")
                                     .setNetworkListId("network-list-id")
                                     .build())
                             .setAkamaiAuthCredentials(
@@ -2321,7 +2321,7 @@ class WafIntegrationConfigServiceImplTest {
                             .setAkamaiPolicyDetails(
                                 AkamaiPolicyDetails.newBuilder()
                                     .setPolicyId("policy1")
-                                    .setAkamaiPolicyConfigurationId("configId")
+                                    .setAkamaiPolicyConfigurationId("1")
                                     .setNetworkListId("old-network-list-id")
                                     .build())
                             .setAkamaiAuthCredentials(
@@ -2370,7 +2370,7 @@ class WafIntegrationConfigServiceImplTest {
                             .setAkamaiPolicyDetails(
                                 AkamaiPolicyDetails.newBuilder()
                                     .setPolicyId("policy2")
-                                    .setAkamaiPolicyConfigurationId("configId2")
+                                    .setAkamaiPolicyConfigurationId("2")
                                     .setListConfig(
                                         AkamaiListConfig.newBuilder()
                                             .setNetworkList(
@@ -2422,7 +2422,7 @@ class WafIntegrationConfigServiceImplTest {
                             .setAkamaiPolicyDetails(
                                 AkamaiPolicyDetails.newBuilder()
                                     .setPolicyId("policy3")
-                                    .setAkamaiPolicyConfigurationId("configId3")
+                                    .setAkamaiPolicyConfigurationId("3")
                                     .setListConfig(
                                         AkamaiListConfig.newBuilder()
                                             .setClientList(

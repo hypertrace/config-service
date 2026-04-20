@@ -767,6 +767,7 @@ public class WafIntegrationConfigRequestValidator {
         akamaiPolicyDetails, AkamaiPolicyDetails.POLICY_ID_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
         akamaiPolicyDetails, AkamaiPolicyDetails.AKAMAI_POLICY_CONFIGURATION_ID_FIELD_NUMBER);
+    validateAkamaiConfigurationIdOrThrow(akamaiPolicyDetails.getAkamaiPolicyConfigurationId());
 
     boolean hasDeprecatedNetworkListId = !akamaiPolicyDetails.getNetworkListId().isEmpty();
     boolean hasListConfig = akamaiPolicyDetails.hasListConfig();
@@ -779,6 +780,17 @@ public class WafIntegrationConfigRequestValidator {
 
     if (hasListConfig) {
       validateAkamaiListConfig(akamaiPolicyDetails.getListConfig());
+    }
+  }
+
+  private void validateAkamaiConfigurationIdOrThrow(String akamaiConfigurationId) {
+    try {
+      Long.parseLong(akamaiConfigurationId);
+    } catch (NumberFormatException e) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              "akamai policy configuration id must be a numeric Akamai configuration id")
+          .asRuntimeException();
     }
   }
 
