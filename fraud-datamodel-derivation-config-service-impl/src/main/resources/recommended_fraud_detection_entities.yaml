@@ -3,6 +3,10 @@
 # They extract sensitive data from request/response bodies for security monitoring
 
 entities:
+  # ---------------------------------------------------------------------------
+  # User Information
+  # ---------------------------------------------------------------------------
+
   - id: "recommended_entity_email_address"
     column_name: "email_address"
     data:
@@ -24,6 +28,212 @@ entities:
                 location_type: EXTRACTION_LOCATION_TYPE_REQUEST_BODY
                 key: "$..email, $..[?(@=~/(?i)(e)?mail[\\s\\-_]?(addr(ess)?)?|e?mail/)]"
                 key_match_type: KEY_MATCH_TYPE_REGEX
+
+  - id: "recommended_entity_first_name"
+    column_name: "first_name"
+    data:
+      display_name: "First Name"
+      description: "User's first name extracted from request body for identity verification and fraud detection"
+      disabled: true
+      internal: false
+      category: ENTITY_CATEGORY_RECOMMENDED
+      event_kind:
+        kind_id: "system_event_kind_string"
+      span_projection:
+        event_derivation_configs:
+          - scope:
+              environment_scope:
+                environments: []
+            disabled: false
+            span_extraction:
+              location:
+                location_type: EXTRACTION_LOCATION_TYPE_REQUEST_BODY
+                key: "$..first_name, $..firstName, $..[?(@=~/(?i)first[\\s\\-_]?name/)]"
+                key_match_type: KEY_MATCH_TYPE_REGEX
+
+  - id: "recommended_entity_last_name"
+    column_name: "last_name"
+    data:
+      display_name: "Last Name"
+      description: "User's last name extracted from request body for identity verification and fraud detection"
+      disabled: true
+      internal: false
+      category: ENTITY_CATEGORY_RECOMMENDED
+      event_kind:
+        kind_id: "system_event_kind_string"
+      span_projection:
+        event_derivation_configs:
+          - scope:
+              environment_scope:
+                environments: []
+            disabled: false
+            span_extraction:
+              location:
+                location_type: EXTRACTION_LOCATION_TYPE_REQUEST_BODY
+                key: "$..last_name, $..lastName, $..surname, $..[?(@=~/(?i)(last|sur)[\\s\\-_]?name/)]"
+                key_match_type: KEY_MATCH_TYPE_REGEX
+
+  - id: "recommended_entity_phone_number"
+    column_name: "phone_number"
+    data:
+      display_name: "Phone Number"
+      description: "Phone number extracted from request body for rate limiting and account verification"
+      disabled: true
+      internal: false
+      category: ENTITY_CATEGORY_RECOMMENDED
+      event_kind:
+        kind_id: "system_event_kind_phone_number"
+      span_projection:
+        event_derivation_configs:
+          - scope:
+              environment_scope:
+                environments: []
+            disabled: false
+            span_extraction:
+              location:
+                location_type: EXTRACTION_LOCATION_TYPE_REQUEST_BODY
+                key: "$..phone, $..phone_number, $..phoneNumber, $..mobile, $..[?(@=~/(?i)(phone|mobile|cell|tel(ephone)?)[\\s\\-_]?(number|num|no)?/)]"
+                key_match_type: KEY_MATCH_TYPE_REGEX
+
+  - id: "recommended_entity_social_security_number"
+    column_name: "social_security_number"
+    data:
+      display_name: "Social Security Number"
+      description: "SSN extracted from request body for identity fraud detection"
+      disabled: true
+      internal: false
+      category: ENTITY_CATEGORY_RECOMMENDED
+      event_kind:
+        kind_id: "system_event_kind_string"
+      span_projection:
+        event_derivation_configs:
+          - scope:
+              environment_scope:
+                environments: []
+            disabled: false
+            span_extraction:
+              location:
+                location_type: EXTRACTION_LOCATION_TYPE_REQUEST_BODY
+                key: "$..ssn, $..social_security, $..socialSecurity, $..[?(@=~/(?i)(social[\\s\\-_]?security[\\s\\-_]?(number|num|no)?|ssn)/)]"
+                key_match_type: KEY_MATCH_TYPE_REGEX
+
+  - id: "recommended_entity_vin"
+    column_name: "vin"
+    data:
+      display_name: "VIN"
+      description: "Vehicle Identification Number extracted from request body for automotive fraud detection"
+      disabled: true
+      internal: false
+      category: ENTITY_CATEGORY_RECOMMENDED
+      event_kind:
+        kind_id: "system_event_kind_string"
+      span_projection:
+        event_derivation_configs:
+          - scope:
+              environment_scope:
+                environments: []
+            disabled: false
+            span_extraction:
+              location:
+                location_type: EXTRACTION_LOCATION_TYPE_REQUEST_BODY
+                key: "$..vin, $..vehicle_identification_number, $..vehicleIdentificationNumber, $..[?(@=~/(?i)v(ehicle)?[\\s\\-_]?i(dentification)?[\\s\\-_]?n(umber)?/)]"
+                key_match_type: KEY_MATCH_TYPE_REGEX
+
+  - id: "recommended_entity_billing_address"
+    column_name: "billing_address"
+    data:
+      display_name: "Billing Address"
+      description: "Billing address extracted from request body for address verification and fraud detection"
+      disabled: true
+      internal: false
+      category: ENTITY_CATEGORY_RECOMMENDED
+      event_kind:
+        kind_id: "system_event_kind_string"
+      span_projection:
+        event_derivation_configs:
+          - scope:
+              environment_scope:
+                environments: []
+            disabled: false
+            span_extraction:
+              location:
+                location_type: EXTRACTION_LOCATION_TYPE_REQUEST_BODY
+                key: "$..billing_address, $..billingAddress, $..[?(@=~/(?i)billing[\\s\\-_]?addr(ess)?/)]"
+                key_match_type: KEY_MATCH_TYPE_REGEX
+
+  - id: "recommended_entity_shipping_address"
+    column_name: "shipping_address"
+    data:
+      display_name: "Shipping Address"
+      description: "Shipping address extracted from request body for address mismatch and fraud detection"
+      disabled: true
+      internal: false
+      category: ENTITY_CATEGORY_RECOMMENDED
+      event_kind:
+        kind_id: "system_event_kind_string"
+      span_projection:
+        event_derivation_configs:
+          - scope:
+              environment_scope:
+                environments: []
+            disabled: false
+            span_extraction:
+              location:
+                location_type: EXTRACTION_LOCATION_TYPE_REQUEST_BODY
+                key: "$..shipping_address, $..shippingAddress, $..delivery_address, $..deliveryAddress, $..[?(@=~/(?i)(shipping|delivery)[\\s\\-_]?addr(ess)?/)]"
+                key_match_type: KEY_MATCH_TYPE_REGEX
+
+  # ---------------------------------------------------------------------------
+  # Account Information
+  # ---------------------------------------------------------------------------
+
+  - id: "recommended_entity_login_username"
+    column_name: "login_username"
+    data:
+      display_name: "Login Username"
+      description: "Login username extracted from request body for credential stuffing and brute force detection"
+      disabled: true
+      internal: false
+      category: ENTITY_CATEGORY_RECOMMENDED
+      event_kind:
+        kind_id: "system_event_kind_string"
+      span_projection:
+        event_derivation_configs:
+          - scope:
+              environment_scope:
+                environments: []
+            disabled: false
+            span_extraction:
+              location:
+                location_type: EXTRACTION_LOCATION_TYPE_REQUEST_BODY
+                key: "$..username, $..user_name, $..userName, $..login, $..[?(@=~/(?i)(user|login)[\\s\\-_]?name/)]"
+                key_match_type: KEY_MATCH_TYPE_REGEX
+
+  - id: "recommended_entity_login_password"
+    column_name: "login_password"
+    data:
+      display_name: "Login Password"
+      description: "Login password extracted from request body for credential stuffing and brute force detection"
+      disabled: true
+      internal: false
+      category: ENTITY_CATEGORY_RECOMMENDED
+      event_kind:
+        kind_id: "system_event_kind_string"
+      span_projection:
+        event_derivation_configs:
+          - scope:
+              environment_scope:
+                environments: []
+            disabled: false
+            span_extraction:
+              location:
+                location_type: EXTRACTION_LOCATION_TYPE_REQUEST_BODY
+                key: "$..password, $..passwd, $..pass_word, $..passWord, $..[?(@=~/(?i)pass(word|wd)?/)]"
+                key_match_type: KEY_MATCH_TYPE_REGEX
+
+  # ---------------------------------------------------------------------------
+  # Payment Information
+  # ---------------------------------------------------------------------------
 
   - id: "recommended_entity_credit_card_number"
     column_name: "credit_card_number"
@@ -67,4 +277,92 @@ entities:
               location:
                 location_type: EXTRACTION_LOCATION_TYPE_REQUEST_BODY
                 key: "$..account_number, $..accountNumber, $..iban, $..[?(@=~/(?i)(bank[\\s\\-_]?)?account[\\s\\-_]?(number|num|no)/)]"
+                key_match_type: KEY_MATCH_TYPE_REGEX
+
+  - id: "recommended_entity_payment_method"
+    column_name: "payment_method"
+    data:
+      display_name: "Payment Method"
+      description: "Payment method type for monitoring payment fraud patterns"
+      disabled: true
+      internal: false
+      category: ENTITY_CATEGORY_RECOMMENDED
+      event_kind:
+        kind_id: "system_event_kind_string"
+      span_projection:
+        event_derivation_configs:
+          - scope:
+              environment_scope:
+                environments: []
+            disabled: false
+            span_extraction:
+              location:
+                location_type: EXTRACTION_LOCATION_TYPE_REQUEST_BODY
+                key: "$..payment_method, $..paymentMethod, $..payment_type, $..paymentType, $..[?(@=~/(?i)payment[\\s\\-_]?(method|type)/)]"
+                key_match_type: KEY_MATCH_TYPE_REGEX
+
+  - id: "recommended_entity_transaction_amount"
+    column_name: "transaction_amount"
+    data:
+      display_name: "Transaction Amount"
+      description: "Transaction amount for monitoring unusual spending patterns and fraud detection"
+      disabled: true
+      internal: false
+      category: ENTITY_CATEGORY_RECOMMENDED
+      event_kind:
+        kind_id: "system_event_kind_float"
+      span_projection:
+        event_derivation_configs:
+          - scope:
+              environment_scope:
+                environments: []
+            disabled: false
+            span_extraction:
+              location:
+                location_type: EXTRACTION_LOCATION_TYPE_REQUEST_BODY
+                key: "$..amount, $..transaction_amount, $..transactionAmount, $..total, $..price, $..[?(@=~/(?i)(transaction[\\s\\-_]?)?amount|total[\\s\\-_]?price/)]"
+                key_match_type: KEY_MATCH_TYPE_REGEX
+
+  - id: "recommended_entity_currency_code"
+    column_name: "currency_code"
+    data:
+      display_name: "Currency Code"
+      description: "Currency code for detecting cross-currency fraud and money laundering patterns"
+      disabled: true
+      internal: false
+      category: ENTITY_CATEGORY_RECOMMENDED
+      event_kind:
+        kind_id: "system_event_kind_string"
+      span_projection:
+        event_derivation_configs:
+          - scope:
+              environment_scope:
+                environments: []
+            disabled: false
+            span_extraction:
+              location:
+                location_type: EXTRACTION_LOCATION_TYPE_REQUEST_BODY
+                key: "$..currency, $..currency_code, $..currencyCode, $..[?(@=~/(?i)currency[\\s\\-_]?(code)?/)]"
+                key_match_type: KEY_MATCH_TYPE_REGEX
+
+  - id: "recommended_entity_exchange_rate"
+    column_name: "exchange_rate"
+    data:
+      display_name: "Exchange Rate"
+      description: "Exchange rate extracted from request body for currency manipulation and fraud detection"
+      disabled: true
+      internal: false
+      category: ENTITY_CATEGORY_RECOMMENDED
+      event_kind:
+        kind_id: "system_event_kind_float"
+      span_projection:
+        event_derivation_configs:
+          - scope:
+              environment_scope:
+                environments: []
+            disabled: false
+            span_extraction:
+              location:
+                location_type: EXTRACTION_LOCATION_TYPE_REQUEST_BODY
+                key: "$..exchange_rate, $..exchangeRate, $..fx_rate, $..fxRate, $..[?(@=~/(?i)(exchange|fx)[\\s\\-_]?rate/)]"
                 key_match_type: KEY_MATCH_TYPE_REGEX
