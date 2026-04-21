@@ -1,10 +1,13 @@
 package ai.traceable.aiapp.protection.config.service.firewall.cache;
 
 import ai.traceable.aiapp.protection.config.service.firewall.AiAppConfigServiceConfig;
+import ai.traceable.aiapp.protection.config.service.firewall.converter.PiiRuleToCustomSignatureConfigConverter;
+import ai.traceable.aiapp.protection.config.service.v1.AiAppConfigServiceGrpc;
 import ai.traceable.aiapp.protection.config.service.v1.GetAiAppEvaluationConfigContextRequest;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigManager;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatusChange;
+import ai.traceable.data.classification.cache.client.DataClassificationClient;
 import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
 import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
@@ -45,14 +48,20 @@ public class AiAppConfigContextCacheProvider extends AiAppConfigContextClientPro
       CachedApiMappingProvider cachedApiMappingProvider,
       DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub
           dataClassificationConfigServiceStub,
-      ProtectionEngineDataTypeTranslator protectionEngineDataTypeTranslator) {
+      ProtectionEngineDataTypeTranslator protectionEngineDataTypeTranslator,
+      DataClassificationClient dataClassificationClient,
+      AiAppConfigServiceGrpc.AiAppConfigServiceBlockingStub aiAppConfigService,
+      PiiRuleToCustomSignatureConfigConverter piiRuleToCustomSignatureConfigConverter) {
     super(
         anomalyDetectionConfigManager,
         aiAppRulesProvider,
         cachedServiceMappingProvider,
         cachedApiMappingProvider,
         dataClassificationConfigServiceStub,
-        protectionEngineDataTypeTranslator);
+        protectionEngineDataTypeTranslator,
+        dataClassificationClient,
+        aiAppConfigService,
+        piiRuleToCustomSignatureConfigConverter);
     this.cache = buildCache(config);
     try {
       kafkaLiveEventListener.registerCallback(this::handleConfigChangeEvent);

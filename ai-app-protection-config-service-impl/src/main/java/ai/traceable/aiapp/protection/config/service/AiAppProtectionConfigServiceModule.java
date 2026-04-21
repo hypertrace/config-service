@@ -2,10 +2,13 @@ package ai.traceable.aiapp.protection.config.service;
 
 import ai.traceable.aiapp.protection.config.service.firewall.AiAppConfigServiceConfig;
 import ai.traceable.aiapp.protection.config.service.firewall.AiAppEvaluationConfigContextModule;
+import ai.traceable.aiapp.protection.config.service.v1.AiAppConfigServiceGrpc;
 import ai.traceable.anomaly.config.service.AnomalyConfigServiceConfig;
 import ai.traceable.anomaly.config.service.v1.detector.DetectorConfigServiceGrpc;
 import ai.traceable.anomaly.config.service.v1.global.AnomalyGlobalConfigServiceGrpc;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc;
+import ai.traceable.data.classification.cache.client.DataClassificationCachingClientImpl;
+import ai.traceable.data.classification.cache.client.DataClassificationClient;
 import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingConfigServiceGrpc;
 import com.google.inject.AbstractModule;
@@ -78,5 +81,22 @@ public class AiAppProtectionConfigServiceModule extends AbstractModule {
     return DataClassificationConfigServiceGrpc.newBlockingStub(this.channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  @Singleton
+  AiAppConfigServiceGrpc.AiAppConfigServiceBlockingStub provideAiAppConfigService() {
+    return AiAppConfigServiceGrpc.newBlockingStub(this.channel)
+        .withCallCredentials(
+            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  @Singleton
+  DataClassificationClient provideDataClassificationClient(
+      DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub stub,
+      AiAppConfigServiceConfig aiAppConfigServiceConfig) {
+    return new DataClassificationCachingClientImpl(
+        stub, aiAppConfigServiceConfig.getDataClassificationInfoCachingClientConfig());
   }
 }

@@ -15,6 +15,7 @@ dependencies {
   implementation(projects.anomalyConfigServiceApi)
   implementation(projects.anomalyConfigServiceImpl)
   implementation(projects.entityFetcherCache)
+  implementation(projects.dataClassificationClient)
   implementation(projects.dataClassificationConfigServiceApi)
   implementation(commonLibs.traceable.protection.engine.processor.data.type)
   implementation(commonLibs.traceable.protection.engine.config.customsignature)
@@ -31,6 +32,8 @@ dependencies {
   implementation(localLibs.hypertrace.configservice.changeeventapi)
   implementation(commonLibs.traceable.protection.rules.aiapp)
   implementation(commonLibs.traceable.protection.engine.config.aifirewall)
+  implementation(commonLibs.traceable.protection.engine.config.customsignature)
+  implementation(commonLibs.traceable.protection.engine.processor.conditionexpression)
   implementation(commonLibs.traceable.protection.engine.processing.common)
 
   annotationProcessor(commonLibs.lombok)

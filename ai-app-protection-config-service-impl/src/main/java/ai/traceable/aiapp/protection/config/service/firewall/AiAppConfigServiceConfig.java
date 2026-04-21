@@ -1,5 +1,6 @@
 package ai.traceable.aiapp.protection.config.service.firewall;
 
+import ai.traceable.data.classification.cache.config.DataClassificationInfoCachingClientConfig;
 import com.typesafe.config.Config;
 import jakarta.inject.Singleton;
 import java.time.Duration;
@@ -22,6 +23,7 @@ public class AiAppConfigServiceConfig {
   private final int aiAppConfigContextCacheMaxSize;
   private final Duration aiAppConfigContextCacheRefreshAfterWriteDuration;
   private final int aiAppConfigContextCacheThreadPoolSize;
+  private final DataClassificationInfoCachingClientConfig dataClassificationInfoCachingClientConfig;
 
   public AiAppConfigServiceConfig(Config config) {
     this.aiAppConfigContextCacheMaxSize =
@@ -36,5 +38,7 @@ public class AiAppConfigServiceConfig {
         config.hasPath(AI_APP_CONFIG_CONTEXT_CACHE_THREAD_POOL_SIZE)
             ? config.getInt(AI_APP_CONFIG_CONTEXT_CACHE_THREAD_POOL_SIZE)
             : DEFAULT_AI_APP_CONFIG_CONTEXT_CACHE_THREAD_POOL_SIZE;
+    this.dataClassificationInfoCachingClientConfig =
+        DataClassificationInfoCachingClientConfig.from(config);
   }
 }
