@@ -140,7 +140,8 @@ message ParamKeyConfig {
 
 message ParamValueConfig {
   ParamFilterMode filter_mode = 1;
-  repeated string param_key_regexes = 2;
+  repeated string param_key_regexes = 2 [deprecated = true];
+  repeated string param_value_regexes = 3;
 }
 
 message AnomalyDetectionConfig {
