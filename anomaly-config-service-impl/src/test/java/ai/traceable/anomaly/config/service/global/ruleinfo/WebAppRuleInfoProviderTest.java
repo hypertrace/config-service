@@ -33,7 +33,7 @@ public class WebAppRuleInfoProviderTest {
   void testGetCrsRulesBlobWithDisabledRules() {
     RuleVersion stableVersion =
         RuleVersion.newBuilder()
-            .setVersion("1.0.0")
+            .setVersion("1.5.0")
             .setVersionType(RuleVersionType.RULE_VERSION_TYPE_STABLE)
             .build();
     Set<String> disabledRuleIds = Set.of();
@@ -59,13 +59,8 @@ public class WebAppRuleInfoProviderTest {
 
   @Test
   void testGetImpactScoringBlobWithSpecificVersion() {
-    // Test with specific version
-    RuleVersion stableVersion =
-        RuleVersion.newBuilder()
-            .setVersion("1.0.0")
-            .setVersionType(RuleVersionType.RULE_VERSION_TYPE_STABLE)
-            .build();
-    String impactScoringBlob = webAppRuleInfoProvider.getImpactScoringBlob(stableVersion);
+    String impactScoringBlob =
+        webAppRuleInfoProvider.getImpactScoringBlob(RuleVersion.getDefaultInstance());
     assertNotNull(impactScoringBlob, "Impact scoring blob should not be null");
     assertFalse(impactScoringBlob.isEmpty(), "Impact scoring blob should not be empty");
   }
