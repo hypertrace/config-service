@@ -5,6 +5,7 @@ package ai.traceable.fraud.policy.config.service.v1;
 import "ai/traceable/edge/decision/config/service/v1/edge_decision_rule.proto";
 import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
 import "google/protobuf/duration.proto";
+import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 
 option java_multiple_files = true;
@@ -27,6 +28,8 @@ message BrowserBypassTrainingConfig {
   google.protobuf.Duration window_size = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Lookback/lookahead duration around the target API to treat calls as a legitimate pre-target-post flow"];
   // used for TTL to assess when to start re-training
   google.protobuf.Timestamp last_trained = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "When the model was last trained; used as TTL to decide when to re-train"];
+  // reference to the config that was generated as a part of the training
+  google.protobuf.Value training_config = 5 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "The pre/post api config stats that were generated as a part of the training job."];
 }
 
 message BrowserBypassPolicyGenerationConfig {
