@@ -1,7 +1,9 @@
 package ai.traceable.fraud.datamodel.event.kind.transformationfunction;
 
 import ai.traceable.fraud.datamodel.event.kind.eventkind.EventKindHierarchyResolver;
+import ai.traceable.fraud.datamodel.event.kind.eventkind.EventKindProvider;
 import ai.traceable.fraud.datamodel.event.kind.v1.ComplexDataModelEventKind;
+import ai.traceable.fraud.datamodel.event.kind.v1.EventKindFilter;
 import ai.traceable.fraud.datamodel.event.kind.v1.TransformationFunction;
 import ai.traceable.fraud.datamodel.event.kind.v1.TransformationFunctionsByKind;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -32,9 +34,10 @@ public class DefaultTransformationFunctionProvider implements TransformationFunc
   private final EventKindHierarchyResolver hierarchyResolver;
 
   @Inject
-  public DefaultTransformationFunctionProvider(EventKindHierarchyResolver hierarchyResolver) {
+  public DefaultTransformationFunctionProvider(
+      EventKindHierarchyResolver hierarchyResolver, EventKindProvider eventKindProvider) {
     this.hierarchyResolver = hierarchyResolver;
-    this.transformationFunctions = loadFunctions();
+    this.transformationFunctions = loadFunctions(eventKindProvider);
   }
 
   @Override
@@ -87,7 +90,7 @@ public class DefaultTransformationFunctionProvider implements TransformationFunc
     return false;
   }
 
-  private List<TransformationFunction> loadFunctions() {
+  private List<TransformationFunction> loadFunctions(EventKindProvider eventKindProvider) {
     try {
       JsonNode root =
           YAML_MAPPER.readValue(
@@ -106,10 +109,33 @@ public class DefaultTransformationFunctionProvider implements TransformationFunc
         JSON_PARSER.merge(json, builder);
         result.add(builder.build());
       }
+      appendTypeCastFunctions(result, eventKindProvider);
       return Collections.unmodifiableList(result);
     } catch (Exception e) {
       log.error("Failed to load transformation functions from {}", RESOURCE_FILE, e);
       return Collections.emptyList();
+    }
+  }
+
+  /**
+   * Appends {@code type_cast_to_<event_kind_id>} for every loaded kind. JEXL is pass-through only;
+   * {@code validation_regex} on kinds is not evaluated here (can be enforced elsewhere later).
+   */
+  private static void appendTypeCastFunctions(
+      List<TransformationFunction> to, EventKindProvider kinds) {
+    ComplexDataModelEventKind stringIn =
+        ComplexDataModelEventKind.newBuilder().setKindId("system_event_kind_string").build();
+    for (var k : kinds.getEventKinds(EventKindFilter.getDefaultInstance())) {
+      String id = k.getId();
+      to.add(
+          TransformationFunction.newBuilder()
+              .setId("type_cast_to_" + id)
+              .setDisplayName("Cast to " + k.getDisplayName())
+              .setDescription("Narrow to " + k.getDisplayName() + " for type safety.")
+              .addInputKinds(stringIn)
+              .setOutputKind(ComplexDataModelEventKind.newBuilder().setKindId(id).build())
+              .setJexlTemplate("(${input})")
+              .build());
     }
   }
 }

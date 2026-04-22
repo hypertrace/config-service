@@ -22,9 +22,9 @@ class DefaultTransformationFunctionProviderTest {
 
   @BeforeEach
   void setUp() {
-    EventKindHierarchyResolver resolver =
-        new EventKindHierarchyResolver(new DefaultEventKindProvider());
-    provider = new DefaultTransformationFunctionProvider(resolver);
+    DefaultEventKindProvider eventKinds = new DefaultEventKindProvider();
+    EventKindHierarchyResolver resolver = new EventKindHierarchyResolver(eventKinds);
+    provider = new DefaultTransformationFunctionProvider(resolver, eventKinds);
   }
 
   @Test
@@ -42,6 +42,9 @@ class DefaultTransformationFunctionProviderTest {
     assertTrue(functionIds.contains("system_defined_function_base64_decode"));
     // Inherited from value kind
     assertTrue(functionIds.contains("system_defined_function_to_string"));
+    assertTrue(
+        functionIds.contains("type_cast_to_system_event_kind_email"),
+        "Generated type cast uses id type_cast_to_<event_kind_id>");
   }
 
   @Test
