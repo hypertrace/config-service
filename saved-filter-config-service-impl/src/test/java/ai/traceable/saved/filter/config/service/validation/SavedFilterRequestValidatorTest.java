@@ -819,6 +819,45 @@ class SavedFilterRequestValidatorTest {
         statusRuntimeException.getMessage());
   }
 
+  @Test
+  void testSameScopeFieldAllowedWithoutJoinCheck() {
+    when(mockRequestContext.getUserId()).thenReturn(Optional.of(TEST_USER_ID));
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+    when(mockAttributeServiceCachedClient.get(mockRequestContext, "API", "apiId"))
+        .thenReturn(Optional.of(AttributeMetadata.newBuilder().setValueKind(TYPE_STRING).build()));
+
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateSavedFilterRequest.newBuilder()
+                    .setName("f1")
+                    .setScope("API")
+                    .setVisibility(
+                        Visibility.newBuilder()
+                            .setPublic(PublicVisibility.newBuilder().build())
+                            .build())
+                    .setFilterCriteria(
+                        FilterCriteria.newBuilder()
+                            .setRelationalFilter(
+                                RelationalFilterCondition.newBuilder()
+                                    .setLhsExpression(
+                                        Expression.newBuilder()
+                                            .setField(
+                                                Field.newBuilder().setKey("apiId").setScope("API"))
+                                            .build())
+                                    .setOperator(RelationalOperator.RELATIONAL_OPERATOR_EQ)
+                                    .setRhsExpression(
+                                        Expression.newBuilder()
+                                            .setValue(
+                                                Value.newBuilder()
+                                                    .setStringValue("some-api-id")
+                                                    .build())
+                                            .build())
+                                    .build()))
+                    .build()));
+  }
+
   private static FilterCriteria buildFilterCriteria() {
     return FilterCriteria.newBuilder()
         .setRelationalFilter(

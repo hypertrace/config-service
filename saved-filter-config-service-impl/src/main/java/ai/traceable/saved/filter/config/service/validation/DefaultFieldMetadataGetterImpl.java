@@ -24,7 +24,7 @@ public class DefaultFieldMetadataGetterImpl implements FieldMetadataGetter {
   public AttributeMetadata getOrThrow(Field field, ValidationContext validationContext) {
     String effectiveScope = validationContext.scope();
 
-    if (field.hasScope()) {
+    if (field.hasScope() && !field.getScope().equals(validationContext.scope())) {
       joinFeasibilityChecker.validate(validationContext.scope(), field.getScope());
       effectiveScope = field.getScope();
     }
