@@ -127,6 +127,9 @@ public class DefaultTransformationFunctionProvider implements TransformationFunc
         ComplexDataModelEventKind.newBuilder().setKindId("system_event_kind_string").build();
     for (var k : kinds.getEventKinds(EventKindFilter.getDefaultInstance())) {
       String id = k.getId();
+      if ("system_event_kind_string".equals(id)) {
+        continue;
+      }
       to.add(
           TransformationFunction.newBuilder()
               .setId("type_cast_to_" + id)
