@@ -63,42 +63,41 @@ public class EventKindHierarchyResolver {
   }
 
   /**
-   * Checks if a function's input kind is compatible with the requested kind. A function is
-   * compatible if either the kinds match exactly or the function's input kind is an ancestor of the
-   * requested kind.
+   * Checks if a candidate kind is assignable to a target kind. A candidate is assignable if either
+   * the kinds match exactly or the target kind is an ancestor of the candidate kind.
    */
   public boolean isCompatible(
-      ComplexDataModelEventKind functionInputKind, ComplexDataModelEventKind requestedKind) {
+      ComplexDataModelEventKind targetKind, ComplexDataModelEventKind candidateKind) {
     // Handle type_parameter_ref (generic type parameter) - matches anything
-    if (functionInputKind.hasTypeParameterRef()) {
+    if (targetKind.hasTypeParameterRef()) {
       return true;
     }
 
     // Handle simple kind_id matching with hierarchy
-    if (functionInputKind.hasKindId() && requestedKind.hasKindId()) {
-      return isKindCompatible(functionInputKind.getKindId(), requestedKind.getKindId());
+    if (targetKind.hasKindId() && candidateKind.hasKindId()) {
+      return isKindCompatible(targetKind.getKindId(), candidateKind.getKindId());
     }
 
     // Handle array types - check element type compatibility
-    if (functionInputKind.hasArrayOf() && requestedKind.hasArrayOf()) {
-      return isCompatible(functionInputKind.getArrayOf(), requestedKind.getArrayOf());
+    if (targetKind.hasArrayOf() && candidateKind.hasArrayOf()) {
+      return isCompatible(targetKind.getArrayOf(), candidateKind.getArrayOf());
     }
 
     return false;
   }
 
   /**
-   * Checks if the function's kind is compatible with the requested kind. Compatible means either
-   * exact match or function kind is an ancestor of requested kind
+   * Checks if the candidate kind is assignable to the target kind. Assignable means either exact
+   * match or target kind is an ancestor of candidate kind.
    */
-  private boolean isKindCompatible(String functionKindId, String requestedKindId) {
+  private boolean isKindCompatible(String targetKindId, String candidateKindId) {
     // Exact match
-    if (functionKindId.equals(requestedKindId)) {
+    if (targetKindId.equals(candidateKindId)) {
       return true;
     }
 
-    // Check if function's kind is an ancestor of requested kind
-    Set<String> ancestors = kindToAncestors.get(requestedKindId);
-    return ancestors != null && ancestors.contains(functionKindId);
+    // Check if target kind is an ancestor of candidate kind
+    Set<String> ancestors = kindToAncestors.get(candidateKindId);
+    return ancestors != null && ancestors.contains(targetKindId);
   }
 }

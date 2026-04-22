@@ -78,8 +78,8 @@ public class DefaultFraudDataModelEventKindRegistry implements FraudDataModelEve
 
   @Override
   public boolean isKindCompatible(
-      ComplexDataModelEventKind functionInputKind, ComplexDataModelEventKind requestedKind) {
-    return hierarchyResolver.isCompatible(functionInputKind, requestedKind);
+      ComplexDataModelEventKind targetKind, ComplexDataModelEventKind candidateKind) {
+    return hierarchyResolver.isCompatible(targetKind, candidateKind);
   }
 
   @Override

@@ -237,12 +237,13 @@ public class EntityDerivationConfigRequestValidator {
           fraudDataModelEventKindRegistry.validateTransformationPipeline(
               spanExtractionKind, pipeline);
 
-      if (!fraudDataModelEventKindRegistry.isKindCompatible(outputKind, entityEventKind)) {
+      if (!fraudDataModelEventKindRegistry.isKindCompatible(entityEventKind, outputKind)) {
         throw Status.INVALID_ARGUMENT
             .withDescription(
                 prefix
                     + String.format(
-                        "Pipeline output type '%s' incompatible with entity type '%s'",
+                        "Pipeline output type '%s' is not assignable to entity type '%s' "
+                            + "(output must be the same kind or a subtype of the entity kind)",
                         formatKind(outputKind), formatKind(entityEventKind)))
             .asRuntimeException(requestContext.buildTrailers());
       }
@@ -297,11 +298,12 @@ public class EntityDerivationConfigRequestValidator {
       }
     }
 
-    if (!fraudDataModelEventKindRegistry.isKindCompatible(effectiveParentKind, childKind)) {
+    if (!fraudDataModelEventKindRegistry.isKindCompatible(childKind, effectiveParentKind)) {
       throw Status.INVALID_ARGUMENT
           .withDescription(
               String.format(
-                  "Parent entity type '%s' incompatible with declared type '%s'",
+                  "Parent pipeline output type '%s' is not assignable to child entity type '%s' "
+                      + "(output must be the same kind or a subtype of the child kind)",
                   formatKind(effectiveParentKind), formatKind(childKind)))
           .asRuntimeException(requestContext.buildTrailers());
     }

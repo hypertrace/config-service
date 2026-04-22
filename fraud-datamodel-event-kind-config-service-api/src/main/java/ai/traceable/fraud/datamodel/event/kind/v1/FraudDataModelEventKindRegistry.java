@@ -13,14 +13,14 @@ import com.google.protobuf.Value;
 public interface FraudDataModelEventKindRegistry {
 
   /**
-   * Checks if a requested event kind is compatible with a function's expected input kind.
+   * Checks if a candidate event kind is assignable to a target kind.
    *
-   * @param functionInputKind the kind expected by a function/operator
-   * @param requestedKind the kind being validated
-   * @return true if requestedKind is compatible with functionInputKind
+   * @param targetKind the expected kind (e.g., entity type, function input type)
+   * @param candidateKind the kind being validated (e.g., pipeline output, parent output)
+   * @return true if candidateKind is the same as or a subtype of targetKind
    */
   boolean isKindCompatible(
-      ComplexDataModelEventKind functionInputKind, ComplexDataModelEventKind requestedKind);
+      ComplexDataModelEventKind targetKind, ComplexDataModelEventKind candidateKind);
 
   /**
    * Checks if a transformation function with the given ID exists.

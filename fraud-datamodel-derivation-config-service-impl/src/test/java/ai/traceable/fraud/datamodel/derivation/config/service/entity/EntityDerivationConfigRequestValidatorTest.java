@@ -3,6 +3,7 @@ package ai.traceable.fraud.datamodel.derivation.config.service.entity;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -19,8 +20,16 @@ import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.Scope;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.SpanBasedExtraction;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.SpanProjection;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.UpdateEntityDerivationConfigRequest;
+import ai.traceable.fraud.datamodel.event.kind.DefaultFraudDataModelEventKindRegistry;
+import ai.traceable.fraud.datamodel.event.kind.aggregationfunction.DefaultAggregationFunctionProvider;
+import ai.traceable.fraud.datamodel.event.kind.eventkind.DefaultEventKindProvider;
+import ai.traceable.fraud.datamodel.event.kind.eventkind.EventKindHierarchyResolver;
+import ai.traceable.fraud.datamodel.event.kind.operator.DefaultOperatorProvider;
+import ai.traceable.fraud.datamodel.event.kind.transformationfunction.DefaultTransformationFunctionProvider;
 import ai.traceable.fraud.datamodel.event.kind.v1.ComplexDataModelEventKind;
 import ai.traceable.fraud.datamodel.event.kind.v1.FraudDataModelEventKindRegistry;
+import ai.traceable.fraud.datamodel.event.kind.v1.TransformationFunctionInvocation;
+import ai.traceable.fraud.datamodel.event.kind.v1.TransformationPipeline;
 import io.grpc.StatusRuntimeException;
 import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -253,7 +262,7 @@ class EntityDerivationConfigRequestValidatorTest {
                 validator.validateCreateRequest(
                     request, Optional.of(parentEventKind), requestContext));
     assertEquals(
-        "INVALID_ARGUMENT: Parent entity type 'system_event_kind_string' incompatible with declared type 'system_event_kind_long'",
+        "INVALID_ARGUMENT: Parent pipeline output type 'system_event_kind_string' is not assignable to child entity type 'system_event_kind_long' (output must be the same kind or a subtype of the child kind)",
         exception.getMessage());
   }
 
@@ -341,6 +350,107 @@ class EntityDerivationConfigRequestValidatorTest {
     assertEquals(
         "INVALID_ARGUMENT: Event derivation config[0]: Extraction method is required (span_extraction or jexl_expression)",
         exception.getMessage());
+  }
+
+  @Test
+  void spanProjection_withRealRegistry_emailEntity_rejectsPipelineEndingAsString() {
+    FraudDataModelEventKindRegistry registry = realEventKindRegistry();
+    EntityDerivationConfigRequestValidator realValidator =
+        new EntityDerivationConfigRequestValidator(new DefaultEntityDerivationProvider(), registry);
+
+    EntityDerivationConfigData data =
+        EntityDerivationConfigData.newBuilder()
+            .setDisplayName("Test Entity")
+            .setCategory(EntityCategory.ENTITY_CATEGORY_CUSTOM)
+            .setEventKind(
+                ComplexDataModelEventKind.newBuilder().setKindId("system_event_kind_email"))
+            .setSpanProjection(
+                SpanProjection.newBuilder()
+                    .addEventDerivationConfigs(
+                        EventDerivationConfigDetails.newBuilder()
+                            .setName("rule")
+                            .setScope(
+                                Scope.newBuilder()
+                                    .setEnvironmentScope(EnvironmentScope.newBuilder()))
+                            .setSpanExtraction(
+                                SpanBasedExtraction.newBuilder()
+                                    .setLocation(
+                                        ExtractionLocation.newBuilder()
+                                            .setLocationType(
+                                                ExtractionLocationType
+                                                    .EXTRACTION_LOCATION_TYPE_REQUEST_HEADER)
+                                            .setKey("X-User")))
+                            .setPipeline(
+                                TransformationPipeline.newBuilder()
+                                    .addTransformationPipeline(
+                                        TransformationFunctionInvocation.newBuilder()
+                                            .setFunctionId("type_cast_to_system_event_kind_email"))
+                                    .addTransformationPipeline(
+                                        TransformationFunctionInvocation.newBuilder()
+                                            .setFunctionId("system_defined_function_to_string")))))
+            .build();
+
+    CreateEntityDerivationConfigRequest request =
+        CreateEntityDerivationConfigRequest.newBuilder().setData(data).build();
+
+    StatusRuntimeException exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> realValidator.validateCreateRequest(request, Optional.empty(), requestContext));
+    assertTrue(exception.getMessage().contains("not assignable"));
+  }
+
+  @Test
+  void spanProjection_withRealRegistry_emailEntity_acceptsPipelineEndingAsEmail() {
+    FraudDataModelEventKindRegistry registry = realEventKindRegistry();
+    EntityDerivationConfigRequestValidator realValidator =
+        new EntityDerivationConfigRequestValidator(new DefaultEntityDerivationProvider(), registry);
+
+    EntityDerivationConfigData data =
+        EntityDerivationConfigData.newBuilder()
+            .setDisplayName("Test Entity")
+            .setCategory(EntityCategory.ENTITY_CATEGORY_CUSTOM)
+            .setEventKind(
+                ComplexDataModelEventKind.newBuilder().setKindId("system_event_kind_email"))
+            .setSpanProjection(
+                SpanProjection.newBuilder()
+                    .addEventDerivationConfigs(
+                        EventDerivationConfigDetails.newBuilder()
+                            .setName("rule")
+                            .setScope(
+                                Scope.newBuilder()
+                                    .setEnvironmentScope(EnvironmentScope.newBuilder()))
+                            .setSpanExtraction(
+                                SpanBasedExtraction.newBuilder()
+                                    .setLocation(
+                                        ExtractionLocation.newBuilder()
+                                            .setLocationType(
+                                                ExtractionLocationType
+                                                    .EXTRACTION_LOCATION_TYPE_REQUEST_HEADER)
+                                            .setKey("X-User")))
+                            .setPipeline(
+                                TransformationPipeline.newBuilder()
+                                    .addTransformationPipeline(
+                                        TransformationFunctionInvocation.newBuilder()
+                                            .setFunctionId(
+                                                "type_cast_to_system_event_kind_email")))))
+            .build();
+
+    CreateEntityDerivationConfigRequest request =
+        CreateEntityDerivationConfigRequest.newBuilder().setData(data).build();
+
+    assertDoesNotThrow(
+        () -> realValidator.validateCreateRequest(request, Optional.empty(), requestContext));
+  }
+
+  private static FraudDataModelEventKindRegistry realEventKindRegistry() {
+    DefaultEventKindProvider kinds = new DefaultEventKindProvider();
+    EventKindHierarchyResolver hierarchy = new EventKindHierarchyResolver(kinds);
+    return new DefaultFraudDataModelEventKindRegistry(
+        hierarchy,
+        new DefaultTransformationFunctionProvider(hierarchy, kinds),
+        new DefaultOperatorProvider(hierarchy),
+        new DefaultAggregationFunctionProvider(hierarchy));
   }
 
   private EntityDerivationConfigData createValidConfigData() {
