@@ -1,6 +1,7 @@
 package ai.traceable.ast.hooks.config.service.handlers;
 
 import ai.traceable.ast.hooks.config.service.store.AstHooksConfigStore;
+import ai.traceable.ast.hooks.config.service.store.AstHooksTestConfigStore;
 import ai.traceable.ast.hooks.config.service.v1.AstHook;
 import ai.traceable.ast.hooks.config.service.v1.CreateAstHookRequest;
 import ai.traceable.config.utils.UuidGenerator;
@@ -14,6 +15,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public class CreateAstHookHandler {
   private final UuidGenerator uuidGenerator;
   private final AstHooksConfigStore configStore;
+  private final AstHooksTestConfigStore testConfigStore;
 
   public AstHook createHook(CreateAstHookRequest request, RequestContext requestContext) {
     String id = uuidGenerator.generateRandomId();
@@ -22,6 +24,9 @@ public class CreateAstHookHandler {
     getRequestUser(requestContext).ifPresent(astHookBuilder::setCreatedBy);
     if (!StringUtils.isEmpty(request.getHookTestId())) {
       astHookBuilder.setAstHookTestId(request.getHookTestId());
+      testConfigStore
+          .getData(requestContext, request.getHookTestId())
+          .ifPresent(testConfig -> astHookBuilder.setLastTestStatus(testConfig.getTestStatus()));
     }
 
     return configStore.upsertObject(requestContext, astHookBuilder.build()).getData();
