@@ -43,6 +43,8 @@ import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.mockito.MockedStatic;
 
 class ClauseGroupValidatorTest {
@@ -773,6 +775,7 @@ class ClauseGroupValidatorTest {
   }
 
   @Test
+  @EnabledOnOs(OS.LINUX)
   void testCustomSecRuleValidation() {
     // missing SecRule keyword
     Clause missingKeyword =
@@ -957,6 +960,7 @@ class ClauseGroupValidatorTest {
   }
 
   @Test
+  @EnabledOnOs(OS.LINUX)
   void testSecRuleIdUniqueness_SingleSecRule() {
     ClauseGroup clauseGroup =
         ClauseGroup.newBuilder()
@@ -975,6 +979,7 @@ class ClauseGroupValidatorTest {
   }
 
   @Test
+  @EnabledOnOs(OS.LINUX)
   void testSecRuleIdUniqueness_MultipleSecRulesWithDifferentIds() {
     ClauseGroup clauseGroup =
         ClauseGroup.newBuilder()
@@ -1005,6 +1010,7 @@ class ClauseGroupValidatorTest {
   }
 
   @Test
+  @EnabledOnOs(OS.LINUX)
   void testSecRuleIdUniqueness_DuplicateIdsAtSameLevel() {
     ClauseGroup clauseGroup =
         ClauseGroup.newBuilder()
@@ -1032,6 +1038,7 @@ class ClauseGroupValidatorTest {
   }
 
   @Test
+  @EnabledOnOs(OS.LINUX)
   void testSecRuleIdUniqueness_DuplicateIdsAcrossNestingLevels() {
     ClauseGroup clauseGroup =
         ClauseGroup.newBuilder()
@@ -1074,6 +1081,7 @@ class ClauseGroupValidatorTest {
   }
 
   @Test
+  @EnabledOnOs(OS.LINUX)
   void testSecRuleIdUniqueness_NestedClauseGroupsWithDifferentIds() {
     ClauseGroup clauseGroup =
         ClauseGroup.newBuilder()
@@ -1114,6 +1122,7 @@ class ClauseGroupValidatorTest {
   }
 
   @Test
+  @EnabledOnOs(OS.LINUX)
   void testSecRuleIdUniqueness_ThreeSecRulesWithOneDuplicate() {
     ClauseGroup clauseGroup =
         ClauseGroup.newBuilder()
