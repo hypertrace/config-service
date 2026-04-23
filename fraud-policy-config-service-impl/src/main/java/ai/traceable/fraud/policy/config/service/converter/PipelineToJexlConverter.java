@@ -66,7 +66,9 @@ public class PipelineToJexlConverter {
       return baseExpression;
     }
 
-    String currentExpr = baseExpression;
+    // Coerce the extracted value to a string before applying transformations.
+    // This is a product-level constraint: all pipeline inputs are assumed to be strings.
+    String currentExpr = "('' + " + baseExpression + ")";
     List<TransformationFunctionInvocation> invocations = pipeline.getTransformationPipelineList();
 
     for (TransformationFunctionInvocation invocation : invocations) {

@@ -1,20 +1,28 @@
 package ai.traceable.fraud.datamodel.event.kind;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.fraud.datamodel.event.kind.aggregationfunction.AggregationFunctionProvider;
 import ai.traceable.fraud.datamodel.event.kind.eventkind.EventKindHierarchyResolver;
+import ai.traceable.fraud.datamodel.event.kind.eventkind.EventKindProvider;
 import ai.traceable.fraud.datamodel.event.kind.operator.OperatorProvider;
 import ai.traceable.fraud.datamodel.event.kind.transformationfunction.TransformationFunctionProvider;
 import ai.traceable.fraud.datamodel.event.kind.v1.ComplexDataModelEventKind;
+import ai.traceable.fraud.datamodel.event.kind.v1.DataModelEventKind;
 import ai.traceable.fraud.datamodel.event.kind.v1.DataType;
+import ai.traceable.fraud.datamodel.event.kind.v1.TransformationFunction;
+import ai.traceable.fraud.datamodel.event.kind.v1.TransformationFunctionInvocation;
+import ai.traceable.fraud.datamodel.event.kind.v1.TransformationFunctionsByKind;
+import ai.traceable.fraud.datamodel.event.kind.v1.TransformationPipeline;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.Value;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -170,5 +178,199 @@ class DefaultFraudDataModelEventKindRegistryTest {
                     .addValues(Value.newBuilder().setNumberValue(123)))
             .build();
     assertFalse(registry.isLiteralValueCompatible(arrayKind, listValue));
+  }
+
+  /**
+   * Tests for validateTransformationPipeline with type_parameter_ref resolution. Uses real
+   * EventKindHierarchyResolver and real TransformationFunction objects to validate that generic
+   * type parameters (e.g., T in array<T> → T) are resolved correctly during pipeline validation.
+   */
+  @Nested
+  class ValidateTransformationPipelineTypeParameterTest {
+
+    private DefaultFraudDataModelEventKindRegistry realRegistry;
+
+    @BeforeEach
+    void setUp() {
+      // Real event kinds: value → string → email
+      List<DataModelEventKind> kinds =
+          List.of(
+              DataModelEventKind.newBuilder()
+                  .setId("system_event_kind_value")
+                  .setDataType(DataType.DATA_TYPE_STRING)
+                  .build(),
+              DataModelEventKind.newBuilder()
+                  .setId("system_event_kind_string")
+                  .setParentKindId("system_event_kind_value")
+                  .setDataType(DataType.DATA_TYPE_STRING)
+                  .build(),
+              DataModelEventKind.newBuilder()
+                  .setId("system_event_kind_email")
+                  .setParentKindId("system_event_kind_string")
+                  .setDataType(DataType.DATA_TYPE_STRING)
+                  .build());
+
+      EventKindProvider kindProvider = filter -> kinds;
+      EventKindHierarchyResolver realHierarchy = new EventKindHierarchyResolver(kindProvider);
+
+      ComplexDataModelEventKind valueKind =
+          ComplexDataModelEventKind.newBuilder().setKindId("system_event_kind_value").build();
+      ComplexDataModelEventKind stringKind =
+          ComplexDataModelEventKind.newBuilder().setKindId("system_event_kind_string").build();
+      ComplexDataModelEventKind emailKind =
+          ComplexDataModelEventKind.newBuilder().setKindId("system_event_kind_email").build();
+
+      // split: string → array<string>
+      TransformationFunction splitFn =
+          TransformationFunction.newBuilder()
+              .setId("system_defined_function_split")
+              .addInputKinds(stringKind)
+              .setOutputKind(ComplexDataModelEventKind.newBuilder().setArrayOf(stringKind))
+              .build();
+
+      // last: array<T> → T (generic)
+      TransformationFunction lastFn =
+          TransformationFunction.newBuilder()
+              .setId("system_defined_function_last")
+              .addInputKinds(
+                  ComplexDataModelEventKind.newBuilder()
+                      .setArrayOf(ComplexDataModelEventKind.newBuilder().setTypeParameterRef("T")))
+              .setOutputKind(ComplexDataModelEventKind.newBuilder().setTypeParameterRef("T"))
+              .build();
+
+      // trim: string → string
+      TransformationFunction trimFn =
+          TransformationFunction.newBuilder()
+              .setId("system_defined_function_trim")
+              .addInputKinds(stringKind)
+              .setOutputKind(stringKind)
+              .build();
+
+      // type_cast_to_email: string → email
+      TransformationFunction castToEmailFn =
+          TransformationFunction.newBuilder()
+              .setId("type_cast_to_system_event_kind_email")
+              .addInputKinds(stringKind)
+              .setOutputKind(emailKind)
+              .build();
+
+      // parseJson: string → map<string, value>
+      TransformationFunction parseJsonFn =
+          TransformationFunction.newBuilder()
+              .setId("system_defined_function_parse_json")
+              .addInputKinds(stringKind)
+              .setOutputKind(ComplexDataModelEventKind.newBuilder().setStringMapOf(valueKind))
+              .build();
+
+      // getEntry: map<string, T> → T (generic)
+      TransformationFunction getEntryFn =
+          TransformationFunction.newBuilder()
+              .setId("system_defined_function_get_entry")
+              .addInputKinds(
+                  ComplexDataModelEventKind.newBuilder()
+                      .setStringMapOf(
+                          ComplexDataModelEventKind.newBuilder().setTypeParameterRef("T")))
+              .setOutputKind(ComplexDataModelEventKind.newBuilder().setTypeParameterRef("T"))
+              .build();
+
+      TransformationFunctionsByKind byKind =
+          TransformationFunctionsByKind.newBuilder()
+              .addFunctions(splitFn)
+              .addFunctions(lastFn)
+              .addFunctions(trimFn)
+              .addFunctions(castToEmailFn)
+              .addFunctions(parseJsonFn)
+              .addFunctions(getEntryFn)
+              .build();
+
+      when(transformationFunctionProvider.getAllFunctions()).thenReturn(List.of(byKind));
+      when(operatorProvider.getAllOperators()).thenReturn(List.of());
+      when(aggregationFunctionProvider.getAllFunctions()).thenReturn(List.of());
+
+      realRegistry =
+          new DefaultFraudDataModelEventKindRegistry(
+              realHierarchy,
+              transformationFunctionProvider,
+              operatorProvider,
+              aggregationFunctionProvider);
+    }
+
+    @Test
+    void testPipeline_SplitLastTrimCast_ResolvesTypeParameterCorrectly() {
+      // Pipeline: split → last → trim → type_cast_to_email
+      // This is the exact pipeline from the failing mutation.
+      // Without type_parameter_ref resolution, 'last' outputs raw T instead of string,
+      // causing 'trim' to reject the input.
+      TransformationPipeline pipeline =
+          TransformationPipeline.newBuilder()
+              .addTransformationPipeline(
+                  TransformationFunctionInvocation.newBuilder()
+                      .setFunctionId("system_defined_function_split"))
+              .addTransformationPipeline(
+                  TransformationFunctionInvocation.newBuilder()
+                      .setFunctionId("system_defined_function_last"))
+              .addTransformationPipeline(
+                  TransformationFunctionInvocation.newBuilder()
+                      .setFunctionId("system_defined_function_trim"))
+              .addTransformationPipeline(
+                  TransformationFunctionInvocation.newBuilder()
+                      .setFunctionId("type_cast_to_system_event_kind_email"))
+              .build();
+
+      ComplexDataModelEventKind inputKind =
+          ComplexDataModelEventKind.newBuilder().setKindId("system_event_kind_string").build();
+
+      ComplexDataModelEventKind outputKind =
+          realRegistry.validateTransformationPipeline(inputKind, pipeline);
+
+      assertEquals("system_event_kind_email", outputKind.getKindId());
+    }
+
+    @Test
+    void testPipeline_SplitLast_ResolvesTypeParameterToString() {
+      // Pipeline: split → last
+      // Should resolve T to string (from array<string>)
+      TransformationPipeline pipeline =
+          TransformationPipeline.newBuilder()
+              .addTransformationPipeline(
+                  TransformationFunctionInvocation.newBuilder()
+                      .setFunctionId("system_defined_function_split"))
+              .addTransformationPipeline(
+                  TransformationFunctionInvocation.newBuilder()
+                      .setFunctionId("system_defined_function_last"))
+              .build();
+
+      ComplexDataModelEventKind inputKind =
+          ComplexDataModelEventKind.newBuilder().setKindId("system_event_kind_string").build();
+
+      ComplexDataModelEventKind outputKind =
+          realRegistry.validateTransformationPipeline(inputKind, pipeline);
+
+      assertEquals("system_event_kind_string", outputKind.getKindId());
+    }
+
+    @Test
+    void testPipeline_ParseJsonGetEntry_ResolvesMapTypeParameterCorrectly() {
+      // Pipeline: parseJson → getEntry
+      // parseJson outputs map<string, value>, getEntry (map<string, T> → T) should resolve
+      // T to value. Without stringMapOf support, getEntry would output raw T.
+      TransformationPipeline pipeline =
+          TransformationPipeline.newBuilder()
+              .addTransformationPipeline(
+                  TransformationFunctionInvocation.newBuilder()
+                      .setFunctionId("system_defined_function_parse_json"))
+              .addTransformationPipeline(
+                  TransformationFunctionInvocation.newBuilder()
+                      .setFunctionId("system_defined_function_get_entry"))
+              .build();
+
+      ComplexDataModelEventKind inputKind =
+          ComplexDataModelEventKind.newBuilder().setKindId("system_event_kind_string").build();
+
+      ComplexDataModelEventKind outputKind =
+          realRegistry.validateTransformationPipeline(inputKind, pipeline);
+
+      assertEquals("system_event_kind_value", outputKind.getKindId());
+    }
   }
 }

@@ -21,6 +21,7 @@ import jakarta.inject.Singleton;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Default implementation of FraudDataModelEventKindRegistry that wraps existing providers and
@@ -111,10 +112,94 @@ public class DefaultFraudDataModelEventKindRegistry implements FraudDataModelEve
                 functionId, formatKind(currentKind)));
       }
 
-      currentKind = function.getOutputKind();
+      currentKind = resolveOutputKind(function, currentKind);
     }
 
     return currentKind;
+  }
+
+  /**
+   * Resolves the output kind of a function, substituting any type_parameter_ref with the actual
+   * type bound from the input. For example, if a function declares input=array<T> and output=T, and
+   * the actual input is array<string>, then T resolves to string.
+   */
+  private ComplexDataModelEventKind resolveOutputKind(
+      TransformationFunction function, ComplexDataModelEventKind actualInputKind) {
+    ComplexDataModelEventKind outputKind = function.getOutputKind();
+    if (!containsTypeParameterRef(outputKind)) {
+      return outputKind;
+    }
+    for (ComplexDataModelEventKind declaredInputKind : function.getInputKindsList()) {
+      if (!hierarchyResolver.isCompatible(declaredInputKind, actualInputKind)) {
+        continue;
+      }
+      Optional<ComplexDataModelEventKind> resolved =
+          resolveTypeParameter(declaredInputKind, actualInputKind, outputKind);
+      if (resolved.isPresent()) {
+        return resolved.get();
+      }
+    }
+    return outputKind;
+  }
+
+  private static boolean containsTypeParameterRef(ComplexDataModelEventKind kind) {
+    if (kind.hasTypeParameterRef()) {
+      return true;
+    }
+    if (kind.hasArrayOf()) {
+      return containsTypeParameterRef(kind.getArrayOf());
+    }
+    if (kind.hasStringMapOf()) {
+      return containsTypeParameterRef(kind.getStringMapOf());
+    }
+    return false;
+  }
+
+  private static Optional<ComplexDataModelEventKind> resolveTypeParameter(
+      ComplexDataModelEventKind declaredInput,
+      ComplexDataModelEventKind actualInput,
+      ComplexDataModelEventKind outputTemplate) {
+    Map<String, ComplexDataModelEventKind> bindings = new HashMap<>();
+    collectBindings(declaredInput, actualInput, bindings);
+    return bindings.isEmpty()
+        ? Optional.empty()
+        : Optional.of(substituteBindings(outputTemplate, bindings));
+  }
+
+  private static void collectBindings(
+      ComplexDataModelEventKind declared,
+      ComplexDataModelEventKind actual,
+      Map<String, ComplexDataModelEventKind> bindings) {
+    if (declared.hasTypeParameterRef()) {
+      bindings.put(declared.getTypeParameterRef(), actual);
+      return;
+    }
+    if (declared.hasArrayOf() && actual.hasArrayOf()) {
+      collectBindings(declared.getArrayOf(), actual.getArrayOf(), bindings);
+      return;
+    }
+    if (declared.hasStringMapOf() && actual.hasStringMapOf()) {
+      collectBindings(declared.getStringMapOf(), actual.getStringMapOf(), bindings);
+    }
+  }
+
+  private static ComplexDataModelEventKind substituteBindings(
+      ComplexDataModelEventKind template, Map<String, ComplexDataModelEventKind> bindings) {
+    if (template.hasTypeParameterRef()) {
+      ComplexDataModelEventKind bound = bindings.get(template.getTypeParameterRef());
+      return bound != null ? bound : template;
+    }
+    if (template.hasArrayOf()) {
+      return ComplexDataModelEventKind.newBuilder()
+          .setArrayOf(substituteBindings(template.getArrayOf(), bindings))
+          .build();
+    }
+    if (template.hasStringMapOf()) {
+      return ComplexDataModelEventKind.newBuilder()
+          .setStringMapOf(substituteBindings(template.getStringMapOf(), bindings))
+          .build();
+    }
+    return template;
   }
 
   private boolean isCompatibleWithAnyInputKind(
@@ -205,6 +290,9 @@ public class DefaultFraudDataModelEventKindRegistry implements FraudDataModelEve
     }
     if (kind.hasArrayOf()) {
       return "array<" + formatKind(kind.getArrayOf()) + ">";
+    }
+    if (kind.hasStringMapOf()) {
+      return "map<string," + formatKind(kind.getStringMapOf()) + ">";
     }
     return kind.toString();
   }

@@ -83,6 +83,10 @@ public class EventKindHierarchyResolver {
       return isCompatible(targetKind.getArrayOf(), candidateKind.getArrayOf());
     }
 
+    if (targetKind.hasStringMapOf() && candidateKind.hasStringMapOf()) {
+      return isCompatible(targetKind.getStringMapOf(), candidateKind.getStringMapOf());
+    }
+
     return false;
   }
 
