@@ -1,8 +1,7 @@
 package ai.traceable.ast.hooks.config.service.handlers;
 
-import static ai.traceable.ast.hooks.config.service.v1.TestStatus.TEST_STATUS_PENDING;
-
 import ai.traceable.ast.hooks.config.service.store.AstHooksConfigStore;
+import ai.traceable.ast.hooks.config.service.store.AstHooksTestConfigStore;
 import ai.traceable.ast.hooks.config.service.v1.AstHook;
 import ai.traceable.ast.hooks.config.service.v1.AstHookDetails;
 import ai.traceable.ast.hooks.config.service.v1.UpdateAstHookRequest;
@@ -14,6 +13,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public class UpdateAstHookHandler {
   private final AstHooksConfigStore configStore;
   private final UpdateAstHookConfigHandler updateAstHookConfigHandler;
+  private final AstHooksTestConfigStore testConfigStore;
 
   public AstHook updateHook(UpdateAstHookRequest request, RequestContext requestContext) {
     AstHook oldHook =
@@ -34,7 +34,10 @@ public class UpdateAstHookHandler {
         oldHook.toBuilder().setHookDetails(updatedHookDetailsBuilder.build());
     if (request.hasHookTestId()) {
       updatedHookBuilder.setAstHookTestId(request.getHookTestId());
-      updatedHookBuilder.setLastTestStatus(TEST_STATUS_PENDING);
+      testConfigStore
+          .getData(requestContext, request.getHookTestId())
+          .ifPresent(
+              testConfig -> updatedHookBuilder.setLastTestStatus(testConfig.getTestStatus()));
     }
     return configStore.upsertObject(requestContext, updatedHookBuilder.build()).getData();
   }

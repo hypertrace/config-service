@@ -1,6 +1,6 @@
 package ai.traceable.ast.hooks.config.service.handlers;
 
-import static ai.traceable.ast.hooks.config.service.v1.TestStatus.TEST_STATUS_PENDING;
+import static ai.traceable.ast.hooks.config.service.v1.TestStatus.TEST_STATUS_PASSED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -10,8 +10,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.ast.hooks.config.service.store.AstHooksConfigStore;
+import ai.traceable.ast.hooks.config.service.store.AstHooksTestConfigStore;
 import ai.traceable.ast.hooks.config.service.v1.AstHook;
 import ai.traceable.ast.hooks.config.service.v1.AstHookDetails;
+import ai.traceable.ast.hooks.config.service.v1.AstHookTest;
 import ai.traceable.ast.hooks.config.service.v1.UpdateAstHookRequest;
 import java.util.Optional;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
@@ -27,6 +29,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class UpdateAstHookHandlerTest {
 
   @Mock AstHooksConfigStore mockConfigStore;
+  @Mock AstHooksTestConfigStore mockTestConfigStore;
   @Mock RequestContext mockRequestContext;
   @Mock ContextualConfigObject<AstHook> mockConfigObject;
 
@@ -35,11 +38,12 @@ class UpdateAstHookHandlerTest {
   @BeforeEach
   void setUp() {
     updateAstHookHandler =
-        new UpdateAstHookHandler(mockConfigStore, new UpdateAstHookConfigHandler());
+        new UpdateAstHookHandler(
+            mockConfigStore, new UpdateAstHookConfigHandler(), mockTestConfigStore);
   }
 
   @Test
-  void testUpdateHookWithTestIdSetsLastTestStatusToPending() {
+  void testUpdateHookWithTestIdSetsStatusFromTestConfig() {
     // Given
     final AstHook existingHook =
         AstHook.newBuilder()
@@ -48,6 +52,13 @@ class UpdateAstHookHandlerTest {
             .build();
     when(mockConfigStore.getData(mockRequestContext, "hook-1"))
         .thenReturn(Optional.of(existingHook));
+    when(mockTestConfigStore.getData(mockRequestContext, "test-123"))
+        .thenReturn(
+            Optional.of(
+                AstHookTest.newBuilder()
+                    .setId("test-123")
+                    .setTestStatus(TEST_STATUS_PASSED)
+                    .build()));
     when(mockConfigStore.upsertObject(eq(mockRequestContext), any(AstHook.class)))
         .thenReturn(mockConfigObject);
     when(mockConfigObject.getData()).thenReturn(existingHook);
@@ -63,7 +74,35 @@ class UpdateAstHookHandlerTest {
     final AstHook upsertedHook = hookCaptor.getValue();
     assertEquals("test-123", upsertedHook.getAstHookTestId());
     assertTrue(upsertedHook.hasLastTestStatus());
-    assertEquals(TEST_STATUS_PENDING, upsertedHook.getLastTestStatus());
+    assertEquals(TEST_STATUS_PASSED, upsertedHook.getLastTestStatus());
+  }
+
+  @Test
+  void testUpdateHookWithTestIdWhenTestConfigMissingPreservesExistingStatus() {
+    // Given
+    final AstHook existingHook =
+        AstHook.newBuilder()
+            .setId("hook-3")
+            .setHookDetails(AstHookDetails.newBuilder().setName("test-hook").build())
+            .setLastTestStatus(TEST_STATUS_PASSED)
+            .build();
+    when(mockConfigStore.getData(mockRequestContext, "hook-3"))
+        .thenReturn(Optional.of(existingHook));
+    when(mockTestConfigStore.getData(mockRequestContext, "test-456")).thenReturn(Optional.empty());
+    when(mockConfigStore.upsertObject(eq(mockRequestContext), any(AstHook.class)))
+        .thenReturn(mockConfigObject);
+    when(mockConfigObject.getData()).thenReturn(existingHook);
+
+    // When
+    updateAstHookHandler.updateHook(
+        UpdateAstHookRequest.newBuilder().setId("hook-3").setHookTestId("test-456").build(),
+        mockRequestContext);
+
+    // Then
+    final ArgumentCaptor<AstHook> hookCaptor = ArgumentCaptor.forClass(AstHook.class);
+    verify(mockConfigStore).upsertObject(eq(mockRequestContext), hookCaptor.capture());
+    final AstHook upsertedHook = hookCaptor.getValue();
+    assertEquals(TEST_STATUS_PASSED, upsertedHook.getLastTestStatus());
   }
 
   @Test
