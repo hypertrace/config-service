@@ -63,6 +63,7 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
   private static final String SANITIZE_PARAM_VALUES = "sanitize_param_value";
   private static final String PARAM_KEY_CONFIG = "param_key_config";
   private static final String PARAM_VALUE_CONFIG = "param_value_config";
+  private static final String USER_ROLES_CONFIG = "user_roles_config";
   private static final String USER_ID_SOURCE = "user_id_source";
   private static final String USER_ID_DATA_LIST = "user_id_data_list";
   private static final String IP_TYPES = "ip_types";
@@ -627,6 +628,15 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
                     .build())
             .build();
 
+    ConfigMetadata bolaDetectionUserRolesConfigMetadata =
+        ConfigMetadata.newBuilder()
+            .setKey(USER_ROLES_CONFIG)
+            .setConfigValueMetadata(
+                ConfigValueMetadata.newBuilder()
+                    .setType(ConfigValueType.CONFIG_VALUE_TYPE_OBJECT)
+                    .build())
+            .build();
+
     ConfigMetadata userIdDataListConfigMetadata =
         ConfigMetadata.newBuilder()
             .setKey(USER_ID_DATA_LIST)
@@ -854,6 +864,7 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
             requestParamValuesNotAllowedConfigMetadata,
             bolaDetectionParamKeyConfigMetadata,
             bolaDetectionParamValueConfigMetadata,
+            bolaDetectionUserRolesConfigMetadata,
             multiValuedStringParamRulesConfigMetadata));
 
     // authzv_bfla mapping

@@ -144,6 +144,32 @@ message ParamValueConfig {
   repeated string param_value_regexes = 3;
 }
 
+message UserRoleSpanFilterConfig {
+  oneof user_role_span_filter {
+    UserRoleSpanFilterAllSpans all_spans = 1;
+    UserRoleSpanFilterSpansWithSomeRole spans_with_some_role = 2;
+    UserRoleSpanFilterSpansWithUserDefinedRoles spans_with_user_defined_roles = 3;
+    UserRoleSpanFilterSpansWithSpecifiedRoles spans_with_specified_roles = 4;
+  }
+}
+
+message UserRoleSpanFilterAllSpans {}
+
+message UserRoleSpanFilterSpansWithSomeRole {}
+
+message UserRoleSpanFilterSpansWithUserDefinedRoles {}
+
+message UserRoleSpanFilterSpansWithSpecifiedRoles {
+  UserRoleFilterMode filter_mode = 1;
+  repeated string user_roles = 2;
+}
+
+enum UserRoleFilterMode {
+  USER_ROLE_FILTER_MODE_UNSPECIFIED = 0;
+  USER_ROLE_FILTER_MODE_IN = 1;
+  USER_ROLE_FILTER_MODE_NOT_IN = 2;
+}
+
 message AnomalyDetectionConfig {
   AnomalyConfigStatusChange config_status = 1;
   AnomalyCategoryConfig category_config = 2;
