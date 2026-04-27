@@ -9,6 +9,8 @@ import static org.mockito.Mockito.when;
 import ai.traceable.aiapp.protection.config.service.firewall.cache.AiAppConfigContextClientProvider;
 import ai.traceable.aiapp.protection.config.service.firewall.cache.ProtectionEngineDataTypeTranslator;
 import ai.traceable.aiapp.protection.config.service.firewall.converter.PiiRuleToCustomSignatureConfigConverter;
+import ai.traceable.aiapp.protection.config.service.v1.Action;
+import ai.traceable.aiapp.protection.config.service.v1.Action.Block;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppConfigServiceGrpc;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRule;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRuleData;
@@ -767,6 +769,7 @@ class AiAppConfigContextClientProviderTest {
             AiAppCustomRuleData.newBuilder()
                 .setRuleName(ruleName)
                 .setDescription("Test PII rule")
+                .setAction(Action.newBuilder().setBlock(Block.getDefaultInstance()))
                 .setEnabled(true)
                 .setPiiDetectedInPromptRuleData(
                     PiiDetectedInPromptRuleData.newBuilder()
@@ -784,11 +787,109 @@ class AiAppConfigContextClientProviderTest {
                 .setRuleName(ruleName)
                 .setDescription("Test PII rule")
                 .setEnabled(true)
+                .setAction(Action.newBuilder().setBlock(Block.getDefaultInstance()))
                 .setRuleScope(ruleScope)
                 .setPiiDetectedInPromptRuleData(
                     PiiDetectedInPromptRuleData.newBuilder()
                         .setDatatypeCondition(
                             DatatypeCondition.newBuilder().addDatatypeIds("datatype-1"))))
         .build();
+  }
+
+  @Test
+  void testNonBlockingPiiRules_FilteredOut() {
+    setupEmptyAnomalyConfig();
+
+    // Create PII rule with Alert action (non-blocking)
+    AiAppCustomRule nonBlockingPiiRule =
+        AiAppCustomRule.newBuilder()
+            .setRuleId("non-blocking-pii-rule")
+            .setRuleData(
+                AiAppCustomRuleData.newBuilder()
+                    .setRuleName("Non-blocking PII Rule")
+                    .setDescription("Test non-blocking PII rule")
+                    .setEnabled(true)
+                    .setAction(
+                        Action.newBuilder()
+                            .setAlert(
+                                ai.traceable.aiapp.protection.config.service.v1.Action.Alert
+                                    .getDefaultInstance()))
+                    .setPiiDetectedInPromptRuleData(
+                        PiiDetectedInPromptRuleData.newBuilder()
+                            .setDatatypeCondition(
+                                DatatypeCondition.newBuilder().addDatatypeIds("datatype-1"))))
+            .build();
+
+    when(aiAppConfigService.getAiAppRules(any()))
+        .thenReturn(
+            GetAiAppRulesResponse.newBuilder()
+                .addAiAppRules(
+                    AiAppRule.newBuilder()
+                        .addAiAppSubRules(
+                            AiAppSubRule.newBuilder().setCustomRule(nonBlockingPiiRule)))
+                .build());
+
+    GetAiAppEvaluationConfigContextRequest request =
+        GetAiAppEvaluationConfigContextRequest.newBuilder()
+            .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+            .build();
+
+    AiFirewallConfigContext result = provider.getAiFirewallConfigContext(requestContext, request);
+
+    // Should have no custom signature context since non-blocking rules are filtered out
+    assertTrue(
+        !result.hasCustomSignatureConfigContext()
+            || result.getCustomSignatureConfigContext().getRuleContextsCount() == 0);
+  }
+
+  @Test
+  void testMixedBlockingAndNonBlockingPiiRules_OnlyBlockingIncluded() {
+    setupEmptyAnomalyConfig();
+
+    // Create blocking PII rule
+    AiAppCustomRule blockingPiiRule = buildPiiCustomRule("blocking-pii-rule", "Blocking PII Rule");
+
+    // Create non-blocking PII rule with Alert action
+    AiAppCustomRule nonBlockingPiiRule =
+        AiAppCustomRule.newBuilder()
+            .setRuleId("non-blocking-pii-rule")
+            .setRuleData(
+                AiAppCustomRuleData.newBuilder()
+                    .setRuleName("Non-blocking PII Rule")
+                    .setDescription("Test non-blocking PII rule")
+                    .setEnabled(true)
+                    .setAction(
+                        Action.newBuilder()
+                            .setAlert(
+                                ai.traceable.aiapp.protection.config.service.v1.Action.Alert
+                                    .getDefaultInstance()))
+                    .setPiiDetectedInPromptRuleData(
+                        PiiDetectedInPromptRuleData.newBuilder()
+                            .setDatatypeCondition(
+                                DatatypeCondition.newBuilder().addDatatypeIds("datatype-2"))))
+            .build();
+
+    when(aiAppConfigService.getAiAppRules(any()))
+        .thenReturn(
+            GetAiAppRulesResponse.newBuilder()
+                .addAiAppRules(
+                    AiAppRule.newBuilder()
+                        .addAiAppSubRules(AiAppSubRule.newBuilder().setCustomRule(blockingPiiRule)))
+                .addAiAppRules(
+                    AiAppRule.newBuilder()
+                        .addAiAppSubRules(
+                            AiAppSubRule.newBuilder().setCustomRule(nonBlockingPiiRule)))
+                .build());
+
+    GetAiAppEvaluationConfigContextRequest request =
+        GetAiAppEvaluationConfigContextRequest.newBuilder()
+            .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+            .build();
+
+    AiFirewallConfigContext result = provider.getAiFirewallConfigContext(requestContext, request);
+
+    // Should have custom signature context with only the blocking rule
+    assertTrue(result.hasCustomSignatureConfigContext());
+    assertEquals(1, result.getCustomSignatureConfigContext().getRuleContextsCount());
   }
 }

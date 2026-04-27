@@ -271,6 +271,10 @@ public class AiAppConfigContextClientProvider implements AiAppConfigContextProvi
                 customRule.hasRuleData()
                     && customRule.getRuleData().hasPiiDetectedInPromptRuleData()
                     && customRule.getRuleData().getEnabled())
+        .filter(
+            customRule ->
+                customRule.getRuleData().hasAction()
+                    && customRule.getRuleData().getAction().hasBlock())
         .filter(customRule -> matchesRequestScope(customRule, requestScope))
         .collect(Collectors.toList());
   }
@@ -351,15 +355,26 @@ public class AiAppConfigContextClientProvider implements AiAppConfigContextProvi
                 .getAnomalyRuleAction()
                 .equals(AnomalyRuleAction.ANOMALY_RULE_ACTION_BLOCK);
       case RULE_EVALUATION_POINT_PLATFORM:
-        return detectionConfig.getConfigStatus().getDisabled()
-            || subRuleConfig
-                .getAnomalyRuleAction()
-                .equals(AnomalyRuleAction.ANOMALY_RULE_ACTION_DISABLE);
+        return isDisabled(detectionConfig, subRuleConfig)
+            && !isInternal(detectionConfig, subRuleConfig);
       default:
         log.error("Unsupported rule evaluation point: {}", ruleEvaluationPoint);
         throw new IllegalArgumentException(
             "Unsupported rule evaluation point: " + ruleEvaluationPoint);
     }
+  }
+
+  private boolean isDisabled(
+      AnomalyDetectionConfig threatTypeDetectionConfig, AnomalySubRuleConfig subRuleConfig) {
+    return threatTypeDetectionConfig.getConfigStatus().getDisabled()
+        || subRuleConfig
+            .getAnomalyRuleAction()
+            .equals(AnomalyRuleAction.ANOMALY_RULE_ACTION_DISABLE);
+  }
+
+  private boolean isInternal(
+      AnomalyDetectionConfig threatTypeDetectionConfig, AnomalySubRuleConfig subRuleConfig) {
+    return threatTypeDetectionConfig.getConfigStatus().getInternal() || subRuleConfig.getInternal();
   }
 
   private <T> Map<AnomalyConfigScope, T> filterByRequestScope(

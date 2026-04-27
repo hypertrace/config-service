@@ -113,6 +113,7 @@ message Action {
   oneof action {
     Alert alert = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Alert action for the rule"];
     MarkForTesting mark_for_testing = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Mark for testing action for the rule"];
+    Block block = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Block action for the rule"];
   }
 
   message Alert {
@@ -120,6 +121,8 @@ message Action {
   }
 
   message MarkForTesting {}
+
+  message Block {}
 }
 
 message ResourceAccessThresholdConfig {
