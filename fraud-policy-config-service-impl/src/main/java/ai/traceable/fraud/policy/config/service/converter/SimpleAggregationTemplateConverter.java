@@ -108,7 +108,7 @@ public class SimpleAggregationTemplateConverter implements TemplateEdgeDecisionC
     return List.of(
         buildJexlSpanAttribute("actor", "$s.getIpAddress()"),
         buildStaticSpanAttribute("actor_type", "IP ADDRESS"),
-        buildJexlSpanAttribute("account", "$s.getUser()"),
+        buildJexlSpanAttribute("account", "$context.get('enduser.id')"),
         buildStaticSpanAttribute("account_type", "USER ID"),
         detectionSignature);
   }

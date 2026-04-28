@@ -159,7 +159,7 @@ class EntityJexlResolverTest {
 
     Map<String, List<DerivationRule>> result = resolve(Set.of("entity_body"));
     assertEquals(
-        "$s.getParsedRequestBodyJson().get('firstName')",
+        "$s.getParsedRequestBodyJson().get('firstName').getAsString()",
         getJexl(result.get("entity_body").get(0)));
   }
 
@@ -189,7 +189,7 @@ class EntityJexlResolverTest {
   }
 
   @Test
-  void resolveAll_spanBasedExtraction_responseHeader() {
+  void resolveAll_spanBasedExtraction_responseHeader_skipped() {
     mockEntityConfigs(
         buildSpanExtractionEntity(
             "entity_resp_hdr",
@@ -197,13 +197,11 @@ class EntityJexlResolverTest {
             "x-ratelimit"));
 
     Map<String, List<DerivationRule>> result = resolve(Set.of("entity_resp_hdr"));
-    assertEquals(
-        "$s.getResponseHeaders().get('x-ratelimit')",
-        getJexl(result.get("entity_resp_hdr").get(0)));
+    assertTrue(result.get("entity_resp_hdr").isEmpty());
   }
 
   @Test
-  void resolveAll_spanBasedExtraction_responseBody() {
+  void resolveAll_spanBasedExtraction_responseBody_skipped() {
     mockEntityConfigs(
         buildSpanExtractionEntity(
             "entity_resp_body",
@@ -211,9 +209,7 @@ class EntityJexlResolverTest {
             "error_code"));
 
     Map<String, List<DerivationRule>> result = resolve(Set.of("entity_resp_body"));
-    assertEquals(
-        "$s.getParsedResponseBodyJson().get('error_code')",
-        getJexl(result.get("entity_resp_body").get(0)));
+    assertTrue(result.get("entity_resp_body").isEmpty());
   }
 
   @Test
@@ -312,8 +308,8 @@ class EntityJexlResolverTest {
     String conditionJexl =
         rule.getMatchCondition().getGenericMatchCondition().getJexlExpression().getJexlExpression();
     // API IDs resolved to url/httpMethod/serviceName
-    assertTrue(conditionJexl.contains("$s.getUrl() =~ '/api/v1/test'"));
-    assertTrue(conditionJexl.contains("$s.getHttpMethod().equals('GET')"));
+    assertTrue(conditionJexl.contains("$s.getPath() =~ '/api/v1/test'"));
+    assertTrue(conditionJexl.contains("$s.getMethod().equals('GET')"));
     assertTrue(conditionJexl.contains("$s.getServiceName().equals('test-svc')"));
   }
 
@@ -399,8 +395,8 @@ class EntityJexlResolverTest {
     String conditionJexl =
         rule.getMatchCondition().getGenericMatchCondition().getJexlExpression().getJexlExpression();
     assertTrue(conditionJexl.contains("$s.getEnvironment().equals('production')"));
-    assertTrue(conditionJexl.contains("$s.getUrl() =~ '/api/v1/test'"));
-    assertTrue(conditionJexl.contains("$s.getHttpMethod().equals('POST')"));
+    assertTrue(conditionJexl.contains("$s.getPath() =~ '/api/v1/test'"));
+    assertTrue(conditionJexl.contains("$s.getMethod().equals('POST')"));
     assertTrue(conditionJexl.contains("&&"));
   }
 

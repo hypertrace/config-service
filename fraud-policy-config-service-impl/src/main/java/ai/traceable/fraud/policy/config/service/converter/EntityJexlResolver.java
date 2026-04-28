@@ -256,18 +256,20 @@ public class EntityJexlResolver {
         return buildMapAccessJexl(SPAN_VAR + ".getRequestHeaders()", rawKey, keyMatchType);
       case EXTRACTION_LOCATION_TYPE_REQUEST_BODY:
         validateExactMatchOnly(keyMatchType, locationType);
-        return SPAN_VAR + ".getParsedRequestBodyJson()" + toChainedGetAccess(rawKey);
+        return SPAN_VAR
+            + ".getParsedRequestBodyJson()"
+            + toChainedGetAccess(rawKey)
+            + ".getAsString()";
       case EXTRACTION_LOCATION_TYPE_REQUEST_COOKIE:
         return buildMapAccessJexl(SPAN_VAR + ".getRequestCookies()", rawKey, keyMatchType);
       case EXTRACTION_LOCATION_TYPE_REQUEST_QUERY_PARAM:
         return buildMapAccessJexl(SPAN_VAR + ".getRequestQueryParams()", rawKey, keyMatchType);
       case EXTRACTION_LOCATION_TYPE_RESPONSE_HEADER:
-        return buildMapAccessJexl(SPAN_VAR + ".getResponseHeaders()", rawKey, keyMatchType);
       case EXTRACTION_LOCATION_TYPE_RESPONSE_BODY:
-        validateExactMatchOnly(keyMatchType, locationType);
-        return SPAN_VAR + ".getParsedResponseBodyJson()" + toChainedGetAccess(rawKey);
       case EXTRACTION_LOCATION_TYPE_RESPONSE_COOKIE:
-        return buildMapAccessJexl(SPAN_VAR + ".getResponseCookies()", rawKey, keyMatchType);
+        log.warn(
+            "Skipping response-based extraction location (unsupported for EDS): {}", locationType);
+        return "";
       default:
         log.warn("Unsupported extraction location type: {}", locationType);
         return "";

@@ -512,7 +512,7 @@ class SimpleAggregationTemplateConverterTest {
     // account
     assertEquals("account", attrs.get(2).getSpanAttributeKey().getStaticValue().getStringValue());
     assertEquals(
-        "$s.getUser()",
+        "$context.get('enduser.id')",
         attrs.get(2).getSpanAttributeValue().getJexlExpression().getJexlExpression());
 
     // account_type

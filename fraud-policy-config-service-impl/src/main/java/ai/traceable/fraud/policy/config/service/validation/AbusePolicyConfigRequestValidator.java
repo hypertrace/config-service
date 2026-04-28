@@ -5,6 +5,8 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateReques
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionType;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfig;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfigServiceGrpc.EntityDerivationConfigServiceBlockingStub;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EventDerivationConfigDetails;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.ExtractionLocationType;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.GetEntityDerivationConfigsRequest;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.GetEntityDerivationConfigsResponse;
 import ai.traceable.fraud.datamodel.event.kind.v1.AggregationFunctionType;
@@ -30,7 +32,9 @@ import com.google.protobuf.Duration;
 import com.google.protobuf.Value;
 import io.grpc.Status;
 import jakarta.inject.Inject;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class AbusePolicyConfigRequestValidator {
@@ -95,6 +99,7 @@ public class AbusePolicyConfigRequestValidator {
     validatePolicyTemplate(data, requestContext);
     validatePolicyMessageFormat(data, requestContext);
     validatePolicyEvaluationSchedule(data, requestContext);
+    validateBlockActionEntityExtractions(data, requestContext);
   }
 
   private void validatePolicyName(AbusePolicyData data, RequestContext requestContext) {
@@ -426,6 +431,92 @@ public class AbusePolicyConfigRequestValidator {
       return "array<" + formatKind(kind.getArrayOf()) + ">";
     }
     return kind.toString();
+  }
+
+  /**
+   * Validates that BLOCK action policies do not reference entity derivation configs with
+   * response-based extraction locations (response headers/body/cookies), since response data is not
+   * available at the edge when the block decision is made.
+   */
+  private void validateBlockActionEntityExtractions(
+      AbusePolicyData data, RequestContext requestContext) {
+    if (data.getAction().getActionType()
+        != ai.traceable.fraud.policy.config.service.v1.AbuseActionType.ABUSE_ACTION_TYPE_BLOCK) {
+      return;
+    }
+
+    Set<String> entityIds = collectAllDerivedEntityIds(data);
+    if (entityIds.isEmpty()) {
+      return;
+    }
+
+    GetEntityDerivationConfigsResponse response =
+        requestContext.call(
+            () ->
+                entityDerivationConfigServiceStub.getEntityDerivationConfigs(
+                    GetEntityDerivationConfigsRequest.newBuilder().addAllIds(entityIds).build()));
+
+    for (EntityDerivationConfig config : response.getEntityDerivationConfigsList()) {
+      if (!config.getData().hasSpanProjection()) {
+        continue;
+      }
+      for (EventDerivationConfigDetails details :
+          config.getData().getSpanProjection().getEventDerivationConfigsList()) {
+        if (details.hasSpanExtraction()
+            && isResponseLocationType(
+                details.getSpanExtraction().getLocation().getLocationType())) {
+          throw Status.INVALID_ARGUMENT
+              .withDescription(
+                  String.format(
+                      "Block action policies cannot use entities with response-based extraction"
+                          + " (entity: %s, location: %s). Response data is not available at the"
+                          + " edge for blocking decisions.",
+                      config.getId(), details.getSpanExtraction().getLocation().getLocationType()))
+              .asRuntimeException(requestContext.buildTrailers());
+        }
+      }
+    }
+  }
+
+  private static Set<String> collectAllDerivedEntityIds(AbusePolicyData data) {
+    Set<String> ids = new HashSet<>();
+    if (data.hasSimpleAggregationTemplate()) {
+      ai.traceable.fraud.policy.config.service.v1.AbuseSimpleAggregationTemplateConfig template =
+          data.getSimpleAggregationTemplate();
+      if (!template.getAggregation().getDerivedEntityId().isEmpty()) {
+        ids.add(template.getAggregation().getDerivedEntityId());
+      }
+      if (template.hasGroupBy() && !template.getGroupBy().getDerivedEntityId().isEmpty()) {
+        ids.add(template.getGroupBy().getDerivedEntityId());
+      }
+      for (ai.traceable.fraud.policy.config.service.v1.AbusePolicyDetectionFilter filter :
+          template.getFiltersList()) {
+        collectDerivedEntityIdsFromFilter(filter, ids);
+      }
+    }
+    return ids;
+  }
+
+  private static void collectDerivedEntityIdsFromFilter(
+      ai.traceable.fraud.policy.config.service.v1.AbusePolicyDetectionFilter filter,
+      Set<String> ids) {
+    if (filter.hasRelationalFilter()) {
+      String id = filter.getRelationalFilter().getDerivedEntityId();
+      if (!id.isEmpty()) {
+        ids.add(id);
+      }
+    } else if (filter.hasLogicalFilter()) {
+      for (ai.traceable.fraud.policy.config.service.v1.AbusePolicyDetectionFilter operand :
+          filter.getLogicalFilter().getOperandsList()) {
+        collectDerivedEntityIdsFromFilter(operand, ids);
+      }
+    }
+  }
+
+  private static boolean isResponseLocationType(ExtractionLocationType locationType) {
+    return locationType == ExtractionLocationType.EXTRACTION_LOCATION_TYPE_RESPONSE_HEADER
+        || locationType == ExtractionLocationType.EXTRACTION_LOCATION_TYPE_RESPONSE_BODY
+        || locationType == ExtractionLocationType.EXTRACTION_LOCATION_TYPE_RESPONSE_COOKIE;
   }
 
   private void validatePredefinedTemplate(

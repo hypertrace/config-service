@@ -64,7 +64,7 @@ public final class JexlExpressionUtils {
   public static String toUrlRegexExpr(Set<String> urlRegexes) {
     String expr =
         urlRegexes.stream()
-            .map(pattern -> SPAN_VAR + ".getUrl() =~ '" + escapeJexlString(pattern) + "'")
+            .map(pattern -> SPAN_VAR + ".getPath() =~ '" + escapeJexlString(pattern) + "'")
             .collect(Collectors.joining(" || "));
     return urlRegexes.size() > 1 ? "(" + expr + ")" : expr;
   }

@@ -79,7 +79,7 @@ class JexlExpressionUtilsTest {
   @Test
   void toUrlRegexExpr_singleUrl() {
     assertEquals(
-        "$s.getUrl() =~ '/api/v1/.*'", JexlExpressionUtils.toUrlRegexExpr(Set.of("/api/v1/.*")));
+        "$s.getPath() =~ '/api/v1/.*'", JexlExpressionUtils.toUrlRegexExpr(Set.of("/api/v1/.*")));
   }
 
   // --- toChainedGetAccess ---

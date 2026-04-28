@@ -90,8 +90,8 @@ class ScopeToJexlConverterTest {
     Scope scope = apiScope("api-1");
     String result = convert(scope);
 
-    assertTrue(result.contains("$s.getUrl() =~ '/api/v1/test'"));
-    assertTrue(result.contains("$s.getHttpMethod().equals('GET')"));
+    assertTrue(result.contains("$s.getPath() =~ '/api/v1/test'"));
+    assertTrue(result.contains("$s.getMethod().equals('GET')"));
     assertTrue(result.contains("$s.getServiceName().equals('test-svc')"));
   }
 
@@ -114,8 +114,8 @@ class ScopeToJexlConverterTest {
     Scope scope = apiScope("api-1");
     String result = convert(scope);
 
-    assertTrue(result.contains("$s.getUrl() =~ '/api/v1/foo'"));
-    assertTrue(result.contains("$s.getUrl() =~ '/api/v1/bar'"));
+    assertTrue(result.contains("$s.getPath() =~ '/api/v1/foo'"));
+    assertTrue(result.contains("$s.getPath() =~ '/api/v1/bar'"));
     assertTrue(result.contains("||"));
   }
 
@@ -233,7 +233,7 @@ class ScopeToJexlConverterTest {
     String result = convert(scope);
 
     assertTrue(result.contains("$s.getRequestHeaders().get('h1').equals('v1')"));
-    assertTrue(result.contains("!$s.getRequestHeaders().get('h2').equals('v2')"));
+    assertTrue(result.contains("!($s.getRequestHeaders().get('h2').equals('v2'))"));
     assertTrue(result.contains("&&"));
   }
 
@@ -256,8 +256,8 @@ class ScopeToJexlConverterTest {
     String result = convert(scope);
 
     assertTrue(result.contains("$s.getEnvironment().equals('production')"));
-    assertTrue(result.contains("$s.getUrl() =~ '/v1/test'"));
-    assertTrue(result.contains("$s.getHttpMethod().equals('POST')"));
+    assertTrue(result.contains("$s.getPath() =~ '/v1/test'"));
+    assertTrue(result.contains("$s.getMethod().equals('POST')"));
     assertTrue(result.contains("$s.getServiceName().equals('my-svc')"));
     assertTrue(result.startsWith("("));
     assertTrue(result.contains("&&"));
@@ -292,7 +292,7 @@ class ScopeToJexlConverterTest {
     String result = convert(scope);
 
     assertTrue(result.contains("$s.getEnvironment().equals('prod')"));
-    assertTrue(result.contains("$s.getUrl() =~ '/v1/test'"));
+    assertTrue(result.contains("$s.getPath() =~ '/v1/test'"));
     assertTrue(result.contains("$s.getRequestHeaders().get('head').equals('toe')"));
   }
 
@@ -581,5 +581,109 @@ class ScopeToJexlConverterTest {
             .build();
 
     assertEquals(convert(defaultScope), convert(exactScope));
+  }
+
+  // --- Response-based filter skipping ---
+
+  @Test
+  void convert_spanBasedScope_responseHeader_skipped() {
+    Scope scope =
+        Scope.newBuilder()
+            .setSpanBasedScope(
+                SpanBasedScope.newBuilder()
+                    .addFilters(
+                        SpanBasedFilter.newBuilder()
+                            .setOperator(FilterOperator.FILTER_OPERATOR_EQ)
+                            .setLocation(
+                                ExtractionLocation.newBuilder()
+                                    .setLocationType(
+                                        ExtractionLocationType
+                                            .EXTRACTION_LOCATION_TYPE_RESPONSE_HEADER)
+                                    .setKey("x-rate-limit"))
+                            .setValue(Value.newBuilder().setStringValue("100"))))
+            .build();
+
+    String result = convert(scope);
+
+    assertEquals("", result);
+  }
+
+  @Test
+  void convert_spanBasedScope_responseBody_skipped() {
+    Scope scope =
+        Scope.newBuilder()
+            .setSpanBasedScope(
+                SpanBasedScope.newBuilder()
+                    .addFilters(
+                        SpanBasedFilter.newBuilder()
+                            .setOperator(FilterOperator.FILTER_OPERATOR_EQ)
+                            .setLocation(
+                                ExtractionLocation.newBuilder()
+                                    .setLocationType(
+                                        ExtractionLocationType
+                                            .EXTRACTION_LOCATION_TYPE_RESPONSE_BODY)
+                                    .setKey("error_code"))
+                            .setValue(Value.newBuilder().setStringValue("404"))))
+            .build();
+
+    String result = convert(scope);
+
+    assertEquals("", result);
+  }
+
+  @Test
+  void convert_spanBasedScope_responseCookie_skipped() {
+    Scope scope =
+        Scope.newBuilder()
+            .setSpanBasedScope(
+                SpanBasedScope.newBuilder()
+                    .addFilters(
+                        SpanBasedFilter.newBuilder()
+                            .setOperator(FilterOperator.FILTER_OPERATOR_EQ)
+                            .setLocation(
+                                ExtractionLocation.newBuilder()
+                                    .setLocationType(
+                                        ExtractionLocationType
+                                            .EXTRACTION_LOCATION_TYPE_RESPONSE_COOKIE)
+                                    .setKey("session"))
+                            .setValue(Value.newBuilder().setStringValue("abc"))))
+            .build();
+
+    String result = convert(scope);
+
+    assertEquals("", result);
+  }
+
+  @Test
+  void convert_spanBasedScope_mixedRequestAndResponse_onlyRequestKept() {
+    Scope scope =
+        Scope.newBuilder()
+            .setSpanBasedScope(
+                SpanBasedScope.newBuilder()
+                    .addFilters(
+                        SpanBasedFilter.newBuilder()
+                            .setOperator(FilterOperator.FILTER_OPERATOR_EQ)
+                            .setLocation(
+                                ExtractionLocation.newBuilder()
+                                    .setLocationType(
+                                        ExtractionLocationType
+                                            .EXTRACTION_LOCATION_TYPE_REQUEST_HEADER)
+                                    .setKey("x-api-key"))
+                            .setValue(Value.newBuilder().setStringValue("secret")))
+                    .addFilters(
+                        SpanBasedFilter.newBuilder()
+                            .setOperator(FilterOperator.FILTER_OPERATOR_EQ)
+                            .setLocation(
+                                ExtractionLocation.newBuilder()
+                                    .setLocationType(
+                                        ExtractionLocationType
+                                            .EXTRACTION_LOCATION_TYPE_RESPONSE_HEADER)
+                                    .setKey("x-rate-limit"))
+                            .setValue(Value.newBuilder().setStringValue("100"))))
+            .build();
+
+    String result = convert(scope);
+
+    assertEquals("$s.getRequestHeaders().get('x-api-key').equals('secret')", result);
   }
 }

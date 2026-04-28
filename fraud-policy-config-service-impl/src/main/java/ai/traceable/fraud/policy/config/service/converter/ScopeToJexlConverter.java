@@ -125,7 +125,7 @@ public class ScopeToJexlConverter {
       if (!httpMethods.isEmpty()) {
         parts.add(
             JexlExpressionUtils.toEqualsExpr(
-                SPAN_VAR + ".getHttpMethod()", new ArrayList<>(httpMethods)));
+                SPAN_VAR + ".getMethod()", new ArrayList<>(httpMethods)));
       }
       if (!serviceNames.isEmpty()) {
         parts.add(
@@ -153,19 +153,25 @@ public class ScopeToJexlConverter {
     if (filters.isEmpty()) {
       return "";
     }
-    String expr =
+    List<String> expressions =
         filters.stream()
             .map(ScopeToJexlConverter::convertFilter)
-            .collect(Collectors.joining(" && "));
-    return filters.size() > 1 ? "(" + expr + ")" : expr;
+            .filter(Optional::isPresent)
+            .map(Optional::get)
+            .collect(Collectors.toList());
+    if (expressions.isEmpty()) {
+      return "";
+    }
+    String expr = String.join(" && ", expressions);
+    return expressions.size() > 1 ? "(" + expr + ")" : expr;
   }
 
-  private static String convertFilter(SpanBasedFilter filter) {
-    String fieldPath = resolveFieldPath(filter.getLocation());
-    return applyOperator(fieldPath, filter.getOperator(), filter.getValue());
+  private static Optional<String> convertFilter(SpanBasedFilter filter) {
+    return resolveFieldPath(filter.getLocation())
+        .map(fieldPath -> applyOperator(fieldPath, filter.getOperator(), filter.getValue()));
   }
 
-  private static String resolveFieldPath(ExtractionLocation location) {
+  private static Optional<String> resolveFieldPath(ExtractionLocation location) {
     String base;
     ExtractionLocationType locationType = location.getLocationType();
     KeyMatchType keyMatchType = location.getKeyMatchType();
@@ -178,9 +184,9 @@ public class ScopeToJexlConverter {
         validateExactMatchOnly(keyMatchType, locationType);
         String bodyKey = location.getKey();
         if (bodyKey.isEmpty()) {
-          return SPAN_VAR + ".getParsedRequestBodyJson()";
+          return Optional.of(SPAN_VAR + ".getParsedRequestBodyJson()");
         }
-        return SPAN_VAR + ".getParsedRequestBodyJson()" + toChainedGetAccess(bodyKey);
+        return Optional.of(SPAN_VAR + ".getParsedRequestBodyJson()" + toChainedGetAccess(bodyKey));
       case EXTRACTION_LOCATION_TYPE_REQUEST_QUERY_PARAM:
         base = "getRequestQueryParams()";
         break;
@@ -190,15 +196,19 @@ public class ScopeToJexlConverter {
       case EXTRACTION_LOCATION_TYPE_RESPONSE_HEADER:
       case EXTRACTION_LOCATION_TYPE_RESPONSE_BODY:
       case EXTRACTION_LOCATION_TYPE_RESPONSE_COOKIE:
+        log.warn(
+            "Skipping response-based extraction location in scope (unsupported for block policies): {}",
+            locationType);
+        return Optional.empty();
       default:
         log.warn("Unsupported extraction location type in scope: {}", locationType);
-        return SPAN_VAR;
+        return Optional.empty();
     }
     String key = location.getKey();
     if (key.isEmpty()) {
-      return SPAN_VAR + "." + base;
+      return Optional.of(SPAN_VAR + "." + base);
     }
-    return buildMapAccessJexl(SPAN_VAR + "." + base, key, keyMatchType);
+    return Optional.of(buildMapAccessJexl(SPAN_VAR + "." + base, key, keyMatchType));
   }
 
   private static String applyOperator(String fieldPath, FilterOperator operator, Value value) {
@@ -216,7 +226,7 @@ public class ScopeToJexlConverter {
         if (isNull) {
           return fieldPath + " != null";
         }
-        return isString ? "!" + fieldPath + ".equals(" + val + ")" : fieldPath + " != " + val;
+        return isString ? "!(" + fieldPath + ".equals(" + val + "))" : fieldPath + " != " + val;
       case FILTER_OPERATOR_GT:
         return fieldPath + " > " + val;
       case FILTER_OPERATOR_LT:
