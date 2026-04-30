@@ -111,14 +111,21 @@ public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
     try {
       Optional<SpanFilter> spanFilter = convertFilter(excludeSpanRule.getRuleInfo().getFilter());
 
-      ExcludeSpanProcessingRuleInfo.Builder ruleInfoBuilder =
-          ExcludeSpanProcessingRuleInfo.newBuilder().setId(excludeSpanRule.getId());
-
-      spanFilter.ifPresent(ruleInfoBuilder::setFilter);
+      // Environment and service-name clauses are consumed at routing time (the agent already
+      // queries for a specific env/service) and are stripped during conversion. If that leaves
+      // no per-span filter, the rule has nothing meaningful to evaluate on the agent, so don't
+      // return it.
+      if (spanFilter.isEmpty()) {
+        return Optional.empty();
+      }
 
       ExcludeSpanProcessingRule rule =
           ExcludeSpanProcessingRule.newBuilder()
-              .setExcludeSpanProcessingRuleInfo(ruleInfoBuilder.build())
+              .setExcludeSpanProcessingRuleInfo(
+                  ExcludeSpanProcessingRuleInfo.newBuilder()
+                      .setId(excludeSpanRule.getId())
+                      .setFilter(spanFilter.get())
+                      .build())
               .build();
 
       if (!isAgentSupportedRule(rule)) {

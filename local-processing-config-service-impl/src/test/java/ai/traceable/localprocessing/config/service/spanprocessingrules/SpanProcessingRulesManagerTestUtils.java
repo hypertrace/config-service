@@ -341,6 +341,28 @@ public class SpanProcessingRulesManagerTestUtils {
         .build();
   }
 
+  public static GetAllExcludeSpanRulesResponse
+      buildGetAllExcludeSpanRulesResponseOnlyEnvironmentFilter() {
+    return GetAllExcludeSpanRulesResponse.newBuilder()
+        .addRuleDetails(
+            ExcludeSpanRuleDetails.newBuilder()
+                .setRule(
+                    ExcludeSpanRule.newBuilder()
+                        .setId("id")
+                        .setRuleInfo(
+                            ExcludeSpanRuleInfo.newBuilder()
+                                .setName("name")
+                                .setFilter(
+                                    buildRelationalFilter(
+                                        Field.FIELD_ENVIRONMENT_NAME,
+                                        null,
+                                        RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
+                                        "value"))
+                                .build())
+                        .build()))
+        .build();
+  }
+
   public static GetAllResolvedSamplingConfigsResponse buildGetAllResolvedSamplingConfigsResponse() {
     return GetAllResolvedSamplingConfigsResponse.newBuilder()
         .addSamplingConfigs(
@@ -582,6 +604,52 @@ public class SpanProcessingRulesManagerTestUtils {
         .build();
   }
 
+  public static GetAllResolvedProtectionSpanRulesResponse
+      buildGetAllResolvedProtectionSpanRulesResponseOnlyEnvironmentFilter() {
+    return GetAllResolvedProtectionSpanRulesResponse.newBuilder()
+        .addRules(
+            ProtectionSpanRule.newBuilder()
+                .setId("id")
+                .setRuleInfo(
+                    ProtectionSpanRuleInfo.newBuilder()
+                        .setName("name")
+                        .setFilter(
+                            buildLogicalFilterSpanProcessing(
+                                ai.traceable.span.processing.config.service.v1.LogicalOperator
+                                    .LOGICAL_OPERATOR_AND,
+                                List.of(
+                                    buildRelationalFilter(
+                                        ai.traceable.span.processing.config.service.v1.Field
+                                            .FIELD_ENVIRONMENT_NAME,
+                                        null,
+                                        ai.traceable.span.processing.config.service.v1
+                                            .RelationalOperator.RELATIONAL_OPERATOR_IN,
+                                        List.of("value1", "value")))))
+                        .build()))
+        .build();
+  }
+
+  public static GetAllResolvedProtectionSpanRulesResponse
+      buildGetAllResolvedProtectionSpanRulesResponseOnlyServiceNameFilter() {
+    return GetAllResolvedProtectionSpanRulesResponse.newBuilder()
+        .addRules(
+            ProtectionSpanRule.newBuilder()
+                .setId("id")
+                .setRuleInfo(
+                    ProtectionSpanRuleInfo.newBuilder()
+                        .setName("name")
+                        .setFilter(
+                            buildRelationalFilter(
+                                ai.traceable.span.processing.config.service.v1.Field
+                                    .FIELD_SERVICE_NAME,
+                                null,
+                                ai.traceable.span.processing.config.service.v1.RelationalOperator
+                                    .RELATIONAL_OPERATOR_EQUALS,
+                                "service1"))
+                        .build()))
+        .build();
+  }
+
   private static SpanFilter buildLogicalFilterSpanProcessing(
       org.hypertrace.span.processing.config.service.v1.LogicalOperator operator,
       List<org.hypertrace.span.processing.config.service.v1.SpanFilter> filters) {
@@ -818,11 +886,10 @@ public class SpanProcessingRulesManagerTestUtils {
                                 .build())
                         .setFilter(
                             buildRelationalFilter(
-                                ai.traceable.span.processing.config.service.v1.Field
-                                    .FIELD_SERVICE_NAME,
                                 null,
+                                "key",
                                 ai.traceable.span.processing.config.service.v1.RelationalOperator
-                                    .RELATIONAL_OPERATOR_CONTAINS,
+                                    .RELATIONAL_OPERATOR_EQUALS,
                                 "val"))
                         .build())
                 .build())
@@ -834,6 +901,64 @@ public class SpanProcessingRulesManagerTestUtils {
         .setId("percentage-id")
         .setAllowedPercentage(50)
         .setLimitingStrategy(SpanLimitingStrategy.SPAN_LIMITING_STRATEGY_DROP)
+        .setFilter(
+            buildRelationalFilter(
+                "key",
+                ai.traceable.localprocessing.config.service.v1.RelationalOperator
+                    .RELATIONAL_OPERATOR_EQUALS,
+                "val"))
+        .build();
+  }
+
+  public static GetAllResolvedSamplingConfigsResponse
+      buildGetAllResolvedSamplingConfigsResponseWithPercentageLimitConfigOnlyEnvironmentFilter() {
+    return GetAllResolvedSamplingConfigsResponse.newBuilder()
+        .addSamplingConfigs(
+            SamplingConfig.newBuilder()
+                .setId("percentage-id")
+                .setSamplingConfigInfo(
+                    SamplingConfigInfo.newBuilder()
+                        .setRateLimitConfig(buildRateLimitConfig())
+                        .setPercentageLimitConfig(
+                            ai.traceable.span.processing.config.service.v1.PercentageLimitConfig
+                                .newBuilder()
+                                .setAllowedPercentage(50)
+                                .setLimitingStrategy(
+                                    ai.traceable.span.processing.config.service.v1
+                                        .SpanLimitingStrategy.SPAN_LIMITING_STRATEGY_DROP)
+                                .build())
+                        .setFilter(
+                            buildRelationalFilter(
+                                ai.traceable.span.processing.config.service.v1.Field
+                                    .FIELD_ENVIRONMENT_NAME,
+                                null,
+                                ai.traceable.span.processing.config.service.v1.RelationalOperator
+                                    .RELATIONAL_OPERATOR_IN,
+                                List.of("value1", "value")))
+                        .build())
+                .build())
+        .build();
+  }
+
+  public static GetAllResolvedSamplingConfigsResponse
+      buildGetAllResolvedSamplingConfigsResponseWithPercentageLimitConfigNoFilter() {
+    return GetAllResolvedSamplingConfigsResponse.newBuilder()
+        .addSamplingConfigs(
+            SamplingConfig.newBuilder()
+                .setId("percentage-id")
+                .setSamplingConfigInfo(
+                    SamplingConfigInfo.newBuilder()
+                        .setRateLimitConfig(buildRateLimitConfig())
+                        .setPercentageLimitConfig(
+                            ai.traceable.span.processing.config.service.v1.PercentageLimitConfig
+                                .newBuilder()
+                                .setAllowedPercentage(50)
+                                .setLimitingStrategy(
+                                    ai.traceable.span.processing.config.service.v1
+                                        .SpanLimitingStrategy.SPAN_LIMITING_STRATEGY_DROP)
+                                .build())
+                        .build())
+                .build())
         .build();
   }
 }

@@ -17,6 +17,8 @@ import ai.traceable.localprocessing.config.service.v1.SpanProcessingRulesService
 import ai.traceable.span.processing.config.service.v1.CreateSamplingConfigRequest;
 import ai.traceable.span.processing.config.service.v1.DeleteSamplingConfigRequest;
 import ai.traceable.span.processing.config.service.v1.Field;
+import ai.traceable.span.processing.config.service.v1.LogicalOperator;
+import ai.traceable.span.processing.config.service.v1.LogicalSpanFilterExpression;
 import ai.traceable.span.processing.config.service.v1.RateLimit;
 import ai.traceable.span.processing.config.service.v1.RateLimitConfig;
 import ai.traceable.span.processing.config.service.v1.RateLimitStrategy;
@@ -91,6 +93,7 @@ class SpanProcessingRulesIntegrationTest extends TraceableConfigServiceIntegrati
                             ai.traceable.span.processing.config.service.v1.SpanLimitingStrategy
                                 .SPAN_LIMITING_STRATEGY_BARESPAN)
                         .build())
+                .setFilter(buildAttributeFilter())
                 .build());
 
     SpanProcessingRules rules = getSpanProcessingRules("service1");
@@ -192,6 +195,9 @@ class SpanProcessingRulesIntegrationTest extends TraceableConfigServiceIntegrati
 
   @Test
   void testEnvironmentFilter_matchingEnvironment() {
+    // Environment clause is combined with a non-stripping attribute clause so that the config
+    // is still routed by environment but survives FilterConverter (which strips env clauses)
+    // and is delivered to the agent with the attribute portion of the filter.
     createSamplingConfig(
         SamplingConfigInfo.newBuilder()
             .setPercentageLimitConfig(
@@ -201,7 +207,7 @@ class SpanProcessingRulesIntegrationTest extends TraceableConfigServiceIntegrati
                         ai.traceable.span.processing.config.service.v1.SpanLimitingStrategy
                             .SPAN_LIMITING_STRATEGY_DROP)
                     .build())
-            .setFilter(buildEnvironmentFilter("prod"))
+            .setFilter(andFilters(buildEnvironmentFilter("prod"), buildAttributeFilter()))
             .build());
 
     assertTrue(
@@ -231,7 +237,8 @@ class SpanProcessingRulesIntegrationTest extends TraceableConfigServiceIntegrati
                         ai.traceable.span.processing.config.service.v1.SpanLimitingStrategy
                             .SPAN_LIMITING_STRATEGY_BARESPAN)
                     .build())
-            .setFilter(buildServiceNameFilter("payment-service"))
+            .setFilter(
+                andFilters(buildServiceNameFilter("payment-service"), buildAttributeFilter()))
             .build());
 
     assertTrue(getSpanProcessingRules("other-service").getPercentageLimitConfigsList().isEmpty());
@@ -251,7 +258,7 @@ class SpanProcessingRulesIntegrationTest extends TraceableConfigServiceIntegrati
                         ai.traceable.span.processing.config.service.v1.SpanLimitingStrategy
                             .SPAN_LIMITING_STRATEGY_DROP)
                     .build())
-            .setFilter(buildServiceNameFilter("svc-a"))
+            .setFilter(andFilters(buildServiceNameFilter("svc-a"), buildAttributeFilter()))
             .build());
 
     GetSpanProcessingRulesResponse response =
@@ -288,6 +295,43 @@ class SpanProcessingRulesIntegrationTest extends TraceableConfigServiceIntegrati
     assertEquals(1, svcAResponse.getSpanProcessingRules().getPercentageLimitConfigsList().size());
     assertTrue(svcBResponse.getSpanProcessingRules().getPercentageLimitConfigsList().isEmpty());
     assertNotEquals(svcAResponse.getHash(), svcBResponse.getHash());
+  }
+
+  @Test
+  void testRoutingOnlyFilter_configNotReturnedToAgent() {
+    // A sampling config whose only filter clauses are environment- or service-name- based gets
+    // its filter stripped to nothing during conversion (those clauses are consumed at routing
+    // time). The local processing config service must not return such a config to the agent
+    // because it would carry no per-span filter for the agent to evaluate.
+    createSamplingConfig(
+        SamplingConfigInfo.newBuilder()
+            .setPercentageLimitConfig(
+                ai.traceable.span.processing.config.service.v1.PercentageLimitConfig.newBuilder()
+                    .setAllowedPercentage(25)
+                    .setLimitingStrategy(
+                        ai.traceable.span.processing.config.service.v1.SpanLimitingStrategy
+                            .SPAN_LIMITING_STRATEGY_DROP)
+                    .build())
+            .setFilter(buildServiceNameFilter("payment-service"))
+            .build());
+
+    createSamplingConfig(
+        SamplingConfigInfo.newBuilder()
+            .setPercentageLimitConfig(
+                ai.traceable.span.processing.config.service.v1.PercentageLimitConfig.newBuilder()
+                    .setAllowedPercentage(35)
+                    .setLimitingStrategy(
+                        ai.traceable.span.processing.config.service.v1.SpanLimitingStrategy
+                            .SPAN_LIMITING_STRATEGY_DROP)
+                    .build())
+            .setFilter(buildEnvironmentFilter("prod"))
+            .build());
+
+    assertTrue(getSpanProcessingRules("payment-service").getPercentageLimitConfigsList().isEmpty());
+    assertTrue(
+        getSpanProcessingRulesWithEnv("payment-service", "prod")
+            .getPercentageLimitConfigsList()
+            .isEmpty());
   }
 
   @Test
@@ -357,6 +401,9 @@ class SpanProcessingRulesIntegrationTest extends TraceableConfigServiceIntegrati
   private String createPercentageLimitConfig(
       float allowedPercentage,
       ai.traceable.span.processing.config.service.v1.SpanLimitingStrategy strategy) {
+    // A non-stripping attribute filter is attached so the percentage-limit config survives
+    // FilterConverter (env/service-name clauses are stripped at routing time, leaving such
+    // configs with no per-span filter and therefore dropped from the agent response).
     return createSamplingConfig(
         SamplingConfigInfo.newBuilder()
             .setPercentageLimitConfig(
@@ -364,6 +411,7 @@ class SpanProcessingRulesIntegrationTest extends TraceableConfigServiceIntegrati
                     .setAllowedPercentage(allowedPercentage)
                     .setLimitingStrategy(strategy)
                     .build())
+            .setFilter(buildAttributeFilter())
             .build());
   }
 
@@ -450,6 +498,27 @@ class SpanProcessingRulesIntegrationTest extends TraceableConfigServiceIntegrati
                 .setField(Field.FIELD_SERVICE_NAME)
                 .setOperator(RelationalOperator.RELATIONAL_OPERATOR_CONTAINS)
                 .setRightOperand(SpanFilterValue.newBuilder().setStringValue(serviceName).build())
+                .build())
+        .build();
+  }
+
+  private static SpanFilter buildAttributeFilter() {
+    return SpanFilter.newBuilder()
+        .setRelationalSpanFilter(
+            RelationalSpanFilterExpression.newBuilder()
+                .setSpanAttributeKey("test.attribute")
+                .setOperator(RelationalOperator.RELATIONAL_OPERATOR_EQUALS)
+                .setRightOperand(SpanFilterValue.newBuilder().setStringValue("test-value").build())
+                .build())
+        .build();
+  }
+
+  private static SpanFilter andFilters(SpanFilter... operands) {
+    return SpanFilter.newBuilder()
+        .setLogicalSpanFilter(
+            LogicalSpanFilterExpression.newBuilder()
+                .setOperator(LogicalOperator.LOGICAL_OPERATOR_AND)
+                .addAllOperands(List.of(operands))
                 .build())
         .build();
   }

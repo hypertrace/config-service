@@ -8,15 +8,20 @@ import static ai.traceable.localprocessing.config.service.spanprocessingrules.Sp
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildExpectedRateLimitConfig;
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllExcludeSpanRulesResponse;
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllExcludeSpanRulesResponseEnvironmentFilter;
+import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllExcludeSpanRulesResponseOnlyEnvironmentFilter;
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllExcludeSpanRulesResponseServiceNameFilter;
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllResolvedProtectionSpanRulesResponse;
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllResolvedProtectionSpanRulesResponseEnvironmentFilter;
+import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllResolvedProtectionSpanRulesResponseOnlyEnvironmentFilter;
+import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllResolvedProtectionSpanRulesResponseOnlyServiceNameFilter;
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllResolvedProtectionSpanRulesResponseServiceNameFilter;
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllResolvedSamplingConfigsResponse;
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllResolvedSamplingConfigsResponseEnvironmentFilter;
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllResolvedSamplingConfigsResponseNoFilter;
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllResolvedSamplingConfigsResponseServiceNameFilter;
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllResolvedSamplingConfigsResponseWithPercentageLimitConfig;
+import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllResolvedSamplingConfigsResponseWithPercentageLimitConfigNoFilter;
+import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllResolvedSamplingConfigsResponseWithPercentageLimitConfigOnlyEnvironmentFilter;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -37,6 +42,7 @@ import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.v1.ExcludeSpanProcessingRule;
 import ai.traceable.localprocessing.config.service.v1.GetSpanProcessingRulesRequest;
 import ai.traceable.localprocessing.config.service.v1.GetSpanProcessingRulesResponse;
+import ai.traceable.localprocessing.config.service.v1.PercentageLimitConfig;
 import ai.traceable.localprocessing.config.service.v1.ProtectionSpanProcessingRule;
 import ai.traceable.localprocessing.config.service.v1.SpanProcessingRules;
 import ai.traceable.localprocessing.config.service.v1.SpanProcessingRulesServiceRequest;
@@ -255,6 +261,39 @@ class DefaultSpanProcessingRulesManagerTest {
                     .build())
             .build(),
         getSpanProcessingRulesResponse);
+  }
+
+  @Test
+  void testGetAllExcludeSpanRulesOnlyEnvironmentFilter() {
+    when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedSamplingConfigs(any()))
+        .thenReturn(GetAllResolvedSamplingConfigsResponse.newBuilder().build());
+    when(spanProcessingConfigServiceBlockingStub.getAllExcludeSpanRules(any()))
+        .thenReturn(buildGetAllExcludeSpanRulesResponseOnlyEnvironmentFilter());
+    when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedProtectionSpanRules(any()))
+        .thenReturn(GetAllResolvedProtectionSpanRulesResponse.getDefaultInstance());
+
+    GetSpanProcessingRulesResponse getSpanProcessingRulesResponse =
+        spanProcessingRulesManager.getSpanProcessingRulesResponse(
+            requestContext,
+            GetSpanProcessingRulesRequest.newBuilder()
+                .setEnvironment("value")
+                .addServiceRequests(
+                    SpanProcessingRulesServiceRequest.newBuilder()
+                        .setServiceName("service1")
+                        .setHash("")
+                        .build())
+                .build());
+
+    List<ExcludeSpanProcessingRule> excludeSpanProcessingRules =
+        getSpanProcessingRulesResponse
+            .getSpanProcessingRulesServiceResponsesList()
+            .get(0)
+            .getSpanProcessingRules()
+            .getExcludeSpanRulesList();
+
+    // The rule's only clause was an environment filter, which gets stripped at routing time.
+    // After stripping there's no per-span filter to evaluate, so the rule isn't returned.
+    assertEquals(0, excludeSpanProcessingRules.size());
   }
 
   @Test
@@ -501,6 +540,39 @@ class DefaultSpanProcessingRulesManagerTest {
   }
 
   @Test
+  void testGetAllProtectionSpanRulesOnlyEnvironmentFilter() {
+    when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedSamplingConfigs(any()))
+        .thenReturn(GetAllResolvedSamplingConfigsResponse.newBuilder().build());
+    when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedProtectionSpanRules(any()))
+        .thenReturn(buildGetAllResolvedProtectionSpanRulesResponseOnlyEnvironmentFilter());
+    when(spanProcessingConfigServiceBlockingStub.getAllExcludeSpanRules(any()))
+        .thenReturn(GetAllExcludeSpanRulesResponse.newBuilder().build());
+
+    GetSpanProcessingRulesResponse getSpanProcessingRulesResponse =
+        spanProcessingRulesManager.getSpanProcessingRulesResponse(
+            requestContext,
+            GetSpanProcessingRulesRequest.newBuilder()
+                .setEnvironment("value")
+                .addServiceRequests(
+                    SpanProcessingRulesServiceRequest.newBuilder()
+                        .setServiceName("service1")
+                        .setHash("")
+                        .build())
+                .build());
+
+    List<ProtectionSpanProcessingRule> protectionSpanProcessingRules =
+        getSpanProcessingRulesResponse
+            .getSpanProcessingRulesServiceResponsesList()
+            .get(0)
+            .getSpanProcessingRules()
+            .getProtectionSpanRulesList();
+
+    // The rule's only clause was an environment filter, which gets stripped at routing time.
+    // After stripping there's no per-span filter to evaluate, so the rule isn't returned.
+    assertEquals(0, protectionSpanProcessingRules.size());
+  }
+
+  @Test
   void testGetAllProtectionSpanRulesServiceNameFilter() {
     when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedSamplingConfigs(any()))
         .thenReturn(GetAllResolvedSamplingConfigsResponse.newBuilder().build());
@@ -563,6 +635,38 @@ class DefaultSpanProcessingRulesManagerTest {
                     .build())
             .build(),
         getSpanProcessingRulesResponse);
+  }
+
+  @Test
+  void testGetAllProtectionSpanRulesOnlyServiceNameFilter() {
+    when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedSamplingConfigs(any()))
+        .thenReturn(GetAllResolvedSamplingConfigsResponse.newBuilder().build());
+    when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedProtectionSpanRules(any()))
+        .thenReturn(buildGetAllResolvedProtectionSpanRulesResponseOnlyServiceNameFilter());
+    when(spanProcessingConfigServiceBlockingStub.getAllExcludeSpanRules(any()))
+        .thenReturn(GetAllExcludeSpanRulesResponse.newBuilder().build());
+
+    GetSpanProcessingRulesResponse getSpanProcessingRulesResponse =
+        spanProcessingRulesManager.getSpanProcessingRulesResponse(
+            requestContext,
+            GetSpanProcessingRulesRequest.newBuilder()
+                .addServiceRequests(
+                    SpanProcessingRulesServiceRequest.newBuilder()
+                        .setServiceName("service1")
+                        .setHash("")
+                        .build())
+                .build());
+
+    List<ProtectionSpanProcessingRule> protectionSpanProcessingRules =
+        getSpanProcessingRulesResponse
+            .getSpanProcessingRulesServiceResponsesList()
+            .get(0)
+            .getSpanProcessingRules()
+            .getProtectionSpanRulesList();
+
+    // The rule's only clause was a service-name filter, which gets stripped at routing time.
+    // After stripping there's no per-span filter to evaluate, so the rule isn't returned.
+    assertEquals(0, protectionSpanProcessingRules.size());
   }
 
   @Test
@@ -979,5 +1083,69 @@ class DefaultSpanProcessingRulesManagerTest {
             .getSpanProcessingRules()
             .getPercentageLimitConfigsList()
             .get(0));
+  }
+
+  @Test
+  void testGetAllPercentageLimitConfigsOnlyEnvironmentFilter() {
+    when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedSamplingConfigs(any()))
+        .thenReturn(
+            buildGetAllResolvedSamplingConfigsResponseWithPercentageLimitConfigOnlyEnvironmentFilter());
+    when(spanProcessingConfigServiceBlockingStub.getAllExcludeSpanRules(any()))
+        .thenReturn(GetAllExcludeSpanRulesResponse.getDefaultInstance());
+    when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedProtectionSpanRules(any()))
+        .thenReturn(GetAllResolvedProtectionSpanRulesResponse.getDefaultInstance());
+
+    GetSpanProcessingRulesResponse getSpanProcessingRulesResponse =
+        spanProcessingRulesManager.getSpanProcessingRulesResponse(
+            requestContext,
+            GetSpanProcessingRulesRequest.newBuilder()
+                .setEnvironment("value")
+                .addServiceRequests(
+                    SpanProcessingRulesServiceRequest.newBuilder()
+                        .setServiceName("service1")
+                        .build())
+                .build());
+
+    List<PercentageLimitConfig> percentageLimitConfigs =
+        getSpanProcessingRulesResponse
+            .getSpanProcessingRulesServiceResponsesList()
+            .get(0)
+            .getSpanProcessingRules()
+            .getPercentageLimitConfigsList();
+
+    // The config's only clause was an environment filter, which gets stripped at routing time.
+    // After stripping there's no per-span filter to evaluate, so the config isn't returned.
+    assertEquals(0, percentageLimitConfigs.size());
+  }
+
+  @Test
+  void testGetAllPercentageLimitConfigsNoFilter() {
+    when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedSamplingConfigs(any()))
+        .thenReturn(buildGetAllResolvedSamplingConfigsResponseWithPercentageLimitConfigNoFilter());
+    when(spanProcessingConfigServiceBlockingStub.getAllExcludeSpanRules(any()))
+        .thenReturn(GetAllExcludeSpanRulesResponse.getDefaultInstance());
+    when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedProtectionSpanRules(any()))
+        .thenReturn(GetAllResolvedProtectionSpanRulesResponse.getDefaultInstance());
+
+    GetSpanProcessingRulesResponse getSpanProcessingRulesResponse =
+        spanProcessingRulesManager.getSpanProcessingRulesResponse(
+            requestContext,
+            GetSpanProcessingRulesRequest.newBuilder()
+                .addServiceRequests(
+                    SpanProcessingRulesServiceRequest.newBuilder()
+                        .setServiceName("service1")
+                        .build())
+                .build());
+
+    List<PercentageLimitConfig> percentageLimitConfigs =
+        getSpanProcessingRulesResponse
+            .getSpanProcessingRulesServiceResponsesList()
+            .get(0)
+            .getSpanProcessingRules()
+            .getPercentageLimitConfigsList();
+
+    // Source config had no filter at all; with no per-span filter to evaluate, the config is
+    // not returned.
+    assertEquals(0, percentageLimitConfigs.size());
   }
 }

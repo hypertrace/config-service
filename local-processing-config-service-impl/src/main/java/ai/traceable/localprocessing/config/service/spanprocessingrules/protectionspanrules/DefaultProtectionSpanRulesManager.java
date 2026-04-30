@@ -82,14 +82,20 @@ public class DefaultProtectionSpanRulesManager implements ProtectionSpanRulesMan
     Optional<SpanFilter> spanFilter =
         filterConverter.convert(protectionSpanRule.getRuleInfo().getFilter());
 
-    ProtectionSpanProcessingRuleInfo.Builder ruleInfoBuilder =
-        ProtectionSpanProcessingRuleInfo.newBuilder().setId(protectionSpanRule.getId());
-
-    spanFilter.ifPresent(ruleInfoBuilder::setFilter);
+    // Environment and service-name clauses are consumed at routing time (the agent already queries
+    // for a specific env/service) and FilterConverter strips them. If that leaves no per-span
+    // filter, the rule has nothing meaningful to evaluate on the agent, so don't return it.
+    if (spanFilter.isEmpty()) {
+      return Optional.empty();
+    }
 
     return Optional.of(
         ProtectionSpanProcessingRule.newBuilder()
-            .setProtectionSpanProcessingRuleInfo(ruleInfoBuilder.build())
+            .setProtectionSpanProcessingRuleInfo(
+                ProtectionSpanProcessingRuleInfo.newBuilder()
+                    .setId(protectionSpanRule.getId())
+                    .setFilter(spanFilter.get())
+                    .build())
             .build());
   }
 }

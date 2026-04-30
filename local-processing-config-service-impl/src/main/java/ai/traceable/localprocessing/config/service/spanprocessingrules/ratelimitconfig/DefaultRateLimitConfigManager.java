@@ -10,6 +10,7 @@ import ai.traceable.localprocessing.config.service.v1.PercentageLimitConfig;
 import ai.traceable.localprocessing.config.service.v1.RateLimit;
 import ai.traceable.localprocessing.config.service.v1.RateLimitConfig;
 import ai.traceable.localprocessing.config.service.v1.RateLimitStrategy;
+import ai.traceable.localprocessing.config.service.v1.SpanFilter;
 import ai.traceable.localprocessing.config.service.v1.SpanLimitingStrategy;
 import ai.traceable.localprocessing.config.service.v1.WindowedRateLimit;
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedSamplingConfigsRequest;
@@ -222,15 +223,21 @@ public class DefaultRateLimitConfigManager implements RateLimitConfigManager {
     ai.traceable.span.processing.config.service.v1.PercentageLimitConfig sourceConfig =
         samplingConfigInfo.getPercentageLimitConfig();
 
+    Optional<SpanFilter> filter = filterConverter.convert(spanFilter);
+
+    // Environment and service-name clauses are consumed at routing time (the agent already queries
+    // for a specific env/service) and are stripped during conversion. If that leaves no per-span
+    // filter, the config has nothing meaningful to evaluate on the agent, so don't return it.
+    if (filter.isEmpty()) {
+      return Optional.empty();
+    }
+
     PercentageLimitConfig.Builder builder =
         PercentageLimitConfig.newBuilder()
             .setId(samplingConfig.getId())
             .setAllowedPercentage(sourceConfig.getAllowedPercentage())
-            .setLimitingStrategy(convertSpanLimitingStrategy(sourceConfig.getLimitingStrategy()));
-
-    Optional<ai.traceable.localprocessing.config.service.v1.SpanFilter> filter =
-        filterConverter.convert(spanFilter);
-    filter.ifPresent(builder::setFilter);
+            .setLimitingStrategy(convertSpanLimitingStrategy(sourceConfig.getLimitingStrategy()))
+            .setFilter(filter.get());
 
     return Optional.of(builder.build());
   }
@@ -277,8 +284,14 @@ public class DefaultRateLimitConfigManager implements RateLimitConfigManager {
       return Optional.empty();
     }
 
-    Optional<ai.traceable.localprocessing.config.service.v1.SpanFilter> filter =
-        filterConverter.convert(spanFilter);
+    Optional<SpanFilter> filter = filterConverter.convert(spanFilter);
+
+    // Environment and service-name clauses are consumed at routing time (the agent already queries
+    // for a specific env/service) and are stripped during conversion. If that leaves no per-span
+    // filter, the config has nothing meaningful to evaluate on the agent, so don't return it.
+    if (filter.isEmpty()) {
+      return Optional.empty();
+    }
 
     RateLimitConfig.Builder builder =
         RateLimitConfig.newBuilder()
@@ -286,9 +299,8 @@ public class DefaultRateLimitConfigManager implements RateLimitConfigManager {
             .setTraceLimitGlobal(convertRateLimit(rateLimitConfig.getTraceLimitGlobal()))
             .setTraceLimitPerEndpoint(convertRateLimit(rateLimitConfig.getTraceLimitPerEndpoint()))
             .setRateLimitStrategy(convertRateLimitStrategy(rateLimitConfig.getRateLimitStrategy()))
-            .setId(samplingConfig.getId());
-
-    filter.ifPresent(builder::setFilter);
+            .setId(samplingConfig.getId())
+            .setFilter(filter.get());
 
     return Optional.of(builder.build());
   }
