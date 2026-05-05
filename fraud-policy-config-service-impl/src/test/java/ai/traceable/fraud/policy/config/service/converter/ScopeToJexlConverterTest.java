@@ -353,7 +353,9 @@ class ScopeToJexlConverterTest {
 
     String result = convert(scope);
 
-    assertEquals("$s.getParsedRequestBodyJson().get('data').contains('needle')", result);
+    assertEquals(
+        "($s.getParsedRequestBodyJson().get('data') != null && $s.getParsedRequestBodyJson().get('data').contains('needle'))",
+        result);
   }
 
   @Test
@@ -401,7 +403,9 @@ class ScopeToJexlConverterTest {
 
     String result = convert(scope);
 
-    assertEquals("$s.getRequestQueryParams().get('count') > 10", result);
+    assertEquals(
+        "($s.getQueryParams().get('count') != null && $s.getQueryParams().get('count') > 10)",
+        result);
   }
 
   // --- Helper ---
@@ -520,7 +524,7 @@ class ScopeToJexlConverterTest {
     String result = convert(scope);
 
     assertEquals(
-        "map:matchingValue($s.getRequestQueryParams(), predicate:contains('token')).equals('abc')",
+        "map:matchingValue($s.getQueryParams(), predicate:contains('token')).equals('abc')",
         result);
   }
 

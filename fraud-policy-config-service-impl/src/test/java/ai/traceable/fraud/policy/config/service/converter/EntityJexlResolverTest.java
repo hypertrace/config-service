@@ -185,7 +185,7 @@ class EntityJexlResolverTest {
             "page"));
 
     Map<String, List<DerivationRule>> result = resolve(Set.of("entity_qp"));
-    assertEquals("$s.getRequestQueryParams().get('page')", getJexl(result.get("entity_qp").get(0)));
+    assertEquals("$s.getQueryParams().get('page')", getJexl(result.get("entity_qp").get(0)));
   }
 
   @Test
@@ -606,7 +606,7 @@ class EntityJexlResolverTest {
 
     Map<String, List<DerivationRule>> result = resolve(Set.of("entity_contains"));
     assertEquals(
-        "map:matchingValue($s.getRequestQueryParams(), predicate:contains('token'))",
+        "map:matchingValue($s.getQueryParams(), predicate:contains('token'))",
         getJexl(result.get("entity_contains").get(0)));
   }
 

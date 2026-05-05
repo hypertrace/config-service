@@ -263,7 +263,7 @@ public class EntityJexlResolver {
       case EXTRACTION_LOCATION_TYPE_REQUEST_COOKIE:
         return buildMapAccessJexl(SPAN_VAR + ".getRequestCookies()", rawKey, keyMatchType);
       case EXTRACTION_LOCATION_TYPE_REQUEST_QUERY_PARAM:
-        return buildMapAccessJexl(SPAN_VAR + ".getRequestQueryParams()", rawKey, keyMatchType);
+        return buildMapAccessJexl(SPAN_VAR + ".getQueryParams()", rawKey, keyMatchType);
       case EXTRACTION_LOCATION_TYPE_RESPONSE_HEADER:
       case EXTRACTION_LOCATION_TYPE_RESPONSE_BODY:
       case EXTRACTION_LOCATION_TYPE_RESPONSE_COOKIE:

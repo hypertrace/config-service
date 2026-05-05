@@ -67,8 +67,8 @@ public class PipelineToJexlConverter {
     }
 
     // Coerce the extracted value to a string before applying transformations.
-    // This is a product-level constraint: all pipeline inputs are assumed to be strings.
-    String currentExpr = "('' + " + baseExpression + ")";
+    // Uses traceable:toStr() to safely unwrap JsonPrimitive (avoids toString() quoting).
+    String currentExpr = "traceable:toStr(" + baseExpression + ")";
     List<TransformationFunctionInvocation> invocations = pipeline.getTransformationPipelineList();
 
     for (TransformationFunctionInvocation invocation : invocations) {
@@ -147,11 +147,9 @@ public class PipelineToJexlConverter {
       return JexlExpressionUtils.valueToString(paramDef.get().getDefaultValue());
     }
 
-    log.warn(
-        "entityId={}, functionId={}, parameter {} not found in invocation or defaults",
-        entityId,
-        function.getId(),
-        paramName);
-    return "";
+    throw new IllegalArgumentException(
+        String.format(
+            "entityId=%s, functionId=%s: required parameter '%s' not found in invocation or defaults",
+            entityId, function.getId(), paramName));
   }
 }

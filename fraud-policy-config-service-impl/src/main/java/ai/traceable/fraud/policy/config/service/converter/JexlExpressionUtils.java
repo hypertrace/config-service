@@ -16,7 +16,7 @@ public final class JexlExpressionUtils {
   public static final String SPAN_VAR = "$s";
 
   public static String escapeJexlString(String value) {
-    return value.replace("'", "\\'");
+    return value.replace("\\", "\\\\").replace("'", "\\'");
   }
 
   /**

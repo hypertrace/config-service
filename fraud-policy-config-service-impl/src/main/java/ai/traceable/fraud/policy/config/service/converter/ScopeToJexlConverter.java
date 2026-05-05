@@ -188,7 +188,7 @@ public class ScopeToJexlConverter {
         }
         return Optional.of(SPAN_VAR + ".getParsedRequestBodyJson()" + toChainedGetAccess(bodyKey));
       case EXTRACTION_LOCATION_TYPE_REQUEST_QUERY_PARAM:
-        base = "getRequestQueryParams()";
+        base = "getQueryParams()";
         break;
       case EXTRACTION_LOCATION_TYPE_REQUEST_COOKIE:
         base = "getRequestCookies()";
@@ -228,17 +228,17 @@ public class ScopeToJexlConverter {
         }
         return isString ? "!(" + fieldPath + ".equals(" + val + "))" : fieldPath + " != " + val;
       case FILTER_OPERATOR_GT:
-        return fieldPath + " > " + val;
+        return "(" + fieldPath + " != null && " + fieldPath + " > " + val + ")";
       case FILTER_OPERATOR_LT:
-        return fieldPath + " < " + val;
+        return "(" + fieldPath + " != null && " + fieldPath + " < " + val + ")";
       case FILTER_OPERATOR_GTE:
-        return fieldPath + " >= " + val;
+        return "(" + fieldPath + " != null && " + fieldPath + " >= " + val + ")";
       case FILTER_OPERATOR_LTE:
-        return fieldPath + " <= " + val;
+        return "(" + fieldPath + " != null && " + fieldPath + " <= " + val + ")";
       case FILTER_OPERATOR_REGEX_MATCHES:
         return fieldPath + " =~ " + val;
       case FILTER_OPERATOR_CONTAINS:
-        return fieldPath + ".contains(" + val + ")";
+        return "(" + fieldPath + " != null && " + fieldPath + ".contains(" + val + "))";
       default:
         log.warn("Unsupported filter operator in scope: {}", operator);
         return "true";
