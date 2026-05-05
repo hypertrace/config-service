@@ -99,7 +99,7 @@ spec:
           annotations:
             summary: 'Failed to load IPQS/Neustar files'
             message: 'Failed to load IPQS/Neustar files'
-            #runbook_url: https://harness.atlassian.net/wiki/x/EQISTgU
+            runbook_url: https://harness.atlassian.net/wiki/x/w4AKhQU
           expr: sum(increase(ipqs_neustar_load_failure_count[1m])) > 0
           for: 1m
           labels:
