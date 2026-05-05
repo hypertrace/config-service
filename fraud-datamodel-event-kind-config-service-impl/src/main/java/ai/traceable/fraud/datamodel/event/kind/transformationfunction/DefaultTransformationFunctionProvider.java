@@ -3,6 +3,8 @@ package ai.traceable.fraud.datamodel.event.kind.transformationfunction;
 import ai.traceable.fraud.datamodel.event.kind.eventkind.EventKindHierarchyResolver;
 import ai.traceable.fraud.datamodel.event.kind.eventkind.EventKindProvider;
 import ai.traceable.fraud.datamodel.event.kind.v1.ComplexDataModelEventKind;
+import ai.traceable.fraud.datamodel.event.kind.v1.DataModelEventKind;
+import ai.traceable.fraud.datamodel.event.kind.v1.DataType;
 import ai.traceable.fraud.datamodel.event.kind.v1.EventKindFilter;
 import ai.traceable.fraud.datamodel.event.kind.v1.TransformationFunction;
 import ai.traceable.fraud.datamodel.event.kind.v1.TransformationFunctionsByKind;
@@ -109,7 +111,7 @@ public class DefaultTransformationFunctionProvider implements TransformationFunc
         JSON_PARSER.merge(json, builder);
         result.add(builder.build());
       }
-      appendTypeCastFunctions(result, eventKindProvider);
+      result.addAll(buildTypeCastFunctions(eventKindProvider));
       return Collections.unmodifiableList(result);
     } catch (Exception e) {
       log.error("Failed to load transformation functions from {}", RESOURCE_FILE, e);
@@ -118,27 +120,38 @@ public class DefaultTransformationFunctionProvider implements TransformationFunc
   }
 
   /**
-   * Appends {@code type_cast_to_<event_kind_id>} for every loaded kind. JEXL is pass-through only;
+   * Builds {@code type_cast_to_<event_kind_id>} for every loaded kind. JEXL is pass-through only;
    * {@code validation_regex} on kinds is not evaluated here (can be enforced elsewhere later).
    */
-  private static void appendTypeCastFunctions(
-      List<TransformationFunction> to, EventKindProvider kinds) {
-    ComplexDataModelEventKind stringIn =
+  private static List<TransformationFunction> buildTypeCastFunctions(
+      EventKindProvider eventKindProvider) {
+    ComplexDataModelEventKind stringInput =
         ComplexDataModelEventKind.newBuilder().setKindId("system_event_kind_string").build();
-    for (var k : kinds.getEventKinds(EventKindFilter.getDefaultInstance())) {
-      String id = k.getId();
-      if ("system_event_kind_string".equals(id)) {
-        continue;
-      }
-      to.add(
+    List<TransformationFunction> result = new ArrayList<>();
+    for (DataModelEventKind kind :
+        eventKindProvider.getEventKinds(EventKindFilter.getDefaultInstance())) {
+      String kindId = kind.getId();
+      result.add(
           TransformationFunction.newBuilder()
-              .setId("type_cast_to_" + id)
-              .setDisplayName("Cast to " + k.getDisplayName())
-              .setDescription("Narrow to " + k.getDisplayName() + " for type safety.")
-              .addInputKinds(stringIn)
-              .setOutputKind(ComplexDataModelEventKind.newBuilder().setKindId(id).build())
-              .setJexlTemplate("(${input})")
+              .setId("type_cast_to_" + kindId)
+              .setDisplayName("Cast to " + kind.getDisplayName())
+              .setDescription("Narrow to " + kind.getDisplayName() + " for type safety.")
+              .addInputKinds(stringInput)
+              .setOutputKind(ComplexDataModelEventKind.newBuilder().setKindId(kindId).build())
+              .setJexlTemplate(jexlCastFunction(kind.getDataType()) + "(${input})")
               .build());
+    }
+    return result;
+  }
+
+  private static String jexlCastFunction(DataType dataType) {
+    switch (dataType) {
+      case DATA_TYPE_INT:
+      case DATA_TYPE_LONG:
+      case DATA_TYPE_DOUBLE:
+        return "traceable:toNum";
+      default:
+        return "traceable:toStr";
     }
   }
 }
