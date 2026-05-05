@@ -404,7 +404,7 @@ class ScopeToJexlConverterTest {
     String result = convert(scope);
 
     assertEquals(
-        "($s.getQueryParams().get('count') != null && $s.getQueryParams().get('count') > 10)",
+        "(traceable:toNum($s.getQueryParams().get('count')) != null && traceable:toNum($s.getQueryParams().get('count')) > 10)",
         result);
   }
 

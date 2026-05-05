@@ -161,7 +161,7 @@ class DetectionFilterConverterTest {
 
     assertTrue(result.isPresent());
     assertEquals(
-        "entity_status > 400",
+        "(traceable:toNum(entity_status) != null && traceable:toNum(entity_status) > 400)",
         result.get().getGenericMatchCondition().getJexlExpression().getJexlExpression());
   }
 
@@ -182,7 +182,7 @@ class DetectionFilterConverterTest {
 
     assertTrue(result.isPresent());
     assertEquals(
-        "entity_status <= 200",
+        "(traceable:toNum(entity_status) != null && traceable:toNum(entity_status) <= 200)",
         result.get().getGenericMatchCondition().getJexlExpression().getJexlExpression());
   }
 

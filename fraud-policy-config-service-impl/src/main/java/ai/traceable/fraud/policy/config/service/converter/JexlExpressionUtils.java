@@ -149,6 +149,17 @@ public final class JexlExpressionUtils {
   }
 
   /**
+   * Builds a null-safe numeric comparison JEXL expression using traceable:toNum(). Returns an
+   * expression like: {@code (traceable:toNum(lhs) != null && traceable:toNum(lhs) > rhs)}
+   *
+   * <p>Short-circuits to false when toNum() returns null (missing or non-numeric value).
+   */
+  public static String toNumericComparisonExpr(String lhs, String operator, String rhs) {
+    String toNum = "traceable:toNum(" + lhs + ")";
+    return "(" + toNum + " != null && " + toNum + " " + operator + " " + rhs + ")";
+  }
+
+  /**
    * Builds a JEXL map access expression that respects KeyMatchType.
    *
    * <p>For exact match: {@code mapExpr.get('key')} For non-exact: {@code map:matchingValue(mapExpr,

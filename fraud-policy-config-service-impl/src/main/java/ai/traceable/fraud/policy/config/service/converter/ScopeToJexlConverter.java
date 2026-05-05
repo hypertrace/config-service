@@ -4,6 +4,7 @@ import static ai.traceable.fraud.policy.config.service.converter.JexlExpressionU
 import static ai.traceable.fraud.policy.config.service.converter.JexlExpressionUtils.buildMapAccessJexl;
 import static ai.traceable.fraud.policy.config.service.converter.JexlExpressionUtils.escapeJexlString;
 import static ai.traceable.fraud.policy.config.service.converter.JexlExpressionUtils.toChainedGetAccess;
+import static ai.traceable.fraud.policy.config.service.converter.JexlExpressionUtils.toNumericComparisonExpr;
 import static ai.traceable.fraud.policy.config.service.converter.JexlExpressionUtils.validateExactMatchOnly;
 import static ai.traceable.fraud.policy.config.service.converter.JexlExpressionUtils.valueToString;
 
@@ -228,13 +229,13 @@ public class ScopeToJexlConverter {
         }
         return isString ? "!(" + fieldPath + ".equals(" + val + "))" : fieldPath + " != " + val;
       case FILTER_OPERATOR_GT:
-        return "(" + fieldPath + " != null && " + fieldPath + " > " + val + ")";
+        return toNumericComparisonExpr(fieldPath, ">", val);
       case FILTER_OPERATOR_LT:
-        return "(" + fieldPath + " != null && " + fieldPath + " < " + val + ")";
+        return toNumericComparisonExpr(fieldPath, "<", val);
       case FILTER_OPERATOR_GTE:
-        return "(" + fieldPath + " != null && " + fieldPath + " >= " + val + ")";
+        return toNumericComparisonExpr(fieldPath, ">=", val);
       case FILTER_OPERATOR_LTE:
-        return "(" + fieldPath + " != null && " + fieldPath + " <= " + val + ")";
+        return toNumericComparisonExpr(fieldPath, "<=", val);
       case FILTER_OPERATOR_REGEX_MATCHES:
         return fieldPath + " =~ " + val;
       case FILTER_OPERATOR_CONTAINS:

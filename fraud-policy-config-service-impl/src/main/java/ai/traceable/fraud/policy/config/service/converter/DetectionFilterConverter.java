@@ -1,6 +1,7 @@
 package ai.traceable.fraud.policy.config.service.converter;
 
 import static ai.traceable.fraud.policy.config.service.converter.JexlExpressionUtils.escapeJexlString;
+import static ai.traceable.fraud.policy.config.service.converter.JexlExpressionUtils.toNumericComparisonExpr;
 
 import ai.traceable.datamodel.data.transformation.config.v1.DerivationRule;
 import ai.traceable.datamodel.data.transformation.config.v1.GenericMatchCondition;
@@ -143,13 +144,13 @@ public class DetectionFilterConverter {
       case OPERATOR_TYPE_NUMERIC_NOT_EQUALS:
         return lhsJexl + " != " + rhsValue;
       case OPERATOR_TYPE_LESS_THAN:
-        return lhsJexl + " < " + rhsValue;
+        return toNumericComparisonExpr(lhsJexl, "<", rhsValue);
       case OPERATOR_TYPE_LESS_THAN_OR_EQUALS:
-        return lhsJexl + " <= " + rhsValue;
+        return toNumericComparisonExpr(lhsJexl, "<=", rhsValue);
       case OPERATOR_TYPE_GREATER_THAN:
-        return lhsJexl + " > " + rhsValue;
+        return toNumericComparisonExpr(lhsJexl, ">", rhsValue);
       case OPERATOR_TYPE_GREATER_THAN_OR_EQUALS:
-        return lhsJexl + " >= " + rhsValue;
+        return toNumericComparisonExpr(lhsJexl, ">=", rhsValue);
       case OPERATOR_TYPE_CONTAINS:
         return lhsJexl + ".contains('" + escaped + "')";
       case OPERATOR_TYPE_NOT_CONTAINS:
