@@ -1,6 +1,7 @@
 package ai.traceable.anomaly.config.service.detector.anomalydetection.handler;
 
 import static ai.traceable.anomaly.config.service.common.AnomalyConfigServiceUtils.mergeConfigs;
+import static ai.traceable.anomaly.config.service.v1.ApiProtectThreatRuleConfigMappingProvider.USER_ROLE_SPAN_FILTER_CONFIG;
 
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyCategoryConfig;
@@ -9,6 +10,7 @@ import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ApiProtectAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ApiProtectAnomalyRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
+import com.google.protobuf.Value;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -17,6 +19,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ApiProtectionConfigHandler {
+
+  private static final Set<String> STRUCT_VALUE_CONFIGS_TO_REPLACE_DURING_MERGE =
+      Set.of(USER_ROLE_SPAN_FILTER_CONFIG);
 
   /**
    * @param preferredConfig preferredConfig for merging
@@ -211,9 +216,13 @@ public class ApiProtectionConfigHandler {
                     anomalySubRuleConfig -> {
                       String subRuleId = anomalySubRuleConfig.getSubRuleId();
                       if (subRuleConfigMap.containsKey(subRuleId)) {
+                        AnomalySubRuleConfig preferredSubRuleConfig =
+                            subRuleConfigMap.get(subRuleId);
                         AnomalySubRuleConfig mergedAnomalySubRuleConfig =
                             (AnomalySubRuleConfig)
-                                mergeConfigs(anomalySubRuleConfig, subRuleConfigMap.get(subRuleId));
+                                mergeConfigs(anomalySubRuleConfig, preferredSubRuleConfig);
+                        mergedAnomalySubRuleConfig =
+                            replaceConfigParams(mergedAnomalySubRuleConfig, preferredSubRuleConfig);
                         subRuleConfigMap.put(subRuleId, mergedAnomalySubRuleConfig);
                       } else {
                         subRuleConfigMap.put(subRuleId, anomalySubRuleConfig);
@@ -240,6 +249,24 @@ public class ApiProtectionConfigHandler {
         .collect(
             Collectors.toMap(
                 AnomalySubRuleConfig::getSubRuleId, anomalySubRuleConfig -> anomalySubRuleConfig));
+  }
+
+  /**
+   * After deep-merge, replace specific config_params values from the preferred config. Keys listed
+   * in CONFIG_PARAMS_OVERRIDE_KEYS are fully replaced rather than deep-merged, preventing incorrect
+   * accumulation of multiple oneof fields within Struct values.
+   */
+  private AnomalySubRuleConfig replaceConfigParams(
+      AnomalySubRuleConfig mergedConfig, AnomalySubRuleConfig preferredConfig) {
+    Map<String, Value> preferredParams = preferredConfig.getConfigParamsMap();
+    if (preferredParams.isEmpty() || STRUCT_VALUE_CONFIGS_TO_REPLACE_DURING_MERGE.isEmpty()) {
+      return mergedConfig;
+    }
+    AnomalySubRuleConfig.Builder builder = mergedConfig.toBuilder();
+    STRUCT_VALUE_CONFIGS_TO_REPLACE_DURING_MERGE.stream()
+        .filter(preferredParams::containsKey)
+        .forEach(key -> builder.putConfigParams(key, preferredParams.get(key)));
+    return builder.build();
   }
 
   private List<ApiProtectAnomalyRuleConfig> getApiProtectionAnomalyRuleConfigs(
