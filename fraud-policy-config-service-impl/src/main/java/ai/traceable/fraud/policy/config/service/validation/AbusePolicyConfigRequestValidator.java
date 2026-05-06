@@ -435,8 +435,8 @@ public class AbusePolicyConfigRequestValidator {
 
   /**
    * Validates that BLOCK action policies do not reference entity derivation configs with
-   * response-based extraction locations (response headers/body/cookies), since response data is not
-   * available at the edge when the block decision is made.
+   * monitor-only extraction locations (response headers/body/cookies, span attributes), since this
+   * data is not available at the edge when the block decision is made.
    */
   private void validateBlockActionEntityExtractions(
       AbusePolicyData data, RequestContext requestContext) {
@@ -463,13 +463,13 @@ public class AbusePolicyConfigRequestValidator {
       for (EventDerivationConfigDetails details :
           config.getData().getSpanProjection().getEventDerivationConfigsList()) {
         if (details.hasSpanExtraction()
-            && isResponseLocationType(
+            && isMonitorOnlyLocationType(
                 details.getSpanExtraction().getLocation().getLocationType())) {
           throw Status.INVALID_ARGUMENT
               .withDescription(
                   String.format(
-                      "Block action policies cannot use entities with response-based extraction"
-                          + " (entity: %s, location: %s). Response data is not available at the"
+                      "Block action policies cannot use entities with monitor-only extraction"
+                          + " (entity: %s, location: %s). This data is not available at the"
                           + " edge for blocking decisions.",
                       config.getId(), details.getSpanExtraction().getLocation().getLocationType()))
               .asRuntimeException(requestContext.buildTrailers());
@@ -513,10 +513,11 @@ public class AbusePolicyConfigRequestValidator {
     }
   }
 
-  private static boolean isResponseLocationType(ExtractionLocationType locationType) {
+  private static boolean isMonitorOnlyLocationType(ExtractionLocationType locationType) {
     return locationType == ExtractionLocationType.EXTRACTION_LOCATION_TYPE_RESPONSE_HEADER
         || locationType == ExtractionLocationType.EXTRACTION_LOCATION_TYPE_RESPONSE_BODY
-        || locationType == ExtractionLocationType.EXTRACTION_LOCATION_TYPE_RESPONSE_COOKIE;
+        || locationType == ExtractionLocationType.EXTRACTION_LOCATION_TYPE_RESPONSE_COOKIE
+        || locationType == ExtractionLocationType.EXTRACTION_LOCATION_TYPE_SPAN_ATTRIBUTE;
   }
 
   private void validatePredefinedTemplate(

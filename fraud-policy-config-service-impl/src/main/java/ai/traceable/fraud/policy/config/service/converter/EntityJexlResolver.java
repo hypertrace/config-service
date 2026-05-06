@@ -267,8 +267,9 @@ public class EntityJexlResolver {
       case EXTRACTION_LOCATION_TYPE_RESPONSE_HEADER:
       case EXTRACTION_LOCATION_TYPE_RESPONSE_BODY:
       case EXTRACTION_LOCATION_TYPE_RESPONSE_COOKIE:
+      case EXTRACTION_LOCATION_TYPE_SPAN_ATTRIBUTE:
         log.warn(
-            "Skipping response-based extraction location (unsupported for EDS): {}", locationType);
+            "Skipping monitor-only extraction location (unsupported for EDS): {}", locationType);
         return "";
       default:
         log.warn("Unsupported extraction location type: {}", locationType);

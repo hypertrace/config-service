@@ -11,7 +11,14 @@ import ai.traceable.edge.decision.config.service.v1.EdgeDecisionType;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfig;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfigData;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfigServiceGrpc.EntityDerivationConfigServiceBlockingStub;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EnvironmentScope;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EventDerivationConfigDetails;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.ExtractionLocation;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.ExtractionLocationType;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.GetEntityDerivationConfigsResponse;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.Scope;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.SpanBasedExtraction;
+import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.SpanProjection;
 import ai.traceable.fraud.datamodel.event.kind.v1.AggregationFunctionType;
 import ai.traceable.fraud.datamodel.event.kind.v1.ComplexDataModelEventKind;
 import ai.traceable.fraud.datamodel.event.kind.v1.FraudDataModelEventKindRegistry;
@@ -728,6 +735,100 @@ class AbusePolicyConfigRequestValidatorTest {
         .setRequestDensityPerUaDeviationThreshold(2.0)
         .setAnomalyScoreThreshold(70)
         .build();
+  }
+
+  @Test
+  void testBlockActionWithSpanAttributeEntity_Rejected() {
+    GetEntityDerivationConfigsResponse spanAttrResponse =
+        GetEntityDerivationConfigsResponse.newBuilder()
+            .addEntityDerivationConfigs(
+                EntityDerivationConfig.newBuilder()
+                    .setId("test-entity")
+                    .setData(
+                        EntityDerivationConfigData.newBuilder()
+                            .setEventKind(
+                                ComplexDataModelEventKind.newBuilder()
+                                    .setKindId("system_event_kind_string"))
+                            .setSpanProjection(
+                                SpanProjection.newBuilder()
+                                    .addEventDerivationConfigs(
+                                        EventDerivationConfigDetails.newBuilder()
+                                            .setScope(
+                                                Scope.newBuilder()
+                                                    .setEnvironmentScope(
+                                                        EnvironmentScope.newBuilder()))
+                                            .setSpanExtraction(
+                                                SpanBasedExtraction.newBuilder()
+                                                    .setLocation(
+                                                        ExtractionLocation.newBuilder()
+                                                            .setLocationType(
+                                                                ExtractionLocationType
+                                                                    .EXTRACTION_LOCATION_TYPE_SPAN_ATTRIBUTE)
+                                                            .setKey("custom.attr")))))))
+            .build();
+    when(entityDerivationConfigServiceStub.getEntityDerivationConfigs(any()))
+        .thenReturn(spanAttrResponse);
+
+    AbusePolicyData data =
+        createValidPolicyData().toBuilder()
+            .setAction(
+                AbuseActionConfig.newBuilder()
+                    .setActionType(AbuseActionType.ABUSE_ACTION_TYPE_BLOCK)
+                    .build())
+            .build();
+    CreateAbusePolicyRequest request = CreateAbusePolicyRequest.newBuilder().setData(data).build();
+
+    StatusRuntimeException exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> validator.validateCreateRequest(request, requestContext));
+    assertTrue(
+        exception.getMessage().contains("monitor-only extraction"),
+        "Expected error about monitor-only extraction, got: " + exception.getMessage());
+  }
+
+  @Test
+  void testMonitorActionWithSpanAttributeEntity_Accepted() {
+    GetEntityDerivationConfigsResponse spanAttrResponse =
+        GetEntityDerivationConfigsResponse.newBuilder()
+            .addEntityDerivationConfigs(
+                EntityDerivationConfig.newBuilder()
+                    .setId("test-entity")
+                    .setData(
+                        EntityDerivationConfigData.newBuilder()
+                            .setEventKind(
+                                ComplexDataModelEventKind.newBuilder()
+                                    .setKindId("system_event_kind_string"))
+                            .setSpanProjection(
+                                SpanProjection.newBuilder()
+                                    .addEventDerivationConfigs(
+                                        EventDerivationConfigDetails.newBuilder()
+                                            .setScope(
+                                                Scope.newBuilder()
+                                                    .setEnvironmentScope(
+                                                        EnvironmentScope.newBuilder()))
+                                            .setSpanExtraction(
+                                                SpanBasedExtraction.newBuilder()
+                                                    .setLocation(
+                                                        ExtractionLocation.newBuilder()
+                                                            .setLocationType(
+                                                                ExtractionLocationType
+                                                                    .EXTRACTION_LOCATION_TYPE_SPAN_ATTRIBUTE)
+                                                            .setKey("custom.attr")))))))
+            .build();
+    when(entityDerivationConfigServiceStub.getEntityDerivationConfigs(any()))
+        .thenReturn(spanAttrResponse);
+
+    AbusePolicyData data =
+        createValidPolicyData().toBuilder()
+            .setAction(
+                AbuseActionConfig.newBuilder()
+                    .setActionType(AbuseActionType.ABUSE_ACTION_TYPE_ALERT)
+                    .build())
+            .build();
+    CreateAbusePolicyRequest request = CreateAbusePolicyRequest.newBuilder().setData(data).build();
+
+    assertDoesNotThrow(() -> validator.validateCreateRequest(request, requestContext));
   }
 
   private AbuseSimpleAggregationTemplateConfig createValidSimpleAggregationTemplate() {
