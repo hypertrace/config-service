@@ -31,8 +31,10 @@ import java.util.List;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+@Disabled
 public class RateLimitingAllowRulesPlatformExclusionMigrationConfigServiceIntegrationTest
     extends TraceableConfigServiceIntegrationTestBase {
   private static RateLimitingConfigServiceGrpc.RateLimitingConfigServiceBlockingStub

@@ -47,6 +47,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
@@ -87,18 +88,23 @@ public class AiAppConfigContextClientProvider implements AiAppConfigContextProvi
 
     AnomalyConfigScope anomalyConfigScope =
         convertRuleScopeToAnomalyConfigScope(request.getRuleScope());
+    CompletableFuture<Map<AnomalyConfigScope, ScopedAnomalyDetectionConfig>> configMapFuture =
+        CompletableFuture.supplyAsync(
+            () ->
+                filterByRequestScope(
+                    getScopedAnomalyDetectionConfigMap(requestContext), anomalyConfigScope));
+
+    AiAppRules aiAppRules = aiAppRulesProvider.getAiAppRules();
+    Set<String> secRuleEvaluatedRuleIds = getSecRuleEvaluatedRuleIds(aiAppRules);
+
     Map<AnomalyConfigScope, ScopedAnomalyDetectionConfig> scopedAnomalyDetectionConfigMap =
-        filterByRequestScope(
-            getScopedAnomalyDetectionConfigMap(requestContext), anomalyConfigScope);
+        configMapFuture.join();
     log.debug(
         "Retrieved scopedAnomalyDetectionConfigMap with {} entries",
         scopedAnomalyDetectionConfigMap.size());
 
     TreeSet<AnomalyConfigScope> configScopes = new TreeSet<>(ANOMALY_CONFIG_SCOPE_COMPARATOR);
     configScopes.addAll(scopedAnomalyDetectionConfigMap.keySet());
-
-    AiAppRules aiAppRules = aiAppRulesProvider.getAiAppRules();
-    Set<String> secRuleEvaluatedRuleIds = getSecRuleEvaluatedRuleIds(aiAppRules);
 
     List<AiFirewallScopedConfigContext> scopedConfigContextList = new ArrayList<>();
     Map<AnomalyConfigScope, ScopeContext> scopeContextMap =
@@ -160,9 +166,8 @@ public class AiAppConfigContextClientProvider implements AiAppConfigContextProvi
     CustomSignatureConfigContext.Builder customSigBuilder =
         CustomSignatureConfigContext.newBuilder();
 
-    List<DataType> dataTypes = fetchDataTypes(requestContext, request);
-
     if (request.getRuleEvaluationPoint() != RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM) {
+      List<DataType> dataTypes = fetchDataTypes(requestContext, request);
       if (!isPiiDetectionInPromptDisabled(scopedAnomalyDetectionConfigMap, anomalyConfigScope)) {
         addPiiRulesContext(requestContext, request.getRuleScope(), customSigBuilder, dataTypes);
       } else {

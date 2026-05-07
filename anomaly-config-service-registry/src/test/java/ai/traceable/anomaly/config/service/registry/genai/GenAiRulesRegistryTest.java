@@ -63,6 +63,12 @@ class GenAiRulesRegistryTest {
             .setCodeDetectedInPrompt(
                 CodeDetectedInPromptAnomalyDetectionConfig.getDefaultInstance())
             .build());
+    expectedMap.put(
+        "toxicUnsafeContent",
+        GenAiAnomalyDetectionConfig.newBuilder()
+            .setAnomalyRuleId("toxicUnsafeContent")
+            .setToxicUnsafeContent(ToxicUnsafeContentAnomalyDetectionConfig.getDefaultInstance())
+            .build());
 
     assertEquals(expectedMap, ruleIdToConfigMap);
   }
