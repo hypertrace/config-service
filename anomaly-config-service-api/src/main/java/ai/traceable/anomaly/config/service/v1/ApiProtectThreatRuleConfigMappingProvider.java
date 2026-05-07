@@ -61,8 +61,8 @@ public final class ApiProtectThreatRuleConfigMappingProvider {
   private static final String REQUEST_PARAM_VALUES_NOT_ALLOWED = "request_param_values_not_allowed";
   private static final String MULTI_VALUED_STRING_PARAM_RULES = "multi_valued_string_param_rules";
   private static final String SANITIZE_PARAM_VALUES = "sanitize_param_value";
-  private static final String PARAM_KEY_CONFIG = "param_key_config";
-  private static final String PARAM_VALUE_CONFIG = "param_value_config";
+  public static final String PARAM_KEY_CONFIG = "param_key_config";
+  public static final String PARAM_VALUE_CONFIG = "param_value_config";
   public static final String USER_ROLE_SPAN_FILTER_CONFIG = "user_role_span_filter_config";
   private static final String USER_ID_SOURCE = "user_id_source";
   private static final String USER_ID_DATA_LIST = "user_id_data_list";
