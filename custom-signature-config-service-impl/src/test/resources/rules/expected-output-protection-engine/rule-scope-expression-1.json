@@ -1,7 +1,7 @@
 {
   "rule_contexts": [
     {
-      "scope_context": {},
+      "scope_context": {"scopes": [{"customer_scope": {}}]},
       "rule_configs": [
         {
           "id": "rule-id",

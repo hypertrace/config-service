@@ -15,6 +15,7 @@ import ai.traceable.protection.engine.config.customsignature.v1.CustomSignatureR
 import ai.traceable.protection.engine.config.customsignature.v1.CustomSignatureRuleDefinition;
 import ai.traceable.protection.engine.config.customsignature.v1.CustomSignatureRuleDefinitionGroup;
 import ai.traceable.protection.engine.config.customsignature.v1.CustomSignatureRulesContext;
+import ai.traceable.protection.processing.common.v1.CustomerScope;
 import ai.traceable.protection.processing.common.v1.Entity;
 import ai.traceable.protection.processing.common.v1.EntityScope;
 import ai.traceable.protection.processing.common.v1.EntityType;
@@ -86,6 +87,10 @@ public class CustomSignatureConfigContextConverter {
 
       builder.addScopes(scope);
     }
+
+    Scope customerScope =
+        Scope.newBuilder().setCustomerScope(CustomerScope.getDefaultInstance()).build();
+    builder.addScopes(customerScope);
 
     return builder.build();
   }
