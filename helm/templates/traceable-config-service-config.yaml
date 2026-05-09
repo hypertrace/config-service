@@ -480,6 +480,9 @@ data:
       {{- if .Values.defaultVulnerabilityTrainingConfigs }}
       vulnerabilityTrainingConfigs = {{- .Values.defaultVulnerabilityTrainingConfigs | indent 6 }}
       {{- end }}
+      {{- if .Values.defaultApiDiscoveryConfigs }}
+      apiDiscoveryConfigs = {{- .Values.defaultApiDiscoveryConfigs | indent 6 }}
+      {{- end }}
     }
     detector.config.service = {
       {{- if .Values.defaultModsecDetectionConfigs }}
