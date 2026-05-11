@@ -185,6 +185,13 @@ message FraudPolicy {
   // that are used by this policy.
   repeated BackreferencesInfo backreferences_info = 22;
 
+  // The AbusePolicy this policy was derived from. Unset when the policy was authored directly via
+  // FraudPolicyConfigService (i.e. not abuse-derived). Populated by abuse-policy-manager's
+  // AbusePolicyConvertor implementations so consumers can correlate detection events back to the
+  // source AbusePolicy without parsing FraudPolicy.id format. Consumers should use the generated
+  // hasSourceAbusePolicyId() accessor rather than checking for an empty string.
+  optional string source_abuse_policy_id = 23;
+
   IncidentConfig incident_config = 100;
   TriageConfig triage_config = 101;
   // store information about the last execution status of the policy.
