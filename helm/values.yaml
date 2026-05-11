@@ -4030,7 +4030,7 @@ defaultApiDiscoveryConfigs: |-
                                     relationalFilter = {
                                       keyFilter = {
                                         location = KEY_LOCATION_REQUEST_HEADER
-                                        operator = RELATIONAL_OPERATOR_CONTAINS
+                                        operator = RELATIONAL_OPERATOR_EQUALS
                                         value = {
                                           stringValue = "content-type"
                                         }
@@ -4044,7 +4044,7 @@ defaultApiDiscoveryConfigs: |-
                               relationalFilter = {
                                 keyFilter = {
                                   location = KEY_LOCATION_REQUEST_HEADER
-                                  operator = RELATIONAL_OPERATOR_CONTAINS
+                                  operator = RELATIONAL_OPERATOR_EQUALS
                                   value = {
                                     stringValue = "content-type"
                                   }
@@ -4074,7 +4074,7 @@ defaultApiDiscoveryConfigs: |-
                                     relationalFilter = {
                                       keyFilter = {
                                         location = KEY_LOCATION_RESPONSE_HEADER
-                                        operator = RELATIONAL_OPERATOR_CONTAINS
+                                        operator = RELATIONAL_OPERATOR_EQUALS
                                         value = {
                                           stringValue = "content-type"
                                         }
@@ -4088,7 +4088,7 @@ defaultApiDiscoveryConfigs: |-
                               relationalFilter = {
                                 keyFilter = {
                                   location = KEY_LOCATION_RESPONSE_HEADER
-                                  operator = RELATIONAL_OPERATOR_CONTAINS
+                                  operator = RELATIONAL_OPERATOR_EQUALS
                                   value = {
                                     stringValue = "content-type"
                                   }
@@ -4132,7 +4132,6 @@ defaultApiDiscoveryConfigs: |-
             }
           }
         }
-        staticApiDiscoveryAction = STATIC_API_DISCOVERY_ACTION_HIDE
       }
     }
   ]
