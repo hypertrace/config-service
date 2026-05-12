@@ -78,13 +78,13 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 /**
- * Integration-style tests that exercise the full AbusePolicy → EdgeDecisionRule conversion
- * pipeline: entity resolution, scope→JEXL, pipeline transformation, detection filters, and span
- * attribute decoration.
+ * E2E converter tests that exercise the full AbusePolicy → EdgeDecisionRule conversion pipeline
+ * with mocked external deps: entity resolution, scope→JEXL, pipeline transformation, detection
+ * filters, and span attribute decoration.
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-class AbusePolicyEdgeDecisionConverterIntegrationTest {
+class AbusePolicyEdgeDecisionConverterE2ETest {
 
   @Mock private EntityDerivationConfigServiceBlockingStub entityDerivationConfigServiceStub;
   @Mock private ApiScopeResolver apiScopeResolver;
@@ -233,12 +233,34 @@ class AbusePolicyEdgeDecisionConverterIntegrationTest {
                     .setPrepopulatedSpanAttribute(PrepopulatedSpanAttribute.getDefaultInstance()))
             .build();
 
+    // Entity "fil17" — filter-only custom header entity (AAP-12668 scenario)
+    EntityDerivationConfig filterOnlyEntity =
+        EntityDerivationConfig.newBuilder()
+            .setId("custom-filter-entity")
+            .setData(
+                EntityDerivationConfigData.newBuilder()
+                    .setDisplayName("Custom Filter Header")
+                    .setSpanProjection(
+                        SpanProjection.newBuilder()
+                            .addEventDerivationConfigs(
+                                EventDerivationConfigDetails.newBuilder()
+                                    .setSpanExtraction(
+                                        SpanBasedExtraction.newBuilder()
+                                            .setLocation(
+                                                ExtractionLocation.newBuilder()
+                                                    .setLocationType(
+                                                        ExtractionLocationType
+                                                            .EXTRACTION_LOCATION_TYPE_REQUEST_HEADER)
+                                                    .setKey("fil17"))))))
+            .build();
+
     when(entityDerivationConfigServiceStub.getEntityDerivationConfigs(any()))
         .thenReturn(
             GetEntityDerivationConfigsResponse.newBuilder()
                 .addEntityDerivationConfigs(authTokenConfig)
                 .addEntityDerivationConfigs(authCodeConfig)
                 .addEntityDerivationConfigs(ipConfig)
+                .addEntityDerivationConfigs(filterOnlyEntity)
                 .build());
 
     // --- Policy: COUNT auth_token GROUP BY auth_code, threshold>5, filters ---
@@ -297,7 +319,12 @@ class AbusePolicyEdgeDecisionConverterIntegrationTest {
                                                 relationalFilter(
                                                     "system_entity_ip_address",
                                                     OperatorType.OPERATOR_TYPE_STRING_NOT_EQUALS,
-                                                    "10.0.0.1"))))))
+                                                    "10.0.0.1"))
+                                            .addOperands(
+                                                relationalFilter(
+                                                    "custom-filter-entity",
+                                                    OperatorType.OPERATOR_TYPE_STRING_EQUALS,
+                                                    "val17"))))))
             .build();
 
     // --- Convert ---
@@ -321,12 +348,14 @@ class AbusePolicyEdgeDecisionConverterIntegrationTest {
 
     // --- Verify rule_definition ---
     EdgeDecisionRuleDefinition def = rule.getRuleDefinition();
-    assertEquals(3, def.getRuleVariablesCount()); // auth_token, auth_code, ip_address
+    assertEquals(
+        4, def.getRuleVariablesCount()); // auth_token, auth_code, ip_address, custom_filter_header
 
     // Find variables by name (HashMap order is non-deterministic)
     VariableDerivationMapping authTokenVar = findVariable(def, "auth_token");
     VariableDerivationMapping authCodeVar = findVariable(def, "auth_code");
     VariableDerivationMapping ipAddressVar = findVariable(def, "ip_address");
+    VariableDerivationMapping filterVar = findVariable(def, "custom_filter_header");
 
     // --- auth_token: 2 derivation rules ---
     assertEquals(2, authTokenVar.getRulesCount());
@@ -362,6 +391,12 @@ class AbusePolicyEdgeDecisionConverterIntegrationTest {
     assertEquals("$s.getIpAddress()", getTransformJexl(ipAddressVar.getRules(0)));
     assertFalse(ipAddressVar.getRules(0).hasMatchCondition());
 
+    // --- custom_filter_header: filter-only entity registered as variable with extraction JEXL
+    // (AAP-12668) ---
+    assertEquals(1, filterVar.getRulesCount());
+    assertEquals("$s.getRequestHeaders().get('fil17')", getTransformJexl(filterVar.getRules(0)));
+    assertFalse(filterVar.getRules(0).hasMatchCondition());
+
     // --- Verify aggregate_threshold_rule ---
     AggregateThresholdRule aggRule = def.getAggregateThresholdRule();
     assertEquals(1, aggRule.getGroupByDimensionsCount());
@@ -369,9 +404,10 @@ class AbusePolicyEdgeDecisionConverterIntegrationTest {
     assertEquals(5.0, aggRule.getValueAggregateThreshold().getStaticThreshold());
     assertEquals(300, aggRule.getTimeWindow().getSeconds());
 
-    // match_condition: AND(auth_code.contains('xK9mP2'), !ip_address.equals('10.0.0.1'))
+    // match_condition: AND(auth_code CONTAINS, ip_address NOT_EQUALS, custom_filter_header EQUALS)
+    // All filters reference entities by variable name — EDS must resolve rule_variables
     MatchCondition filterMc = aggRule.getMatchCondition();
-    assertEquals(2, filterMc.getLogicalMatchCondition().getConditionsCount());
+    assertEquals(3, filterMc.getLogicalMatchCondition().getConditionsCount());
     assertEquals(
         "auth_code.contains('xK9mP2')",
         filterMc
@@ -385,6 +421,14 @@ class AbusePolicyEdgeDecisionConverterIntegrationTest {
         filterMc
             .getLogicalMatchCondition()
             .getConditions(1)
+            .getGenericMatchCondition()
+            .getJexlExpression()
+            .getJexlExpression());
+    assertEquals(
+        "custom_filter_header.equals('val17')",
+        filterMc
+            .getLogicalMatchCondition()
+            .getConditions(2)
             .getGenericMatchCondition()
             .getJexlExpression()
             .getJexlExpression());

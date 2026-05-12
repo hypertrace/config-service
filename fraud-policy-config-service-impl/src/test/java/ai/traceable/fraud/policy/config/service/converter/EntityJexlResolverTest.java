@@ -470,6 +470,97 @@ class EntityJexlResolverTest {
     assertTrue(result.get("parent_a").isEmpty());
   }
 
+  @Test
+  void entity_level_disabled_test() {
+    mockEntityConfigs(
+        EntityDerivationConfig.newBuilder()
+            .setId("disabled_span_entity")
+            .setData(
+                EntityDerivationConfigData.newBuilder()
+                    .setDisabled(true)
+                    .setSpanProjection(
+                        SpanProjection.newBuilder()
+                            .addEventDerivationConfigs(
+                                EventDerivationConfigDetails.newBuilder()
+                                    .setJexlExpression("$s.shouldNotResolve()"))))
+            .build());
+
+    Map<String, List<DerivationRule>> result = resolve(Set.of("disabled_span_entity"));
+    assertTrue(result.get("disabled_span_entity").isEmpty());
+  }
+
+  @Test
+  void resolveAll_disabledPrepopulatedEntity_returnsEmptyRules() {
+    mockEntityConfigs(
+        EntityDerivationConfig.newBuilder()
+            .setId("disabled_prepopulated")
+            .setColumnName("ip_address")
+            .setData(
+                EntityDerivationConfigData.newBuilder()
+                    .setDisabled(true)
+                    .setPrepopulatedSpanAttribute(PrepopulatedSpanAttribute.getDefaultInstance()))
+            .build());
+
+    Map<String, List<DerivationRule>> result = resolve(Set.of("disabled_prepopulated"));
+    assertTrue(result.get("disabled_prepopulated").isEmpty());
+  }
+
+  @Test
+  void resolveAll_allEventDerivationDetailsDisabled_returnsEmptyRules() {
+    mockEntityConfigs(
+        EntityDerivationConfig.newBuilder()
+            .setId("all_details_disabled")
+            .setData(
+                EntityDerivationConfigData.newBuilder()
+                    .setSpanProjection(
+                        SpanProjection.newBuilder()
+                            .addEventDerivationConfigs(
+                                EventDerivationConfigDetails.newBuilder()
+                                    .setDisabled(true)
+                                    .setJexlExpression("$s.first()"))
+                            .addEventDerivationConfigs(
+                                EventDerivationConfigDetails.newBuilder()
+                                    .setDisabled(true)
+                                    .setJexlExpression("$s.second()"))))
+            .build());
+
+    Map<String, List<DerivationRule>> result = resolve(Set.of("all_details_disabled"));
+    assertTrue(result.get("all_details_disabled").isEmpty());
+  }
+
+  @Test
+  void resolveAll_disabledParentDerivationEntity_returnsEmptyRules() {
+    EntityDerivationConfig parent =
+        EntityDerivationConfig.newBuilder()
+            .setId("parent_entity_active")
+            .setColumnName("ip_address")
+            .setData(
+                EntityDerivationConfigData.newBuilder()
+                    .setPrepopulatedSpanAttribute(PrepopulatedSpanAttribute.getDefaultInstance()))
+            .build();
+
+    EntityDerivationConfig disabledChild =
+        EntityDerivationConfig.newBuilder()
+            .setId("disabled_child")
+            .setData(
+                EntityDerivationConfigData.newBuilder()
+                    .setDisabled(true)
+                    .setParentDerivation(
+                        ParentDerivation.newBuilder()
+                            .setParentEntityDerivationId("parent_entity_active")))
+            .build();
+
+    when(entityDerivationConfigServiceStub.getEntityDerivationConfigs(any()))
+        .thenReturn(
+            GetEntityDerivationConfigsResponse.newBuilder()
+                .addEntityDerivationConfigs(disabledChild)
+                .addEntityDerivationConfigs(parent)
+                .build());
+
+    Map<String, List<DerivationRule>> result = resolve(Set.of("disabled_child"));
+    assertTrue(result.get("disabled_child").isEmpty());
+  }
+
   // --- Edge cases ---
 
   @Test

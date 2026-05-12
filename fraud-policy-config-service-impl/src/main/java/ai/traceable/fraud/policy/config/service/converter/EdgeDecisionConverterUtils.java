@@ -111,9 +111,10 @@ public final class EdgeDecisionConverterUtils {
     return Set.of();
   }
 
-  // EDS only supports ABOVE / BELOW threshold operators. AbusePolicy's GREATER_THAN and
-  // GREATER_THAN_OR_EQUAL both map to ABOVE; LESS_THAN and LESS_THAN_OR_EQUAL both map to BELOW.
-  // Any unrecognised operator defaults to ABOVE.
+  // EDS only supports ABOVE / BELOW threshold operators. GREATER_THAN and GREATER_THAN_OR_EQUAL
+  // both map to ABOVE; LESS_THAN and LESS_THAN_OR_EQUAL both map to BELOW.
+  // EQUAL, GREATER_THAN_OR_EQUAL, and LESS_THAN_OR_EQUAL are deprecated in the proto —
+  // only GREATER_THAN and LESS_THAN should be used going forward.
   public static ValueAggregateThreshold.ThresholdOperator convertThresholdOperator(
       AbuseThresholdOperator operator) {
     switch (operator) {

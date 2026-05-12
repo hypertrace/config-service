@@ -2,6 +2,7 @@ package ai.traceable.fraud.policy.config.service.converter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -110,8 +111,11 @@ class AbusePolicyEdgeDecisionConverterTest {
     assertEquals("3a522041-1761-4ce1-94d0-1fca377b444c", rule.getPolicyId());
     assertFalse(rule.getRuleStatus().getDisabled());
 
-    // Scope — "All Environments" is skipped, api_scope returns empty from mock
-    assertFalse(rule.hasRuleScope());
+    assertTrue(rule.hasRuleScope());
+    assertEquals(1, rule.getRuleScope().getScopeConditionsCount());
+    assertEquals(
+        "xyz-env",
+        rule.getRuleScope().getScopeConditions(0).getEnvironmentScope().getEnvironments(0));
   }
 
   @Test
@@ -252,8 +256,7 @@ class AbusePolicyEdgeDecisionConverterTest {
                 .setScope(
                     AbusePolicyScope.newBuilder()
                         .setEnvironmentScope(
-                            AbuseEnvironmentScope.newBuilder()
-                                .addEnvironmentIds("All Environments"))
+                            AbuseEnvironmentScope.newBuilder().addEnvironmentIds("xyz-env"))
                         .setApiScope(
                             AbuseApiScope.newBuilder()
                                 .setApiIds(

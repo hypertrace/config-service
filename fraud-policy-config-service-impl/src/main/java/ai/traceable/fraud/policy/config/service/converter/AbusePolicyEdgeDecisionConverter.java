@@ -148,13 +148,12 @@ public class AbusePolicyEdgeDecisionConverter {
 
     EdgeDecisionRuleScope.Builder scopeBuilder = EdgeDecisionRuleScope.newBuilder();
 
-    // Map environment scope — skip if empty or "All Environments" (means no restriction)
     if (data.getScope().hasEnvironmentScope()) {
-      List<String> envIds = data.getScope().getEnvironmentScope().getEnvironmentIdsList();
-      boolean hasRealEnvScope =
-          !envIds.isEmpty()
-              && envIds.stream().noneMatch(env -> env.equalsIgnoreCase("All Environments"));
-      if (hasRealEnvScope) {
+      List<String> envIds =
+          data.getScope().getEnvironmentScope().getEnvironmentIdsList().stream()
+              .filter(env -> !env.isEmpty())
+              .collect(Collectors.toList());
+      if (!envIds.isEmpty()) {
         scopeBuilder.addScopeConditions(
             EdgeDecisionRuleScopeCondition.newBuilder()
                 .setEnvironmentScope(EnvironmentScope.newBuilder().addAllEnvironments(envIds)));

@@ -139,7 +139,8 @@ tasks.integrationTest {
   dependsOn("startActorServiceContainer")
   dependsOn("startCorazaContainer")
   finalizedBy("stopAllContainers")
-  maxHeapSize = "3500m"
+  maxHeapSize = "4096m"
+  jvmArgs("-XX:+UseG1GC", "-XX:+HeapDumpOnOutOfMemoryError")
 }
 
 dependencies {

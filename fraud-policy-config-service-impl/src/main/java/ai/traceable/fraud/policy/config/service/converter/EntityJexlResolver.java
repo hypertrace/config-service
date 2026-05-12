@@ -148,6 +148,11 @@ public class EntityJexlResolver {
       Set<String> visited) {
     EntityDerivationConfigData data = config.getData();
 
+    if (data.getDisabled()) {
+      log.debug("Skipping disabled entity: {}", config.getId());
+      return List.of();
+    }
+
     if (data.hasSpanProjection()) {
       List<DerivationRule> rules = new ArrayList<>();
       for (EventDerivationConfigDetails details :

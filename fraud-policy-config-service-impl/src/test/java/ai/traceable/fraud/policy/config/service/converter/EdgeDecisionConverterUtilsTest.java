@@ -123,6 +123,14 @@ class EdgeDecisionConverterUtilsTest {
   }
 
   @Test
+  void convertThresholdOperator_equalDeprecated_mapsToAbove() {
+    assertEquals(
+        ValueAggregateThreshold.ThresholdOperator.THRESHOLD_OPERATOR_ABOVE,
+        EdgeDecisionConverterUtils.convertThresholdOperator(
+            AbuseThresholdOperator.ABUSE_THRESHOLD_OPERATOR_EQUAL));
+  }
+
+  @Test
   void convertThresholdOperator_defaultsToAbove() {
     assertEquals(
         ValueAggregateThreshold.ThresholdOperator.THRESHOLD_OPERATOR_ABOVE,
