@@ -1,15 +1,15 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.5.224=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.config.service:config-service-commons:0.37.1490=testCompileClasspath,testRuntimeClasspath
-ai.traceable.config.service:fraud-datamodel-config-service-api:0.37.1490=testCompileClasspath,testRuntimeClasspath
-ai.traceable.config.service:fraud-datamodel-derivation-config-service-api:0.37.1490=testCompileClasspath,testRuntimeClasspath
-ai.traceable.config.service:fraud-datamodel-event-kind-config-service-api:0.37.1490=testCompileClasspath,testRuntimeClasspath
-ai.traceable.config.service:fraud-policy-config-service-api:0.37.1490=testCompileClasspath,testRuntimeClasspath
-ai.traceable.config.service:graphql-autogen-schema-annotations:0.37.1490=testCompileClasspath,testRuntimeClasspath
-ai.traceable.config.service:traceable-datamodel-config-service-api:0.37.1490=testCompileClasspath,testRuntimeClasspath
-ai.traceable.config.service:traceable-edge-decision-config-service-api:0.37.1490=testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.5.227=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.config.service:config-service-commons:0.37.1491=testCompileClasspath,testRuntimeClasspath
+ai.traceable.config.service:fraud-datamodel-config-service-api:0.37.1491=testCompileClasspath,testRuntimeClasspath
+ai.traceable.config.service:fraud-datamodel-derivation-config-service-api:0.37.1491=testCompileClasspath,testRuntimeClasspath
+ai.traceable.config.service:fraud-datamodel-event-kind-config-service-api:0.37.1491=testCompileClasspath,testRuntimeClasspath
+ai.traceable.config.service:fraud-policy-config-service-api:0.37.1491=testCompileClasspath,testRuntimeClasspath
+ai.traceable.config.service:graphql-autogen-schema-annotations:0.37.1491=testCompileClasspath,testRuntimeClasspath
+ai.traceable.config.service:traceable-datamodel-config-service-api:0.37.1491=testCompileClasspath,testRuntimeClasspath
+ai.traceable.config.service:traceable-edge-decision-config-service-api:0.37.1491=testCompileClasspath,testRuntimeClasspath
 ai.traceable.edge-decision-service:edge-decision-engine-model:0.2.137=testCompileClasspath,testRuntimeClasspath
 ai.traceable.fraud-engine:fraud-engine-api:0.1.1248=testCompileClasspath,testRuntimeClasspath
 ai.traceable.fraud-engine:fraud-engine-models:0.1.1248=testCompileClasspath,testRuntimeClasspath
