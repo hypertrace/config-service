@@ -4041,22 +4041,53 @@ defaultApiDiscoveryConfigs: |-
                               }
                             },
                             {
-                              relationalFilter = {
-                                keyFilter = {
-                                  location = KEY_LOCATION_REQUEST_HEADER
-                                  operator = RELATIONAL_OPERATOR_EQUALS
-                                  value = {
-                                    stringValue = "content-type"
-                                  }
-                                }
-                                valueFilter = {
-                                  operator = RELATIONAL_OPERATOR_NOT_CONTAINS
-                                  value = {
-                                    stringValues = {
-                                      values = ["json", "xml", "urlencoded", "graphql", "protobuf", "multipart", "text/plain"]
+                              logicalFilter = {
+                                operator = LOGICAL_OPERATOR_AND
+                                filters = [
+                                  {
+                                    relationalFilter = {
+                                      keyFilter = {
+                                        location = KEY_LOCATION_REQUEST_HEADER
+                                        operator = RELATIONAL_OPERATOR_EQUALS
+                                        value = {
+                                          stringValue = "content-type"
+                                        }
+                                      }
+                                      valueFilter = {
+                                        operator = RELATIONAL_OPERATOR_NOT_CONTAINS
+                                        value = {
+                                          stringValues = {
+                                            values = ["event-stream", "json", "xml", "urlencoded", "graphql", "protobuf", "multipart", "text/plain"]
+                                          }
+                                        }
+                                      }
+                                    }
+                                  },
+                                  {
+                                    logicalFilter = {
+                                      operator = LOGICAL_OPERATOR_NOT
+                                      filters = [
+                                        {
+                                          relationalFilter = {
+                                            keyFilter = {
+                                              location = KEY_LOCATION_REQUEST_HEADER
+                                              operator = RELATIONAL_OPERATOR_EQUALS
+                                              value = {
+                                                stringValue = "content-type"
+                                              }
+                                            }
+                                            valueFilter = {
+                                              operator = RELATIONAL_OPERATOR_STARTS_WITH
+                                              value = {
+                                                stringValue = "application/"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      ]
                                     }
                                   }
-                                }
+                                ]
                               }
                             }
                           ]
@@ -4085,22 +4116,53 @@ defaultApiDiscoveryConfigs: |-
                               }
                             },
                             {
-                              relationalFilter = {
-                                keyFilter = {
-                                  location = KEY_LOCATION_RESPONSE_HEADER
-                                  operator = RELATIONAL_OPERATOR_EQUALS
-                                  value = {
-                                    stringValue = "content-type"
-                                  }
-                                }
-                                valueFilter = {
-                                  operator = RELATIONAL_OPERATOR_NOT_CONTAINS
-                                  value = {
-                                    stringValues = {
-                                      values = ["json", "xml", "urlencoded", "graphql", "protobuf", "multipart", "text/plain"]
+                              logicalFilter = {
+                                operator = LOGICAL_OPERATOR_AND
+                                filters = [
+                                  {
+                                    relationalFilter = {
+                                      keyFilter = {
+                                        location = KEY_LOCATION_RESPONSE_HEADER
+                                        operator = RELATIONAL_OPERATOR_EQUALS
+                                        value = {
+                                          stringValue = "content-type"
+                                        }
+                                      }
+                                      valueFilter = {
+                                        operator = RELATIONAL_OPERATOR_NOT_CONTAINS
+                                        value = {
+                                          stringValues = {
+                                            values = ["event-stream", "json", "xml", "urlencoded", "graphql", "protobuf", "multipart", "text/plain"]
+                                          }
+                                        }
+                                      }
+                                    }
+                                  },
+                                  {
+                                    logicalFilter = {
+                                      operator = LOGICAL_OPERATOR_NOT
+                                      filters = [
+                                        {
+                                          relationalFilter = {
+                                            keyFilter = {
+                                              location = KEY_LOCATION_RESPONSE_HEADER
+                                              operator = RELATIONAL_OPERATOR_EQUALS
+                                              value = {
+                                                stringValue = "content-type"
+                                              }
+                                            }
+                                            valueFilter = {
+                                              operator = RELATIONAL_OPERATOR_STARTS_WITH
+                                              value = {
+                                                stringValue = "application/"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      ]
                                     }
                                   }
-                                }
+                                ]
                               }
                             }
                           ]
