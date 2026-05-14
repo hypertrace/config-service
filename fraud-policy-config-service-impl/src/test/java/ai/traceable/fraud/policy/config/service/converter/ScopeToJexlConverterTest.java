@@ -60,7 +60,7 @@ class ScopeToJexlConverterTest {
 
     String result = convert(scope);
 
-    assertEquals("$s.getEnvironment().equals('production')", result);
+    assertEquals("$s.getEnvironment() == 'production'", result);
   }
 
   @Test
@@ -76,8 +76,7 @@ class ScopeToJexlConverterTest {
     String result = convert(scope);
 
     assertEquals(
-        "($s.getEnvironment().equals('production') || $s.getEnvironment().equals('staging'))",
-        result);
+        "($s.getEnvironment() == 'production' || $s.getEnvironment() == 'staging')", result);
   }
 
   // --- API entity scope (resolved to url/httpMethod/serviceName) ---
@@ -91,8 +90,8 @@ class ScopeToJexlConverterTest {
     String result = convert(scope);
 
     assertTrue(result.contains("$s.getPath() =~ '/api/v1/test'"));
-    assertTrue(result.contains("$s.getMethod().equals('GET')"));
-    assertTrue(result.contains("$s.getServiceName().equals('test-svc')"));
+    assertTrue(result.contains("$s.getMethod() == 'GET'"));
+    assertTrue(result.contains("$s.getServiceName() == 'test-svc'"));
   }
 
   @Test
@@ -143,7 +142,7 @@ class ScopeToJexlConverterTest {
 
     String result = convert(scope);
 
-    assertEquals("$s.getServiceName().equals('svc-1')", result);
+    assertEquals("$s.getServiceName() == 'svc-1'", result);
   }
 
   @Test
@@ -159,8 +158,7 @@ class ScopeToJexlConverterTest {
 
     String result = convert(scope);
 
-    assertEquals(
-        "($s.getServiceName().equals('svc-1') || $s.getServiceName().equals('svc-2'))", result);
+    assertEquals("($s.getServiceName() == 'svc-1' || $s.getServiceName() == 'svc-2')", result);
   }
 
   // --- JEXL scope ---
@@ -199,7 +197,7 @@ class ScopeToJexlConverterTest {
 
     String result = convert(scope);
 
-    assertEquals("$s.getRequestHeaders().get('x-api-key').equals('secret')", result);
+    assertEquals("$s.getRequestHeaders().get('x-api-key') == 'secret'", result);
   }
 
   @Test
@@ -232,8 +230,8 @@ class ScopeToJexlConverterTest {
 
     String result = convert(scope);
 
-    assertTrue(result.contains("$s.getRequestHeaders().get('h1').equals('v1')"));
-    assertTrue(result.contains("!($s.getRequestHeaders().get('h2').equals('v2'))"));
+    assertTrue(result.contains("$s.getRequestHeaders().get('h1') == 'v1'"));
+    assertTrue(result.contains("$s.getRequestHeaders().get('h2') != 'v2'"));
     assertTrue(result.contains("&&"));
   }
 
@@ -255,10 +253,10 @@ class ScopeToJexlConverterTest {
 
     String result = convert(scope);
 
-    assertTrue(result.contains("$s.getEnvironment().equals('production')"));
+    assertTrue(result.contains("$s.getEnvironment() == 'production'"));
     assertTrue(result.contains("$s.getPath() =~ '/v1/test'"));
-    assertTrue(result.contains("$s.getMethod().equals('POST')"));
-    assertTrue(result.contains("$s.getServiceName().equals('my-svc')"));
+    assertTrue(result.contains("$s.getMethod() == 'POST'"));
+    assertTrue(result.contains("$s.getServiceName() == 'my-svc'"));
     assertTrue(result.startsWith("("));
     assertTrue(result.contains("&&"));
   }
@@ -291,9 +289,9 @@ class ScopeToJexlConverterTest {
 
     String result = convert(scope);
 
-    assertTrue(result.contains("$s.getEnvironment().equals('prod')"));
+    assertTrue(result.contains("$s.getEnvironment() == 'prod'"));
     assertTrue(result.contains("$s.getPath() =~ '/v1/test'"));
-    assertTrue(result.contains("$s.getRequestHeaders().get('head').equals('toe')"));
+    assertTrue(result.contains("$s.getRequestHeaders().get('head') == 'toe'"));
   }
 
   // --- Null / empty ---
@@ -354,8 +352,7 @@ class ScopeToJexlConverterTest {
     String result = convert(scope);
 
     assertEquals(
-        "($s.getParsedRequestBodyJson().get('data') != null && $s.getParsedRequestBodyJson().get('data').contains('needle'))",
-        result);
+        "$s.getParsedRequestBodyJson().get('data').getAsString().contains('needle')", result);
   }
 
   @Test
@@ -403,9 +400,7 @@ class ScopeToJexlConverterTest {
 
     String result = convert(scope);
 
-    assertEquals(
-        "(traceable:toNum($s.getQueryParams().get('count')) != null && traceable:toNum($s.getQueryParams().get('count')) > 10)",
-        result);
+    assertEquals("traceable:toNum($s.getQueryParams().get('count')) > 10", result);
   }
 
   // --- Helper ---
@@ -445,7 +440,7 @@ class ScopeToJexlConverterTest {
 
     String result = convert(scope);
 
-    assertEquals("$s.getParsedRequestBodyJson().equals('test')", result);
+    assertEquals("$s.getParsedRequestBodyJson() == 'test'", result);
   }
 
   // --- KeyMatchType tests ---
@@ -524,8 +519,7 @@ class ScopeToJexlConverterTest {
     String result = convert(scope);
 
     assertEquals(
-        "map:matchingValue($s.getQueryParams(), predicate:contains('token')).equals('abc')",
-        result);
+        "map:matchingValue($s.getQueryParams(), predicate:contains('token')) == 'abc'", result);
   }
 
   @Test
@@ -688,6 +682,6 @@ class ScopeToJexlConverterTest {
 
     String result = convert(scope);
 
-    assertEquals("$s.getRequestHeaders().get('x-api-key').equals('secret')", result);
+    assertEquals("$s.getRequestHeaders().get('x-api-key') == 'secret'", result);
   }
 }

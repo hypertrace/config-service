@@ -1,7 +1,6 @@
 package ai.traceable.fraud.policy.config.service.converter;
 
 import static ai.traceable.fraud.policy.config.service.converter.JexlExpressionUtils.escapeJexlString;
-import static ai.traceable.fraud.policy.config.service.converter.JexlExpressionUtils.toNumericComparisonExpr;
 
 import ai.traceable.datamodel.data.transformation.config.v1.DerivationRule;
 import ai.traceable.datamodel.data.transformation.config.v1.GenericMatchCondition;
@@ -97,8 +96,12 @@ public class DetectionFilterConverter {
     String entityId = filter.getDerivedEntityId();
     // Entity is a variable in rule_variables; use variable name as LHS reference
     if (!entityRulesMap.containsKey(entityId) || entityRulesMap.get(entityId).isEmpty()) {
-      log.warn("No derivation rules for filter derived entity: {}", entityId);
-      return Optional.empty();
+      throw new IllegalStateException(
+          "Detection filter references entity '"
+              + entityId
+              + "' which has no valid derivation rules. "
+              + "Cannot generate a rule without the filter entity — "
+              + "dropping the filter would cause unconditional blocking.");
     }
     String lhsJexl = entityVariableNames.getOrDefault(entityId, entityId);
 
@@ -109,17 +112,25 @@ public class DetectionFilterConverter {
       List<Value> values = filter.getLiteralValues().getValuesList();
       if (values.size() == 1) {
         rhsValue = JexlExpressionUtils.valueToString(values.get(0));
-      } else {
-        // Multiple values: build list-contains check
+      } else if (isSetMembershipOperator(opType)) {
+        // EQUALS/NOT_EQUALS with multiple values: list-contains check
         String valueList =
             values.stream()
                 .map(v -> escapeJexlString(JexlExpressionUtils.valueToString(v)))
                 .collect(Collectors.joining("', '", "['", "']"));
         String containsExpr = valueList + ".contains(" + lhsJexl + ")";
         if (isNegatedOperator(opType)) {
-          containsExpr = "!" + containsExpr;
+          containsExpr = "!(" + containsExpr + ")";
         }
         return buildJexlMatchCondition(containsExpr);
+      } else {
+        // Non-equality operators with multiple values: OR-join individual comparisons
+        String orJoined =
+            values.stream()
+                .map(
+                    v -> buildComparisonJexl(lhsJexl, opType, JexlExpressionUtils.valueToString(v)))
+                .collect(Collectors.joining(" || "));
+        return buildJexlMatchCondition("(" + orJoined + ")");
       }
     }
 
@@ -133,28 +144,30 @@ public class DetectionFilterConverter {
 
   private String buildComparisonJexl(String lhsJexl, OperatorType opType, String rhsValue) {
     String escaped = escapeJexlString(rhsValue);
+    String toNum = "traceable:toNum(" + lhsJexl + ")";
     switch (opType) {
       case OPERATOR_TYPE_STRING_EQUALS:
-        return lhsJexl + ".equals('" + escaped + "')";
+        return lhsJexl + " == '" + escaped + "'";
       case OPERATOR_TYPE_STRING_NOT_EQUALS:
-        return "!" + lhsJexl + ".equals('" + escaped + "')";
+        return lhsJexl + " != '" + escaped + "'";
       case OPERATOR_TYPE_NUMERIC_EQUALS:
+        return toNum + " == " + rhsValue;
       case OPERATOR_TYPE_BOOLEAN_EQUALS:
         return lhsJexl + " == " + rhsValue;
       case OPERATOR_TYPE_NUMERIC_NOT_EQUALS:
-        return lhsJexl + " != " + rhsValue;
+        return toNum + " != " + rhsValue;
       case OPERATOR_TYPE_LESS_THAN:
-        return toNumericComparisonExpr(lhsJexl, "<", rhsValue);
+        return toNum + " < " + rhsValue;
       case OPERATOR_TYPE_LESS_THAN_OR_EQUALS:
-        return toNumericComparisonExpr(lhsJexl, "<=", rhsValue);
+        return toNum + " <= " + rhsValue;
       case OPERATOR_TYPE_GREATER_THAN:
-        return toNumericComparisonExpr(lhsJexl, ">", rhsValue);
+        return toNum + " > " + rhsValue;
       case OPERATOR_TYPE_GREATER_THAN_OR_EQUALS:
-        return toNumericComparisonExpr(lhsJexl, ">=", rhsValue);
+        return toNum + " >= " + rhsValue;
       case OPERATOR_TYPE_CONTAINS:
         return lhsJexl + ".contains('" + escaped + "')";
       case OPERATOR_TYPE_NOT_CONTAINS:
-        return "!" + lhsJexl + ".contains('" + escaped + "')";
+        return "!(" + lhsJexl + ".contains('" + escaped + "'))";
       case OPERATOR_TYPE_STARTS_WITH:
         return lhsJexl + ".startsWith('" + escaped + "')";
       case OPERATOR_TYPE_ENDS_WITH:
@@ -164,6 +177,13 @@ public class DetectionFilterConverter {
       default:
         return null;
     }
+  }
+
+  private boolean isSetMembershipOperator(OperatorType opType) {
+    return opType == OperatorType.OPERATOR_TYPE_STRING_EQUALS
+        || opType == OperatorType.OPERATOR_TYPE_STRING_NOT_EQUALS
+        || opType == OperatorType.OPERATOR_TYPE_NUMERIC_EQUALS
+        || opType == OperatorType.OPERATOR_TYPE_NUMERIC_NOT_EQUALS;
   }
 
   private boolean isNegatedOperator(OperatorType opType) {

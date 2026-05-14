@@ -44,7 +44,7 @@ public final class JexlExpressionUtils {
 
   /**
    * Builds an OR-joined equality expression for a getter and a list of values. e.g. {@code
-   * ($s.getEnvironment().equals('prod') || $s.getEnvironment().equals('staging'))}
+   * ($s.getEnvironment() == 'prod' || $s.getEnvironment() == 'staging')}
    */
   public static String toEqualsExpr(String getter, List<String> values) {
     if (values == null || values.isEmpty()) {
@@ -52,7 +52,7 @@ public final class JexlExpressionUtils {
     }
     String expr =
         values.stream()
-            .map(v -> getter + ".equals('" + escapeJexlString(v) + "')")
+            .map(v -> getter + " == '" + escapeJexlString(v) + "'")
             .collect(Collectors.joining(" || "));
     return values.size() > 1 ? "(" + expr + ")" : expr;
   }
@@ -146,17 +146,6 @@ public final class JexlExpressionUtils {
       throw new IllegalArgumentException(
           "Non-exact key match type " + keyMatchType + " is not supported for " + locationType);
     }
-  }
-
-  /**
-   * Builds a null-safe numeric comparison JEXL expression using traceable:toNum(). Returns an
-   * expression like: {@code (traceable:toNum(lhs) != null && traceable:toNum(lhs) > rhs)}
-   *
-   * <p>Short-circuits to false when toNum() returns null (missing or non-numeric value).
-   */
-  public static String toNumericComparisonExpr(String lhs, String operator, String rhs) {
-    String toNum = "traceable:toNum(" + lhs + ")";
-    return "(" + toNum + " != null && " + toNum + " " + operator + " " + rhs + ")";
   }
 
   /**

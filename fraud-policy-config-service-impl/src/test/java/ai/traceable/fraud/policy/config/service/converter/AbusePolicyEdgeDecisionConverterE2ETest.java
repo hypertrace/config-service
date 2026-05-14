@@ -334,7 +334,7 @@ class AbusePolicyEdgeDecisionConverterE2ETest {
     EdgeDecisionRule rule = result.getDecisionRules(0);
 
     // --- Verify envelope ---
-    assertEquals("policy-complex-001", rule.getId());
+    assertEquals("abuse-policy-complex-001", rule.getId());
     assertEquals("Auth Token Detect", rule.getName());
     assertEquals("detect repeat auth token", rule.getDescription());
     assertEquals(
@@ -366,7 +366,7 @@ class AbusePolicyEdgeDecisionConverterE2ETest {
         getTransformJexl(authTokenVar.getRules(0)));
     String mc1 = getMatchConditionJexl(authTokenVar.getRules(0));
     assertTrue(mc1.contains("$s.getPath() =~ '/api/v1/beta/.*'"));
-    assertTrue(mc1.contains("$s.getServiceName().equals('beta-svc')"));
+    assertTrue(mc1.contains("$s.getServiceName() == 'beta-svc'"));
 
     // Rule 2: REQUEST_BODY $.authToken with pipeline (hash→to_string→split)
     assertEquals(
@@ -374,8 +374,8 @@ class AbusePolicyEdgeDecisionConverterE2ETest {
         getTransformJexl(authTokenVar.getRules(1)));
     String mc2 = getMatchConditionJexl(authTokenVar.getRules(1));
     assertTrue(mc2.contains("$s.getPath() =~ '/api/v1/gamma/.*'"));
-    assertTrue(mc2.contains("$s.getMethod().equals('GET')"));
-    assertTrue(mc2.contains("$s.getRequestHeaders().get('x-mode').equals('secure')"));
+    assertTrue(mc2.contains("$s.getMethod() == 'GET'"));
+    assertTrue(mc2.contains("$s.getRequestHeaders().get('x-mode') == 'secure'"));
 
     // --- auth_code: 2 derivation rules ---
     assertEquals(2, authCodeVar.getRulesCount());
@@ -417,7 +417,7 @@ class AbusePolicyEdgeDecisionConverterE2ETest {
             .getJexlExpression()
             .getJexlExpression());
     assertEquals(
-        "!ip_address.equals('10.0.0.1')",
+        "ip_address != '10.0.0.1'",
         filterMc
             .getLogicalMatchCondition()
             .getConditions(1)
@@ -425,7 +425,7 @@ class AbusePolicyEdgeDecisionConverterE2ETest {
             .getJexlExpression()
             .getJexlExpression());
     assertEquals(
-        "custom_filter_header.equals('val17')",
+        "custom_filter_header == 'val17'",
         filterMc
             .getLogicalMatchCondition()
             .getConditions(2)

@@ -209,7 +209,7 @@ public class AbusePolicyEdgeDecisionIntegrationTest
 
         // 4. Assert the full EDS rule output
         EdgeDecisionRule rule = engineConfig.getDecisionRules(0);
-        assertEquals(policy.getId(), rule.getId());
+        assertEquals("abuse-" + policy.getId(), rule.getId());
         assertEquals("IT Filter Test Policy", rule.getName());
         assertEquals(
             EdgeDecisionRuleCategory.EDGE_DECISION_RULE_CATEGORY_ABUSE_DETECTION,
@@ -246,7 +246,7 @@ public class AbusePolicyEdgeDecisionIntegrationTest
         // match_condition references the filter variable by name
         assertTrue(aggRule.hasMatchCondition());
         assertEquals(
-            "custom_filter_header.equals('expected_value')",
+            "custom_filter_header == 'expected_value'",
             aggRule
                 .getMatchCondition()
                 .getGenericMatchCondition()

@@ -59,14 +59,13 @@ class JexlExpressionUtilsTest {
   @Test
   void toEqualsExpr_singleValue() {
     assertEquals(
-        "$s.getEnv().equals('prod')",
-        JexlExpressionUtils.toEqualsExpr("$s.getEnv()", List.of("prod")));
+        "$s.getEnv() == 'prod'", JexlExpressionUtils.toEqualsExpr("$s.getEnv()", List.of("prod")));
   }
 
   @Test
   void toEqualsExpr_multipleValues_orJoined() {
     String result = JexlExpressionUtils.toEqualsExpr("$s.getEnv()", List.of("prod", "staging"));
-    assertEquals("($s.getEnv().equals('prod') || $s.getEnv().equals('staging'))", result);
+    assertEquals("($s.getEnv() == 'prod' || $s.getEnv() == 'staging')", result);
   }
 
   @Test

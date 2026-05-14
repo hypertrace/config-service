@@ -99,7 +99,7 @@ class AbusePolicyEdgeDecisionConverterTest {
     EdgeDecisionRule rule = result.getDecisionRules(0);
 
     // Verify orchestration-level envelope fields
-    assertEquals("3a522041-1761-4ce1-94d0-1fca377b444c", rule.getId());
+    assertEquals("abuse-3a522041-1761-4ce1-94d0-1fca377b444c", rule.getId());
     assertEquals("abc", rule.getName());
     assertEquals(
         EdgeDecisionRuleCategory.EDGE_DECISION_RULE_CATEGORY_ABUSE_DETECTION,
@@ -108,7 +108,7 @@ class AbusePolicyEdgeDecisionConverterTest {
         EdgeDecisionType.EDGE_DECISION_TYPE_BLOCK, rule.getRuleDecision().getEdgeDecisionType());
     assertEquals("abc", rule.getRuleDecision().getThreatType());
     assertEquals(PolicyKind.POLICY_KIND_BOT_MITIGATION, rule.getPolicyKind());
-    assertEquals("3a522041-1761-4ce1-94d0-1fca377b444c", rule.getPolicyId());
+    assertEquals("abuse-3a522041-1761-4ce1-94d0-1fca377b444c", rule.getPolicyId());
     assertFalse(rule.getRuleStatus().getDisabled());
 
     assertTrue(rule.hasRuleScope());
@@ -234,7 +234,7 @@ class AbusePolicyEdgeDecisionConverterTest {
 
     EdgeDecisionEngineConfig result = convert(List.of(blockPolicy, alertPolicy));
     assertEquals(1, result.getDecisionRulesCount());
-    assertEquals("block-policy", result.getDecisionRules(0).getId());
+    assertEquals("abuse-block-policy", result.getDecisionRules(0).getId());
   }
 
   // --- Helper methods ---

@@ -127,7 +127,12 @@ public class SimpleAggregationTemplateConverter implements TemplateEdgeDecisionC
         String varName = entityVariableNames.getOrDefault(groupByEntityId, groupByEntityId);
         builder.addGroupByDimensions(buildVariableRefAttribute(varName));
       } else {
-        log.warn("No derivation rules for group_by derived entity: {}", groupByEntityId);
+        throw new IllegalStateException(
+            "Group-by entity '"
+                + groupByEntityId
+                + "' has no valid derivation rules. "
+                + "Cannot generate a rule without group-by — "
+                + "it would create a shared counter blocking all requests.");
       }
     }
 
@@ -173,7 +178,13 @@ public class SimpleAggregationTemplateConverter implements TemplateEdgeDecisionC
         String varName = entityVariableNames.getOrDefault(aggregationEntityId, aggregationEntityId);
         builder.setDimension(buildVariableRefAttribute(varName));
       } else {
-        log.warn("No derivation rules for aggregation derived entity: {}", aggregationEntityId);
+        throw new IllegalStateException(
+            "Aggregation entity '"
+                + aggregationEntityId
+                + "' has no valid derivation rules. "
+                + "Cannot generate a "
+                + template.getAggregation().getAggregationFunction()
+                + " rule without the aggregation dimension.");
       }
     }
 

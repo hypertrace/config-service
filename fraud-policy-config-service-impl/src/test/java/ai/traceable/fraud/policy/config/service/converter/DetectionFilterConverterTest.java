@@ -2,6 +2,7 @@ package ai.traceable.fraud.policy.config.service.converter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig;
@@ -62,7 +63,7 @@ class DetectionFilterConverterTest {
 
     assertTrue(result.isPresent());
     assertEquals(
-        "entity_ip.equals('1.2.3.4')",
+        "entity_ip == '1.2.3.4'",
         result.get().getGenericMatchCondition().getJexlExpression().getJexlExpression());
   }
 
@@ -75,7 +76,7 @@ class DetectionFilterConverterTest {
 
     assertTrue(result.isPresent());
     assertEquals(
-        "!entity_ip.equals('1.2.3.4')",
+        "entity_ip != '1.2.3.4'",
         result.get().getGenericMatchCondition().getJexlExpression().getJexlExpression());
   }
 
@@ -101,7 +102,7 @@ class DetectionFilterConverterTest {
 
     assertTrue(result.isPresent());
     assertEquals(
-        "!entity_ua.contains('bot')",
+        "!(entity_ua.contains('bot'))",
         result.get().getGenericMatchCondition().getJexlExpression().getJexlExpression());
   }
 
@@ -161,7 +162,7 @@ class DetectionFilterConverterTest {
 
     assertTrue(result.isPresent());
     assertEquals(
-        "(traceable:toNum(entity_status) != null && traceable:toNum(entity_status) > 400)",
+        "traceable:toNum(entity_status) > 400",
         result.get().getGenericMatchCondition().getJexlExpression().getJexlExpression());
   }
 
@@ -182,7 +183,49 @@ class DetectionFilterConverterTest {
 
     assertTrue(result.isPresent());
     assertEquals(
-        "(traceable:toNum(entity_status) != null && traceable:toNum(entity_status) <= 200)",
+        "traceable:toNum(entity_status) <= 200",
+        result.get().getGenericMatchCondition().getJexlExpression().getJexlExpression());
+  }
+
+  @Test
+  void convert_numericEquals() {
+    AbusePolicyDetectionFilter filter =
+        AbusePolicyDetectionFilter.newBuilder()
+            .setRelationalFilter(
+                AbusePolicyRelationalFilter.newBuilder()
+                    .setDerivedEntityId("entity_status")
+                    .setOperator(OperatorType.OPERATOR_TYPE_NUMERIC_EQUALS)
+                    .setLiteralValues(
+                        AbusePolicyLiteralValues.newBuilder()
+                            .addValues(Value.newBuilder().setNumberValue(4))))
+            .build();
+
+    Optional<MatchCondition> result = converter.convert(List.of(filter), entityRulesMap, Map.of());
+
+    assertTrue(result.isPresent());
+    assertEquals(
+        "traceable:toNum(entity_status) == 4",
+        result.get().getGenericMatchCondition().getJexlExpression().getJexlExpression());
+  }
+
+  @Test
+  void convert_numericNotEquals() {
+    AbusePolicyDetectionFilter filter =
+        AbusePolicyDetectionFilter.newBuilder()
+            .setRelationalFilter(
+                AbusePolicyRelationalFilter.newBuilder()
+                    .setDerivedEntityId("entity_status")
+                    .setOperator(OperatorType.OPERATOR_TYPE_NUMERIC_NOT_EQUALS)
+                    .setLiteralValues(
+                        AbusePolicyLiteralValues.newBuilder()
+                            .addValues(Value.newBuilder().setNumberValue(500))))
+            .build();
+
+    Optional<MatchCondition> result = converter.convert(List.of(filter), entityRulesMap, Map.of());
+
+    assertTrue(result.isPresent());
+    assertEquals(
+        "traceable:toNum(entity_status) != 500",
         result.get().getGenericMatchCondition().getJexlExpression().getJexlExpression());
   }
 
@@ -205,6 +248,28 @@ class DetectionFilterConverterTest {
     assertTrue(result.isPresent());
     assertEquals(
         "['1.1.1.1', '2.2.2.2'].contains(entity_ip)",
+        result.get().getGenericMatchCondition().getJexlExpression().getJexlExpression());
+  }
+
+  @Test
+  void convert_multipleValues_containsOperator_buildsOrJoined() {
+    AbusePolicyDetectionFilter filter =
+        AbusePolicyDetectionFilter.newBuilder()
+            .setRelationalFilter(
+                AbusePolicyRelationalFilter.newBuilder()
+                    .setDerivedEntityId("entity_ua")
+                    .setOperator(OperatorType.OPERATOR_TYPE_CONTAINS)
+                    .setLiteralValues(
+                        AbusePolicyLiteralValues.newBuilder()
+                            .addValues(Value.newBuilder().setStringValue("bot"))
+                            .addValues(Value.newBuilder().setStringValue("crawl"))))
+            .build();
+
+    Optional<MatchCondition> result = converter.convert(List.of(filter), entityRulesMap, Map.of());
+
+    assertTrue(result.isPresent());
+    assertEquals(
+        "(entity_ua.contains('bot') || entity_ua.contains('crawl'))",
         result.get().getGenericMatchCondition().getJexlExpression().getJexlExpression());
   }
 
@@ -232,7 +297,7 @@ class DetectionFilterConverterTest {
         result.get().getLogicalMatchCondition().getOperator());
     assertEquals(2, result.get().getLogicalMatchCondition().getConditionsCount());
     assertEquals(
-        "entity_ip.equals('1.2.3.4')",
+        "entity_ip == '1.2.3.4'",
         result
             .get()
             .getLogicalMatchCondition()
@@ -269,13 +334,13 @@ class DetectionFilterConverterTest {
   }
 
   @Test
-  void convert_unresolvedEntity_skipsFilter() {
+  void convert_unresolvedEntity_throwsException() {
     AbusePolicyDetectionFilter filter =
         relationalFilter("unknown_entity", OperatorType.OPERATOR_TYPE_STRING_EQUALS, "val");
 
-    Optional<MatchCondition> result = converter.convert(List.of(filter), entityRulesMap, Map.of());
-
-    assertFalse(result.isPresent());
+    assertThrows(
+        IllegalStateException.class,
+        () -> converter.convert(List.of(filter), entityRulesMap, Map.of()));
   }
 
   private static AbusePolicyDetectionFilter relationalFilter(

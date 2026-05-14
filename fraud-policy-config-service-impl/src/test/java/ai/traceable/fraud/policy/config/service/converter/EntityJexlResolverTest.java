@@ -309,8 +309,8 @@ class EntityJexlResolverTest {
         rule.getMatchCondition().getGenericMatchCondition().getJexlExpression().getJexlExpression();
     // API IDs resolved to url/httpMethod/serviceName
     assertTrue(conditionJexl.contains("$s.getPath() =~ '/api/v1/test'"));
-    assertTrue(conditionJexl.contains("$s.getMethod().equals('GET')"));
-    assertTrue(conditionJexl.contains("$s.getServiceName().equals('test-svc')"));
+    assertTrue(conditionJexl.contains("$s.getMethod() == 'GET'"));
+    assertTrue(conditionJexl.contains("$s.getServiceName() == 'test-svc'"));
   }
 
   @Test
@@ -338,7 +338,7 @@ class EntityJexlResolverTest {
     assertTrue(rule.hasMatchCondition());
     String conditionJexl =
         rule.getMatchCondition().getGenericMatchCondition().getJexlExpression().getJexlExpression();
-    assertTrue(conditionJexl.contains("$s.getEnvironment().equals('production')"));
+    assertTrue(conditionJexl.contains("$s.getEnvironment() == 'production'"));
   }
 
   @Test
@@ -394,9 +394,9 @@ class EntityJexlResolverTest {
     assertTrue(rule.hasMatchCondition());
     String conditionJexl =
         rule.getMatchCondition().getGenericMatchCondition().getJexlExpression().getJexlExpression();
-    assertTrue(conditionJexl.contains("$s.getEnvironment().equals('production')"));
+    assertTrue(conditionJexl.contains("$s.getEnvironment() == 'production'"));
     assertTrue(conditionJexl.contains("$s.getPath() =~ '/api/v1/test'"));
-    assertTrue(conditionJexl.contains("$s.getMethod().equals('POST')"));
+    assertTrue(conditionJexl.contains("$s.getMethod() == 'POST'"));
     assertTrue(conditionJexl.contains("&&"));
   }
 

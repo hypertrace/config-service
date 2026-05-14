@@ -38,6 +38,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 @Singleton
 public class AbusePolicyEdgeDecisionConverter {
 
+  public static final String ABUSE_POLICY_ID_PREFIX = "abuse-";
   private final EntityJexlResolver entityJexlResolver;
   private final ApiScopeResolver apiScopeResolver;
   private final Map<AbusePolicyData.TemplateConfigCase, TemplateEdgeDecisionConverter>
@@ -115,7 +116,7 @@ public class AbusePolicyEdgeDecisionConverter {
 
       EdgeDecisionRule.Builder ruleBuilder =
           EdgeDecisionRule.newBuilder()
-              .setId(abusePolicy.getId())
+              .setId(buildPolicyId(abusePolicy.getId()))
               .setName(data.getName())
               .setVersion(data.getVersion())
               .setRuleCategory(EDGE_DECISION_RULE_CATEGORY_ABUSE_DETECTION)
@@ -125,7 +126,7 @@ public class AbusePolicyEdgeDecisionConverter {
                   converter.buildRuleDefinition(data, entityRulesMap, entityVariableNames))
               .setRuleDecision(edgeDecision)
               .setPolicyKind(PolicyKind.POLICY_KIND_BOT_MITIGATION)
-              .setPolicyId(abusePolicy.getId());
+              .setPolicyId(buildPolicyId(abusePolicy.getId()));
 
       if (!data.getDescription().isEmpty()) {
         ruleBuilder.setDescription(data.getDescription());
@@ -170,5 +171,9 @@ public class AbusePolicyEdgeDecisionConverter {
     return scopeBuilder.getScopeConditionsList().isEmpty()
         ? Optional.empty()
         : Optional.of(scopeBuilder.build());
+  }
+
+  private String buildPolicyId(String abusePolicyId) {
+    return ABUSE_POLICY_ID_PREFIX + abusePolicyId;
   }
 }

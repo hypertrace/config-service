@@ -2,6 +2,7 @@ package ai.traceable.fraud.policy.config.service.converter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig;
@@ -193,6 +194,16 @@ class SimpleAggregationTemplateConverterTest {
             .getTransformationConfig()
             .getJexlExpression()
             .getJexlExpression());
+  }
+
+  @Test
+  void buildRuleDefinition_groupByEntityNoRules_throwsException() {
+    AbusePolicyData data = buildSimplePolicyData("entity_ip", "entity_missing");
+    Map<String, List<DerivationRule>> entityRulesMap = rulesMap("entity_ip", "$s.getIpAddress()");
+
+    assertThrows(
+        IllegalStateException.class,
+        () -> converter.buildRuleDefinition(data, entityRulesMap, Map.of()));
   }
 
   @Test
@@ -390,9 +401,8 @@ class SimpleAggregationTemplateConverterTest {
     assertTrue(aggRule.hasMatchCondition());
     MatchCondition mc = aggRule.getMatchCondition();
     assertTrue(mc.hasGenericMatchCondition());
-    // LHS is the variable name, not the inline JEXL
     assertEquals(
-        "header_entity.equals('test-value')",
+        "header_entity == 'test-value'",
         mc.getGenericMatchCondition().getJexlExpression().getJexlExpression());
   }
 
@@ -461,7 +471,7 @@ class SimpleAggregationTemplateConverterTest {
         mc.getLogicalMatchCondition().getOperator());
     assertEquals(2, mc.getLogicalMatchCondition().getConditionsCount());
     assertEquals(
-        "entity_a.equals('1.2.3.4')",
+        "entity_a == '1.2.3.4'",
         mc.getLogicalMatchCondition()
             .getConditions(0)
             .getGenericMatchCondition()

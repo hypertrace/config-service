@@ -4,7 +4,6 @@ import static ai.traceable.fraud.policy.config.service.converter.JexlExpressionU
 import static ai.traceable.fraud.policy.config.service.converter.JexlExpressionUtils.buildMapAccessJexl;
 import static ai.traceable.fraud.policy.config.service.converter.JexlExpressionUtils.escapeJexlString;
 import static ai.traceable.fraud.policy.config.service.converter.JexlExpressionUtils.toChainedGetAccess;
-import static ai.traceable.fraud.policy.config.service.converter.JexlExpressionUtils.toNumericComparisonExpr;
 import static ai.traceable.fraud.policy.config.service.converter.JexlExpressionUtils.validateExactMatchOnly;
 import static ai.traceable.fraud.policy.config.service.converter.JexlExpressionUtils.valueToString;
 
@@ -187,7 +186,11 @@ public class ScopeToJexlConverter {
         if (bodyKey.isEmpty()) {
           return Optional.of(SPAN_VAR + ".getParsedRequestBodyJson()");
         }
-        return Optional.of(SPAN_VAR + ".getParsedRequestBodyJson()" + toChainedGetAccess(bodyKey));
+        return Optional.of(
+            SPAN_VAR
+                + ".getParsedRequestBodyJson()"
+                + toChainedGetAccess(bodyKey)
+                + ".getAsString()");
       case EXTRACTION_LOCATION_TYPE_REQUEST_QUERY_PARAM:
         base = "getQueryParams()";
         break;
@@ -217,29 +220,30 @@ public class ScopeToJexlConverter {
     boolean isString = value.getKindCase() == Value.KindCase.STRING_VALUE;
     String val =
         isString ? "'" + escapeJexlString(valueToString(value)) + "'" : valueToString(value);
+    String toNum = "traceable:toNum(" + fieldPath + ")";
     switch (operator) {
       case FILTER_OPERATOR_EQ:
         if (isNull) {
           return fieldPath + " == null";
         }
-        return isString ? fieldPath + ".equals(" + val + ")" : fieldPath + " == " + val;
+        return fieldPath + " == " + val;
       case FILTER_OPERATOR_NEQ:
         if (isNull) {
           return fieldPath + " != null";
         }
-        return isString ? "!(" + fieldPath + ".equals(" + val + "))" : fieldPath + " != " + val;
+        return fieldPath + " != " + val;
       case FILTER_OPERATOR_GT:
-        return toNumericComparisonExpr(fieldPath, ">", val);
+        return toNum + " > " + val;
       case FILTER_OPERATOR_LT:
-        return toNumericComparisonExpr(fieldPath, "<", val);
+        return toNum + " < " + val;
       case FILTER_OPERATOR_GTE:
-        return toNumericComparisonExpr(fieldPath, ">=", val);
+        return toNum + " >= " + val;
       case FILTER_OPERATOR_LTE:
-        return toNumericComparisonExpr(fieldPath, "<=", val);
+        return toNum + " <= " + val;
       case FILTER_OPERATOR_REGEX_MATCHES:
         return fieldPath + " =~ " + val;
       case FILTER_OPERATOR_CONTAINS:
-        return "(" + fieldPath + " != null && " + fieldPath + ".contains(" + val + "))";
+        return fieldPath + ".contains(" + val + ")";
       default:
         log.warn("Unsupported filter operator in scope: {}", operator);
         return "true";
