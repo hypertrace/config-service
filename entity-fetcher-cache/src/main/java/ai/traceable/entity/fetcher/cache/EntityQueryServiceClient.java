@@ -107,13 +107,9 @@ class EntityQueryServiceClient {
               AiEndpointMetadata.Builder builder =
                   AiEndpointMetadata.newBuilder()
                       .addAllAssociatedAiModels(row.getColumn(1).getStringArrayList())
-                      .addAllAssociatedAiVendors(row.getColumn(2).getStringArrayList());
-              // TODO : we are currently not parsing prompt attribute keys at all since we don't
-              // have that as of now, uncomment and update the code once we have that column in
-              // place and start populating it in entity query service
-              //                      .addAllPromptAttributeKeys(
-              //
-              // parsePromptAttributeKeys(row.getColumn(3).getStringArrayList()));
+                      .addAllAssociatedAiVendors(row.getColumn(2).getStringArrayList())
+                      .addAllPromptAttributeKeys(
+                          parsePromptAttributeKeys(row.getColumn(3).getStringArrayList()));
               return new ApiAiEndpointMetadataDetails(apiId, builder.build());
             });
   }
@@ -121,10 +117,10 @@ class EntityQueryServiceClient {
   private List<PromptAttributeKey> parsePromptAttributeKeys(List<String> promptAttributeKeysRaw) {
     return promptAttributeKeysRaw.stream()
         .filter(raw -> raw != null && !raw.isEmpty())
+        .map(raw -> raw.endsWith(",") ? raw.substring(0, raw.length() - 1) : raw)
         .map(
             raw -> {
-              // Format: http.request.{attributeType}[.{attributeKey}]
-              // e.g. http.request.header.x-prompt, http.request.body.prompt, http.request.body
+              // Format: http.request.{attributeType}[.$.{jsonPath}]
               String[] parts = raw.split("\\.", 4);
               PromptAttributeKey.Builder builder = PromptAttributeKey.newBuilder();
               if (parts.length >= 3) {
@@ -132,15 +128,17 @@ class EntityQueryServiceClient {
                 if (attributeType != null) {
                   if (AttributeType.ATTRIBUTE_TYPE_BODY_PARAM.equals(attributeType)
                       && parts.length == 3) {
-                    // For body type, if attribute key is not provided, we will consider the whole
-                    // body as the attribute value
                     builder.setAttributeType(AttributeType.ATTRIBUTE_TYPE_BODY);
                   } else {
                     builder.setAttributeType(attributeType);
                   }
                 }
                 if (parts.length >= 4) {
-                  builder.setAttributeKey(parts[3]);
+                  String attributeKey = parts[3];
+                  if (attributeKey.startsWith("$.")) {
+                    attributeKey = attributeKey.substring(2);
+                  }
+                  builder.setAttributeKey(attributeKey);
                 }
               }
               return builder.build();
@@ -168,9 +166,9 @@ class EntityQueryServiceClient {
         .addSelection(
             buildSelectionExpression(
                 entityQueryServiceConfig.getApiAssociatedAiVendorsColumnName()))
-        //        .addSelection(
-        //            buildSelectionExpression(
-        //                entityQueryServiceConfig.getApiPromptAttributeKeysColumnName()))
+        .addSelection(
+            buildSelectionExpression(
+                entityQueryServiceConfig.getApiPromptAttributeKeysColumnName()))
         .build();
   }
 
