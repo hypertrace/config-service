@@ -24,18 +24,15 @@ class CookiesBuilder {
     // 2. still remain decoupled from the container impl (since we're going back to a string)
     // 3. use newer cookie attributes that neither spec supports like same-site
 
-    return new HttpCookie(
-            cookie.getKey(),
-            cookie.getValue(),
-            null,
-            null,
-            cookie.hasMaxAge() ? cookie.getMaxAge().getSeconds() : -1,
-            cookie.getHttpOnly(),
-            true,
-            null,
-            0,
-            this.convertSameSiteToJetty(cookie.getSameSite()).orElse(null))
-        .getRFC6265SetCookie();
+    HttpCookie.Builder builder =
+        HttpCookie.build(cookie.getKey(), cookie.getValue())
+            .secure(true)
+            .httpOnly(cookie.getHttpOnly());
+    if (cookie.hasMaxAge()) {
+      builder.maxAge(cookie.getMaxAge().getSeconds());
+    }
+    this.convertSameSiteToJetty(cookie.getSameSite()).ifPresent(builder::sameSite);
+    return builder.build().toString();
   }
 
   private Optional<HttpCookie.SameSite> convertSameSiteToJetty(Cookie.SameSite sameSite) {
