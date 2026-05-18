@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.5.253=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.5.258=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.fasterxml.jackson:jackson-bom:2.21.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.github.f4b6a3:uuid-creator:5.3.2=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.google.api.grpc:proto-google-common-protos:2.59.2=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
@@ -42,7 +42,7 @@ org.codehaus.mojo:animal-sniffer-annotations:1.24=compileClasspath,runtimeClassp
 org.eclipse.jetty.ee10:jetty-ee10-bom:12.1.9=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.eclipse.jetty:jetty-bom:12.1.9=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.glassfish.jersey:jersey-bom:2.41=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-org.hypertrace.bom:hypertrace-bom:0.3.79=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.hypertrace.bom:hypertrace-bom:0.3.80=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.kafkastreams.framework:kafka-bom:0.6.4=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-api:5.14.3=testCompileClasspath,testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-engine:5.14.3=testRuntimeClasspath

@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.5.253=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.5.258=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.config.service:config-service-commons:0.37.1495=testCompileClasspath,testRuntimeClasspath
 ai.traceable.config.service:fraud-datamodel-config-service-api:0.37.1495=testCompileClasspath,testRuntimeClasspath
 ai.traceable.config.service:fraud-datamodel-derivation-config-service-api:0.37.1495=testCompileClasspath,testRuntimeClasspath
@@ -114,7 +114,7 @@ org.glassfish.jersey.core:jersey-server:3.1.10=compileClasspath,runtimeClasspath
 org.glassfish.jersey.inject:jersey-hk2:3.1.10=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.glassfish.jersey:jersey-bom:3.1.10=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hdrhistogram:HdrHistogram:2.2.2=testRuntimeClasspath
-org.hypertrace.bom:hypertrace-bom:0.3.79=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.hypertrace.bom:hypertrace-bom:0.3.80=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.grpcutils:grpc-client-utils:0.13.23=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.grpcutils:grpc-context-utils:0.13.23=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.kafkastreams.framework:kafka-bom:0.6.4=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
