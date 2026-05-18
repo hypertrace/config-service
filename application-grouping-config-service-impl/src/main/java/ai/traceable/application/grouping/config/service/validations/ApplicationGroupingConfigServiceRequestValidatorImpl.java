@@ -20,6 +20,7 @@ import io.grpc.Status;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.validation.GrpcValidatorUtils;
+import org.hypertrace.core.grpcutils.context.ContextualStatusExceptionBuilder;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
@@ -77,12 +78,17 @@ public class ApplicationGroupingConfigServiceRequestValidatorImpl
 
     if (!applicationGroupingRuleConfigService.doesApplicationGroupingRuleConfigExist(
         requestContext, request.getId())) {
-      throw Status.NOT_FOUND
-          .withDescription(
+      throw ContextualStatusExceptionBuilder.from(
+              Status.NOT_FOUND
+                  .withDescription(
+                      String.format(
+                          "Unable to find application grouping rule config in context %s for request %s",
+                          requestContext, request))
+                  .asRuntimeException(requestContext.buildTrailers()))
+          .withExternalMessage(
               String.format(
-                  "Unable to find application grouping rule config in context %s for request %s",
-                  requestContext, request))
-          .asRuntimeException(requestContext.buildTrailers());
+                  "Unable to find application grouping rule config with id %s", request.getId()))
+          .buildRuntimeException();
     }
   }
 
@@ -111,9 +117,12 @@ public class ApplicationGroupingConfigServiceRequestValidatorImpl
   private void validateIsNotDynamic(
       RequestContext requestContext, ApplicationGroupingRuleConfigInfo configInfo) {
     if (configInfo.getGroupName().hasDynamic()) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription("Dynamic rules cannot be updated")
-          .asRuntimeException(requestContext.buildTrailers());
+      throw ContextualStatusExceptionBuilder.from(
+              Status.INVALID_ARGUMENT
+                  .withDescription("Dynamic rules cannot be updated")
+                  .asRuntimeException(requestContext.buildTrailers()))
+          .useStatusDescriptionAsExternalMessage()
+          .buildRuntimeException();
     }
   }
 
@@ -128,9 +137,12 @@ public class ApplicationGroupingConfigServiceRequestValidatorImpl
       validateNonDefaultPresenceOrThrow(
           configInfo, ApplicationGroupingRuleConfigInfo.SELECTOR_FIELD_NUMBER);
       if (configInfo.getSelectorList().isEmpty()) {
-        throw Status.INVALID_ARGUMENT
-            .withDescription("At least one asset selector is required")
-            .asRuntimeException(context.buildTrailers());
+        throw ContextualStatusExceptionBuilder.from(
+                Status.INVALID_ARGUMENT
+                    .withDescription("At least one asset selector is required")
+                    .asRuntimeException(context.buildTrailers()))
+            .useStatusDescriptionAsExternalMessage()
+            .buildRuntimeException();
       }
       validateDynamicApiRegex(configInfo.getGroupName().getDynamic().getApiRegex(), context);
     }
@@ -142,15 +154,21 @@ public class ApplicationGroupingConfigServiceRequestValidatorImpl
 
   private void validateAssetSelector(RequestContext context, AssetSelector selector) {
     if (!selector.getAssetType().hasWellKnownAssetType()) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription("Asset type must have a well-known asset type")
-          .asRuntimeException(context.buildTrailers());
+      throw ContextualStatusExceptionBuilder.from(
+              Status.INVALID_ARGUMENT
+                  .withDescription("Asset type must have a well-known asset type")
+                  .asRuntimeException(context.buildTrailers()))
+          .useStatusDescriptionAsExternalMessage()
+          .buildRuntimeException();
     }
 
     if (!selector.getFilter().hasSavedFilter()) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription("Filter must have a saved filter reference")
-          .asRuntimeException(context.buildTrailers());
+      throw ContextualStatusExceptionBuilder.from(
+              Status.INVALID_ARGUMENT
+                  .withDescription("Filter must have a saved filter reference")
+                  .asRuntimeException(context.buildTrailers()))
+          .withExternalMessage("Filter in the asset selector does not contain a valid filter")
+          .buildRuntimeException();
     }
     validateStringField(
         context, selector.getFilter().getSavedFilter().getId(), "Filter ID", MAX_ID_LENGTH);
@@ -159,27 +177,36 @@ public class ApplicationGroupingConfigServiceRequestValidatorImpl
   private void validateStringField(
       RequestContext requestContext, String stringField, String fieldName, int maxLength) {
     if (stringField == null || stringField.isBlank()) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription(String.format("%s must not be blank", fieldName))
-          .asRuntimeException(requestContext.buildTrailers());
+      throw ContextualStatusExceptionBuilder.from(
+              Status.INVALID_ARGUMENT
+                  .withDescription(String.format("%s must not be blank", fieldName))
+                  .asRuntimeException(requestContext.buildTrailers()))
+          .useStatusDescriptionAsExternalMessage()
+          .buildRuntimeException();
     }
 
     if (stringField.length() > maxLength) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription(
-              String.format(
-                  "%s must not exceed %d characters (provided: %d)",
-                  fieldName, maxLength, stringField.length()))
-          .asRuntimeException(requestContext.buildTrailers());
+      throw ContextualStatusExceptionBuilder.from(
+              Status.INVALID_ARGUMENT
+                  .withDescription(
+                      String.format(
+                          "%s must not exceed %d characters (provided: %d)",
+                          fieldName, maxLength, stringField.length()))
+                  .asRuntimeException(requestContext.buildTrailers()))
+          .useStatusDescriptionAsExternalMessage()
+          .buildRuntimeException();
     }
 
     if (!VALID_STRING_PATTERN.matcher(stringField).matches()) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription(
-              String.format(
-                  "%s contains invalid characters. Only alphanumeric characters, spaces, hyphens, and underscores are allowed",
-                  fieldName))
-          .asRuntimeException(requestContext.buildTrailers());
+      throw ContextualStatusExceptionBuilder.from(
+              Status.INVALID_ARGUMENT
+                  .withDescription(
+                      String.format(
+                          "%s contains invalid characters. Only alphanumeric characters, spaces, hyphens, and underscores are allowed",
+                          fieldName))
+                  .asRuntimeException(requestContext.buildTrailers()))
+          .useStatusDescriptionAsExternalMessage()
+          .buildRuntimeException();
     }
   }
 
@@ -187,9 +214,12 @@ public class ApplicationGroupingConfigServiceRequestValidatorImpl
       RequestContext requestContext, String ruleName) {
     if (!isLetterOrDigit(ruleName.charAt(0))
         || !isLetterOrDigit(ruleName.charAt(ruleName.length() - 1))) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription("Rule name must start and end with an alphanumeric character")
-          .asRuntimeException(requestContext.buildTrailers());
+      throw ContextualStatusExceptionBuilder.from(
+              Status.INVALID_ARGUMENT
+                  .withDescription("Rule name must start and end with an alphanumeric character")
+                  .asRuntimeException(requestContext.buildTrailers()))
+          .useStatusDescriptionAsExternalMessage()
+          .buildRuntimeException();
     }
   }
 
@@ -204,11 +234,15 @@ public class ApplicationGroupingConfigServiceRequestValidatorImpl
         .ifPresent(
             existingConfig -> {
               if (excludeId == null || !existingConfig.getId().equals(excludeId)) {
-                throw Status.ALREADY_EXISTS
-                    .withDescription(
-                        String.format(
-                            "Application grouping rule with name '%s' already exists", ruleName))
-                    .asRuntimeException(requestContext.buildTrailers());
+                throw ContextualStatusExceptionBuilder.from(
+                        Status.ALREADY_EXISTS
+                            .withDescription(
+                                String.format(
+                                    "Application grouping rule with name '%s' already exists",
+                                    ruleName))
+                            .asRuntimeException(requestContext.buildTrailers()))
+                    .useStatusDescriptionAsExternalMessage()
+                    .buildRuntimeException();
               }
             });
   }
@@ -220,9 +254,12 @@ public class ApplicationGroupingConfigServiceRequestValidatorImpl
             : emptyList();
 
     if (denyList.contains(apiRegex)) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription(String.format("API regex %s is not allowed", apiRegex))
-          .asRuntimeException(requestContext.buildTrailers());
+      throw ContextualStatusExceptionBuilder.from(
+              Status.INVALID_ARGUMENT
+                  .withDescription(String.format("API regex %s is not allowed", apiRegex))
+                  .asRuntimeException(requestContext.buildTrailers()))
+          .useStatusDescriptionAsExternalMessage()
+          .buildRuntimeException();
     }
   }
 }
