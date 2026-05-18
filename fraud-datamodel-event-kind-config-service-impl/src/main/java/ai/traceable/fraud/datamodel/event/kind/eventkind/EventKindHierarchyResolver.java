@@ -3,7 +3,6 @@ package ai.traceable.fraud.datamodel.event.kind.eventkind;
 import ai.traceable.fraud.datamodel.event.kind.v1.ComplexDataModelEventKind;
 import ai.traceable.fraud.datamodel.event.kind.v1.DataModelEventKind;
 import ai.traceable.fraud.datamodel.event.kind.v1.DataType;
-import ai.traceable.fraud.datamodel.event.kind.v1.EventKindFilter;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.HashMap;
@@ -30,8 +29,7 @@ public class EventKindHierarchyResolver {
     Map<String, String> kindToParent = new HashMap<>();
     Map<String, DataType> dataTypes = new HashMap<>();
 
-    for (DataModelEventKind kind :
-        eventKindProvider.getEventKinds(EventKindFilter.getDefaultInstance())) {
+    for (DataModelEventKind kind : eventKindProvider.getAllEventKinds()) {
       if (!kind.getParentKindId().isEmpty()) {
         kindToParent.put(kind.getId(), kind.getParentKindId());
       }

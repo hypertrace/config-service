@@ -11,6 +11,7 @@ import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 /** Default implementation that loads event kinds from YAML resource file. */
@@ -23,17 +24,26 @@ public class DefaultEventKindProvider implements EventKindProvider {
   private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
   private static final JsonFormat.Parser JSON_PARSER = JsonFormat.parser().ignoringUnknownFields();
 
-  private final List<DataModelEventKind> eventKinds;
+  private final List<DataModelEventKind> allEventKinds;
+  private final List<DataModelEventKind> selectableEventKinds;
 
   @Inject
   public DefaultEventKindProvider() {
-    this.eventKinds = loadEventKinds();
+    this.allEventKinds = loadEventKinds();
+    this.selectableEventKinds =
+        allEventKinds.stream()
+            .filter(kind -> !kind.getParentKindId().isEmpty())
+            .collect(Collectors.toUnmodifiableList());
   }
 
   @Override
   public List<DataModelEventKind> getEventKinds(EventKindFilter filter) {
-    // Currently all event kinds are system-defined, so system_only filter has no effect
-    return eventKinds;
+    return selectableEventKinds;
+  }
+
+  @Override
+  public List<DataModelEventKind> getAllEventKinds() {
+    return allEventKinds;
   }
 
   private List<DataModelEventKind> loadEventKinds() {

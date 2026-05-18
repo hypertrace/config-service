@@ -54,9 +54,9 @@ class DefaultEventKindProviderTest {
   void containsExpectedSystemKinds() {
     List<DataModelEventKind> kinds = provider.getEventKinds(EventKindFilter.getDefaultInstance());
 
-    assertTrue(
+    assertFalse(
         kinds.stream().anyMatch(k -> k.getId().equals("system_event_kind_value")),
-        "Should contain root value kind");
+        "Should not contain root value kind");
     assertTrue(
         kinds.stream().anyMatch(k -> k.getId().equals("system_event_kind_string")),
         "Should contain string kind");
@@ -76,11 +76,12 @@ class DefaultEventKindProviderTest {
     // Currently all kinds are system-defined, so filter should return same result
     EventKindFilter filter = EventKindFilter.newBuilder().setSystemOnly(true).build();
 
-    List<DataModelEventKind> allKinds =
+    List<DataModelEventKind> defaultKinds =
         provider.getEventKinds(EventKindFilter.getDefaultInstance());
     List<DataModelEventKind> systemKinds = provider.getEventKinds(filter);
 
-    assertEquals(allKinds.size(), systemKinds.size(), "All kinds should be system-defined");
+    assertEquals(
+        defaultKinds.size(), systemKinds.size(), "All selectable kinds are system-defined");
   }
 
   @Test

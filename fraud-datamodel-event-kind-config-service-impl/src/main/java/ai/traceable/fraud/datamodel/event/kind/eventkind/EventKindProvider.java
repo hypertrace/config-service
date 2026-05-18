@@ -8,10 +8,22 @@ import java.util.List;
 public interface EventKindProvider {
 
   /**
-   * Gets all event kinds matching the filter.
+   * Gets selectable event kinds matching the filter. Root/internal kinds (e.g., the abstract
+   * "value" kind) are excluded since they have no operators and should not be assigned to
+   * attributes.
    *
    * @param filter optional filter criteria
-   * @return list of event kinds
+   * @return list of selectable event kinds
    */
   List<DataModelEventKind> getEventKinds(EventKindFilter filter);
+
+  /**
+   * Gets all event kinds including internal root types. Used by hierarchy resolver to build the
+   * full type tree. Default implementation delegates to getEventKinds with no filter.
+   *
+   * @return list of all event kinds
+   */
+  default List<DataModelEventKind> getAllEventKinds() {
+    return getEventKinds(EventKindFilter.getDefaultInstance());
+  }
 }
