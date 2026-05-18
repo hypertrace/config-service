@@ -280,7 +280,7 @@ class SimpleAggregationTemplateConverterTest {
   }
 
   @Test
-  void buildRuleDefinition_countDoesNotSetDimension() {
+  void buildRuleDefinition_countSetsDimensionWhenEntityAvailable() {
     AbusePolicyData data = buildSimplePolicyData("entity_ip", "entity_ip");
     Map<String, List<DerivationRule>> entityRulesMap = rulesMap("entity_ip", "$s.getIpAddress()");
 
@@ -292,7 +292,14 @@ class SimpleAggregationTemplateConverterTest {
 
     assertEquals(
         ValueAggregateThreshold.AggregationType.AGGREGATION_TYPE_COUNT, vat.getAggregationType());
-    assertFalse(vat.hasDimension());
+    assertTrue(vat.hasDimension());
+    assertEquals(
+        "entity_ip",
+        vat.getDimension()
+            .getRules(0)
+            .getTransformationConfig()
+            .getJexlExpression()
+            .getJexlExpression());
   }
 
   @Test

@@ -169,24 +169,35 @@ public class SimpleAggregationTemplateConverter implements TemplateEdgeDecisionC
     builder.setAggregationType(
         convertAggregationFunctionType(template.getAggregation().getAggregationFunction()));
 
-    // Set dimension for non-COUNT aggregations — reference variable name
+    // Set dimension — reference variable name for the aggregation entity
     String aggregationEntityId = template.getAggregation().getDerivedEntityId();
-    if (template.getAggregation().getAggregationFunction()
-        != AggregationFunctionType.AGGREGATION_FUNCTION_TYPE_COUNT) {
-      if (entityRulesMap.containsKey(aggregationEntityId)
-          && !entityRulesMap.get(aggregationEntityId).isEmpty()) {
-        String varName = entityVariableNames.getOrDefault(aggregationEntityId, aggregationEntityId);
-        builder.setDimension(buildVariableRefAttribute(varName));
-      } else {
-        throw new IllegalStateException(
-            "Aggregation entity '"
-                + aggregationEntityId
-                + "' has no valid derivation rules. "
-                + "Cannot generate a "
-                + template.getAggregation().getAggregationFunction()
-                + " rule without the aggregation dimension.");
-      }
+    boolean hasDimensionRules =
+        !aggregationEntityId.isEmpty()
+            && entityRulesMap.containsKey(aggregationEntityId)
+            && !entityRulesMap.get(aggregationEntityId).isEmpty();
+    boolean isCountAggregation =
+        template.getAggregation().getAggregationFunction()
+            == AggregationFunctionType.AGGREGATION_FUNCTION_TYPE_COUNT;
+
+    if (hasDimensionRules) {
+      // Dimension available: set it for all aggregation types.
+      // For COUNT, this enables EDS to skip spans where the entity resolves to null.
+      // For DISTINCT_COUNT/SUM/AVG/etc., this tells EDS which field to aggregate.
+      String varName = entityVariableNames.getOrDefault(aggregationEntityId, aggregationEntityId);
+      builder.setDimension(buildVariableRefAttribute(varName));
+    } else if (!isCountAggregation) {
+      // Non-COUNT aggregations (DISTINCT_COUNT, SUM, AVG, etc.) require a dimension —
+      // without it, EDS wouldn't know which field's values to aggregate.
+      throw new IllegalStateException(
+          "Aggregation entity '"
+              + aggregationEntityId
+              + "' has no valid derivation rules. "
+              + "Cannot generate a "
+              + template.getAggregation().getAggregationFunction()
+              + " rule without the aggregation dimension.");
     }
+    // COUNT without dimension rules: no dimension set. EDS will count all qualifying spans
+    // regardless of any entity value (legacy behavior).
 
     if (template.hasThreshold()) {
       AbuseThresholdConfig threshold = template.getThreshold();
