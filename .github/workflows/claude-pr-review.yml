@@ -1,0 +1,45 @@
+name: Claude PR Review
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  claude-review:
+    runs-on: self-hosted-x64-small
+    timeout-minutes: 20
+    if: github.event.pull_request.draft == false
+
+    steps:
+      - name: Check out PR code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Run Claude Code Review
+        uses: anthropics/claude-code-action@v1
+        env:
+          CLAUDE_CODE_USE_BEDROCK: "1"
+          AWS_BEARER_TOKEN_BEDROCK: ${{ secrets.BEDROCK_API_KEY }}
+          AWS_REGION: ${{ vars.BEDROCK_REGION }}
+          ANTHROPIC_MODEL: ${{ vars.BEDROCK_MODEL_ID }}
+        with:
+          use_bedrock: "true"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: |
+            Run the `config-service-code-review` skill on PR #${{ github.event.pull_request.number }}.
+            Read `.claude/skills/config-service-code-review/SKILL.md` and follow it.
+            Skip Step 3's clarifying-question pause — proceed straight to the review and post findings as inline PR comments.
+          claude_args: |
+            --allowedTools "Bash(gh:*),Bash(git:*),Bash(grep:*),Bash(find:*),Read,Glob"
