@@ -40,6 +40,6 @@ jobs:
           prompt: |
             Run the `config-service-code-review` skill on PR #${{ github.event.pull_request.number }}.
             Read `.claude/skills/config-service-code-review/SKILL.md` and follow it.
-            Skip Step 3's clarifying-question pause — proceed straight to the review and post findings as inline PR comments.
+            Post findings as inline PR comments.
           claude_args: |
             --allowedTools "Bash(gh:*),Bash(git:*),Bash(grep:*),Bash(find:*),Read,Glob"

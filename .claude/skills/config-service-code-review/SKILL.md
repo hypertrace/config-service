@@ -75,9 +75,12 @@ Then operate in that working tree for the rest of the review.
 
 For every PR, before drafting findings, gather the following set of files. The list of *what* to read is the same as before; the change is *how*: build the list first, then dispatch it in parallel.
 
-**Files to read:**
+**Files to read — tiered policy (read budget always matters; especially in CI):**
 
-- **Every file touched in the PR — fully**, not just the patched hunks. The diff hides surrounding state (existing imports, neighboring methods, class-level annotations like `@Singleton`, the rest of an enum or constants block).
+- **Source code touched in the PR** (`.java`, `.proto`, `.kts`, `.kt`, `.md`) **— read fully**, not just the patched hunks. The diff hides surrounding state (existing imports, neighboring methods, class-level annotations like `@Singleton`, the rest of an enum or constants block). `.md` is included so meta-PRs that modify the skill itself, agent rules, or other agent-facing docs get full-file context.
+- **Config / data / fixture files touched in the PR** (`.conf`, `.yaml`, `.yml`, `.json`, `*-rules.*`, `default-*.conf`, resource files under `src/main/resources/`) **— read the diff hunks plus ~50 lines of surrounding context, not the full file.** These contain unrelated entries; reading entry 600 doesn't help you review the addition of entry 601, and a large file in context degrades focus on the rest of the review.
+- **Generated code and `gradle.lockfile` — skip entirely**, even if touched.
+- **Hard cap: before reading any non-source file larger than 500 lines, decide whether the full content is genuinely needed.** Default to the diff + context window. Only escalate to a full read if a finding actually depends on something outside the diff.
 - **The immediate neighbors of any new class/file** — the directory listing of the file's package, plus the 1–2 most semantically related files (e.g. an existing `PiiRule…Converter` when reviewing a new `DatatypeRule…Converter`).
 - **The file declaring any helper whose signature changed**, plus its other callers, found via `grep`.
 - **Every caller of any renamed symbol** — `grep -rn "OldClassName\|oldMethodName" .` across the whole repo, including the `hypertrace-config-service` submodule. Stale callers are a frequent miss.
@@ -103,14 +106,23 @@ If `.proto` files changed, run `buf breaking --against .git#branch=main` against
 
 ---
 
-## Step 3: Summarize the PR and ask clarifying questions
+## Step 3: Summarize the PR (and, in interactive mode, ask clarifying questions)
 
-**First**, write a plain-English summary of the PR covering:
+**Always** write a plain-English summary of the PR covering:
 - What problem it solves / what feature it adds (based on the PR description and Jira ticket title)
 - Which modules changed (`-api`, `-impl`, client, utility) and what each change does at a high level
 - Any notable patterns, risks, or open questions you spotted just from reading the diff (proto changes, Guice wiring changes, store/persistence layer changes, factory registration order)
 
-**Then**, ask all clarifying questions in a single numbered list before doing any review. Do not hold back — the more context you get, the better the review. Good questions to consider (use these as prompts, not an exhaustive script):
+The next part of Step 3 depends on whether you're running interactively or non-interactively.
+
+### How to detect mode
+
+- **Non-interactive (CI):** check first with `echo "$GITHUB_ACTIONS"` — a value of `true` means CI. As a fallback (for non-GHA CI), treat the run as non-interactive if the invocation prompt mentions "post findings as inline PR comments" / "GitHub Actions" / similar CI signals.
+- **Interactive (default):** anything else — a human in a CLI / chat session who can answer questions.
+
+### Interactive mode
+
+Ask all clarifying questions in a single numbered list before doing any review. Do not hold back — the more context you get, the better the review. Good questions to consider (use these as prompts, not an exhaustive script):
 
 - What is the intended end-to-end behavior of this config service / RPC? Who is the upstream consumer (UI, agent, another backend service)?
 - Is this a new config service or an extension of an existing one? If new, why doesn't an existing service cover this domain?
@@ -127,11 +139,20 @@ If `.proto` files changed, run `buf breaking --against .git#branch=main` against
 
 **Wait for the reviewer's answers before proceeding to the review.** Do not guess — stop here and present only the summary and questions.
 
+### Non-interactive mode (CI)
+
+Skip clarifying questions entirely. There is no human in the loop to answer them. Instead:
+
+- If a finding's severity genuinely depends on product context you don't have, **fold the assumption into the finding itself**: e.g. "**Assumption:** this RPC is consumed only by the agent. If the UI also calls it, this becomes P1 instead of P3."
+- Add a single **"Assumptions"** section at the end of the PR summary listing any product-context gaps the human reviewer should sanity-check.
+- **Brand every PR comment** with `**Traceable Code Review Agent**` on its own line, followed by a blank line, then the finding. This lives in the skill (not the workflow) so the brand survives workflow rewrites.
+- Proceed straight to Step 4.
+
 ---
 
 ## Step 4: Domain-specific review
 
-After receiving answers, review using the checklist below, plus any patterns loaded from memory in Step 1. Use the reviewer's answers to calibrate which findings are real issues vs. intentional decisions.
+Review using the checklist below, plus any patterns loaded from memory in Step 1 and any reviewer answers collected in interactive mode. Use those answers (when present) to calibrate which findings are real issues vs. intentional decisions.
 
 > **Cross-cutting priorities (highest weight, raised by all top reviewers):**
 > 1. **Naming** — generic / misleading / behavior-misaligned names. The single most-commented topic.
