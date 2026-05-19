@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.5.258=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.5.268=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.7.82=runtimeClasspath,testRuntimeClasspath
 ai.traceable.llm.guardrails.service:llm_guardrails_service_api:0.3.5=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:cache-provider:0.8.145=runtimeClasspath,testRuntimeClasspath
@@ -10,8 +10,8 @@ ai.traceable.platform-gateway:event-invalidation-cache:0.8.145=runtimeClasspath,
 ai.traceable.platform-gateway:ip-utils:0.8.145=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:traceable-raw-span-constants:0.8.145=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform:actor-service-api:0.2.194=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.platform:coraza-waf-service-api:0.3.55=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform:coraza-waf-service-client:0.3.55=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform:coraza-waf-service-api:0.3.67=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform:coraza-waf-service-client:0.3.67=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:enriched-span-constants:5.0.121=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:jni-modsecurity-v2:0.1.149=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:jni-modsecurity:0.1.149=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath

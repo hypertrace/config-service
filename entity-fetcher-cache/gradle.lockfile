@@ -1,13 +1,13 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.5.258=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.5.268=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.llm.guardrails.service:llm_guardrails_service_api:0.3.5=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:cache-provider:0.8.145=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:event-invalidation-cache:0.8.145=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:ip-utils:0.8.145=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform:coraza-waf-service-api:0.3.55=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform:coraza-waf-service-client:0.3.55=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform:coraza-waf-service-api:0.3.67=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform:coraza-waf-service-client:0.3.67=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:jni-modsecurity-v2:0.1.149=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:jni-modsecurity:0.1.149=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:pyml-aifirewall-grpc-api:0.1.80=runtimeClasspath,testRuntimeClasspath
