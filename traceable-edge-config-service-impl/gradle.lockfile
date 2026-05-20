@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.5.307=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.5.313=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.7.82=runtimeClasspath,testRuntimeClasspath
 ai.traceable.llm.guardrails.service:llm_guardrails_service_api:0.3.5=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:cache-provider:0.8.145=runtimeClasspath,testRuntimeClasspath
@@ -12,8 +12,8 @@ ai.traceable.platform:coraza-waf-service-client:0.3.67=runtimeClasspath,testRunt
 ai.traceable.platform:jni-modsecurity-v2:0.1.149=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:jni-modsecurity:0.1.149=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:pyml-aifirewall-grpc-api:0.1.81=runtimeClasspath,testRuntimeClasspath
-ai.traceable.protection.rules:protection-filtering-rules:0.1.153=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.protection.rules:protection-rules-common:0.1.153=runtimeClasspath,testRuntimeClasspath
+ai.traceable.protection.rules:protection-filtering-rules:0.1.154=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.protection.rules:protection-rules-common:0.1.154=runtimeClasspath,testRuntimeClasspath
 ai.traceable.protection:ai-firewall-engine-config:0.1.180=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.protection:ai-firewall-engine:0.1.180=runtimeClasspath,testRuntimeClasspath
 ai.traceable.protection:api-protection-engine-config:0.1.180=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
@@ -156,8 +156,8 @@ org.hypertrace.core.grpcutils:grpc-context-utils:0.13.23=compileClasspath,runtim
 org.hypertrace.core.kafkastreams.framework:kafka-bom:0.6.4=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.kafkastreams.framework:kafka-event-listener:0.6.2=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.serviceframework:platform-metrics:0.1.94=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-org.hypertrace.entity.service:entity-service-api:0.12.62=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-org.hypertrace.entity.service:entity-service-change-event-api:0.12.62=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.hypertrace.entity.service:entity-service-api:0.12.64=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.hypertrace.entity.service:entity-service-change-event-api:0.12.64=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.jsoup:jsoup:1.15.3=runtimeClasspath,testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-api:5.14.3=testCompileClasspath,testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-engine:5.14.3=testRuntimeClasspath
