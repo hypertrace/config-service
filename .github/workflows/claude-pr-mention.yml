@@ -1,8 +1,10 @@
-name: Claude PR Review
+name: Claude PR Mention
 
 on:
-  pull_request:
-    types: [opened, reopened, synchronize]
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
 
 permissions:
   contents: read
@@ -10,53 +12,50 @@ permissions:
   issues: write
 
 concurrency:
-  group: claude-review-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  group: claude-mention-${{ github.event.issue.number || github.event.pull_request.number }}-${{ github.event.comment.id }}
+  cancel-in-progress: false
 
 jobs:
-  claude-review:
+  claude-mention:
     runs-on: self-hosted-x64-small
     timeout-minutes: 20
-    if: github.event.pull_request.draft == false
+    if: |
+      contains(github.event.comment.body, '@traceable-review-agent') &&
+      github.event.comment.user.type != 'Bot' &&
+      (
+        github.event.comment.author_association == 'OWNER' ||
+        github.event.comment.author_association == 'MEMBER' ||
+        github.event.comment.author_association == 'COLLABORATOR'
+      ) &&
+      (
+        github.event_name == 'pull_request_review_comment' ||
+        github.event.issue.pull_request != null
+      )
 
     steps:
+      - name: Resolve PR head SHA
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request_review_comment" ]; then
+            PR_NUMBER="${{ github.event.pull_request.number }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          else
+            PR_NUMBER="${{ github.event.issue.number }}"
+            HEAD_SHA=$(gh api "repos/${{ github.repository }}/pulls/$PR_NUMBER" --jq .head.sha)
+          fi
+          echo "number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
+
       - name: Check out PR code
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ steps.pr.outputs.sha }}
           fetch-depth: 0
           submodules: recursive
 
-      - name: Skip review if push is only a merge-from-base
-        id: gate
-        if: github.event.action == 'synchronize'
-        env:
-          BEFORE_SHA: ${{ github.event.before }}
-          AFTER_SHA: ${{ github.event.pull_request.head.sha }}
-          BASE_REF: ${{ github.event.pull_request.base.ref }}
-        run: |
-          set -euo pipefail
-          if [ -z "${BEFORE_SHA:-}" ] || [ "$BEFORE_SHA" = "0000000000000000000000000000000000000000" ]; then
-            echo "No usable BEFORE_SHA — running review."
-            echo "should_review=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          if ! git cat-file -e "$BEFORE_SHA^{commit}" 2>/dev/null; then
-            echo "BEFORE_SHA $BEFORE_SHA not present locally — running review."
-            echo "should_review=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          non_merge_commits=$(git log "$BEFORE_SHA..$AFTER_SHA" --no-merges --first-parent --pretty=oneline || true)
-          if [ -z "$non_merge_commits" ]; then
-            echo "Push contains only merge commits (likely 'Update branch with $BASE_REF') — skipping review."
-            echo "should_review=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "Push contains non-merge commits — running review."
-            echo "should_review=true" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Run Claude Code Review
-        if: steps.gate.outputs.should_review != 'false'
+      - name: Run Claude on mention
         uses: anthropics/claude-code-action@1dc994ee7a008f0ecc866d9ac23ef036b7229f84  # v1.0.127
         env:
           CLAUDE_CODE_USE_BEDROCK: "1"
@@ -67,18 +66,27 @@ jobs:
           use_bedrock: "true"
           github_token: ${{ secrets.GITHUB_TOKEN }}
           prompt: |
-            Run the `config-service-code-review` skill on PR #${{ github.event.pull_request.number }}.
-            Read `.claude/skills/config-service-code-review/SKILL.md` and follow it.
-            Post findings as inline PR comments.
+            A repo collaborator mentioned `@traceable-review-agent` on PR #${{ steps.pr.outputs.number }}.
+
+            Comment author: ${{ github.event.comment.user.login }}
+            Comment URL: ${{ github.event.comment.html_url }}
+            Comment body:
+            ---
+            ${{ github.event.comment.body }}
+            ---
+
+            ${{ github.event_name == 'pull_request_review_comment' && format('This is a reply on an inline review comment anchored to {0}:{1}. Parent review comment id: {2}.', github.event.comment.path, github.event.comment.line, github.event.comment.in_reply_to_id || github.event.comment.id) || 'This is a top-level PR comment, not a reply on an inline review comment.' }}
+
+            Read `.claude/skills/config-service-code-review/SKILL.md` and follow the **"Mention triggers"** section to choose the right sub-flow (Re-review, Why?/clarification, or free-form). Post the response as a PR comment branded `**Traceable Code Review Agent**`. For "Why?" replies, post as a threaded reply on the parent review comment, not as a new top-level comment.
           claude_args: |
             --allowedTools "Bash(gh:*),Bash(git:*),Bash(grep:*),Bash(find:*),Bash(buf:*),Bash(echo:*),Read,Glob"
             --verbose
 
       - name: Report run usage
-        if: always() && steps.gate.outputs.should_review != 'false'
+        if: always()
         continue-on-error: true
         env:
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
         run: |
           set -uo pipefail
           LOG="${RUNNER_TEMP}/claude-execution-output.json"
@@ -157,7 +165,7 @@ jobs:
             ' "$LOG" 2>/dev/null || true)
           fi
           {
-            echo "## Claude PR Review — usage"
+            echo "## Claude PR Mention — usage"
             echo ""
             echo "PR: #${PR_NUMBER}"
             echo ""
