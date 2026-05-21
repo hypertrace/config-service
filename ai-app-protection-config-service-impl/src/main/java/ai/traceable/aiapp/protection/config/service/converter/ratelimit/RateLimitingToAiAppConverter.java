@@ -1,6 +1,7 @@
 package ai.traceable.aiapp.protection.config.service.converter.ratelimit;
 
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.AI_RATE_LIMITING_THREAT_TYPE_ID;
+import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.AI_SENSITIVE_DATA_PROTECTION_THREAT_TYPE_ID;
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.GENAI_MODELS_ATTRIBUTE_KEY;
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.GENAI_PROVIDERS_ATTRIBUTE_KEY;
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.PII_DETECTED_IN_PROMPT_THREAT_TYPE_ID;
@@ -10,6 +11,7 @@ import ai.traceable.aiapp.protection.config.service.v1.Action;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRule;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRuleData;
 import ai.traceable.aiapp.protection.config.service.v1.AiRateLimitingRuleData;
+import ai.traceable.aiapp.protection.config.service.v1.AiSensitiveDataProtectionRuleData;
 import ai.traceable.aiapp.protection.config.service.v1.ApiAggregateType;
 import ai.traceable.aiapp.protection.config.service.v1.DatatypeCondition;
 import ai.traceable.aiapp.protection.config.service.v1.MatchOperator;
@@ -24,6 +26,7 @@ import ai.traceable.aiapp.protection.config.service.v1.TenantScope;
 import ai.traceable.aiapp.protection.config.service.v1.UserAggregateType;
 import ai.traceable.ratelimiting.config.service.v2.CompositeCondition;
 import ai.traceable.ratelimiting.config.service.v2.Condition;
+import ai.traceable.ratelimiting.config.service.v2.DataLocation;
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
@@ -86,6 +89,10 @@ public class RateLimitingToAiAppConverter {
       case AI_RATE_LIMITING_THREAT_TYPE_ID:
         aiAppRuleDataBuilder.setAiRateLimitingRuleData(convertToAiRateLimitingRuleData(ruleData));
         break;
+      case AI_SENSITIVE_DATA_PROTECTION_THREAT_TYPE_ID:
+        aiAppRuleDataBuilder.setAiSensitiveDataProtectionRuleData(
+            convertToAiSensitiveDataProtectionRuleData(ruleData));
+        break;
       default:
         throw new IllegalArgumentException(
             "Unsupported threatTypeId for rate limiting rule conversion: " + threatTypeId);
@@ -123,6 +130,90 @@ public class RateLimitingToAiAppConverter {
     }
 
     return builder.build();
+  }
+
+  /** Converts rate limiting rule data to AI sensitive data protection rule data. */
+  private AiSensitiveDataProtectionRuleData convertToAiSensitiveDataProtectionRuleData(
+      RateLimitingRuleData ruleData) {
+    AiSensitiveDataProtectionRuleData.Builder builder =
+        AiSensitiveDataProtectionRuleData.newBuilder();
+
+    if (ruleData.hasCondition()) {
+      extractSensitiveDataConditions(ruleData.getCondition(), builder);
+    }
+
+    return builder.build();
+  }
+
+  /**
+   * Recursively traverses the condition tree (handling AND-composite outer wrapper and OR-composite
+   * inner datatype wrapper) and routes each leaf to the AI sensitive data protection builder. Both
+   * AND and OR wrappers' children are processed identically — the leaf type drives whether each
+   * child becomes a datatype condition or a scope condition.
+   */
+  private void extractSensitiveDataConditions(
+      Condition condition, AiSensitiveDataProtectionRuleData.Builder builder) {
+    if (condition.hasLeafCondition()) {
+      extractSensitiveDataLeaf(condition.getLeafCondition(), builder);
+    } else if (condition.hasCompositeCondition()) {
+      CompositeCondition composite = condition.getCompositeCondition();
+      for (Condition child : composite.getChildrenList()) {
+        extractSensitiveDataConditions(child, builder);
+      }
+    }
+  }
+
+  /**
+   * Routes a leaf condition to either the datatype-conditions list or scope-conditions list on the
+   * AI sensitive data protection rule data builder.
+   */
+  private void extractSensitiveDataLeaf(
+      LeafCondition leafCondition, AiSensitiveDataProtectionRuleData.Builder builder) {
+    if (leafCondition.hasDatatypeCondition()) {
+      builder.addDatatypeConditions(
+          convertRateLimitingDatatypeCondition(leafCondition.getDatatypeCondition()));
+    } else if (leafCondition.hasScopeCondition()) {
+      ScopeCondition scopeCondition =
+          convertRateLimitingScopeConditionToAiApp(leafCondition.getScopeCondition());
+      if (scopeCondition != null) {
+        builder.addScopeConditions(scopeCondition);
+      }
+    }
+  }
+
+  /**
+   * Converts a rate limiting DatatypeCondition into an AI app DatatypeCondition. The rate-limiting
+   * {@link DataLocation} chooses between the request-body and response-body custom-location oneof
+   * on the AI app side.
+   */
+  private DatatypeCondition convertRateLimitingDatatypeCondition(
+      ai.traceable.ratelimiting.config.service.v2.DatatypeCondition rateLimitingDatatypeCondition) {
+    DatatypeCondition.Builder datatypeBuilder =
+        DatatypeCondition.newBuilder()
+            .addAllDatasetIds(rateLimitingDatatypeCondition.getDatasetIdsList())
+            .addAllDatatypeIds(rateLimitingDatatypeCondition.getDatatypeIdsList());
+
+    if (rateLimitingDatatypeCondition
+        .getDatatypeMatching()
+        .getRegexBasedMatching()
+        .hasCustomMatchingLocation()) {
+      KeyValueCondition customLocation =
+          rateLimitingDatatypeCondition
+              .getDatatypeMatching()
+              .getRegexBasedMatching()
+              .getCustomMatchingLocation();
+
+      MatchOperatorCondition customLocationCondition =
+          reverseKeyValueConditionToMatchOperator(customLocation);
+
+      if (rateLimitingDatatypeCondition.getDataLocation() == DataLocation.DATA_LOCATION_RESPONSE) {
+        datatypeBuilder.setResponseBodyCustomLocationCondition(customLocationCondition);
+      } else {
+        datatypeBuilder.setRequestBodyCustomLocationCondition(customLocationCondition);
+      }
+    }
+
+    return datatypeBuilder.build();
   }
 
   /**

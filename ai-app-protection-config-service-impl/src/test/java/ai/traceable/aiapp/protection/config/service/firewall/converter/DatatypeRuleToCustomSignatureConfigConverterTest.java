@@ -39,14 +39,14 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class PiiRuleToCustomSignatureConfigConverterTest {
+class DatatypeRuleToCustomSignatureConfigConverterTest {
 
-  private PiiRuleToCustomSignatureConfigConverter converter;
+  private DatatypeRuleToCustomSignatureConfigConverter converter;
   private DataClassificationInfo dataClassificationInfo;
 
   @BeforeEach
   void setUp() {
-    converter = new PiiRuleToCustomSignatureConfigConverter();
+    converter = new DatatypeRuleToCustomSignatureConfigConverter();
 
     // Setup test data classification info using datatype→dataset inverse mapping
     DataType dataType1 =
@@ -636,5 +636,242 @@ class PiiRuleToCustomSignatureConfigConverterTest {
     ScopeContext scopeContext = result.getRuleContexts(0).getScopeContext();
     assertEquals(1, scopeContext.getScopesCount());
     assertTrue(scopeContext.getScopes(0).hasCustomerScope());
+  }
+
+  @Test
+  void convert_aiSensitiveDataProtection_singleRequestCondition_buildsRuleConfig() {
+    AiAppCustomRule rule =
+        AiAppCustomRule.newBuilder()
+            .setRuleId("rule-ai-sdp-req")
+            .setRuleData(
+                AiAppCustomRuleData.newBuilder()
+                    .setRuleName("AI Sensitive Data Protection Request")
+                    .setDescription("Test AI SDP with request body location")
+                    .setAiSensitiveDataProtectionRuleData(
+                        ai.traceable.aiapp.protection.config.service.v1
+                            .AiSensitiveDataProtectionRuleData.newBuilder()
+                            .addDatatypeConditions(
+                                DatatypeCondition.newBuilder()
+                                    .addAllDatatypeIds(List.of("datatype-1"))
+                                    .setRequestBodyCustomLocationCondition(
+                                        MatchOperatorCondition.newBuilder()
+                                            .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                            .setValue(
+                                                Value.newBuilder()
+                                                    .setStringValue("$.body.field")
+                                                    .build())
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
+    CustomSignatureConfigContext result = converter.convert(List.of(rule), dataClassificationInfo);
+
+    assertNotNull(result);
+    assertEquals(1, result.getRuleContextsCount());
+
+    CustomSignatureRulesContext rulesContext = result.getRuleContexts(0);
+    assertEquals(1, rulesContext.getRuleConfigsCount());
+
+    CustomSignatureRuleConfig ruleConfig = rulesContext.getRuleConfigs(0);
+    assertEquals("rule-ai-sdp-req", ruleConfig.getId());
+
+    CustomSignatureRuleDefinitionGroup group = ruleConfig.getRuleDefinitionGroup();
+    assertEquals(1, group.getRuleDefinitionsCount());
+
+    CustomSignatureRuleDefinition definition = group.getRuleDefinitions(0);
+    assertTrue(definition.hasCustomSignatureConditionExpression());
+
+    String evaluationIdentifier =
+        definition
+            .getCustomSignatureConditionExpression()
+            .getConditionExpressionEvaluationIdentifier();
+    assertTrue(
+        evaluationIdentifier.startsWith("datatype-rule-"),
+        "Expected identifier to start with 'datatype-rule-' but got: " + evaluationIdentifier);
+
+    KeyValueMatchCondition kvCondition =
+        definition
+            .getCustomSignatureConditionExpression()
+            .getConditionExpression()
+            .getLeafMatchConditionExpression()
+            .getKeyValueMatchCondition();
+
+    String expectedRequestPrefix =
+        PrefixBuilder.buildAppendablePrefix(
+            MessageType.MESSAGE_TYPE_REQUEST, AttributeType.ATTRIBUTE_TYPE_BODY_PARAM);
+    assertEquals(
+        expectedRequestPrefix,
+        kvCondition.getLhsKeyOperand().getKeyMetadata().getFullyQualifiedKeyPrefix());
+  }
+
+  @Test
+  void convert_aiSensitiveDataProtection_responseLocation_usesResponseBodyPrefix() {
+    AiAppCustomRule rule =
+        AiAppCustomRule.newBuilder()
+            .setRuleId("rule-ai-sdp-resp")
+            .setRuleData(
+                AiAppCustomRuleData.newBuilder()
+                    .setRuleName("AI Sensitive Data Protection Response")
+                    .setDescription("Test AI SDP with response body location")
+                    .setAiSensitiveDataProtectionRuleData(
+                        ai.traceable.aiapp.protection.config.service.v1
+                            .AiSensitiveDataProtectionRuleData.newBuilder()
+                            .addDatatypeConditions(
+                                DatatypeCondition.newBuilder()
+                                    .addAllDatatypeIds(List.of("datatype-2"))
+                                    .setResponseBodyCustomLocationCondition(
+                                        MatchOperatorCondition.newBuilder()
+                                            .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                            .setValue(
+                                                Value.newBuilder()
+                                                    .setStringValue("$.response.data")
+                                                    .build())
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
+    CustomSignatureConfigContext result = converter.convert(List.of(rule), dataClassificationInfo);
+
+    assertNotNull(result);
+    assertEquals(1, result.getRuleContextsCount());
+
+    CustomSignatureRulesContext rulesContext = result.getRuleContexts(0);
+    assertEquals(1, rulesContext.getRuleConfigsCount());
+
+    CustomSignatureRuleConfig ruleConfig = rulesContext.getRuleConfigs(0);
+    assertEquals(1, ruleConfig.getRuleDefinitionGroup().getRuleDefinitionsCount());
+
+    KeyValueMatchCondition kvCondition =
+        ruleConfig
+            .getRuleDefinitionGroup()
+            .getRuleDefinitions(0)
+            .getCustomSignatureConditionExpression()
+            .getConditionExpression()
+            .getLeafMatchConditionExpression()
+            .getKeyValueMatchCondition();
+
+    String expectedResponsePrefix =
+        PrefixBuilder.buildAppendablePrefix(
+            MessageType.MESSAGE_TYPE_RESPONSE, AttributeType.ATTRIBUTE_TYPE_BODY_PARAM);
+    assertEquals(
+        expectedResponsePrefix,
+        kvCondition.getLhsKeyOperand().getKeyMetadata().getFullyQualifiedKeyPrefix());
+  }
+
+  @Test
+  void convert_aiSensitiveDataProtection_multipleConditions_emitsMultipleDefinitions() {
+    AiAppCustomRule rule =
+        AiAppCustomRule.newBuilder()
+            .setRuleId("rule-ai-sdp-multi")
+            .setRuleData(
+                AiAppCustomRuleData.newBuilder()
+                    .setRuleName("AI Sensitive Data Protection Multiple")
+                    .setDescription("Test AI SDP with multiple conditions")
+                    .setAiSensitiveDataProtectionRuleData(
+                        ai.traceable.aiapp.protection.config.service.v1
+                            .AiSensitiveDataProtectionRuleData.newBuilder()
+                            .addDatatypeConditions(
+                                DatatypeCondition.newBuilder()
+                                    .addAllDatatypeIds(List.of("datatype-1"))
+                                    .setRequestBodyCustomLocationCondition(
+                                        MatchOperatorCondition.newBuilder()
+                                            .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                            .setValue(
+                                                Value.newBuilder()
+                                                    .setStringValue("$.request.field")
+                                                    .build())
+                                            .build())
+                                    .build())
+                            .addDatatypeConditions(
+                                DatatypeCondition.newBuilder()
+                                    .addAllDatatypeIds(List.of("datatype-2"))
+                                    .setResponseBodyCustomLocationCondition(
+                                        MatchOperatorCondition.newBuilder()
+                                            .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                            .setValue(
+                                                Value.newBuilder()
+                                                    .setStringValue("$.response.field")
+                                                    .build())
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
+    CustomSignatureConfigContext result = converter.convert(List.of(rule), dataClassificationInfo);
+
+    assertNotNull(result);
+    assertEquals(1, result.getRuleContextsCount());
+
+    CustomSignatureRulesContext rulesContext = result.getRuleContexts(0);
+    assertEquals(1, rulesContext.getRuleConfigsCount());
+
+    CustomSignatureRuleConfig ruleConfig = rulesContext.getRuleConfigs(0);
+    CustomSignatureRuleDefinitionGroup group = ruleConfig.getRuleDefinitionGroup();
+    assertEquals(2, group.getRuleDefinitionsCount());
+
+    String expectedEvalIdPrefix = "datatype-rule-" + ruleConfig.getId();
+
+    String evalId0 =
+        group
+            .getRuleDefinitions(0)
+            .getCustomSignatureConditionExpression()
+            .getConditionExpressionEvaluationIdentifier();
+    String evalId1 =
+        group
+            .getRuleDefinitions(1)
+            .getCustomSignatureConditionExpression()
+            .getConditionExpressionEvaluationIdentifier();
+
+    assertTrue(
+        evalId0.startsWith(expectedEvalIdPrefix),
+        "Expected first identifier to start with '"
+            + expectedEvalIdPrefix
+            + "' but got: "
+            + evalId0);
+    assertTrue(
+        evalId1.startsWith(expectedEvalIdPrefix),
+        "Expected second identifier to start with '"
+            + expectedEvalIdPrefix
+            + "' but got: "
+            + evalId1);
+    assertTrue(
+        evalId0.endsWith("-0"), "Expected first identifier to end with '-0' but got: " + evalId0);
+    assertTrue(
+        evalId1.endsWith("-1"), "Expected second identifier to end with '-1' but got: " + evalId1);
+
+    KeyValueMatchCondition kvCondition0 =
+        group
+            .getRuleDefinitions(0)
+            .getCustomSignatureConditionExpression()
+            .getConditionExpression()
+            .getLeafMatchConditionExpression()
+            .getKeyValueMatchCondition();
+
+    KeyValueMatchCondition kvCondition1 =
+        group
+            .getRuleDefinitions(1)
+            .getCustomSignatureConditionExpression()
+            .getConditionExpression()
+            .getLeafMatchConditionExpression()
+            .getKeyValueMatchCondition();
+
+    String expectedRequestPrefix =
+        PrefixBuilder.buildAppendablePrefix(
+            MessageType.MESSAGE_TYPE_REQUEST, AttributeType.ATTRIBUTE_TYPE_BODY_PARAM);
+    String expectedResponsePrefix =
+        PrefixBuilder.buildAppendablePrefix(
+            MessageType.MESSAGE_TYPE_RESPONSE, AttributeType.ATTRIBUTE_TYPE_BODY_PARAM);
+
+    assertEquals(
+        expectedRequestPrefix,
+        kvCondition0.getLhsKeyOperand().getKeyMetadata().getFullyQualifiedKeyPrefix());
+    assertEquals(
+        expectedResponsePrefix,
+        kvCondition1.getLhsKeyOperand().getKeyMetadata().getFullyQualifiedKeyPrefix());
   }
 }

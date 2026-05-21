@@ -8,7 +8,7 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.aiapp.protection.config.service.firewall.cache.AiAppConfigContextClientProvider;
 import ai.traceable.aiapp.protection.config.service.firewall.cache.ProtectionEngineDataTypeTranslator;
-import ai.traceable.aiapp.protection.config.service.firewall.converter.PiiRuleToCustomSignatureConfigConverter;
+import ai.traceable.aiapp.protection.config.service.firewall.converter.DatatypeRuleToCustomSignatureConfigConverter;
 import ai.traceable.aiapp.protection.config.service.v1.Action;
 import ai.traceable.aiapp.protection.config.service.v1.Action.Block;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppConfigServiceGrpc;
@@ -16,10 +16,13 @@ import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRule;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRuleData;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppRule;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppSubRule;
+import ai.traceable.aiapp.protection.config.service.v1.AiSensitiveDataProtectionRuleData;
 import ai.traceable.aiapp.protection.config.service.v1.DatatypeCondition;
 import ai.traceable.aiapp.protection.config.service.v1.EnvironmentScope;
 import ai.traceable.aiapp.protection.config.service.v1.GetAiAppEvaluationConfigContextRequest;
 import ai.traceable.aiapp.protection.config.service.v1.GetAiAppRulesResponse;
+import ai.traceable.aiapp.protection.config.service.v1.MatchOperator;
+import ai.traceable.aiapp.protection.config.service.v1.MatchOperatorCondition;
 import ai.traceable.aiapp.protection.config.service.v1.PiiDetectedInPromptRuleData;
 import ai.traceable.aiapp.protection.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.aiapp.protection.config.service.v1.RuleScope;
@@ -44,6 +47,7 @@ import ai.traceable.protection.rules.aiapp.v1.AiAppRulesProvider;
 import ai.traceable.protection.rules.aiapp.v1.AiAppThreatRule;
 import ai.traceable.protection.rules.aiapp.v1.AiAppThreatRuleEvaluation;
 import ai.traceable.protection.rules.aiapp.v1.SecRuleEvaluation;
+import com.google.protobuf.Value;
 import java.util.List;
 import java.util.Map;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -100,7 +104,7 @@ class AiAppConfigContextClientProviderTest {
             protectionEngineDataTypeTranslator,
             dataClassificationClient,
             aiAppConfigService,
-            new PiiRuleToCustomSignatureConfigConverter());
+            new DatatypeRuleToCustomSignatureConfigConverter());
 
     requestContext = RequestContext.forTenantId(TENANT_ID);
 
@@ -672,6 +676,58 @@ class AiAppConfigContextClientProviderTest {
     AiFirewallConfigContext result = provider.getAiFirewallConfigContext(requestContext, request);
 
     assertEquals(0, result.getCustomSignatureConfigContext().getRuleContextsCount());
+  }
+
+  @Test
+  void testAiSensitiveDataProtectionRule_IncludedInCustomSignatureConfigContext() {
+    setupEmptyAnomalyConfig();
+
+    AiAppCustomRule sensitiveDataRule =
+        AiAppCustomRule.newBuilder()
+            .setRuleId("sensitive-rule-1")
+            .setRuleData(
+                AiAppCustomRuleData.newBuilder()
+                    .setRuleName("Sensitive Data Protection Rule")
+                    .setDescription("Test sensitive data protection rule")
+                    .setEnabled(true)
+                    .setAction(Action.newBuilder().setBlock(Block.getDefaultInstance()))
+                    .setAiSensitiveDataProtectionRuleData(
+                        AiSensitiveDataProtectionRuleData.newBuilder()
+                            .addDatatypeConditions(
+                                DatatypeCondition.newBuilder()
+                                    .addDatatypeIds("datatype-1")
+                                    .setRequestBodyCustomLocationCondition(
+                                        MatchOperatorCondition.newBuilder()
+                                            .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                            .setValue(
+                                                Value.newBuilder()
+                                                    .setStringValue("body.field")
+                                                    .build())))))
+            .build();
+
+    when(aiAppConfigService.getAiAppRules(any()))
+        .thenReturn(
+            GetAiAppRulesResponse.newBuilder()
+                .addAiAppRules(
+                    AiAppRule.newBuilder()
+                        .setRuleId("rule-group-1")
+                        .addAiAppSubRules(
+                            AiAppSubRule.newBuilder().setCustomRule(sensitiveDataRule)))
+                .build());
+
+    GetAiAppEvaluationConfigContextRequest request =
+        GetAiAppEvaluationConfigContextRequest.newBuilder()
+            .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+            .build();
+
+    AiFirewallConfigContext result = provider.getAiFirewallConfigContext(requestContext, request);
+
+    assertTrue(result.hasCustomSignatureConfigContext());
+    assertTrue(result.getCustomSignatureConfigContext().getRuleContextsCount() >= 1);
+    assertTrue(
+        result.getCustomSignatureConfigContext().getRuleContextsList().stream()
+            .flatMap(ctx -> ctx.getRuleConfigsList().stream())
+            .anyMatch(rc -> rc.getId().contains("sensitive-rule-1")));
   }
 
   @Test

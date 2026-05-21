@@ -1,6 +1,7 @@
 package ai.traceable.aiapp.protection.config.service.converter.ratelimit;
 
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.AI_RATE_LIMITING_THREAT_TYPE_ID;
+import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.AI_SENSITIVE_DATA_PROTECTION_THREAT_TYPE_ID;
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.GENAI_MODELS_ATTRIBUTE_KEY;
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.GENAI_PROVIDERS_ATTRIBUTE_KEY;
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.PII_DETECTED_IN_PROMPT_THREAT_TYPE_ID;
@@ -13,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRule;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRuleData;
 import ai.traceable.aiapp.protection.config.service.v1.AiRateLimitingRuleData;
+import ai.traceable.aiapp.protection.config.service.v1.AiSensitiveDataProtectionRuleData;
 import ai.traceable.aiapp.protection.config.service.v1.MatchOperator;
 import ai.traceable.aiapp.protection.config.service.v1.MatchOperatorCondition;
 import ai.traceable.aiapp.protection.config.service.v1.PiiDetectedInPromptRuleData;
@@ -521,5 +523,385 @@ class RateLimitingToAiAppConverterTest {
         aiAppRuleData.getRuleStatusDetails().getRuleCreationSource());
     assertFalse(aiAppRuleData.getRuleStatusDetails().getInternal());
     assertTrue(aiAppRuleData.getRuleStatusDetails().getHidden());
+  }
+
+  @Test
+  void testConvertAiSensitiveDataProtectionRuleSingleRequestConditionFromRateLimiting() {
+    // Single datatype condition, request-body location, no scope -> single leaf condition (no
+    // composite wrapper).
+    LeafCondition datatypeLeaf =
+        LeafCondition.newBuilder()
+            .setDatatypeCondition(
+                ai.traceable.ratelimiting.config.service.v2.DatatypeCondition.newBuilder()
+                    .addDatasetIds("dataset-req")
+                    .addDatatypeIds("datatype-req")
+                    .setDataLocation(
+                        ai.traceable.ratelimiting.config.service.v2.DataLocation
+                            .DATA_LOCATION_REQUEST)
+                    .setDatatypeMatching(
+                        DatatypeCondition.DatatypeMatching.newBuilder()
+                            .setRegexBasedMatching(
+                                DatatypeCondition.RegexBasedMatching.newBuilder()
+                                    .setCustomMatchingLocation(
+                                        KeyValueCondition.newBuilder()
+                                            .setStaticValueCondition(
+                                                KeyValueCondition.StaticValueCondition.newBuilder()
+                                                    .setKeyCondition(
+                                                        KeyValueCondition.KeyCondition.newBuilder()
+                                                            .setKeyType(
+                                                                KeyValueCondition.Type
+                                                                    .TYPE_REQUEST_BODY_PARAMETER)
+                                                            .setKeyMatchOperatorCondition(
+                                                                KeyValueCondition
+                                                                    .MatchOperatorCondition
+                                                                    .newBuilder()
+                                                                    .setOperator(
+                                                                        KeyValueCondition
+                                                                            .MatchOperator
+                                                                            .MATCH_OPERATOR_EQUALS)
+                                                                    .setValue(
+                                                                        Value.newBuilder()
+                                                                            .setStringValue(
+                                                                                "req-param")))))))))
+            .build();
+
+    RateLimitingRule rateLimitingRule =
+        RateLimitingRule.newBuilder()
+            .setId("sdp-rule-1")
+            .setData(
+                RateLimitingRuleData.newBuilder()
+                    .setName("Test SDP Rule Single Request")
+                    .setDescription("Single request body condition")
+                    .setEnabled(true)
+                    .setCategory(Category.CATEGORY_AI_APP_PROTECTION)
+                    .putLabels(
+                        THREAT_TYPE_ID_LABEL_KEY, AI_SENSITIVE_DATA_PROTECTION_THREAT_TYPE_ID)
+                    .setCondition(Condition.newBuilder().setLeafCondition(datatypeLeaf))
+                    .setTransactionActionConfig(
+                        TransactionActionConfig.newBuilder()
+                            .setAction(
+                                ai.traceable.ratelimiting.config.service.v2.Action.newBuilder()
+                                    .setAlert(
+                                        ai.traceable.ratelimiting.config.service.v2.Action.Alert
+                                            .newBuilder()
+                                            .setEventSeverity(
+                                                ai.traceable.ratelimiting.config.service.v2.Action
+                                                    .EventSeverity.EVENT_SEVERITY_HIGH))))
+                    .setRuleStatus(
+                        ai.traceable.ratelimiting.config.service.v2.RuleStatus.newBuilder()
+                            .setRuleCreationSource(
+                                ai.traceable.ratelimiting.config.service.v2.RuleStatus.RuleSource
+                                    .RULE_SOURCE_CUSTOMER)
+                            .setInternal(false)
+                            .setHidden(false)))
+            .build();
+
+    AiAppCustomRule aiAppRule =
+        rateLimitingToAiAppConverter.convertFromRateLimitingRule(rateLimitingRule);
+
+    assertNotNull(aiAppRule);
+    assertEquals("sdp-rule-1", aiAppRule.getRuleId());
+
+    AiAppCustomRuleData aiAppRuleData = aiAppRule.getRuleData();
+    assertTrue(aiAppRuleData.hasAiSensitiveDataProtectionRuleData());
+    AiSensitiveDataProtectionRuleData sdpData =
+        aiAppRuleData.getAiSensitiveDataProtectionRuleData();
+
+    assertEquals(1, sdpData.getDatatypeConditionsCount());
+    ai.traceable.aiapp.protection.config.service.v1.DatatypeCondition condition =
+        sdpData.getDatatypeConditions(0);
+    assertEquals(1, condition.getDatasetIdsCount());
+    assertEquals("dataset-req", condition.getDatasetIds(0));
+    assertEquals("datatype-req", condition.getDatatypeIds(0));
+    assertTrue(condition.hasRequestBodyCustomLocationCondition());
+    assertFalse(condition.hasResponseBodyCustomLocationCondition());
+    MatchOperatorCondition customLocationCondition =
+        condition.getRequestBodyCustomLocationCondition();
+    assertEquals(MatchOperator.MATCH_OPERATOR_EQUALS, customLocationCondition.getOperator());
+    assertEquals("req-param", customLocationCondition.getValue().getStringValue());
+
+    assertEquals(0, sdpData.getScopeConditionsCount());
+  }
+
+  @Test
+  void testConvertAiSensitiveDataProtectionRuleSingleResponseConditionFromRateLimiting() {
+    // Single datatype condition, response-body location, no scope -> single leaf condition.
+    LeafCondition datatypeLeaf =
+        LeafCondition.newBuilder()
+            .setDatatypeCondition(
+                ai.traceable.ratelimiting.config.service.v2.DatatypeCondition.newBuilder()
+                    .addDatasetIds("dataset-resp")
+                    .addDatatypeIds("datatype-resp")
+                    .setDataLocation(
+                        ai.traceable.ratelimiting.config.service.v2.DataLocation
+                            .DATA_LOCATION_RESPONSE)
+                    .setDatatypeMatching(
+                        DatatypeCondition.DatatypeMatching.newBuilder()
+                            .setRegexBasedMatching(
+                                DatatypeCondition.RegexBasedMatching.newBuilder()
+                                    .setCustomMatchingLocation(
+                                        KeyValueCondition.newBuilder()
+                                            .setStaticValueCondition(
+                                                KeyValueCondition.StaticValueCondition.newBuilder()
+                                                    .setKeyCondition(
+                                                        KeyValueCondition.KeyCondition.newBuilder()
+                                                            .setKeyType(
+                                                                KeyValueCondition.Type
+                                                                    .TYPE_RESPONSE_BODY_PARAMETER)
+                                                            .setKeyMatchOperatorCondition(
+                                                                KeyValueCondition
+                                                                    .MatchOperatorCondition
+                                                                    .newBuilder()
+                                                                    .setOperator(
+                                                                        KeyValueCondition
+                                                                            .MatchOperator
+                                                                            .MATCH_OPERATOR_CONTAINS)
+                                                                    .setValue(
+                                                                        Value.newBuilder()
+                                                                            .setStringValue(
+                                                                                "resp-param")))))))))
+            .build();
+
+    RateLimitingRule rateLimitingRule =
+        RateLimitingRule.newBuilder()
+            .setId("sdp-rule-2")
+            .setData(
+                RateLimitingRuleData.newBuilder()
+                    .setName("Test SDP Rule Single Response")
+                    .setDescription("Single response body condition")
+                    .setEnabled(true)
+                    .setCategory(Category.CATEGORY_AI_APP_PROTECTION)
+                    .putLabels(
+                        THREAT_TYPE_ID_LABEL_KEY, AI_SENSITIVE_DATA_PROTECTION_THREAT_TYPE_ID)
+                    .setCondition(Condition.newBuilder().setLeafCondition(datatypeLeaf))
+                    .setTransactionActionConfig(
+                        TransactionActionConfig.newBuilder()
+                            .setAction(
+                                ai.traceable.ratelimiting.config.service.v2.Action.newBuilder()
+                                    .setAlert(
+                                        ai.traceable.ratelimiting.config.service.v2.Action.Alert
+                                            .newBuilder()
+                                            .setEventSeverity(
+                                                ai.traceable.ratelimiting.config.service.v2.Action
+                                                    .EventSeverity.EVENT_SEVERITY_MEDIUM))))
+                    .setRuleStatus(
+                        ai.traceable.ratelimiting.config.service.v2.RuleStatus.newBuilder()
+                            .setRuleCreationSource(
+                                ai.traceable.ratelimiting.config.service.v2.RuleStatus.RuleSource
+                                    .RULE_SOURCE_CUSTOMER)
+                            .setInternal(false)
+                            .setHidden(false)))
+            .build();
+
+    AiAppCustomRule aiAppRule =
+        rateLimitingToAiAppConverter.convertFromRateLimitingRule(rateLimitingRule);
+
+    assertNotNull(aiAppRule);
+    assertEquals("sdp-rule-2", aiAppRule.getRuleId());
+
+    AiAppCustomRuleData aiAppRuleData = aiAppRule.getRuleData();
+    assertTrue(aiAppRuleData.hasAiSensitiveDataProtectionRuleData());
+    AiSensitiveDataProtectionRuleData sdpData =
+        aiAppRuleData.getAiSensitiveDataProtectionRuleData();
+
+    assertEquals(1, sdpData.getDatatypeConditionsCount());
+    ai.traceable.aiapp.protection.config.service.v1.DatatypeCondition condition =
+        sdpData.getDatatypeConditions(0);
+    assertEquals("dataset-resp", condition.getDatasetIds(0));
+    assertEquals("datatype-resp", condition.getDatatypeIds(0));
+    assertFalse(condition.hasRequestBodyCustomLocationCondition());
+    assertTrue(condition.hasResponseBodyCustomLocationCondition());
+    MatchOperatorCondition customLocationCondition =
+        condition.getResponseBodyCustomLocationCondition();
+    assertEquals(MatchOperator.MATCH_OPERATOR_CONTAINS, customLocationCondition.getOperator());
+    assertEquals("resp-param", customLocationCondition.getValue().getStringValue());
+
+    assertEquals(0, sdpData.getScopeConditionsCount());
+  }
+
+  @Test
+  void testConvertAiSensitiveDataProtectionRuleMultipleConditionsAndScopeFromRateLimiting() {
+    // Two datatype conditions (request + response) wrapped in OR composite, plus a scope condition,
+    // all within an outer AND composite.
+    LeafCondition requestDatatypeLeaf =
+        LeafCondition.newBuilder()
+            .setDatatypeCondition(
+                ai.traceable.ratelimiting.config.service.v2.DatatypeCondition.newBuilder()
+                    .addDatasetIds("dataset-req")
+                    .addDatatypeIds("datatype-req")
+                    .setDataLocation(
+                        ai.traceable.ratelimiting.config.service.v2.DataLocation
+                            .DATA_LOCATION_REQUEST)
+                    .setDatatypeMatching(
+                        DatatypeCondition.DatatypeMatching.newBuilder()
+                            .setRegexBasedMatching(
+                                DatatypeCondition.RegexBasedMatching.newBuilder()
+                                    .setCustomMatchingLocation(
+                                        KeyValueCondition.newBuilder()
+                                            .setStaticValueCondition(
+                                                KeyValueCondition.StaticValueCondition.newBuilder()
+                                                    .setKeyCondition(
+                                                        KeyValueCondition.KeyCondition.newBuilder()
+                                                            .setKeyType(
+                                                                KeyValueCondition.Type
+                                                                    .TYPE_REQUEST_BODY_PARAMETER)
+                                                            .setKeyMatchOperatorCondition(
+                                                                KeyValueCondition
+                                                                    .MatchOperatorCondition
+                                                                    .newBuilder()
+                                                                    .setOperator(
+                                                                        KeyValueCondition
+                                                                            .MatchOperator
+                                                                            .MATCH_OPERATOR_EQUALS)
+                                                                    .setValue(
+                                                                        Value.newBuilder()
+                                                                            .setStringValue(
+                                                                                "req-param")))))))))
+            .build();
+
+    LeafCondition responseDatatypeLeaf =
+        LeafCondition.newBuilder()
+            .setDatatypeCondition(
+                ai.traceable.ratelimiting.config.service.v2.DatatypeCondition.newBuilder()
+                    .addDatasetIds("dataset-resp")
+                    .addDatatypeIds("datatype-resp")
+                    .setDataLocation(
+                        ai.traceable.ratelimiting.config.service.v2.DataLocation
+                            .DATA_LOCATION_RESPONSE)
+                    .setDatatypeMatching(
+                        DatatypeCondition.DatatypeMatching.newBuilder()
+                            .setRegexBasedMatching(
+                                DatatypeCondition.RegexBasedMatching.newBuilder()
+                                    .setCustomMatchingLocation(
+                                        KeyValueCondition.newBuilder()
+                                            .setStaticValueCondition(
+                                                KeyValueCondition.StaticValueCondition.newBuilder()
+                                                    .setKeyCondition(
+                                                        KeyValueCondition.KeyCondition.newBuilder()
+                                                            .setKeyType(
+                                                                KeyValueCondition.Type
+                                                                    .TYPE_RESPONSE_BODY_PARAMETER)
+                                                            .setKeyMatchOperatorCondition(
+                                                                KeyValueCondition
+                                                                    .MatchOperatorCondition
+                                                                    .newBuilder()
+                                                                    .setOperator(
+                                                                        KeyValueCondition
+                                                                            .MatchOperator
+                                                                            .MATCH_OPERATOR_CONTAINS)
+                                                                    .setValue(
+                                                                        Value.newBuilder()
+                                                                            .setStringValue(
+                                                                                "resp-param")))))))))
+            .build();
+
+    Condition orComposite =
+        Condition.newBuilder()
+            .setCompositeCondition(
+                CompositeCondition.newBuilder()
+                    .setOperator(CompositeCondition.LogicalOperator.LOGICAL_OPERATOR_OR)
+                    .addChildren(Condition.newBuilder().setLeafCondition(requestDatatypeLeaf))
+                    .addChildren(Condition.newBuilder().setLeafCondition(responseDatatypeLeaf)))
+            .build();
+
+    Condition scopeLeafCondition =
+        Condition.newBuilder()
+            .setLeafCondition(
+                LeafCondition.newBuilder()
+                    .setScopeCondition(
+                        ai.traceable.ratelimiting.config.service.v2.ScopeCondition.newBuilder()
+                            .setEntityScope(
+                                ai.traceable.ratelimiting.config.service.v2.ScopeCondition
+                                    .EntityScope.newBuilder()
+                                    .setEntityType(
+                                        ai.traceable.ratelimiting.config.service.v2.ScopeCondition
+                                            .EntityType.ENTITY_TYPE_API)
+                                    .addEntityIds("api-1"))))
+            .build();
+
+    Condition andComposite =
+        Condition.newBuilder()
+            .setCompositeCondition(
+                CompositeCondition.newBuilder()
+                    .setOperator(CompositeCondition.LogicalOperator.LOGICAL_OPERATOR_AND)
+                    .addChildren(orComposite)
+                    .addChildren(scopeLeafCondition))
+            .build();
+
+    RateLimitingRule rateLimitingRule =
+        RateLimitingRule.newBuilder()
+            .setId("sdp-rule-3")
+            .setData(
+                RateLimitingRuleData.newBuilder()
+                    .setName("Test SDP Rule Multi")
+                    .setDescription("Multiple datatype conditions with scope")
+                    .setEnabled(true)
+                    .setCategory(Category.CATEGORY_AI_APP_PROTECTION)
+                    .putLabels(
+                        THREAT_TYPE_ID_LABEL_KEY, AI_SENSITIVE_DATA_PROTECTION_THREAT_TYPE_ID)
+                    .setCondition(andComposite)
+                    .setTransactionActionConfig(
+                        TransactionActionConfig.newBuilder()
+                            .setAction(
+                                ai.traceable.ratelimiting.config.service.v2.Action.newBuilder()
+                                    .setAlert(
+                                        ai.traceable.ratelimiting.config.service.v2.Action.Alert
+                                            .newBuilder()
+                                            .setEventSeverity(
+                                                ai.traceable.ratelimiting.config.service.v2.Action
+                                                    .EventSeverity.EVENT_SEVERITY_HIGH))))
+                    .setRuleStatus(
+                        ai.traceable.ratelimiting.config.service.v2.RuleStatus.newBuilder()
+                            .setRuleCreationSource(
+                                ai.traceable.ratelimiting.config.service.v2.RuleStatus.RuleSource
+                                    .RULE_SOURCE_CUSTOMER)
+                            .setInternal(false)
+                            .setHidden(false)))
+            .build();
+
+    AiAppCustomRule aiAppRule =
+        rateLimitingToAiAppConverter.convertFromRateLimitingRule(rateLimitingRule);
+
+    assertNotNull(aiAppRule);
+    assertEquals("sdp-rule-3", aiAppRule.getRuleId());
+
+    AiAppCustomRuleData aiAppRuleData = aiAppRule.getRuleData();
+    assertTrue(aiAppRuleData.hasAiSensitiveDataProtectionRuleData());
+    AiSensitiveDataProtectionRuleData sdpData =
+        aiAppRuleData.getAiSensitiveDataProtectionRuleData();
+
+    // Verify two datatype conditions preserved in order: index 0 = request, index 1 = response.
+    assertEquals(2, sdpData.getDatatypeConditionsCount());
+
+    ai.traceable.aiapp.protection.config.service.v1.DatatypeCondition firstCondition =
+        sdpData.getDatatypeConditions(0);
+    assertEquals("dataset-req", firstCondition.getDatasetIds(0));
+    assertEquals("datatype-req", firstCondition.getDatatypeIds(0));
+    assertTrue(firstCondition.hasRequestBodyCustomLocationCondition());
+    assertFalse(firstCondition.hasResponseBodyCustomLocationCondition());
+    assertEquals(
+        "req-param",
+        firstCondition.getRequestBodyCustomLocationCondition().getValue().getStringValue());
+
+    ai.traceable.aiapp.protection.config.service.v1.DatatypeCondition secondCondition =
+        sdpData.getDatatypeConditions(1);
+    assertEquals("dataset-resp", secondCondition.getDatasetIds(0));
+    assertEquals("datatype-resp", secondCondition.getDatatypeIds(0));
+    assertFalse(secondCondition.hasRequestBodyCustomLocationCondition());
+    assertTrue(secondCondition.hasResponseBodyCustomLocationCondition());
+    assertEquals(
+        "resp-param",
+        secondCondition.getResponseBodyCustomLocationCondition().getValue().getStringValue());
+
+    // Verify scope condition extracted.
+    assertEquals(1, sdpData.getScopeConditionsCount());
+    ai.traceable.aiapp.protection.config.service.v1.ScopeCondition scopeCondition =
+        sdpData.getScopeConditions(0);
+    assertTrue(scopeCondition.hasEntityScope());
+    assertEquals(
+        ai.traceable.aiapp.protection.config.service.v1.ScopeCondition.EntityType.ENTITY_TYPE_API,
+        scopeCondition.getEntityScope().getEntityType());
+    assertEquals(1, scopeCondition.getEntityScope().getEntityIdsCount());
+    assertEquals("api-1", scopeCondition.getEntityScope().getEntityIds(0));
   }
 }

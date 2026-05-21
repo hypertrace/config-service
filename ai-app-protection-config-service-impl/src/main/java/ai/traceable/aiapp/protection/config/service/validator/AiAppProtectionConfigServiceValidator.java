@@ -138,7 +138,7 @@ public class AiAppProtectionConfigServiceValidator {
     AiAppCustomRuleType ruleType = determineRuleType(ruleData);
     if (ruleType == AiAppCustomRuleType.AI_APP_CUSTOM_RULE_TYPE_UNSPECIFIED) {
       return Status.INVALID_ARGUMENT.withDescription(
-          "Rule data must contain one of: PII detection, rate limiting, model governance, or input explosion configuration");
+          "Rule data must contain one of: PII detection, rate limiting, model governance, input explosion, or sensitive data protection configuration");
     }
 
     return Status.OK;
@@ -170,6 +170,8 @@ public class AiAppProtectionConfigServiceValidator {
       return AiAppCustomRuleType.AI_APP_CUSTOM_RULE_TYPE_MODEL_GOVERNANCE;
     } else if (ruleData.hasAiInputExplosionRuleData()) {
       return AiAppCustomRuleType.AI_APP_CUSTOM_RULE_TYPE_INPUT_EXPLOSION;
+    } else if (ruleData.hasAiSensitiveDataProtectionRuleData()) {
+      return AiAppCustomRuleType.AI_APP_CUSTOM_RULE_TYPE_SENSITIVE_DATA_PROTECTION;
     } else {
       return AiAppCustomRuleType.AI_APP_CUSTOM_RULE_TYPE_UNSPECIFIED;
     }

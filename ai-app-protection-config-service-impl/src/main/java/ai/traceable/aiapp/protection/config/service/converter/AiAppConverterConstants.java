@@ -8,6 +8,8 @@ public final class AiAppConverterConstants {
   public static final String AI_RATE_LIMITING_THREAT_TYPE_ID = "llmRateLimiting";
   public static final String MODEL_GOVERNANCE_THREAT_TYPE_ID = "llmModelGovernance";
   public static final String AI_INPUT_EXPLOSION_THREAT_TYPE_ID = "llmInputExplosion";
+  public static final String AI_SENSITIVE_DATA_PROTECTION_THREAT_TYPE_ID =
+      "aiSensitiveDataProtection";
 
   public static final String GENAI_MODELS_ATTRIBUTE_KEY = "GENAI_MODELS";
   public static final String GENAI_PROVIDERS_ATTRIBUTE_KEY = "GENAI_PROVIDERS";

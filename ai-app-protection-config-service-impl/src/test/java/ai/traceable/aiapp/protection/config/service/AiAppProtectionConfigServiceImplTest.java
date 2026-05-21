@@ -19,6 +19,7 @@ import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRuleType;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppRule;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppRuleUpdate;
 import ai.traceable.aiapp.protection.config.service.v1.AiInputExplosionRuleData;
+import ai.traceable.aiapp.protection.config.service.v1.AiSensitiveDataProtectionRuleData;
 import ai.traceable.aiapp.protection.config.service.v1.CreateAiAppCustomRuleRequest;
 import ai.traceable.aiapp.protection.config.service.v1.CreateAiAppCustomRuleResponse;
 import ai.traceable.aiapp.protection.config.service.v1.DeleteAiAppRulesRequest;
@@ -58,6 +59,7 @@ import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesResponse;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingConfigServiceGrpc;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
+import ai.traceable.ratelimiting.config.service.v2.UpdateRateLimitingRuleResponse;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
@@ -397,6 +399,27 @@ class AiAppProtectionConfigServiceImplTest {
     }
 
     @Test
+    @DisplayName("Should delete AI sensitive data protection rule successfully")
+    void shouldDeleteAiSensitiveDataProtectionRuleSuccessfully() {
+      // Given
+      DeleteAiAppRulesRequest request = createValidDeleteRequestForAiSensitiveDataProtection();
+      when(validator.validateDeleteAiAppRulesRequest(request)).thenReturn(Status.OK);
+
+      DeleteRateLimitingRuleResponse deleteResponse =
+          DeleteRateLimitingRuleResponse.newBuilder().build();
+      when(rateLimitingConfigStub.deleteRateLimitingRule(any())).thenReturn(deleteResponse);
+
+      // When
+      requestContext.run(() -> service.deleteAiAppRules(request, deleteResponseObserver));
+
+      // Then
+      verify(rateLimitingConfigStub).deleteRateLimitingRule(any());
+      verify(customSignatureConfigStub, never()).deleteCustomSignatureRule(any());
+      verify(deleteResponseObserver).onNext(any(DeleteAiAppRulesResponse.class));
+      verify(deleteResponseObserver).onCompleted();
+    }
+
+    @Test
     @DisplayName("Should handle validation error")
     void shouldHandleValidationError() {
       // Given
@@ -465,6 +488,52 @@ class AiAppProtectionConfigServiceImplTest {
       verify(aiAppToRateLimitingConverter).convertToCreateRateLimitingRuleRequest(any());
       verify(rateLimitingConfigStub).createRateLimitingRule(any());
       verify(rateLimitingToAiAppConverter).convertFromRateLimitingRule(any());
+      verify(createResponseObserver).onNext(any(CreateAiAppCustomRuleResponse.class));
+      verify(createResponseObserver).onCompleted();
+    }
+
+    @Test
+    @DisplayName("Should create AI sensitive data protection rule successfully")
+    void shouldCreateAiSensitiveDataProtectionRuleSuccessfully() {
+      // Given
+      CreateAiAppCustomRuleRequest request = createValidCreateRequestForAiSensitiveDataProtection();
+      when(validator.validateCreateAiAppCustomRuleRequest(request)).thenReturn(Status.OK);
+
+      // Mock converter method calls
+      CreateRateLimitingRuleRequest mockCreateRequest =
+          CreateRateLimitingRuleRequest.newBuilder()
+              .setData(RateLimitingRuleData.newBuilder().build())
+              .build();
+      when(aiAppToRateLimitingConverter.convertToCreateRateLimitingRuleRequest(any()))
+          .thenReturn(mockCreateRequest);
+
+      RateLimitingRule mockCreatedRule =
+          RateLimitingRule.newBuilder()
+              .setId("sdp-rule-123")
+              .setData(RateLimitingRuleData.newBuilder().build())
+              .build();
+      CreateRateLimitingRuleResponse createResponse =
+          CreateRateLimitingRuleResponse.newBuilder().setRule(mockCreatedRule).build();
+      when(rateLimitingConfigStub.createRateLimitingRule(any())).thenReturn(createResponse);
+
+      AiAppCustomRule mockAiAppCustomRule =
+          AiAppCustomRule.newBuilder()
+              .setRuleId("sdp-rule-123")
+              .setRuleData(AiAppCustomRuleData.newBuilder().build())
+              .build();
+      when(rateLimitingToAiAppConverter.convertFromRateLimitingRule(any()))
+          .thenReturn(mockAiAppCustomRule);
+
+      // When
+      requestContext.run(() -> service.createAiAppCustomRule(request, createResponseObserver));
+
+      // Then
+      verify(aiAppToRateLimitingConverter).convertToCreateRateLimitingRuleRequest(any());
+      verify(rateLimitingConfigStub).createRateLimitingRule(any());
+      verify(rateLimitingToAiAppConverter).convertFromRateLimitingRule(any());
+      verify(aiAppToCustomSignatureConverter, never())
+          .convertToCreateCustomSignatureRuleRequest(any());
+      verify(customSignatureConfigStub, never()).createCustomSignatureRule(any());
       verify(createResponseObserver).onNext(any(CreateAiAppCustomRuleResponse.class));
       verify(createResponseObserver).onCompleted();
     }
@@ -585,6 +654,48 @@ class AiAppProtectionConfigServiceImplTest {
     }
 
     @Test
+    @DisplayName("Should upsert AI sensitive data protection rule successfully")
+    void shouldUpsertAiSensitiveDataProtectionRuleSuccessfully() {
+      // Given
+      UpsertAiAppCustomRuleRequest request = createValidUpsertRequestForAiSensitiveDataProtection();
+      when(validator.validateUpsertAiAppCustomRuleRequest(request)).thenReturn(Status.OK);
+
+      // Mock converter method calls
+      RateLimitingRuleData mockRateLimitingRuleData = RateLimitingRuleData.newBuilder().build();
+      when(aiAppToRateLimitingConverter.convertToRateLimitingRule(any()))
+          .thenReturn(mockRateLimitingRuleData);
+
+      RateLimitingRule mockUpdatedRule =
+          RateLimitingRule.newBuilder()
+              .setId("rule-123")
+              .setData(RateLimitingRuleData.newBuilder().build())
+              .build();
+      UpdateRateLimitingRuleResponse updateResponse =
+          UpdateRateLimitingRuleResponse.newBuilder().setRule(mockUpdatedRule).build();
+      when(rateLimitingConfigStub.updateRateLimitingRule(any())).thenReturn(updateResponse);
+
+      AiAppCustomRule mockAiAppCustomRule =
+          AiAppCustomRule.newBuilder()
+              .setRuleId("rule-123")
+              .setRuleData(AiAppCustomRuleData.newBuilder().build())
+              .build();
+      when(rateLimitingToAiAppConverter.convertFromRateLimitingRule(any()))
+          .thenReturn(mockAiAppCustomRule);
+
+      // When
+      requestContext.run(() -> service.upsertAiAppCustomRule(request, upsertResponseObserver));
+
+      // Then
+      verify(aiAppToRateLimitingConverter).convertToRateLimitingRule(any());
+      verify(rateLimitingConfigStub).updateRateLimitingRule(any());
+      verify(rateLimitingToAiAppConverter).convertFromRateLimitingRule(any());
+      verify(aiAppToCustomSignatureConverter, never()).convertToCustomSignatureRule(any());
+      verify(customSignatureConfigStub, never()).updateCustomSignatureRule(any());
+      verify(upsertResponseObserver).onNext(any(UpsertAiAppCustomRuleResponse.class));
+      verify(upsertResponseObserver).onCompleted();
+    }
+
+    @Test
     @DisplayName("Should handle validation error")
     void shouldHandleValidationError() {
       // Given
@@ -645,6 +756,17 @@ class AiAppProtectionConfigServiceImplTest {
         .build();
   }
 
+  private CreateAiAppCustomRuleRequest createValidCreateRequestForAiSensitiveDataProtection() {
+    return CreateAiAppCustomRuleRequest.newBuilder()
+        .setAiAppCustomRuleData(
+            AiAppCustomRuleData.newBuilder()
+                .setRuleName("Test AI Sensitive Data Protection Rule")
+                .setAiSensitiveDataProtectionRuleData(
+                    AiSensitiveDataProtectionRuleData.newBuilder().build())
+                .build())
+        .build();
+  }
+
   private UpdateAiAppRulesRequest createValidUpdateRequest() {
     return UpdateAiAppRulesRequest.newBuilder()
         .setRuleScope(
@@ -700,6 +822,17 @@ class AiAppProtectionConfigServiceImplTest {
         .build();
   }
 
+  private DeleteAiAppRulesRequest createValidDeleteRequestForAiSensitiveDataProtection() {
+    return DeleteAiAppRulesRequest.newBuilder()
+        .setCustomRuleToDelete(
+            AiAppCustomRuleToDelete.newBuilder()
+                .setRuleId("sdp-rule-123")
+                .setCustomRuleType(
+                    AiAppCustomRuleType.AI_APP_CUSTOM_RULE_TYPE_SENSITIVE_DATA_PROTECTION)
+                .build())
+        .build();
+  }
+
   private CreateAiAppCustomRuleRequest createValidCreateRequest() {
     return CreateAiAppCustomRuleRequest.newBuilder()
         .setAiAppCustomRuleData(
@@ -719,6 +852,21 @@ class AiAppProtectionConfigServiceImplTest {
                     AiAppCustomRuleData.newBuilder()
                         .setRuleName("Test Rule")
                         .setAiInputExplosionRuleData(AiInputExplosionRuleData.getDefaultInstance())
+                        .build())
+                .build())
+        .build();
+  }
+
+  private UpsertAiAppCustomRuleRequest createValidUpsertRequestForAiSensitiveDataProtection() {
+    return UpsertAiAppCustomRuleRequest.newBuilder()
+        .setAiAppCustomRule(
+            AiAppCustomRule.newBuilder()
+                .setRuleId("rule-123")
+                .setRuleData(
+                    AiAppCustomRuleData.newBuilder()
+                        .setRuleName("Test AI Sensitive Data Protection Rule")
+                        .setAiSensitiveDataProtectionRuleData(
+                            AiSensitiveDataProtectionRuleData.newBuilder().build())
                         .build())
                 .build())
         .build();

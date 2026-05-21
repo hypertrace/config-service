@@ -1,6 +1,7 @@
 package ai.traceable.aiapp.protection.config.service.converter.ratelimit;
 
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.AI_RATE_LIMITING_THREAT_TYPE_ID;
+import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.AI_SENSITIVE_DATA_PROTECTION_THREAT_TYPE_ID;
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.GENAI_MODELS_ATTRIBUTE_KEY;
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.GENAI_PROVIDERS_ATTRIBUTE_KEY;
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.PII_DETECTED_IN_PROMPT_THREAT_TYPE_ID;
@@ -11,6 +12,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRuleData;
 import ai.traceable.aiapp.protection.config.service.v1.AiRateLimitingRuleData;
+import ai.traceable.aiapp.protection.config.service.v1.AiSensitiveDataProtectionRuleData;
+import ai.traceable.aiapp.protection.config.service.v1.DatatypeCondition;
 import ai.traceable.aiapp.protection.config.service.v1.MatchOperator;
 import ai.traceable.aiapp.protection.config.service.v1.MatchOperatorCondition;
 import ai.traceable.aiapp.protection.config.service.v1.PiiDetectedInPromptRuleData;
@@ -320,6 +323,301 @@ class AiAppToRateLimitingConverterTest {
         ai.traceable.ratelimiting.config.service.v2.ScopeCondition.EntityType.ENTITY_TYPE_API,
         rlScopeCondition.getEntityScope().getEntityType());
     assertEquals(1, rlScopeCondition.getEntityScope().getEntityIdsCount());
+    assertEquals("api-1", rlScopeCondition.getEntityScope().getEntityIds(0));
+  }
+
+  @Test
+  void testConvertAiSensitiveDataProtectionRule_singleRequestCondition_buildsCorrectRule() {
+    AiAppCustomRuleData aiAppRuleData =
+        AiAppCustomRuleData.newBuilder()
+            .setRuleName("Test Sensitive Data Rule")
+            .setDescription("Test sensitive data protection rule")
+            .setEnabled(true)
+            .setAiSensitiveDataProtectionRuleData(
+                AiSensitiveDataProtectionRuleData.newBuilder()
+                    .addDatatypeConditions(
+                        DatatypeCondition.newBuilder()
+                            .addDatasetIds("ds-1")
+                            .addDatatypeIds("dt-1")
+                            .setRequestBodyCustomLocationCondition(
+                                MatchOperatorCondition.newBuilder()
+                                    .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                    .setValue(Value.newBuilder().setStringValue("body.field")))))
+            .setAction(
+                ai.traceable.aiapp.protection.config.service.v1.Action.newBuilder()
+                    .setAlert(
+                        ai.traceable.aiapp.protection.config.service.v1.Action.Alert.newBuilder()
+                            .setSeverityLevel(SeverityLevel.SEVERITY_LEVEL_HIGH)))
+            .setRuleStatusDetails(
+                RuleStatusDetails.newBuilder()
+                    .setRuleCreationSource(RuleStatusDetails.RuleSource.RULE_SOURCE_CUSTOMER)
+                    .setInternal(false)
+                    .setHidden(false))
+            .build();
+
+    CreateRateLimitingRuleRequest request =
+        aiAppToRateLimitingConverter.convertToCreateRateLimitingRuleRequest(aiAppRuleData);
+
+    assertNotNull(request);
+    RateLimitingRuleData ruleData = request.getData();
+
+    assertEquals("Test Sensitive Data Rule", ruleData.getName());
+    assertEquals(Category.CATEGORY_AI_APP_PROTECTION, ruleData.getCategory());
+    assertEquals(
+        AI_SENSITIVE_DATA_PROTECTION_THREAT_TYPE_ID,
+        ruleData.getLabelsMap().get(THREAT_TYPE_ID_LABEL_KEY));
+
+    assertTrue(ruleData.hasTransactionActionConfig());
+    assertTrue(ruleData.getTransactionActionConfig().getAction().hasAlert());
+    assertEquals(
+        ai.traceable.ratelimiting.config.service.v2.Action.EventSeverity.EVENT_SEVERITY_HIGH,
+        ruleData.getTransactionActionConfig().getAction().getAlert().getEventSeverity());
+
+    assertTrue(ruleData.hasCondition());
+    Condition condition = ruleData.getCondition();
+    // Single condition is wrapped as a leaf (no composite)
+    assertTrue(condition.hasLeafCondition());
+    LeafCondition leaf = condition.getLeafCondition();
+    assertTrue(leaf.hasDatatypeCondition());
+
+    ai.traceable.ratelimiting.config.service.v2.DatatypeCondition rlDatatypeCondition =
+        leaf.getDatatypeCondition();
+    assertEquals(1, rlDatatypeCondition.getDatasetIdsCount());
+    assertEquals("ds-1", rlDatatypeCondition.getDatasetIds(0));
+    assertEquals(1, rlDatatypeCondition.getDatatypeIdsCount());
+    assertEquals("dt-1", rlDatatypeCondition.getDatatypeIds(0));
+    assertEquals(
+        ai.traceable.ratelimiting.config.service.v2.DataLocation.DATA_LOCATION_REQUEST,
+        rlDatatypeCondition.getDataLocation());
+
+    KeyValueCondition.KeyCondition customMatchingCondition =
+        rlDatatypeCondition
+            .getDatatypeMatching()
+            .getRegexBasedMatching()
+            .getCustomMatchingLocation()
+            .getStaticValueCondition()
+            .getKeyCondition();
+    assertEquals(
+        KeyValueCondition.Type.TYPE_REQUEST_BODY_PARAMETER, customMatchingCondition.getKeyType());
+    assertEquals(
+        KeyValueCondition.MatchOperator.MATCH_OPERATOR_EQUALS,
+        customMatchingCondition.getKeyMatchOperatorCondition().getOperator());
+    assertEquals(
+        "body.field",
+        customMatchingCondition.getKeyMatchOperatorCondition().getValue().getStringValue());
+  }
+
+  @Test
+  void testConvertAiSensitiveDataProtectionRule_responseLocation_setsResponseDataLocation() {
+    AiAppCustomRuleData aiAppRuleData =
+        AiAppCustomRuleData.newBuilder()
+            .setRuleName("Test Sensitive Data Response Rule")
+            .setDescription("Response body sensitive data rule")
+            .setEnabled(true)
+            .setAiSensitiveDataProtectionRuleData(
+                AiSensitiveDataProtectionRuleData.newBuilder()
+                    .addDatatypeConditions(
+                        DatatypeCondition.newBuilder()
+                            .addDatasetIds("ds-1")
+                            .addDatatypeIds("dt-1")
+                            .setResponseBodyCustomLocationCondition(
+                                MatchOperatorCondition.newBuilder()
+                                    .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                    .setValue(Value.newBuilder().setStringValue("body.resp")))))
+            .setAction(
+                ai.traceable.aiapp.protection.config.service.v1.Action.newBuilder()
+                    .setAlert(
+                        ai.traceable.aiapp.protection.config.service.v1.Action.Alert.newBuilder()
+                            .setSeverityLevel(SeverityLevel.SEVERITY_LEVEL_HIGH)))
+            .setRuleStatusDetails(
+                RuleStatusDetails.newBuilder()
+                    .setRuleCreationSource(RuleStatusDetails.RuleSource.RULE_SOURCE_CUSTOMER)
+                    .setInternal(false)
+                    .setHidden(false))
+            .build();
+
+    CreateRateLimitingRuleRequest request =
+        aiAppToRateLimitingConverter.convertToCreateRateLimitingRuleRequest(aiAppRuleData);
+
+    assertNotNull(request);
+    RateLimitingRuleData ruleData = request.getData();
+    assertTrue(ruleData.hasCondition());
+
+    Condition condition = ruleData.getCondition();
+    assertTrue(condition.hasLeafCondition());
+    LeafCondition leaf = condition.getLeafCondition();
+    assertTrue(leaf.hasDatatypeCondition());
+
+    ai.traceable.ratelimiting.config.service.v2.DatatypeCondition rlDatatypeCondition =
+        leaf.getDatatypeCondition();
+    assertEquals(
+        ai.traceable.ratelimiting.config.service.v2.DataLocation.DATA_LOCATION_RESPONSE,
+        rlDatatypeCondition.getDataLocation());
+
+    KeyValueCondition.KeyCondition customMatchingCondition =
+        rlDatatypeCondition
+            .getDatatypeMatching()
+            .getRegexBasedMatching()
+            .getCustomMatchingLocation()
+            .getStaticValueCondition()
+            .getKeyCondition();
+    assertEquals(
+        KeyValueCondition.Type.TYPE_RESPONSE_BODY_PARAMETER, customMatchingCondition.getKeyType());
+    assertEquals(
+        KeyValueCondition.MatchOperator.MATCH_OPERATOR_EQUALS,
+        customMatchingCondition.getKeyMatchOperatorCondition().getOperator());
+    assertEquals(
+        "body.resp",
+        customMatchingCondition.getKeyMatchOperatorCondition().getValue().getStringValue());
+  }
+
+  @Test
+  void testConvertAiSensitiveDataProtectionRule_multipleConditions_orsConditions() {
+    AiAppCustomRuleData aiAppRuleData =
+        AiAppCustomRuleData.newBuilder()
+            .setRuleName("Test Sensitive Data Multi Rule")
+            .setDescription("Multi datatype condition rule")
+            .setEnabled(true)
+            .setAiSensitiveDataProtectionRuleData(
+                AiSensitiveDataProtectionRuleData.newBuilder()
+                    .addDatatypeConditions(
+                        DatatypeCondition.newBuilder()
+                            .addDatasetIds("ds-1")
+                            .addDatatypeIds("dt-1")
+                            .setRequestBodyCustomLocationCondition(
+                                MatchOperatorCondition.newBuilder()
+                                    .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                    .setValue(Value.newBuilder().setStringValue("req.field"))))
+                    .addDatatypeConditions(
+                        DatatypeCondition.newBuilder()
+                            .addDatasetIds("ds-2")
+                            .addDatatypeIds("dt-2")
+                            .setResponseBodyCustomLocationCondition(
+                                MatchOperatorCondition.newBuilder()
+                                    .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                    .setValue(Value.newBuilder().setStringValue("resp.field")))))
+            .setAction(
+                ai.traceable.aiapp.protection.config.service.v1.Action.newBuilder()
+                    .setAlert(
+                        ai.traceable.aiapp.protection.config.service.v1.Action.Alert.newBuilder()
+                            .setSeverityLevel(SeverityLevel.SEVERITY_LEVEL_HIGH)))
+            .setRuleStatusDetails(
+                RuleStatusDetails.newBuilder()
+                    .setRuleCreationSource(RuleStatusDetails.RuleSource.RULE_SOURCE_CUSTOMER)
+                    .setInternal(false)
+                    .setHidden(false))
+            .build();
+
+    CreateRateLimitingRuleRequest request =
+        aiAppToRateLimitingConverter.convertToCreateRateLimitingRuleRequest(aiAppRuleData);
+
+    assertNotNull(request);
+    RateLimitingRuleData ruleData = request.getData();
+    assertTrue(ruleData.hasCondition());
+
+    Condition condition = ruleData.getCondition();
+    // Multiple datatype conditions with no scope conditions => OR composite
+    assertTrue(condition.hasCompositeCondition());
+    CompositeCondition composite = condition.getCompositeCondition();
+    assertEquals(CompositeCondition.LogicalOperator.LOGICAL_OPERATOR_OR, composite.getOperator());
+    assertEquals(2, composite.getChildrenCount());
+
+    Condition first = composite.getChildren(0);
+    assertTrue(first.hasLeafCondition());
+    assertTrue(first.getLeafCondition().hasDatatypeCondition());
+    assertEquals(
+        ai.traceable.ratelimiting.config.service.v2.DataLocation.DATA_LOCATION_REQUEST,
+        first.getLeafCondition().getDatatypeCondition().getDataLocation());
+
+    Condition second = composite.getChildren(1);
+    assertTrue(second.hasLeafCondition());
+    assertTrue(second.getLeafCondition().hasDatatypeCondition());
+    assertEquals(
+        ai.traceable.ratelimiting.config.service.v2.DataLocation.DATA_LOCATION_RESPONSE,
+        second.getLeafCondition().getDatatypeCondition().getDataLocation());
+  }
+
+  @Test
+  void testConvertAiSensitiveDataProtectionRule_multipleConditionsWithScope_andsWithScope() {
+    AiAppCustomRuleData aiAppRuleData =
+        AiAppCustomRuleData.newBuilder()
+            .setRuleName("Test Sensitive Data Multi+Scope Rule")
+            .setDescription("Multi datatype + scope condition rule")
+            .setEnabled(true)
+            .setAiSensitiveDataProtectionRuleData(
+                AiSensitiveDataProtectionRuleData.newBuilder()
+                    .addDatatypeConditions(
+                        DatatypeCondition.newBuilder()
+                            .addDatasetIds("ds-1")
+                            .addDatatypeIds("dt-1")
+                            .setRequestBodyCustomLocationCondition(
+                                MatchOperatorCondition.newBuilder()
+                                    .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                    .setValue(Value.newBuilder().setStringValue("req.field"))))
+                    .addDatatypeConditions(
+                        DatatypeCondition.newBuilder()
+                            .addDatasetIds("ds-2")
+                            .addDatatypeIds("dt-2")
+                            .setResponseBodyCustomLocationCondition(
+                                MatchOperatorCondition.newBuilder()
+                                    .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                    .setValue(Value.newBuilder().setStringValue("resp.field"))))
+                    .addScopeConditions(
+                        ai.traceable.aiapp.protection.config.service.v1.ScopeCondition.newBuilder()
+                            .setEntityScope(
+                                ai.traceable.aiapp.protection.config.service.v1.ScopeCondition
+                                    .EntityScope.newBuilder()
+                                    .setEntityType(
+                                        ai.traceable.aiapp.protection.config.service.v1
+                                            .ScopeCondition.EntityType.ENTITY_TYPE_API)
+                                    .addEntityIds("api-1"))))
+            .setAction(
+                ai.traceable.aiapp.protection.config.service.v1.Action.newBuilder()
+                    .setAlert(
+                        ai.traceable.aiapp.protection.config.service.v1.Action.Alert.newBuilder()
+                            .setSeverityLevel(SeverityLevel.SEVERITY_LEVEL_HIGH)))
+            .setRuleStatusDetails(
+                RuleStatusDetails.newBuilder()
+                    .setRuleCreationSource(RuleStatusDetails.RuleSource.RULE_SOURCE_CUSTOMER)
+                    .setInternal(false)
+                    .setHidden(false))
+            .build();
+
+    CreateRateLimitingRuleRequest request =
+        aiAppToRateLimitingConverter.convertToCreateRateLimitingRuleRequest(aiAppRuleData);
+
+    assertNotNull(request);
+    RateLimitingRuleData ruleData = request.getData();
+    assertTrue(ruleData.hasCondition());
+
+    Condition condition = ruleData.getCondition();
+    // Top-level: AND composite with [OR-composite of datatype conditions, scope leaf]
+    assertTrue(condition.hasCompositeCondition());
+    CompositeCondition andComposite = condition.getCompositeCondition();
+    assertEquals(
+        CompositeCondition.LogicalOperator.LOGICAL_OPERATOR_AND, andComposite.getOperator());
+    assertEquals(2, andComposite.getChildrenCount());
+
+    // First child: OR composite with the two datatype conditions
+    Condition orChild = andComposite.getChildren(0);
+    assertTrue(orChild.hasCompositeCondition());
+    CompositeCondition orComposite = orChild.getCompositeCondition();
+    assertEquals(CompositeCondition.LogicalOperator.LOGICAL_OPERATOR_OR, orComposite.getOperator());
+    assertEquals(2, orComposite.getChildrenCount());
+    assertTrue(orComposite.getChildren(0).getLeafCondition().hasDatatypeCondition());
+    assertTrue(orComposite.getChildren(1).getLeafCondition().hasDatatypeCondition());
+
+    // Second child: scope leaf
+    Condition scopeChild = andComposite.getChildren(1);
+    assertTrue(scopeChild.hasLeafCondition());
+    LeafCondition scopeLeaf = scopeChild.getLeafCondition();
+    assertTrue(scopeLeaf.hasScopeCondition());
+    ai.traceable.ratelimiting.config.service.v2.ScopeCondition rlScopeCondition =
+        scopeLeaf.getScopeCondition();
+    assertTrue(rlScopeCondition.hasEntityScope());
+    assertEquals(
+        ai.traceable.ratelimiting.config.service.v2.ScopeCondition.EntityType.ENTITY_TYPE_API,
+        rlScopeCondition.getEntityScope().getEntityType());
     assertEquals("api-1", rlScopeCondition.getEntityScope().getEntityIds(0));
   }
 }

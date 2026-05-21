@@ -1,6 +1,7 @@
 package ai.traceable.aiapp.protection.config.service.converter.ratelimit;
 
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.AI_RATE_LIMITING_THREAT_TYPE_ID;
+import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.AI_SENSITIVE_DATA_PROTECTION_THREAT_TYPE_ID;
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.GENAI_MODELS_ATTRIBUTE_KEY;
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.GENAI_PROVIDERS_ATTRIBUTE_KEY;
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.PII_DETECTED_IN_PROMPT_THREAT_TYPE_ID;
@@ -9,7 +10,9 @@ import static ai.traceable.aiapp.protection.config.service.converter.AiAppConver
 import ai.traceable.aiapp.protection.config.service.v1.Action;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRuleData;
 import ai.traceable.aiapp.protection.config.service.v1.AiRateLimitingRuleData;
+import ai.traceable.aiapp.protection.config.service.v1.AiSensitiveDataProtectionRuleData;
 import ai.traceable.aiapp.protection.config.service.v1.ApiAggregateType;
+import ai.traceable.aiapp.protection.config.service.v1.DatatypeCondition;
 import ai.traceable.aiapp.protection.config.service.v1.MatchOperatorCondition;
 import ai.traceable.aiapp.protection.config.service.v1.PiiDetectedInPromptRuleData;
 import ai.traceable.aiapp.protection.config.service.v1.ResourceAccessThresholdConfig;
@@ -19,6 +22,7 @@ import ai.traceable.ratelimiting.config.service.v2.Category;
 import ai.traceable.ratelimiting.config.service.v2.CompositeCondition;
 import ai.traceable.ratelimiting.config.service.v2.Condition;
 import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleRequest;
+import ai.traceable.ratelimiting.config.service.v2.DataLocation;
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
@@ -73,6 +77,8 @@ public class AiAppToRateLimitingConverter {
       convertPiiDetectedInPromptRule(aiAppRuleData, rateLimitingRuleDataBuilder);
     } else if (aiAppRuleData.hasAiRateLimitingRuleData()) {
       convertAiRateLimitingRule(aiAppRuleData, rateLimitingRuleDataBuilder);
+    } else if (aiAppRuleData.hasAiSensitiveDataProtectionRuleData()) {
+      convertAiSensitiveDataProtectionRule(aiAppRuleData, rateLimitingRuleDataBuilder);
     }
 
     return rateLimitingRuleDataBuilder.build();
@@ -138,7 +144,8 @@ public class AiAppToRateLimitingConverter {
 
       // Convert custom location condition to KeyValueCondition
       KeyValueCondition customMatchingLocation =
-          convertCustomLocationMatchingCondition(customLocationCondition);
+          convertCustomLocationMatchingCondition(
+              customLocationCondition, KeyValueCondition.Type.TYPE_REQUEST_BODY_PARAMETER);
 
       // Create regex-based matching with custom location
       ai.traceable.ratelimiting.config.service.v2.DatatypeCondition.RegexBasedMatching
@@ -191,6 +198,108 @@ public class AiAppToRateLimitingConverter {
             .setAction(convertAction(aiAppRuleData.getAction()))
             .build();
     builder.setTransactionActionConfig(transactionActionConfig);
+  }
+
+  private void convertAiSensitiveDataProtectionRule(
+      AiAppCustomRuleData aiAppRuleData, RateLimitingRuleData.Builder builder) {
+    AiSensitiveDataProtectionRuleData ruleData =
+        aiAppRuleData.getAiSensitiveDataProtectionRuleData();
+
+    // Build a leaf Condition for each DatatypeCondition (OR semantics across them).
+    List<Condition> datatypeConditions = new ArrayList<>();
+    for (DatatypeCondition aiAppDatatypeCondition : ruleData.getDatatypeConditionsList()) {
+      datatypeConditions.add(buildDatatypeLeafCondition(aiAppDatatypeCondition));
+    }
+
+    // Combine datatype conditions: single -> use directly; multiple -> OR composite.
+    Condition datatypeCombined;
+    if (datatypeConditions.size() == 1) {
+      datatypeCombined = datatypeConditions.get(0);
+    } else {
+      CompositeCondition orComposite =
+          CompositeCondition.newBuilder()
+              .setOperator(CompositeCondition.LogicalOperator.LOGICAL_OPERATOR_OR)
+              .addAllChildren(datatypeConditions)
+              .build();
+      datatypeCombined = Condition.newBuilder().setCompositeCondition(orComposite).build();
+    }
+
+    // AND with scope conditions if present.
+    List<Condition> scopeConditionList = new ArrayList<>();
+    for (ai.traceable.aiapp.protection.config.service.v1.ScopeCondition scopeCondition :
+        ruleData.getScopeConditionsList()) {
+      scopeConditionList.add(convertScopeCondition(scopeCondition));
+    }
+
+    Condition finalCondition;
+    if (scopeConditionList.isEmpty()) {
+      finalCondition = datatypeCombined;
+    } else {
+      List<Condition> andChildren = new ArrayList<>();
+      andChildren.add(datatypeCombined);
+      andChildren.addAll(scopeConditionList);
+      CompositeCondition andComposite =
+          CompositeCondition.newBuilder()
+              .setOperator(CompositeCondition.LogicalOperator.LOGICAL_OPERATOR_AND)
+              .addAllChildren(andChildren)
+              .build();
+      finalCondition = Condition.newBuilder().setCompositeCondition(andComposite).build();
+    }
+
+    builder.setCondition(finalCondition);
+
+    TransactionActionConfig transactionActionConfig =
+        TransactionActionConfig.newBuilder()
+            .setAction(convertAction(aiAppRuleData.getAction()))
+            .build();
+    builder.setTransactionActionConfig(transactionActionConfig);
+  }
+
+  private Condition buildDatatypeLeafCondition(DatatypeCondition aiAppDatatypeCondition) {
+    boolean isResponse = aiAppDatatypeCondition.hasResponseBodyCustomLocationCondition();
+    DataLocation dataLocation =
+        isResponse ? DataLocation.DATA_LOCATION_RESPONSE : DataLocation.DATA_LOCATION_REQUEST;
+
+    ai.traceable.ratelimiting.config.service.v2.DatatypeCondition.Builder datatypeBuilder =
+        ai.traceable.ratelimiting.config.service.v2.DatatypeCondition.newBuilder()
+            .addAllDatasetIds(aiAppDatatypeCondition.getDatasetIdsList())
+            .addAllDatatypeIds(aiAppDatatypeCondition.getDatatypeIdsList())
+            .setDataLocation(dataLocation);
+
+    MatchOperatorCondition customLocationCondition = null;
+    KeyValueCondition.Type keyType = null;
+    if (aiAppDatatypeCondition.hasRequestBodyCustomLocationCondition()) {
+      customLocationCondition = aiAppDatatypeCondition.getRequestBodyCustomLocationCondition();
+      keyType = KeyValueCondition.Type.TYPE_REQUEST_BODY_PARAMETER;
+    } else if (aiAppDatatypeCondition.hasResponseBodyCustomLocationCondition()) {
+      customLocationCondition = aiAppDatatypeCondition.getResponseBodyCustomLocationCondition();
+      keyType = KeyValueCondition.Type.TYPE_RESPONSE_BODY_PARAMETER;
+    }
+
+    if (customLocationCondition != null) {
+      KeyValueCondition customMatchingLocation =
+          convertCustomLocationMatchingCondition(customLocationCondition, keyType);
+
+      ai.traceable.ratelimiting.config.service.v2.DatatypeCondition.RegexBasedMatching
+          regexMatching =
+              ai.traceable.ratelimiting.config.service.v2.DatatypeCondition.RegexBasedMatching
+                  .newBuilder()
+                  .setCustomMatchingLocation(customMatchingLocation)
+                  .build();
+
+      ai.traceable.ratelimiting.config.service.v2.DatatypeCondition.DatatypeMatching
+          datatypeMatching =
+              ai.traceable.ratelimiting.config.service.v2.DatatypeCondition.DatatypeMatching
+                  .newBuilder()
+                  .setRegexBasedMatching(regexMatching)
+                  .build();
+
+      datatypeBuilder.setDatatypeMatching(datatypeMatching);
+    }
+
+    LeafCondition datatypeLeafCondition =
+        LeafCondition.newBuilder().setDatatypeCondition(datatypeBuilder.build()).build();
+    return Condition.newBuilder().setLeafCondition(datatypeLeafCondition).build();
   }
 
   /** Converts AI app ScopeCondition to rate limiting ScopeCondition */
@@ -439,7 +548,7 @@ public class AiAppToRateLimitingConverter {
   }
 
   private KeyValueCondition convertCustomLocationMatchingCondition(
-      MatchOperatorCondition matchOperatorCondition) {
+      MatchOperatorCondition matchOperatorCondition, KeyValueCondition.Type keyType) {
 
     // Create key match operator condition using the reusable converter
     KeyValueCondition.MatchOperatorCondition.Builder keyConditionBuilder =
@@ -455,7 +564,7 @@ public class AiAppToRateLimitingConverter {
         KeyValueCondition.StaticValueCondition.newBuilder()
             .setKeyCondition(
                 KeyValueCondition.KeyCondition.newBuilder()
-                    .setKeyType(KeyValueCondition.Type.TYPE_REQUEST_BODY_PARAMETER)
+                    .setKeyType(keyType)
                     .setKeyMatchOperatorCondition(keyConditionBuilder))
             .build();
 
@@ -487,6 +596,8 @@ public class AiAppToRateLimitingConverter {
       return PII_DETECTED_IN_PROMPT_THREAT_TYPE_ID;
     } else if (aiAppRuleData.hasAiRateLimitingRuleData()) {
       return AI_RATE_LIMITING_THREAT_TYPE_ID;
+    } else if (aiAppRuleData.hasAiSensitiveDataProtectionRuleData()) {
+      return AI_SENSITIVE_DATA_PROTECTION_THREAT_TYPE_ID;
     }
     throw new IllegalArgumentException(
         "Unsupported rule type for rate limiting conversion: " + aiAppRuleData.getRuleDataCase());

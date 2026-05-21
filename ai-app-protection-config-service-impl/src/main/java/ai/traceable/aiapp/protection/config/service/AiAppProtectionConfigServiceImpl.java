@@ -104,7 +104,8 @@ public class AiAppProtectionConfigServiceImpl
   private static final Set<AiAppCustomRuleType> RATE_LIMITING_RULE_TYPES =
       EnumSet.of(
           AiAppCustomRuleType.AI_APP_CUSTOM_RULE_TYPE_PII_DETECTED_IN_PROMPT,
-          AiAppCustomRuleType.AI_APP_CUSTOM_RULE_TYPE_RATE_LIMITING);
+          AiAppCustomRuleType.AI_APP_CUSTOM_RULE_TYPE_RATE_LIMITING,
+          AiAppCustomRuleType.AI_APP_CUSTOM_RULE_TYPE_SENSITIVE_DATA_PROTECTION);
 
   private static final Set<AiAppCustomRuleType> CUSTOM_SIGNATURE_RULE_TYPES =
       EnumSet.of(
@@ -800,6 +801,8 @@ public class AiAppProtectionConfigServiceImpl
       return AiAppCustomRuleType.AI_APP_CUSTOM_RULE_TYPE_MODEL_GOVERNANCE;
     } else if (ruleData.hasAiInputExplosionRuleData()) {
       return AiAppCustomRuleType.AI_APP_CUSTOM_RULE_TYPE_INPUT_EXPLOSION;
+    } else if (ruleData.hasAiSensitiveDataProtectionRuleData()) {
+      return AiAppCustomRuleType.AI_APP_CUSTOM_RULE_TYPE_SENSITIVE_DATA_PROTECTION;
     } else {
       return AiAppCustomRuleType.AI_APP_CUSTOM_RULE_TYPE_UNSPECIFIED;
     }

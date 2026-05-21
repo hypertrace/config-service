@@ -22,15 +22,22 @@ message AiAppCustomRuleData {
   Action action = 6 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Action of the rule"];
   map<string, string> event_labels = 7 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Event labels of the rule"];
   oneof rule_data {
-    PiiDetectedInPromptRuleData pii_detected_in_prompt_rule_data = 8 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "PII detected in prompt custom rule details"];
+    PiiDetectedInPromptRuleData pii_detected_in_prompt_rule_data = 8 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "PII detected in prompt custom rule details", deprecated = true];
     AiRateLimitingRuleData ai_rate_limiting_rule_data = 9 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "AI rate limiting custom rule details"];
     ModelGovernanceRuleData model_governance_rule_data = 10 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Model governance custom rule details"];
     AiInputExplosionRuleData ai_input_explosion_rule_data = 11 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "AI input explosion custom rule details"];
+    AiSensitiveDataProtectionRuleData ai_sensitive_data_protection_rule_data = 12 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "AI sensitive data protection custom rule details"];
   }
 }
 
 message PiiDetectedInPromptRuleData {
+  option deprecated = true;
   DatatypeCondition datatype_condition = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Datatype condition of the rule"];
+  repeated ScopeCondition scope_conditions = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of scope conditions of the rule"];
+}
+
+message AiSensitiveDataProtectionRuleData {
+  repeated DatatypeCondition datatype_conditions = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of datatype conditions of the rule (OR semantics)"];
   repeated ScopeCondition scope_conditions = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of scope conditions of the rule"];
 }
 
@@ -68,7 +75,10 @@ message RuleStatusDetails {
 message DatatypeCondition {
   repeated string dataset_ids = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Dataset IDs of the condition"];
   repeated string datatype_ids = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Datatype IDs of the condition"];
-  MatchOperatorCondition request_body_custom_location_condition = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Custom request body location condition for datatype matching"];
+  oneof custom_location_condition {
+    MatchOperatorCondition request_body_custom_location_condition = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Custom request body location condition for datatype matching"];
+    MatchOperatorCondition response_body_custom_location_condition = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Custom response body location condition for datatype matching"];
+  }
 }
 
 message ScopeCondition {
@@ -156,4 +166,5 @@ enum AiAppCustomRuleType {
   AI_APP_CUSTOM_RULE_TYPE_RATE_LIMITING = 2;
   AI_APP_CUSTOM_RULE_TYPE_MODEL_GOVERNANCE = 3;
   AI_APP_CUSTOM_RULE_TYPE_INPUT_EXPLOSION = 4;
+  AI_APP_CUSTOM_RULE_TYPE_SENSITIVE_DATA_PROTECTION = 5;
 }

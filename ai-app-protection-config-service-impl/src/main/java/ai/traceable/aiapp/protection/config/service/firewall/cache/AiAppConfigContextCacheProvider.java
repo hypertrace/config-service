@@ -1,7 +1,7 @@
 package ai.traceable.aiapp.protection.config.service.firewall.cache;
 
 import ai.traceable.aiapp.protection.config.service.firewall.AiAppConfigServiceConfig;
-import ai.traceable.aiapp.protection.config.service.firewall.converter.PiiRuleToCustomSignatureConfigConverter;
+import ai.traceable.aiapp.protection.config.service.firewall.converter.DatatypeRuleToCustomSignatureConfigConverter;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppConfigServiceGrpc;
 import ai.traceable.aiapp.protection.config.service.v1.GetAiAppEvaluationConfigContextRequest;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigManager;
@@ -51,7 +51,7 @@ public class AiAppConfigContextCacheProvider extends AiAppConfigContextClientPro
       ProtectionEngineDataTypeTranslator protectionEngineDataTypeTranslator,
       DataClassificationClient dataClassificationClient,
       AiAppConfigServiceGrpc.AiAppConfigServiceBlockingStub aiAppConfigService,
-      PiiRuleToCustomSignatureConfigConverter piiRuleToCustomSignatureConfigConverter) {
+      DatatypeRuleToCustomSignatureConfigConverter datatypeRuleToCustomSignatureConfigConverter) {
     super(
         anomalyDetectionConfigManager,
         aiAppRulesProvider,
@@ -61,7 +61,7 @@ public class AiAppConfigContextCacheProvider extends AiAppConfigContextClientPro
         protectionEngineDataTypeTranslator,
         dataClassificationClient,
         aiAppConfigService,
-        piiRuleToCustomSignatureConfigConverter);
+        datatypeRuleToCustomSignatureConfigConverter);
     this.cache = buildCache(config);
     try {
       kafkaLiveEventListener.registerCallback(this::handleConfigChangeEvent);

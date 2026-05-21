@@ -154,7 +154,7 @@ class AiAppProtectionConfigServiceValidatorTest {
       assertFalse(result.isOk());
       assertEquals(Status.Code.INVALID_ARGUMENT, result.getCode());
       assertEquals(
-          "Rule data must contain one of: PII detection, rate limiting, model governance, or input explosion configuration",
+          "Rule data must contain one of: PII detection, rate limiting, model governance, input explosion, or sensitive data protection configuration",
           result.getDescription());
     }
   }

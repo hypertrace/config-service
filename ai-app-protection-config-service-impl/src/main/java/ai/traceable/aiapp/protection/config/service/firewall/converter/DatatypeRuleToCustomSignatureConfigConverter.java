@@ -1,6 +1,8 @@
 package ai.traceable.aiapp.protection.config.service.firewall.converter;
 
 import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRule;
+import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRuleData;
+import ai.traceable.aiapp.protection.config.service.v1.AiSensitiveDataProtectionRuleData;
 import ai.traceable.aiapp.protection.config.service.v1.DatatypeCondition;
 import ai.traceable.aiapp.protection.config.service.v1.MatchOperator;
 import ai.traceable.aiapp.protection.config.service.v1.MatchOperatorCondition;
@@ -43,12 +45,13 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Singleton
-public class PiiRuleToCustomSignatureConfigConverter {
+public class DatatypeRuleToCustomSignatureConfigConverter {
 
   /**
-   * Converts a list of AI App Custom Rules (PII type) to CustomSignatureConfigContext.
+   * Converts a list of AI App Custom Rules with datatype-based conditions (PII or AI Sensitive Data
+   * Protection) to CustomSignatureConfigContext.
    *
-   * @param rules the list of PII custom rules
+   * @param rules the list of datatype-based custom rules
    * @param dataClassificationInfo the data classification information for resolving dataset IDs
    * @return the CustomSignatureConfigContext
    */
@@ -120,29 +123,53 @@ public class PiiRuleToCustomSignatureConfigConverter {
       return null;
     }
 
-    PiiDetectedInPromptRuleData piiData = rule.getRuleData().getPiiDetectedInPromptRuleData();
-    if (!piiData.hasDatatypeCondition()) {
-      log.debug("Rule {} has no datatype condition, skipping", rule.getRuleId());
+    AiAppCustomRuleData ruleData = rule.getRuleData();
+    List<DatatypeCondition> datatypeConditions;
+    List<ScopeCondition> scopeConditions;
+
+    if (ruleData.hasPiiDetectedInPromptRuleData()) {
+      PiiDetectedInPromptRuleData piiData = ruleData.getPiiDetectedInPromptRuleData();
+      if (!piiData.hasDatatypeCondition()) {
+        log.debug("Rule {} has no datatype condition, skipping", rule.getRuleId());
+        return null;
+      }
+      datatypeConditions = List.of(piiData.getDatatypeCondition());
+      scopeConditions = piiData.getScopeConditionsList();
+    } else if (ruleData.hasAiSensitiveDataProtectionRuleData()) {
+      AiSensitiveDataProtectionRuleData sdpData = ruleData.getAiSensitiveDataProtectionRuleData();
+      if (sdpData.getDatatypeConditionsList().isEmpty()) {
+        log.debug("Rule {} has no datatype conditions, skipping", rule.getRuleId());
+        return null;
+      }
+      datatypeConditions = sdpData.getDatatypeConditionsList();
+      scopeConditions = sdpData.getScopeConditionsList();
+    } else {
+      log.debug("Rule {} has unsupported rule data type, skipping", rule.getRuleId());
       return null;
     }
 
-    DatatypeCondition datatypeCondition = piiData.getDatatypeCondition();
-
-    // Resolve datatype IDs using datatype→dataset inverse mapping
-    Set<String> datatypeIds = resolveDatatypeIds(datatypeCondition, dataClassificationInfo);
-
-    if (datatypeIds.isEmpty()) {
-      log.debug("Rule {} has no resolvable datatype IDs, skipping", rule.getRuleId());
-      return null;
-    }
-
-    // Build the datatype match rule definition
     List<CustomSignatureRuleDefinition> ruleDefinitions = new ArrayList<>();
-    ruleDefinitions.add(
-        buildDatatypeMatchDefinition(rule.getRuleId(), datatypeCondition, datatypeIds));
+    for (int i = 0; i < datatypeConditions.size(); i++) {
+      DatatypeCondition datatypeCondition = datatypeConditions.get(i);
+      Set<String> datatypeIds = resolveDatatypeIds(datatypeCondition, dataClassificationInfo);
+      if (datatypeIds.isEmpty()) {
+        log.debug(
+            "Rule {} condition {} has no resolvable datatype IDs, skipping condition",
+            rule.getRuleId(),
+            i);
+        continue;
+      }
+      ruleDefinitions.add(
+          buildDatatypeMatchDefinition(rule.getRuleId() + "-" + i, datatypeCondition, datatypeIds));
+    }
+
+    if (ruleDefinitions.isEmpty()) {
+      log.debug("Rule {} has no resolvable datatype conditions, skipping", rule.getRuleId());
+      return null;
+    }
 
     // Convert scope conditions to additional rule definitions
-    for (ScopeCondition scopeCondition : piiData.getScopeConditionsList()) {
+    for (ScopeCondition scopeCondition : scopeConditions) {
       CustomSignatureRuleDefinition scopeDef = convertScopeCondition(scopeCondition);
       if (scopeDef != null) {
         ruleDefinitions.add(scopeDef);
@@ -159,8 +186,8 @@ public class PiiRuleToCustomSignatureConfigConverter {
     // Build CustomSignatureRuleConfig
     return CustomSignatureRuleConfig.newBuilder()
         .setId(rule.getRuleId())
-        .setName(rule.getRuleData().getRuleName())
-        .setDescription(rule.getRuleData().getDescription())
+        .setName(ruleData.getRuleName())
+        .setDescription(ruleData.getDescription())
         .setRuleDefinitionGroup(ruleDefinitionGroup)
         .build();
   }
@@ -174,12 +201,17 @@ public class PiiRuleToCustomSignatureConfigConverter {
             .addAllDataTypeIds(datatypeIds)
             .setKeyValueRegexCombineMatch(true);
 
-    // Build KeyValueMatchCondition with lhs_key_operand always set to request.body_param prefix
+    // Build KeyValueMatchCondition; lhs_key_operand prefix is request.body_param or
+    // response.body_param depending on which oneof case is set on the datatype condition.
     KeyValueMatchCondition.Builder kvConditionBuilder = KeyValueMatchCondition.newBuilder();
 
+    MessageType messageType =
+        datatypeCondition.hasResponseBodyCustomLocationCondition()
+            ? MessageType.MESSAGE_TYPE_RESPONSE
+            : MessageType.MESSAGE_TYPE_REQUEST;
+
     String bodyParamPrefix =
-        PrefixBuilder.buildAppendablePrefix(
-            MessageType.MESSAGE_TYPE_REQUEST, AttributeType.ATTRIBUTE_TYPE_BODY_PARAM);
+        PrefixBuilder.buildAppendablePrefix(messageType, AttributeType.ATTRIBUTE_TYPE_BODY_PARAM);
 
     KeyMatchOperand.Builder keyOperandBuilder =
         KeyMatchOperand.newBuilder()
@@ -188,21 +220,24 @@ public class PiiRuleToCustomSignatureConfigConverter {
                     .setFullyQualifiedKeyPrefix(bodyParamPrefix)
                     .build());
 
-    // When request_body_custom_location_condition is present, set key_match_operation
+    // When a custom location condition is present (request or response), set key_match_operation
+    MatchOperatorCondition locationCondition = null;
     if (datatypeCondition.hasRequestBodyCustomLocationCondition()) {
-      MatchOperatorCondition locationCondition =
-          datatypeCondition.getRequestBodyCustomLocationCondition();
-      if (locationCondition.hasValue()) {
-        String keyValue = locationCondition.getValue().getStringValue();
-        keyOperandBuilder.setKeyMatchOperation(
-            ValueMatchOperation.newBuilder()
-                .setStringMatchOperation(
-                    StringMatchOperation.newBuilder()
-                        .setStringOperator(convertMatchOperator(locationCondition.getOperator()))
-                        .setStringValue(keyValue)
-                        .build())
-                .build());
-      }
+      locationCondition = datatypeCondition.getRequestBodyCustomLocationCondition();
+    } else if (datatypeCondition.hasResponseBodyCustomLocationCondition()) {
+      locationCondition = datatypeCondition.getResponseBodyCustomLocationCondition();
+    }
+
+    if (locationCondition != null && locationCondition.hasValue()) {
+      String keyValue = locationCondition.getValue().getStringValue();
+      keyOperandBuilder.setKeyMatchOperation(
+          ValueMatchOperation.newBuilder()
+              .setStringMatchOperation(
+                  StringMatchOperation.newBuilder()
+                      .setStringOperator(convertMatchOperator(locationCondition.getOperator()))
+                      .setStringValue(keyValue)
+                      .build())
+              .build());
     }
 
     kvConditionBuilder.setLhsKeyOperand(keyOperandBuilder.build());
@@ -220,7 +255,7 @@ public class PiiRuleToCustomSignatureConfigConverter {
     MatchConditionExpression matchExpr =
         MatchConditionExpression.newBuilder().setLeafMatchConditionExpression(leafExpr).build();
 
-    String evaluationIdentifier = "pii-rule-" + ruleId;
+    String evaluationIdentifier = "datatype-rule-" + ruleId;
 
     CustomSignatureConditionExpression condExpr =
         CustomSignatureConditionExpression.newBuilder()
