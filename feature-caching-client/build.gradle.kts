@@ -16,6 +16,8 @@ dependencies {
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)
+
+  testImplementation(commonLibs.bundles.junit.mockito)
 }
 
 tasks.test {

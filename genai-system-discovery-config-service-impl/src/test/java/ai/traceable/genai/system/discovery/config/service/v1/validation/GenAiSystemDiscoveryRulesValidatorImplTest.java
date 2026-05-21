@@ -9,6 +9,7 @@ import ai.traceable.genai.system.discovery.config.service.v1.Condition;
 import ai.traceable.genai.system.discovery.config.service.v1.CreateGenAiSystemDiscoveryRuleRequest;
 import ai.traceable.genai.system.discovery.config.service.v1.DeleteGenAiSystemDiscoveryRuleRequest;
 import ai.traceable.genai.system.discovery.config.service.v1.DynamicNameExtractionAction;
+import ai.traceable.genai.system.discovery.config.service.v1.EntityPathReference;
 import ai.traceable.genai.system.discovery.config.service.v1.ExtractionAction;
 import ai.traceable.genai.system.discovery.config.service.v1.GenAiInfoExtractionAction;
 import ai.traceable.genai.system.discovery.config.service.v1.GenAiNameExtractionAction;
@@ -21,6 +22,7 @@ import ai.traceable.genai.system.discovery.config.service.v1.MatchCondition;
 import ai.traceable.genai.system.discovery.config.service.v1.MatchGroupOperation;
 import ai.traceable.genai.system.discovery.config.service.v1.NoOperation;
 import ai.traceable.genai.system.discovery.config.service.v1.Operator;
+import ai.traceable.genai.system.discovery.config.service.v1.ReferenceCondition;
 import ai.traceable.genai.system.discovery.config.service.v1.StaticNameAction;
 import ai.traceable.genai.system.discovery.config.service.v1.UpdateGenAiSystemDiscoveryRuleRequest;
 import io.grpc.StatusRuntimeException;
@@ -405,6 +407,113 @@ class GenAiSystemDiscoveryRulesValidatorImplTest {
         createValidGenAiSystemDiscoveryRuleData().toBuilder()
             .setGenAiInfoExtractionAction(infoAction)
             .build();
+    CreateGenAiSystemDiscoveryRuleRequest request =
+        CreateGenAiSystemDiscoveryRuleRequest.newBuilder()
+            .setGenAiSystemDiscoveryRuleData(ruleData)
+            .build();
+    assertThrows(
+        StatusRuntimeException.class, () -> validator.validateOrThrow(requestContext, request));
+  }
+
+  @Test
+  void validateReferenceCondition_nonBlankReferenceAndValue_shouldPass() {
+    ReferenceCondition referenceCondition =
+        ReferenceCondition.newBuilder()
+            .setReference(
+                EntityPathReference.newBuilder()
+                    .setEntityType("API")
+                    .setPath("aiModelLocation")
+                    .build())
+            .setValueMatch(
+                MatchCondition.newBuilder()
+                    .setOperator(Operator.OPERATOR_STARTS_WITH)
+                    .setValue("gpt")
+                    .build())
+            .build();
+    LeafCondition leafCondition =
+        LeafCondition.newBuilder().setReferenceCondition(referenceCondition).build();
+    Condition condition = Condition.newBuilder().setLeafCondition(leafCondition).build();
+    GenAiSystemDiscoveryRuleData ruleData =
+        createValidGenAiSystemDiscoveryRuleData().toBuilder().setCondition(condition).build();
+    CreateGenAiSystemDiscoveryRuleRequest request =
+        CreateGenAiSystemDiscoveryRuleRequest.newBuilder()
+            .setGenAiSystemDiscoveryRuleData(ruleData)
+            .build();
+    assertDoesNotThrow(() -> validator.validateOrThrow(requestContext, request));
+  }
+
+  @Test
+  void validateReferenceCondition_blankReferenceEntityType_shouldThrow() {
+    ReferenceCondition referenceCondition =
+        ReferenceCondition.newBuilder()
+            .setReference(
+                EntityPathReference.newBuilder()
+                    .setEntityType("")
+                    .setPath("aiModelLocation")
+                    .build())
+            .setValueMatch(
+                MatchCondition.newBuilder()
+                    .setOperator(Operator.OPERATOR_STARTS_WITH)
+                    .setValue("gpt")
+                    .build())
+            .build();
+    LeafCondition leafCondition =
+        LeafCondition.newBuilder().setReferenceCondition(referenceCondition).build();
+    Condition condition = Condition.newBuilder().setLeafCondition(leafCondition).build();
+    GenAiSystemDiscoveryRuleData ruleData =
+        createValidGenAiSystemDiscoveryRuleData().toBuilder().setCondition(condition).build();
+    CreateGenAiSystemDiscoveryRuleRequest request =
+        CreateGenAiSystemDiscoveryRuleRequest.newBuilder()
+            .setGenAiSystemDiscoveryRuleData(ruleData)
+            .build();
+    assertThrows(
+        StatusRuntimeException.class, () -> validator.validateOrThrow(requestContext, request));
+  }
+
+  @Test
+  void validateReferenceCondition_blankReferencePath_shouldThrow() {
+    ReferenceCondition referenceCondition =
+        ReferenceCondition.newBuilder()
+            .setReference(EntityPathReference.newBuilder().setEntityType("API").setPath("").build())
+            .setValueMatch(
+                MatchCondition.newBuilder()
+                    .setOperator(Operator.OPERATOR_STARTS_WITH)
+                    .setValue("gpt")
+                    .build())
+            .build();
+    LeafCondition leafCondition =
+        LeafCondition.newBuilder().setReferenceCondition(referenceCondition).build();
+    Condition condition = Condition.newBuilder().setLeafCondition(leafCondition).build();
+    GenAiSystemDiscoveryRuleData ruleData =
+        createValidGenAiSystemDiscoveryRuleData().toBuilder().setCondition(condition).build();
+    CreateGenAiSystemDiscoveryRuleRequest request =
+        CreateGenAiSystemDiscoveryRuleRequest.newBuilder()
+            .setGenAiSystemDiscoveryRuleData(ruleData)
+            .build();
+    assertThrows(
+        StatusRuntimeException.class, () -> validator.validateOrThrow(requestContext, request));
+  }
+
+  @Test
+  void validateReferenceCondition_blankValueMatchValue_shouldThrow() {
+    ReferenceCondition referenceCondition =
+        ReferenceCondition.newBuilder()
+            .setReference(
+                EntityPathReference.newBuilder()
+                    .setEntityType("API")
+                    .setPath("aiModelLocation")
+                    .build())
+            .setValueMatch(
+                MatchCondition.newBuilder()
+                    .setOperator(Operator.OPERATOR_STARTS_WITH)
+                    .setValue("")
+                    .build())
+            .build();
+    LeafCondition leafCondition =
+        LeafCondition.newBuilder().setReferenceCondition(referenceCondition).build();
+    Condition condition = Condition.newBuilder().setLeafCondition(leafCondition).build();
+    GenAiSystemDiscoveryRuleData ruleData =
+        createValidGenAiSystemDiscoveryRuleData().toBuilder().setCondition(condition).build();
     CreateGenAiSystemDiscoveryRuleRequest request =
         CreateGenAiSystemDiscoveryRuleRequest.newBuilder()
             .setGenAiSystemDiscoveryRuleData(ruleData)

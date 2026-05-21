@@ -15,6 +15,7 @@ dependencies {
   implementation(commonLibs.hypertrace.grpcutils.context)
   implementation(commonLibs.guice7)
   implementation(projects.configUtils)
+  implementation(projects.featureCachingClient)
   implementation(commonLibs.protobuf.javautil)
   implementation(commonLibs.slf4j2.api)
 

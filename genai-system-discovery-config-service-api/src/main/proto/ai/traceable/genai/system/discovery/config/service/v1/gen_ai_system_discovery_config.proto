@@ -44,7 +44,24 @@ message LeafCondition {
     KeyValueCondition attribute_condition = 2;
     KeyValueCondition request_body_condition = 3;
     KeyValueCondition response_body_condition = 4;
+    ReferenceCondition reference_condition = 5;
   }
+}
+
+// Matches a value resolved from an EntityPathReference (entity_type + path,
+// e.g. entity_type="API", path="aiModelLocation") against all locations the
+// reference resolves to (e.g. request body, response body). The consumer
+// iterates the resolved locations and checks value_match against each one.
+// The path is a dotted expression and may traverse nested fields in the
+// future (e.g. "body.model").
+message ReferenceCondition {
+  EntityPathReference reference = 1;
+  MatchCondition value_match = 2;
+}
+
+message EntityPathReference {
+  string entity_type = 1;
+  string path = 2;
 }
 
 message GenAiInfoExtractionAction {

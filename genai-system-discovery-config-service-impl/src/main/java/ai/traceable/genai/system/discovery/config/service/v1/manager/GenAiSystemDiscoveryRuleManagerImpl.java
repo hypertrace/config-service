@@ -40,7 +40,9 @@ public class GenAiSystemDiscoveryRuleManagerImpl implements GenAiSystemDiscovery
   public List<GenAiSystemDiscoveryRule> getGenAiSystemDiscoveryRules(
       RequestContext requestContext, GetGenAiSystemDiscoveryRulesFilter filter) {
     return mergeGenAiSystemDiscoveryRules(
-        filter, genAiSystemDiscoveryRuleStore.getAllConfigData(requestContext, filter));
+        requestContext,
+        filter,
+        genAiSystemDiscoveryRuleStore.getAllConfigData(requestContext, filter));
   }
 
   @Override
@@ -64,7 +66,10 @@ public class GenAiSystemDiscoveryRuleManagerImpl implements GenAiSystemDiscovery
             .getData(requestContext, ruleId)
             .orElseGet(
                 () ->
-                    Optional.ofNullable(config.getDefaultGenAiSystemDiscoveryRuleMap().get(ruleId))
+                    Optional.ofNullable(
+                            config
+                                .getDefaultGenAiSystemDiscoveryRuleMap(requestContext)
+                                .get(ruleId))
                         .orElseThrow(
                             () ->
                                 Status.NOT_FOUND
@@ -83,7 +88,7 @@ public class GenAiSystemDiscoveryRuleManagerImpl implements GenAiSystemDiscovery
 
   @Override
   public void deleteGenAiSystemDiscoveryRule(RequestContext requestContext, String id) {
-    if (config.getDefaultGenAiSystemDiscoveryRuleMap().containsKey(id)) {
+    if (config.getDefaultGenAiSystemDiscoveryRuleMap(requestContext).containsKey(id)) {
       throw Status.INVALID_ARGUMENT
           .withDescription(
               String.format(
@@ -105,16 +110,18 @@ public class GenAiSystemDiscoveryRuleManagerImpl implements GenAiSystemDiscovery
   }
 
   private List<GenAiSystemDiscoveryRule> mergeGenAiSystemDiscoveryRules(
-      List<GenAiSystemDiscoveryRule> genAiSystemDiscoveryRules) {
+      RequestContext requestContext, List<GenAiSystemDiscoveryRule> genAiSystemDiscoveryRules) {
     Map<String, GenAiSystemDiscoveryRule> mergedRulesMap =
-        new LinkedHashMap<>(config.getDefaultGenAiSystemDiscoveryRuleMap());
+        new LinkedHashMap<>(config.getDefaultGenAiSystemDiscoveryRuleMap(requestContext));
     genAiSystemDiscoveryRules.forEach(rule -> mergedRulesMap.put(rule.getRuleId(), rule));
     return mergedRulesMap.values().stream().collect(Collectors.toUnmodifiableList());
   }
 
   private List<GenAiSystemDiscoveryRule> mergeGenAiSystemDiscoveryRules(
-      GetGenAiSystemDiscoveryRulesFilter filter, List<GenAiSystemDiscoveryRule> rules) {
-    return mergeGenAiSystemDiscoveryRules(rules).stream()
+      RequestContext requestContext,
+      GetGenAiSystemDiscoveryRulesFilter filter,
+      List<GenAiSystemDiscoveryRule> rules) {
+    return mergeGenAiSystemDiscoveryRules(requestContext, rules).stream()
         .filter(rule -> filter.getEnabled() == rule.getGenAiSystemDiscoveryRuleData().getEnabled())
         .collect(Collectors.toUnmodifiableList());
   }

@@ -8,6 +8,7 @@ import ai.traceable.genai.system.discovery.config.service.v1.Condition;
 import ai.traceable.genai.system.discovery.config.service.v1.CreateGenAiSystemDiscoveryRuleRequest;
 import ai.traceable.genai.system.discovery.config.service.v1.DeleteGenAiSystemDiscoveryRuleRequest;
 import ai.traceable.genai.system.discovery.config.service.v1.DynamicNameExtractionAction;
+import ai.traceable.genai.system.discovery.config.service.v1.EntityPathReference;
 import ai.traceable.genai.system.discovery.config.service.v1.ExtractionAction;
 import ai.traceable.genai.system.discovery.config.service.v1.GenAiInfoExtractionAction;
 import ai.traceable.genai.system.discovery.config.service.v1.GenAiNameExtractionAction;
@@ -18,6 +19,7 @@ import ai.traceable.genai.system.discovery.config.service.v1.KeyValueCondition;
 import ai.traceable.genai.system.discovery.config.service.v1.LeafCondition;
 import ai.traceable.genai.system.discovery.config.service.v1.MatchCondition;
 import ai.traceable.genai.system.discovery.config.service.v1.MatchGroupOperation;
+import ai.traceable.genai.system.discovery.config.service.v1.ReferenceCondition;
 import ai.traceable.genai.system.discovery.config.service.v1.StaticNameAction;
 import ai.traceable.genai.system.discovery.config.service.v1.UpdateGenAiSystemDiscoveryRuleRequest;
 import io.grpc.Status;
@@ -99,12 +101,30 @@ public class GenAiSystemDiscoveryRulesValidatorImpl implements GenAiSystemDiscov
       case RESPONSE_BODY_CONDITION:
         validateKeyValueCondition(leafCondition.getResponseBodyCondition());
         break;
+      case REFERENCE_CONDITION:
+        validateReferenceCondition(leafCondition.getReferenceCondition());
+        break;
       default:
         throw Status.INVALID_ARGUMENT
             .withDescription(
                 String.format("Invalid leaf condition case : %s", leafCondition.getConditionCase()))
             .asRuntimeException();
     }
+  }
+
+  private void validateReferenceCondition(ReferenceCondition referenceCondition) {
+    final EntityPathReference reference = referenceCondition.getReference();
+    if (reference.getEntityType().isBlank()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Reference entity type should not be blank in reference condition")
+          .asRuntimeException();
+    }
+    if (reference.getPath().isBlank()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Reference path should not be blank in reference condition")
+          .asRuntimeException();
+    }
+    validateMatchCondition(referenceCondition.getValueMatch());
   }
 
   private void validateMatchCondition(MatchCondition urlCondition) {
