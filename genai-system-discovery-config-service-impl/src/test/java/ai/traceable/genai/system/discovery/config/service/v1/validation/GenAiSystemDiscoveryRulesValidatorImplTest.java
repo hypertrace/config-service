@@ -23,6 +23,7 @@ import ai.traceable.genai.system.discovery.config.service.v1.MatchGroupOperation
 import ai.traceable.genai.system.discovery.config.service.v1.NoOperation;
 import ai.traceable.genai.system.discovery.config.service.v1.Operator;
 import ai.traceable.genai.system.discovery.config.service.v1.ReferenceCondition;
+import ai.traceable.genai.system.discovery.config.service.v1.ReferenceExtractionAction;
 import ai.traceable.genai.system.discovery.config.service.v1.StaticNameAction;
 import ai.traceable.genai.system.discovery.config.service.v1.UpdateGenAiSystemDiscoveryRuleRequest;
 import io.grpc.StatusRuntimeException;
@@ -514,6 +515,104 @@ class GenAiSystemDiscoveryRulesValidatorImplTest {
     Condition condition = Condition.newBuilder().setLeafCondition(leafCondition).build();
     GenAiSystemDiscoveryRuleData ruleData =
         createValidGenAiSystemDiscoveryRuleData().toBuilder().setCondition(condition).build();
+    CreateGenAiSystemDiscoveryRuleRequest request =
+        CreateGenAiSystemDiscoveryRuleRequest.newBuilder()
+            .setGenAiSystemDiscoveryRuleData(ruleData)
+            .build();
+    assertThrows(
+        StatusRuntimeException.class, () -> validator.validateOrThrow(requestContext, request));
+  }
+
+  @Test
+  void validateReferenceExtractionAction_nonBlankReference_shouldPass() {
+    ReferenceExtractionAction referenceExtractionAction =
+        ReferenceExtractionAction.newBuilder()
+            .setReference(
+                EntityPathReference.newBuilder()
+                    .setEntityType("API")
+                    .setPath("aiModelLocation")
+                    .build())
+            .build();
+    DynamicNameExtractionAction dynamicAction =
+        DynamicNameExtractionAction.newBuilder()
+            .setReferenceExtractionAction(referenceExtractionAction)
+            .build();
+    GenAiNameExtractionAction nameAction =
+        GenAiNameExtractionAction.newBuilder()
+            .setDynamicNameExtractionAction(dynamicAction)
+            .build();
+    GenAiNameExtractionAction providerAction =
+        GenAiNameExtractionAction.newBuilder()
+            .setStaticNameAction(StaticNameAction.newBuilder().setValue("test-provider").build())
+            .build();
+    GenAiInfoExtractionAction infoAction =
+        GenAiInfoExtractionAction.newBuilder()
+            .setProviderAction(providerAction)
+            .setModelAction(nameAction)
+            .build();
+    GenAiSystemDiscoveryRuleData ruleData =
+        createValidGenAiSystemDiscoveryRuleData().toBuilder()
+            .setGenAiInfoExtractionAction(infoAction)
+            .build();
+    CreateGenAiSystemDiscoveryRuleRequest request =
+        CreateGenAiSystemDiscoveryRuleRequest.newBuilder()
+            .setGenAiSystemDiscoveryRuleData(ruleData)
+            .build();
+    assertDoesNotThrow(() -> validator.validateOrThrow(requestContext, request));
+  }
+
+  @Test
+  void validateReferenceExtractionAction_blankReferenceEntityType_shouldThrow() {
+    ReferenceExtractionAction referenceExtractionAction =
+        ReferenceExtractionAction.newBuilder()
+            .setReference(
+                EntityPathReference.newBuilder()
+                    .setEntityType("")
+                    .setPath("aiModelLocation")
+                    .build())
+            .build();
+    DynamicNameExtractionAction dynamicAction =
+        DynamicNameExtractionAction.newBuilder()
+            .setReferenceExtractionAction(referenceExtractionAction)
+            .build();
+    GenAiNameExtractionAction nameAction =
+        GenAiNameExtractionAction.newBuilder()
+            .setDynamicNameExtractionAction(dynamicAction)
+            .build();
+    GenAiInfoExtractionAction infoAction =
+        GenAiInfoExtractionAction.newBuilder().setModelAction(nameAction).build();
+    GenAiSystemDiscoveryRuleData ruleData =
+        createValidGenAiSystemDiscoveryRuleData().toBuilder()
+            .setGenAiInfoExtractionAction(infoAction)
+            .build();
+    CreateGenAiSystemDiscoveryRuleRequest request =
+        CreateGenAiSystemDiscoveryRuleRequest.newBuilder()
+            .setGenAiSystemDiscoveryRuleData(ruleData)
+            .build();
+    assertThrows(
+        StatusRuntimeException.class, () -> validator.validateOrThrow(requestContext, request));
+  }
+
+  @Test
+  void validateReferenceExtractionAction_blankReferencePath_shouldThrow() {
+    ReferenceExtractionAction referenceExtractionAction =
+        ReferenceExtractionAction.newBuilder()
+            .setReference(EntityPathReference.newBuilder().setEntityType("API").setPath("").build())
+            .build();
+    DynamicNameExtractionAction dynamicAction =
+        DynamicNameExtractionAction.newBuilder()
+            .setReferenceExtractionAction(referenceExtractionAction)
+            .build();
+    GenAiNameExtractionAction nameAction =
+        GenAiNameExtractionAction.newBuilder()
+            .setDynamicNameExtractionAction(dynamicAction)
+            .build();
+    GenAiInfoExtractionAction infoAction =
+        GenAiInfoExtractionAction.newBuilder().setModelAction(nameAction).build();
+    GenAiSystemDiscoveryRuleData ruleData =
+        createValidGenAiSystemDiscoveryRuleData().toBuilder()
+            .setGenAiInfoExtractionAction(infoAction)
+            .build();
     CreateGenAiSystemDiscoveryRuleRequest request =
         CreateGenAiSystemDiscoveryRuleRequest.newBuilder()
             .setGenAiSystemDiscoveryRuleData(ruleData)

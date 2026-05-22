@@ -20,6 +20,7 @@ import ai.traceable.genai.system.discovery.config.service.v1.LeafCondition;
 import ai.traceable.genai.system.discovery.config.service.v1.MatchCondition;
 import ai.traceable.genai.system.discovery.config.service.v1.MatchGroupOperation;
 import ai.traceable.genai.system.discovery.config.service.v1.ReferenceCondition;
+import ai.traceable.genai.system.discovery.config.service.v1.ReferenceExtractionAction;
 import ai.traceable.genai.system.discovery.config.service.v1.StaticNameAction;
 import ai.traceable.genai.system.discovery.config.service.v1.UpdateGenAiSystemDiscoveryRuleRequest;
 import io.grpc.Status;
@@ -208,6 +209,10 @@ public class GenAiSystemDiscoveryRulesValidatorImpl implements GenAiSystemDiscov
       case RESPONSE_BODY_EXTRACTION_ACTION:
         validateExtractionAction(dynamicNameExtractionAction.getResponseBodyExtractionAction());
         break;
+      case REFERENCE_EXTRACTION_ACTION:
+        validateReferenceExtractionAction(
+            dynamicNameExtractionAction.getReferenceExtractionAction());
+        break;
       default:
         throw Status.INVALID_ARGUMENT
             .withDescription(
@@ -215,6 +220,22 @@ public class GenAiSystemDiscoveryRulesValidatorImpl implements GenAiSystemDiscov
                     "Invalid dynamic name extraction action case : %s",
                     dynamicNameExtractionAction.getDynamicNameExtractionActionCase()))
             .asRuntimeException();
+    }
+  }
+
+  private void validateReferenceExtractionAction(
+      ReferenceExtractionAction referenceExtractionAction) {
+    final EntityPathReference reference = referenceExtractionAction.getReference();
+    if (reference.getEntityType().isBlank()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              "Reference entity type should not be blank in reference extraction action")
+          .asRuntimeException();
+    }
+    if (reference.getPath().isBlank()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Reference path should not be blank in reference extraction action")
+          .asRuntimeException();
     }
   }
 

@@ -86,6 +86,7 @@ message DynamicNameExtractionAction {
     ExtractionAction attribute_extraction_action = 2;
     ExtractionAction request_body_extraction_action = 3;
     ExtractionAction response_body_extraction_action = 4;
+    ReferenceExtractionAction reference_extraction_action = 5;
   }
 }
 
@@ -95,6 +96,13 @@ message ExtractionAction {
     NoOperation no_operation = 2;
     MatchGroupOperation match_group_operation = 3;
   }
+}
+
+// Extracts a value resolved from an EntityPathReference (entity_type + path,
+// e.g. entity_type="API", path="aiModelLocation"). The consumer resolves the
+// reference and uses the resolved value as-is.
+message ReferenceExtractionAction {
+  EntityPathReference reference = 1;
 }
 
 message NoOperation {}
