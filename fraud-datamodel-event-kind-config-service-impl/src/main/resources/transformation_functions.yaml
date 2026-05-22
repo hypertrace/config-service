@@ -163,6 +163,20 @@ functions:
         type: PARAMETER_TYPE_STRING
         required: true
 
+  - id: "system_defined_function_regex_extract"
+    display_name: "regexExtract"
+    description: "Extract first regex capture group match from input string"
+    input_kinds:
+      - event_kind_id: "system_event_kind_string"
+    output_kind:
+      event_kind_id: "system_event_kind_string"
+    parameters:
+      - name: "pattern"
+        description: "Regex pattern with capture group"
+        type: PARAMETER_TYPE_STRING
+        required: true
+    jexl_template: "traceableTransformUtils:regexExtract(${input}, '${pattern}')"
+
   # Masking functions
   #  - id: "system_defined_function_last_4_digits"
   #    display_name: "last4Digits"
