@@ -34,6 +34,7 @@ ai.traceable.platform:enriched-span-constants:5.0.141=runtimeClasspath,testRunti
 ai.traceable.platform:insights-service-api:5.0.38=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:jni-modsecurity-v2:0.1.149=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:jni-modsecurity:0.1.149=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform:model-service-api:5.0.38=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:notification-message-api:8.0.71=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:opa-aggregator-api:0.2.64=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:pyml-aifirewall-grpc-api:0.1.83=runtimeClasspath,testRuntimeClasspath

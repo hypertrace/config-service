@@ -49,6 +49,7 @@ dependencies {
   testImplementation(commonLibs.bundles.junit.mockito)
   testImplementation(commonLibs.grpc.core)
   testImplementation(testFixtures(localLibs.hypertrace.configservice.api))
+  testImplementation(commonLibs.traceable.protection.engine.processing.common)
 }
 
 tasks.test {

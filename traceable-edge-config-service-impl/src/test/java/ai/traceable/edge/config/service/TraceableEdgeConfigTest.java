@@ -73,6 +73,9 @@ public class TraceableEdgeConfigTest {
             ImmutableMap.copyOf(
                 ConfigFactory.parseString(
                         "host = localhost\n" + "  port = 50888\n" + "  request.timeout = 10s\n")
-                    .entrySet())));
+                    .entrySet()),
+            "insights.service.config",
+            ImmutableMap.copyOf(
+                ConfigFactory.parseString("host = localhost\n" + "  port = 50061\n").entrySet())));
   }
 }

@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package ai.traceable.edge.config.service.v1;
+
+option go_package = "github.com/Traceableai/config-service/gen/go/ai/traceable/edge/config/service/v1";
+option java_multiple_files = true;
+
+message ApiEndpointModelConfig {
+  map<string, bytes> api_endpoint_models = 1;
+}

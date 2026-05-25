@@ -518,6 +518,22 @@ data:
     default.variables.user-attribution = {{- .Values.defaultTraceableEdgeUserAttributionVariables | indent 4 }}
     {{- end }}
     get.configs.thread.pool.size = {{ .Values.traceableEdgeConfigService.getConfigsThreadPoolSize }}
+    api.endpoint.model.config {
+      include "api-endpoint-model.conf"
+    }
+
+  api-endpoint-model.conf: |-
+    {{- $config := .Values.traceableEdgeConfigService.apiEndpointModelConfig | default dict }}
+    {{- if $config.requestKeyMatchClauses }}
+    requestKeyMatchClauses = {{ $config.requestKeyMatchClauses | toJson }}
+    {{- else }}
+    requestKeyMatchClauses = []
+    {{- end }}
+    {{- if $config.responseKeyMatchClauses }}
+    responseKeyMatchClauses = {{ $config.responseKeyMatchClauses | toJson }}
+    {{- else }}
+    responseKeyMatchClauses = []
+    {{- end }}
 
   {{- if and (hasKey .Values "apiProtectThreatRuleConfigsConf") .Values.apiProtectThreatRuleConfigsConf }}
   api-protect-threat-rule-configs.conf: |-

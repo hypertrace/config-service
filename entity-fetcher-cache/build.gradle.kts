@@ -17,6 +17,7 @@ dependencies {
   implementation(commonLibs.traceable.platform.eventInvalidationCache)
   implementation(commonLibs.traceable.protection.engine.processing.common)
   implementation(commonLibs.traceable.protection.engine.core)
+  implementation(commonLibs.traceable.insights.model.api)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

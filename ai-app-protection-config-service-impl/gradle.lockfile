@@ -12,6 +12,7 @@ ai.traceable.platform:coraza-waf-service-api:0.3.68=runtimeClasspath,testRuntime
 ai.traceable.platform:coraza-waf-service-client:0.3.68=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:jni-modsecurity-v2:0.1.149=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:jni-modsecurity:0.1.149=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform:model-service-api:5.0.38=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:pyml-aifirewall-grpc-api:0.1.83=runtimeClasspath,testRuntimeClasspath
 ai.traceable.protection.rules:ai-application-protection-rules:0.1.156=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.protection.rules:api-protection-rules:0.1.156=runtimeClasspath,testRuntimeClasspath
