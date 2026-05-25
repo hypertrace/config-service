@@ -6,6 +6,8 @@ import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleScopeConditi
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleScopeCondition.UrlRegexScope;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider.ApiIdentifierEntity;
+import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
+import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider.ServiceIdentifierEntity;
 import ai.traceable.fraud.policy.config.service.v1.AbuseApiScope;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -16,24 +18,30 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 /**
- * Resolves AbusePolicy api_scope to EDS scope conditions (url_regex_scope, http_method_scope,
- * service_scope) by delegating entity lookups to {@link CachedApiMappingProvider}.
+ * Resolves entity scopes (API IDs, API labels, service IDs) to structured data by delegating
+ * lookups to {@link CachedApiMappingProvider} and {@link CachedServiceMappingProvider}.
  *
- * <p>Mirrors the pattern used in the fingerprinting-job's EdgeDecisionRuleConverter.get_rule_scope.
+ * <p>Provides both EDS proto scope condition output (for rule_scope) and raw resolved data (for
+ * JEXL match_condition generation by {@link ScopeToJexlConverter}).
  */
 @Slf4j
 @Singleton
-public class ApiScopeResolver {
+public class EntityScopeResolver {
 
   private final CachedApiMappingProvider cachedApiMappingProvider;
+  private final CachedServiceMappingProvider cachedServiceMappingProvider;
 
   @Inject
-  public ApiScopeResolver(CachedApiMappingProvider cachedApiMappingProvider) {
+  public EntityScopeResolver(
+      CachedApiMappingProvider cachedApiMappingProvider,
+      CachedServiceMappingProvider cachedServiceMappingProvider) {
     this.cachedApiMappingProvider = cachedApiMappingProvider;
+    this.cachedServiceMappingProvider = cachedServiceMappingProvider;
   }
 
   /**
@@ -121,10 +129,61 @@ public class ApiScopeResolver {
   }
 
   /**
+   * Resolves API IDs to their detail components (URL patterns, HTTP methods, service names). Used
+   * by {@link ScopeToJexlConverter} for generating JEXL match_condition expressions.
+   *
+   * @return aggregated details, or empty if resolution fails
+   */
+  public ApiDetails resolveApiDetails(RequestContext requestContext, Set<String> apiIds) {
+    try {
+      Map<String, Optional<ApiIdentifierEntity>> apiDetailsMap =
+          cachedApiMappingProvider.getApiIdentifierEntities(requestContext, apiIds);
+
+      Set<String> urlRegexes = new HashSet<>();
+      Set<String> httpMethods = new HashSet<>();
+      Set<String> serviceNames = new HashSet<>();
+      aggregateApiDetails(apiDetailsMap, urlRegexes, httpMethods, serviceNames);
+
+      return new ApiDetails(urlRegexes, httpMethods, serviceNames);
+    } catch (Exception e) {
+      log.warn("Failed to resolve API IDs for match_condition, skipping", e);
+      return ApiDetails.EMPTY;
+    }
+  }
+
+  /**
+   * Resolves service IDs to service names via the entity query service. Used by {@link
+   * ScopeToJexlConverter} for generating JEXL match_condition expressions.
+   *
+   * @return resolved service names, or empty list if resolution fails
+   */
+  public List<String> resolveServiceNames(RequestContext requestContext, Set<String> serviceIds) {
+    try {
+      Map<String, Optional<ServiceIdentifierEntity>> serviceEntities =
+          cachedServiceMappingProvider.getServiceIdentifierEntities(requestContext, serviceIds);
+
+      List<String> serviceNames =
+          serviceEntities.values().stream()
+              .flatMap(Optional::stream)
+              .map(ServiceIdentifierEntity::getServiceName)
+              .collect(Collectors.toUnmodifiableList());
+
+      if (serviceNames.isEmpty()) {
+        log.warn(
+            "Could not resolve any service names for service IDs: {}, skipping scope", serviceIds);
+      }
+      return serviceNames;
+    } catch (Exception e) {
+      log.warn("Failed to resolve service IDs to names, skipping", e);
+      return List.of();
+    }
+  }
+
+  /**
    * Aggregates URL patterns, HTTP methods, and service names from an API details map into the
    * provided output sets. Shared between EDS scope condition building and JEXL scope conversion.
    */
-  public static void aggregateApiDetails(
+  static void aggregateApiDetails(
       Map<String, Optional<ApiIdentifierEntity>> apiDetailsMap,
       Set<String> urlRegexes,
       Set<String> httpMethods,
@@ -142,5 +201,19 @@ public class ApiScopeResolver {
                 serviceNames.add(details.getServiceName());
               }
             });
+  }
+
+  /** Aggregated API entity details for use in JEXL generation. */
+  @Value
+  public static class ApiDetails {
+    static final ApiDetails EMPTY = new ApiDetails(Set.of(), Set.of(), Set.of());
+
+    Set<String> urlRegexes;
+    Set<String> httpMethods;
+    Set<String> serviceNames;
+
+    public boolean isEmpty() {
+      return urlRegexes.isEmpty() && httpMethods.isEmpty() && serviceNames.isEmpty();
+    }
   }
 }

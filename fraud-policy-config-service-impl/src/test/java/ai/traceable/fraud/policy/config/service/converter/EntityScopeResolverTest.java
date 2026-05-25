@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleScopeCondition;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider.ApiIdentifierEntity;
+import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
 import ai.traceable.fraud.policy.config.service.v1.AbuseApiIds;
 import ai.traceable.fraud.policy.config.service.v1.AbuseApiLabels;
 import ai.traceable.fraud.policy.config.service.v1.AbuseApiScope;
@@ -30,18 +31,19 @@ import org.mockito.quality.Strictness;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-class ApiScopeResolverTest {
+class EntityScopeResolverTest {
 
   private static final String TENANT_ID = "test-tenant";
 
   @Mock private CachedApiMappingProvider cachedApiMappingProvider;
+  @Mock private CachedServiceMappingProvider cachedServiceMappingProvider;
 
-  private ApiScopeResolver resolver;
+  private EntityScopeResolver resolver;
   private RequestContext requestContext;
 
   @BeforeEach
   void setUp() {
-    resolver = new ApiScopeResolver(cachedApiMappingProvider);
+    resolver = new EntityScopeResolver(cachedApiMappingProvider, cachedServiceMappingProvider);
     requestContext = RequestContext.forTenantId(TENANT_ID);
   }
 

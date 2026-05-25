@@ -7,10 +7,7 @@ import static ai.traceable.fraud.policy.config.service.converter.JexlExpressionU
 import static ai.traceable.fraud.policy.config.service.converter.JexlExpressionUtils.validateExactMatchOnly;
 import static ai.traceable.fraud.policy.config.service.converter.JexlExpressionUtils.valueToString;
 
-import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
-import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider.ApiIdentifierEntity;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityScope;
-import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityType;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.ExtractionLocation;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.ExtractionLocationType;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.FilterOperator;
@@ -18,14 +15,13 @@ import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.KeyMatch
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.Scope;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.SpanBasedFilter;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.SpanBasedScope;
+import ai.traceable.fraud.policy.config.service.converter.EntityScopeResolver.ApiDetails;
 import com.google.protobuf.Value;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -38,18 +34,18 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
  * <p>Uses Java-style getter accessors (e.g. {@code $s.getUrl()}, {@code $s.getEnvironment()})
  * matching the EDS span context API. Multiple scope dimensions are ANDed together.
  *
- * <p>For API entity scopes, resolves API IDs to url/httpMethod/serviceName conditions via {@link
- * CachedApiMappingProvider} instead of using raw apiId matching.
+ * <p>Delegates entity ID resolution (API IDs → url/method/service, service IDs → service names) to
+ * {@link EntityScopeResolver} and focuses on JEXL expression generation.
  */
 @Slf4j
 @Singleton
 public class ScopeToJexlConverter {
 
-  private final CachedApiMappingProvider cachedApiMappingProvider;
+  private final EntityScopeResolver entityScopeResolver;
 
   @Inject
-  public ScopeToJexlConverter(CachedApiMappingProvider cachedApiMappingProvider) {
-    this.cachedApiMappingProvider = cachedApiMappingProvider;
+  public ScopeToJexlConverter(EntityScopeResolver entityScopeResolver) {
+    this.entityScopeResolver = entityScopeResolver;
   }
 
   /**
@@ -102,48 +98,55 @@ public class ScopeToJexlConverter {
   // --- Entity scope resolution ---
 
   private String resolveEntityScope(RequestContext requestContext, EntityScope entityScope) {
-    if (entityScope.getEntityType() == EntityType.ENTITY_TYPE_SERVICE) {
-      return JexlExpressionUtils.toEqualsExpr(
-          SPAN_VAR + ".getServiceName()", entityScope.getEntityIdsList());
-    }
-
-    // API type: resolve API IDs to url/method/service JEXL conditions
-    Set<String> apiIds = new HashSet<>(entityScope.getEntityIdsList());
-    try {
-      Map<String, Optional<ApiIdentifierEntity>> apiDetailsMap =
-          cachedApiMappingProvider.getApiIdentifierEntities(requestContext, apiIds);
-
-      Set<String> urlRegexes = new LinkedHashSet<>();
-      Set<String> httpMethods = new LinkedHashSet<>();
-      Set<String> serviceNames = new LinkedHashSet<>();
-      ApiScopeResolver.aggregateApiDetails(apiDetailsMap, urlRegexes, httpMethods, serviceNames);
-
-      List<String> parts = new ArrayList<>();
-      if (!urlRegexes.isEmpty()) {
-        parts.add(JexlExpressionUtils.toUrlRegexExpr(urlRegexes));
-      }
-      if (!httpMethods.isEmpty()) {
-        parts.add(
-            JexlExpressionUtils.toEqualsExpr(
-                SPAN_VAR + ".getMethod()", new ArrayList<>(httpMethods)));
-      }
-      if (!serviceNames.isEmpty()) {
-        parts.add(
-            JexlExpressionUtils.toEqualsExpr(
-                SPAN_VAR + ".getServiceName()", new ArrayList<>(serviceNames)));
-      }
-
-      if (parts.isEmpty()) {
+    switch (entityScope.getEntityType()) {
+      case ENTITY_TYPE_SERVICE:
+        return resolveServiceScope(requestContext, entityScope);
+      case ENTITY_TYPE_API:
+        return resolveApiScope(requestContext, entityScope);
+      default:
+        log.warn("Unsupported entity type in scope, skipping: {}", entityScope.getEntityType());
         return "";
-      }
-      if (parts.size() == 1) {
-        return parts.get(0);
-      }
-      return "(" + String.join(" && ", parts) + ")";
-    } catch (Exception e) {
-      log.warn("Failed to resolve entity scope API IDs for match_condition, skipping", e);
+    }
+  }
+
+  private String resolveServiceScope(RequestContext requestContext, EntityScope entityScope) {
+    Set<String> serviceIds = new HashSet<>(entityScope.getEntityIdsList());
+    List<String> serviceNames = entityScopeResolver.resolveServiceNames(requestContext, serviceIds);
+    if (serviceNames.isEmpty()) {
       return "";
     }
+    return JexlExpressionUtils.toEqualsExpr(SPAN_VAR + ".getServiceName()", serviceNames);
+  }
+
+  private String resolveApiScope(RequestContext requestContext, EntityScope entityScope) {
+    Set<String> apiIds = new HashSet<>(entityScope.getEntityIdsList());
+    ApiDetails details = entityScopeResolver.resolveApiDetails(requestContext, apiIds);
+    if (details.isEmpty()) {
+      return "";
+    }
+
+    List<String> parts = new ArrayList<>();
+    if (!details.getUrlRegexes().isEmpty()) {
+      parts.add(JexlExpressionUtils.toUrlRegexExpr(details.getUrlRegexes()));
+    }
+    if (!details.getHttpMethods().isEmpty()) {
+      parts.add(
+          JexlExpressionUtils.toEqualsExpr(
+              SPAN_VAR + ".getMethod()", new ArrayList<>(details.getHttpMethods())));
+    }
+    if (!details.getServiceNames().isEmpty()) {
+      parts.add(
+          JexlExpressionUtils.toEqualsExpr(
+              SPAN_VAR + ".getServiceName()", new ArrayList<>(details.getServiceNames())));
+    }
+
+    if (parts.isEmpty()) {
+      return "";
+    }
+    if (parts.size() == 1) {
+      return parts.get(0);
+    }
+    return "(" + String.join(" && ", parts) + ")";
   }
 
   // --- Span-based scope ---

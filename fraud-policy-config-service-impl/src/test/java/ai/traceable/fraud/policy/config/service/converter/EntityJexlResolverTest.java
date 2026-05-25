@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import ai.traceable.datamodel.data.transformation.config.v1.DerivationRule;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider.ApiIdentifierEntity;
+import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfig;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfigData;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfigServiceGrpc.EntityDerivationConfigServiceBlockingStub;
@@ -47,6 +48,7 @@ class EntityJexlResolverTest {
   @Mock private EntityDerivationConfigServiceBlockingStub entityDerivationConfigServiceStub;
   @Mock private PipelineToJexlConverter pipelineToJexlConverter;
   @Mock private CachedApiMappingProvider cachedApiMappingProvider;
+  @Mock private CachedServiceMappingProvider cachedServiceMappingProvider;
 
   private EntityJexlResolver resolver;
 
@@ -54,7 +56,11 @@ class EntityJexlResolverTest {
   void setUp() {
     // Default: API resolution returns empty map (no url/method/service resolved)
     when(cachedApiMappingProvider.getApiIdentifierEntities(any(), any())).thenReturn(Map.of());
-    ScopeToJexlConverter scopeToJexlConverter = new ScopeToJexlConverter(cachedApiMappingProvider);
+    when(cachedServiceMappingProvider.getServiceIdentifierEntities(any(), any()))
+        .thenReturn(Map.of());
+    EntityScopeResolver entityScopeResolver =
+        new EntityScopeResolver(cachedApiMappingProvider, cachedServiceMappingProvider);
+    ScopeToJexlConverter scopeToJexlConverter = new ScopeToJexlConverter(entityScopeResolver);
     resolver =
         new EntityJexlResolver(
             entityDerivationConfigServiceStub, pipelineToJexlConverter, scopeToJexlConverter);
@@ -710,8 +716,8 @@ class EntityJexlResolverTest {
             "field",
             KeyMatchType.KEY_MATCH_TYPE_REGEX));
 
-    Assertions.assertThrows(
-        IllegalArgumentException.class, () -> resolve(Set.of("entity_body_regex")));
+    Set<String> entityNames = Set.of("entity_body_regex");
+    Assertions.assertThrows(IllegalArgumentException.class, () -> resolve(entityNames));
   }
 
   @Test

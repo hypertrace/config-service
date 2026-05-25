@@ -32,7 +32,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
  *
  * <p>Delegates template-specific conversion to {@link TemplateEdgeDecisionConverter}
  * implementations, entity-to-JEXL resolution to {@link EntityJexlResolver}, and scope resolution to
- * {@link ApiScopeResolver}.
+ * {@link EntityScopeResolver}.
  */
 @Slf4j
 @Singleton
@@ -40,17 +40,17 @@ public class AbusePolicyEdgeDecisionConverter {
 
   public static final String ABUSE_POLICY_ID_PREFIX = "abuse-";
   private final EntityJexlResolver entityJexlResolver;
-  private final ApiScopeResolver apiScopeResolver;
+  private final EntityScopeResolver entityScopeResolver;
   private final Map<AbusePolicyData.TemplateConfigCase, TemplateEdgeDecisionConverter>
       templateConverters;
 
   @Inject
   public AbusePolicyEdgeDecisionConverter(
       EntityJexlResolver entityJexlResolver,
-      ApiScopeResolver apiScopeResolver,
+      EntityScopeResolver entityScopeResolver,
       Map<AbusePolicyData.TemplateConfigCase, TemplateEdgeDecisionConverter> templateConverters) {
     this.entityJexlResolver = entityJexlResolver;
-    this.apiScopeResolver = apiScopeResolver;
+    this.entityScopeResolver = entityScopeResolver;
     this.templateConverters = templateConverters;
   }
 
@@ -163,7 +163,7 @@ public class AbusePolicyEdgeDecisionConverter {
 
     // Resolve api_scope to url_regex_scope, http_method_scope, service_scope
     if (data.getScope().hasApiScope()) {
-      apiScopeResolver
+      entityScopeResolver
           .resolveApiScope(requestContext, data.getScope().getApiScope())
           .forEach(scopeBuilder::addScopeConditions);
     }

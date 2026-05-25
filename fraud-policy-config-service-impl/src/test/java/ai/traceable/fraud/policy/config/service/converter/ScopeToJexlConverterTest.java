@@ -7,6 +7,8 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider.ApiIdentifierEntity;
+import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
+import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider.ServiceIdentifierEntity;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityScope;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityType;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EnvironmentScope;
@@ -20,9 +22,12 @@ import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.SpanBase
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.SpanBasedScope;
 import com.google.protobuf.NullValue;
 import com.google.protobuf.Value;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +43,7 @@ import org.mockito.quality.Strictness;
 class ScopeToJexlConverterTest {
 
   @Mock private CachedApiMappingProvider cachedApiMappingProvider;
+  @Mock private CachedServiceMappingProvider cachedServiceMappingProvider;
 
   private ScopeToJexlConverter converter;
   private RequestContext requestContext;
@@ -45,7 +51,11 @@ class ScopeToJexlConverterTest {
   @BeforeEach
   void setUp() {
     when(cachedApiMappingProvider.getApiIdentifierEntities(any(), any())).thenReturn(Map.of());
-    converter = new ScopeToJexlConverter(cachedApiMappingProvider);
+    when(cachedServiceMappingProvider.getServiceIdentifierEntities(any(), any()))
+        .thenReturn(Map.of());
+    EntityScopeResolver entityScopeResolver =
+        new EntityScopeResolver(cachedApiMappingProvider, cachedServiceMappingProvider);
+    converter = new ScopeToJexlConverter(entityScopeResolver);
     requestContext = RequestContext.forTenantId("test-tenant");
   }
 
@@ -132,6 +142,11 @@ class ScopeToJexlConverterTest {
 
   @Test
   void convert_serviceEntityScope_usesServiceName() {
+    when(cachedServiceMappingProvider.getServiceIdentifierEntities(any(), any()))
+        .thenReturn(
+            Map.of(
+                "svc-1", Optional.of(new ServiceIdentifierEntity("my-service", Optional.empty()))));
+
     Scope scope =
         Scope.newBuilder()
             .setEntityScope(
@@ -142,11 +157,19 @@ class ScopeToJexlConverterTest {
 
     String result = convert(scope);
 
-    assertEquals("$s.getServiceName() == 'svc-1'", result);
+    assertEquals("$s.getServiceName() == 'my-service'", result);
   }
 
   @Test
   void convert_serviceEntityScope_multipleIds() {
+    when(cachedServiceMappingProvider.getServiceIdentifierEntities(any(), any()))
+        .thenReturn(
+            Map.of(
+                "svc-1",
+                Optional.of(new ServiceIdentifierEntity("service-alpha", Optional.empty())),
+                "svc-2",
+                Optional.of(new ServiceIdentifierEntity("service-beta", Optional.empty()))));
+
     Scope scope =
         Scope.newBuilder()
             .setEntityScope(
@@ -158,7 +181,49 @@ class ScopeToJexlConverterTest {
 
     String result = convert(scope);
 
-    assertEquals("($s.getServiceName() == 'svc-1' || $s.getServiceName() == 'svc-2')", result);
+    assertTrue(result.startsWith("(") && result.endsWith(")"), "Should be wrapped in parens");
+    String inner = result.substring(1, result.length() - 1);
+    Set<String> parts =
+        Arrays.stream(inner.split(" \\|\\| ")).map(String::trim).collect(Collectors.toSet());
+    assertEquals(
+        Set.of("$s.getServiceName() == 'service-alpha'", "$s.getServiceName() == 'service-beta'"),
+        parts);
+  }
+
+  @Test
+  void convert_serviceEntityScope_resolutionFails_returnsEmpty() {
+    when(cachedServiceMappingProvider.getServiceIdentifierEntities(any(), any()))
+        .thenThrow(new RuntimeException("service unavailable"));
+
+    Scope scope =
+        Scope.newBuilder()
+            .setEntityScope(
+                EntityScope.newBuilder()
+                    .setEntityType(EntityType.ENTITY_TYPE_SERVICE)
+                    .addEntityIds("svc-1"))
+            .build();
+
+    String result = convert(scope);
+
+    assertEquals("", result);
+  }
+
+  @Test
+  void convert_serviceEntityScope_noNamesResolved_returnsEmpty() {
+    when(cachedServiceMappingProvider.getServiceIdentifierEntities(any(), any()))
+        .thenReturn(Map.of("svc-1", Optional.empty()));
+
+    Scope scope =
+        Scope.newBuilder()
+            .setEntityScope(
+                EntityScope.newBuilder()
+                    .setEntityType(EntityType.ENTITY_TYPE_SERVICE)
+                    .addEntityIds("svc-1"))
+            .build();
+
+    String result = convert(scope);
+
+    assertEquals("", result);
   }
 
   // --- JEXL scope ---

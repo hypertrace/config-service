@@ -5,9 +5,9 @@ import ai.traceable.entity.fetcher.cache.CachedServiceMappingProviderModule;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfigServiceGrpc;
 import ai.traceable.fraud.datamodel.event.kind.EventKindConfigServiceModule;
 import ai.traceable.fraud.policy.config.service.converter.AbusePolicyEdgeDecisionConverter;
-import ai.traceable.fraud.policy.config.service.converter.ApiScopeResolver;
 import ai.traceable.fraud.policy.config.service.converter.DetectionFilterConverter;
 import ai.traceable.fraud.policy.config.service.converter.EntityJexlResolver;
+import ai.traceable.fraud.policy.config.service.converter.EntityScopeResolver;
 import ai.traceable.fraud.policy.config.service.converter.SimpleAggregationTemplateConverter;
 import ai.traceable.fraud.policy.config.service.converter.TemplateEdgeDecisionConverter;
 import ai.traceable.fraud.policy.config.service.v1.AbusePolicyData;
@@ -52,7 +52,7 @@ public class FraudPolicyConfigServiceModule extends AbstractModule {
     install(
         new CachedServiceMappingProviderModule(
             grpcChannelRegistry, config, CACHED_SERVICE_MAPPING_NAME));
-    bind(ApiScopeResolver.class).asEagerSingleton();
+    bind(EntityScopeResolver.class).asEagerSingleton();
     MapBinder<AbusePolicyData.TemplateConfigCase, TemplateEdgeDecisionConverter>
         templateConverterBinder =
             MapBinder.newMapBinder(

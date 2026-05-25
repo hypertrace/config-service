@@ -12,6 +12,7 @@ import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleCategory;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionType;
 import ai.traceable.edge.decision.config.service.v1.PolicyKind;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
+import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfig;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfigData;
 import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDerivationConfigServiceGrpc.EntityDerivationConfigServiceBlockingStub;
@@ -51,9 +52,10 @@ import org.mockito.quality.Strictness;
 class AbusePolicyEdgeDecisionConverterTest {
 
   @Mock private EntityDerivationConfigServiceBlockingStub entityDerivationConfigServiceStub;
-  @Mock private ApiScopeResolver apiScopeResolver;
+  @Mock private EntityScopeResolver entityScopeResolver;
   @Mock private PipelineToJexlConverter pipelineToJexlConverter;
   @Mock private CachedApiMappingProvider cachedApiMappingProvider;
+  @Mock private CachedServiceMappingProvider cachedServiceMappingProvider;
 
   private AbusePolicyEdgeDecisionConverter converter;
 
@@ -61,18 +63,22 @@ class AbusePolicyEdgeDecisionConverterTest {
   void setUp() {
     when(pipelineToJexlConverter.apply(any(), any(), any())).thenAnswer(inv -> inv.getArgument(0));
     when(cachedApiMappingProvider.getApiIdentifierEntities(any(), any())).thenReturn(Map.of());
-    ScopeToJexlConverter scopeToJexlConverter = new ScopeToJexlConverter(cachedApiMappingProvider);
+    when(cachedServiceMappingProvider.getServiceIdentifierEntities(any(), any()))
+        .thenReturn(Map.of());
+    when(entityScopeResolver.resolveApiScope(any(), any())).thenReturn(Collections.emptyList());
+    EntityScopeResolver realEntityScopeResolver =
+        new EntityScopeResolver(cachedApiMappingProvider, cachedServiceMappingProvider);
+    ScopeToJexlConverter scopeToJexlConverter = new ScopeToJexlConverter(realEntityScopeResolver);
     EntityJexlResolver entityJexlResolver =
         new EntityJexlResolver(
             entityDerivationConfigServiceStub, pipelineToJexlConverter, scopeToJexlConverter);
-    when(apiScopeResolver.resolveApiScope(any(), any())).thenReturn(Collections.emptyList());
     Map<AbusePolicyData.TemplateConfigCase, TemplateEdgeDecisionConverter> templateConverters =
         Map.of(
             AbusePolicyData.TemplateConfigCase.SIMPLE_AGGREGATION_TEMPLATE,
             new SimpleAggregationTemplateConverter(new DetectionFilterConverter()));
     converter =
         new AbusePolicyEdgeDecisionConverter(
-            entityJexlResolver, apiScopeResolver, templateConverters);
+            entityJexlResolver, entityScopeResolver, templateConverters);
   }
 
   @Test
