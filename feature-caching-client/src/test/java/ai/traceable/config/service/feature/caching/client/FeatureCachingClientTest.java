@@ -19,8 +19,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class FeatureCachingClientTest {
-  private static final String GENAI_ML_BASED_AI_CLASSIFICATION_ENABLED =
-      "genai.ml-based-ai-classification";
+  private static final String GENAI_SERVER_SPAN_AI_CLASSIFICATION_ENABLED =
+      "genai.server-span-ai-classification";
 
   @SuppressWarnings("unchecked")
   private final LoadingCache<ContextualKey<Void>, Map<String, FeatureFlagValue>> mockCache =
@@ -43,38 +43,38 @@ class FeatureCachingClientTest {
   }
 
   @Test
-  void isGenAiMlBasedAiClassificationEnabled_flagTrue_returnsTrue() throws Exception {
+  void isGenAiServerSpanAiClassificationEnabled_flagTrue_returnsTrue() throws Exception {
     Map<String, FeatureFlagValue> flagValues = new HashMap<>();
     flagValues.put(
-        GENAI_ML_BASED_AI_CLASSIFICATION_ENABLED,
+        GENAI_SERVER_SPAN_AI_CLASSIFICATION_ENABLED,
         FeatureFlagValue.newBuilder().setBoolean(true).build());
     when(mockCache.get(contextualKey)).thenReturn(flagValues);
 
-    assertTrue(client.isGenAiMlBasedAiClassificationEnabled(requestContext));
+    assertTrue(client.isGenAiServerSpanAiClassificationEnabled(requestContext));
   }
 
   @Test
-  void isGenAiMlBasedAiClassificationEnabled_flagFalse_returnsFalse() throws Exception {
+  void isGenAiServerSpanAiClassificationEnabled_flagFalse_returnsFalse() throws Exception {
     Map<String, FeatureFlagValue> flagValues = new HashMap<>();
     flagValues.put(
-        GENAI_ML_BASED_AI_CLASSIFICATION_ENABLED,
+        GENAI_SERVER_SPAN_AI_CLASSIFICATION_ENABLED,
         FeatureFlagValue.newBuilder().setBoolean(false).build());
     when(mockCache.get(contextualKey)).thenReturn(flagValues);
 
-    assertFalse(client.isGenAiMlBasedAiClassificationEnabled(requestContext));
+    assertFalse(client.isGenAiServerSpanAiClassificationEnabled(requestContext));
   }
 
   @Test
-  void isGenAiMlBasedAiClassificationEnabled_flagMissing_returnsDefault() throws Exception {
+  void isGenAiServerSpanAiClassificationEnabled_flagMissing_returnsDefault() throws Exception {
     when(mockCache.get(contextualKey)).thenReturn(new HashMap<>());
 
-    assertFalse(client.isGenAiMlBasedAiClassificationEnabled(requestContext));
+    assertFalse(client.isGenAiServerSpanAiClassificationEnabled(requestContext));
   }
 
   @Test
-  void isGenAiMlBasedAiClassificationEnabled_cacheThrows_returnsDefault() throws Exception {
+  void isGenAiServerSpanAiClassificationEnabled_cacheThrows_returnsDefault() throws Exception {
     when(mockCache.get(any())).thenThrow(new RuntimeException("cache failure"));
 
-    assertFalse(client.isGenAiMlBasedAiClassificationEnabled(requestContext));
+    assertFalse(client.isGenAiServerSpanAiClassificationEnabled(requestContext));
   }
 }

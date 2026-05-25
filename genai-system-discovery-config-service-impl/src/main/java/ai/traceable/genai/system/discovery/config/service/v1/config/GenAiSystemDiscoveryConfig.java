@@ -23,8 +23,8 @@ public class GenAiSystemDiscoveryConfig {
 
   private static final String DEFAULT_GENAI_SYSTEM_DISCOVERY_RULES_FILE =
       "default-genai-system-discovery-rules.conf";
-  private static final String DEFAULT_GENAI_SYSTEM_DISCOVERY_ML_BASED_RULES_FILE =
-      "default-genai-system-discovery-ml-based-rules.conf";
+  private static final String DEFAULT_GENAI_SYSTEM_DISCOVERY_SERVER_SPAN_RULES_FILE =
+      "default-genai-system-discovery-server-span-rules.conf";
   private static final String GENAI_SYSTEM_DISCOVERY_RULES_PATH = "genAiSystemDiscoveryRules";
   private static final JsonFormat.Parser JSON_PARSER = JsonFormat.parser().ignoringUnknownFields();
   private static final ConfigRenderOptions CONFIG_RENDER_CONCISE = ConfigRenderOptions.concise();
@@ -47,7 +47,7 @@ public class GenAiSystemDiscoveryConfig {
 
   public Map<String, GenAiSystemDiscoveryRule> getDefaultGenAiSystemDiscoveryRuleMap(
       RequestContext requestContext) {
-    if (!featureCachingClient.isGenAiMlBasedAiClassificationEnabled(requestContext)) {
+    if (!featureCachingClient.isGenAiServerSpanAiClassificationEnabled(requestContext)) {
       return defaultGenAiSystemDiscoveryRuleMap;
     }
     return getMergedDefaultGenAiSystemDiscoveryRuleMap();
@@ -59,7 +59,7 @@ public class GenAiSystemDiscoveryConfig {
         if (mergedDefaultGenAiSystemDiscoveryRuleMap == null) {
           Map<String, GenAiSystemDiscoveryRule> merged = new LinkedHashMap<>();
           merged.putAll(defaultGenAiSystemDiscoveryRuleMap);
-          merged.putAll(buildRuleMap(DEFAULT_GENAI_SYSTEM_DISCOVERY_ML_BASED_RULES_FILE));
+          merged.putAll(buildRuleMap(DEFAULT_GENAI_SYSTEM_DISCOVERY_SERVER_SPAN_RULES_FILE));
           mergedDefaultGenAiSystemDiscoveryRuleMap = Collections.unmodifiableMap(merged);
         }
       }

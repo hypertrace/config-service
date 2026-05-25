@@ -54,7 +54,7 @@ public class FeatureCachingClient {
       Collections.emptySet();
   private static final boolean DEFAULT_PROTECTION_BLOCKING_DUAL_EVALUATION_FLAG_VALUE = false;
   private static final boolean DEFAULT_PROTECTION_ENGINE_AI_APP_PROTECTION_FLAG_VALUE = false;
-  private static final boolean DEFAULT_GENAI_ML_BASED_AI_CLASSIFICATION_ENABLED_VALUE = false;
+  private static final boolean DEFAULT_GENAI_SERVER_SPAN_AI_CLASSIFICATION_ENABLED_VALUE = false;
 
   private static final String DATA_CLASSIFICATION_ENHANCED_OBFUSCATION_FLAG =
       "data-classification.enhanced-obfuscation";
@@ -97,8 +97,8 @@ public class FeatureCachingClient {
       "protection-engine.ai-app-protection";
   private static final String BLOCKING_AVAILABLE_DEFENSE_AI_FEATURES_FLAG =
       "graphql.security-settings.defense-ai.blocking-available";
-  private static final String GENAI_ML_BASED_AI_CLASSIFICATION_ENABLED =
-      "genai.ml-based-ai-classification";
+  private static final String GENAI_SERVER_SPAN_AI_CLASSIFICATION_ENABLED =
+      "genai.server-span-ai-classification";
 
   private static final List<String> ALL_FLAGS_TO_FETCH =
       List.of(
@@ -128,7 +128,7 @@ public class FeatureCachingClient {
           PROTECTION_BLOCKING_DUAL_EVALUATION_FLAG,
           PROTECTION_ENGINE_AI_APP_PROTECTION_FLAG,
           BLOCKING_AVAILABLE_DEFENSE_AI_FEATURES_FLAG,
-          GENAI_ML_BASED_AI_CLASSIFICATION_ENABLED);
+          GENAI_SERVER_SPAN_AI_CLASSIFICATION_ENABLED);
   private final FeatureFlagServiceBlockingStub featureFlagStub;
   private final LoadingCache<ContextualKey<Void>, Map<String, FeatureFlagValue>> featureFlagCache;
   private final Duration featureFlagRequestTimeout;
@@ -476,18 +476,18 @@ public class FeatureCachingClient {
     }
   }
 
-  public boolean isGenAiMlBasedAiClassificationEnabled(RequestContext requestContext) {
+  public boolean isGenAiServerSpanAiClassificationEnabled(RequestContext requestContext) {
     try {
       return requireNonNull(
               this.featureFlagCache
                   .get(requestContext.buildInternalContextualKey())
-                  .get(GENAI_ML_BASED_AI_CLASSIFICATION_ENABLED))
+                  .get(GENAI_SERVER_SPAN_AI_CLASSIFICATION_ENABLED))
           .getBoolean();
     } catch (Exception exception) {
       log.warn(
-          "Failed to retrieve current feature flag value for GenAI ML based AI classification",
+          "Failed to retrieve current feature flag value for GenAI server-span AI classification",
           exception);
-      return DEFAULT_GENAI_ML_BASED_AI_CLASSIFICATION_ENABLED_VALUE;
+      return DEFAULT_GENAI_SERVER_SPAN_AI_CLASSIFICATION_ENABLED_VALUE;
     }
   }
 

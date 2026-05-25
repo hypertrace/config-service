@@ -36,7 +36,7 @@ class GenAiSystemDiscoveryConfigTest {
 
   @Test
   void getDefaultGenAiSystemDiscoveryRuleMap_featureDisabled_returnsBaseRulesOnly() {
-    when(featureCachingClient.isGenAiMlBasedAiClassificationEnabled(requestContext))
+    when(featureCachingClient.isGenAiServerSpanAiClassificationEnabled(requestContext))
         .thenReturn(false);
     Map<String, GenAiSystemDiscoveryRule> rules =
         config.getDefaultGenAiSystemDiscoveryRuleMap(requestContext);
@@ -52,7 +52,7 @@ class GenAiSystemDiscoveryConfigTest {
 
   @Test
   void getDefaultGenAiSystemDiscoveryRuleMap_featureDisabled_isUnmodifiable() {
-    when(featureCachingClient.isGenAiMlBasedAiClassificationEnabled(requestContext))
+    when(featureCachingClient.isGenAiServerSpanAiClassificationEnabled(requestContext))
         .thenReturn(false);
     Map<String, GenAiSystemDiscoveryRule> rules =
         config.getDefaultGenAiSystemDiscoveryRuleMap(requestContext);
@@ -63,12 +63,12 @@ class GenAiSystemDiscoveryConfigTest {
 
   @Test
   void getDefaultGenAiSystemDiscoveryRuleMap_featureEnabled_returnsMergedRules() {
-    when(featureCachingClient.isGenAiMlBasedAiClassificationEnabled(requestContext))
+    when(featureCachingClient.isGenAiServerSpanAiClassificationEnabled(requestContext))
         .thenReturn(false);
     Map<String, GenAiSystemDiscoveryRule> baseRules =
         config.getDefaultGenAiSystemDiscoveryRuleMap(requestContext);
 
-    when(featureCachingClient.isGenAiMlBasedAiClassificationEnabled(requestContext))
+    when(featureCachingClient.isGenAiServerSpanAiClassificationEnabled(requestContext))
         .thenReturn(true);
     Map<String, GenAiSystemDiscoveryRule> mergedRules =
         config.getDefaultGenAiSystemDiscoveryRuleMap(requestContext);
@@ -79,7 +79,7 @@ class GenAiSystemDiscoveryConfigTest {
 
   @Test
   void getDefaultGenAiSystemDiscoveryRuleMap_featureEnabled_isUnmodifiable() {
-    when(featureCachingClient.isGenAiMlBasedAiClassificationEnabled(requestContext))
+    when(featureCachingClient.isGenAiServerSpanAiClassificationEnabled(requestContext))
         .thenReturn(true);
     Map<String, GenAiSystemDiscoveryRule> rules =
         config.getDefaultGenAiSystemDiscoveryRuleMap(requestContext);
@@ -90,7 +90,7 @@ class GenAiSystemDiscoveryConfigTest {
 
   @Test
   void getDefaultGenAiSystemDiscoveryRuleMap_featureEnabled_cachesMergedMap() {
-    when(featureCachingClient.isGenAiMlBasedAiClassificationEnabled(requestContext))
+    when(featureCachingClient.isGenAiServerSpanAiClassificationEnabled(requestContext))
         .thenReturn(true);
     Map<String, GenAiSystemDiscoveryRule> firstCall =
         config.getDefaultGenAiSystemDiscoveryRuleMap(requestContext);
@@ -101,7 +101,7 @@ class GenAiSystemDiscoveryConfigTest {
 
   @Test
   void getDefaultGenAiSystemDiscoveryRuleMap_validatesRulesOnLoad() {
-    when(featureCachingClient.isGenAiMlBasedAiClassificationEnabled(requestContext))
+    when(featureCachingClient.isGenAiServerSpanAiClassificationEnabled(requestContext))
         .thenReturn(true);
     Map<String, GenAiSystemDiscoveryRule> rules =
         config.getDefaultGenAiSystemDiscoveryRuleMap(requestContext);
