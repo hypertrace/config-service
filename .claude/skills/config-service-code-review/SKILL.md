@@ -139,7 +139,12 @@ If the Tier-1 set exceeds **30 source files** (uncommon for config-service PRs),
 
 **Never resolve a thread that wasn't started by the agent** (i.e. first comment author is not `github-actions[bot]`). Human reviewers own their own threads — even if the line was rewritten, only the human can decide their concern is addressed. Reply on the human's thread instead, with the same `Resolved in <new-sha>. Thanks.` body, and leave it open for them to close.
 
-**Step 8 — Top-level summary prefix.** Open the Step 5 summary with: `Re-reviewed commits <LAST_SHA>..<HEAD_SHA> — <n> source files in range, <m> open prior findings considered (<k> agent, <l> human).` Substitute the actual numbers for `<n>`/`<m>`/`<k>`/`<l>`; do not echo the angle-bracket placeholders literally. Humans glancing at the PR should see the scope at a glance and know the review is incremental, not a fresh full-PR pass.
+**Step 8 — Top-level summary prefix.** Open the Step 5 summary with two lines:
+
+1. `Re-reviewed commits <LAST_SHA>..<HEAD_SHA> — <n> source files in range, <m> open prior findings considered (<k> agent, <l> human).`
+2. `<r> resolved · <o> still open · <e> net new` — the resolve/open/new counts for the agent's prior findings (Step 7 already classifies each one). `<r>` is the number reconciled as resolved (line gone or rewritten). `<o>` is prior findings whose anchored line is unchanged (still open). `<e>` is findings introduced by the new commits in this re-review.
+
+Substitute the actual numbers for `<n>`/`<m>`/`<k>`/`<l>`/`<r>`/`<o>`/`<e>`; do not echo the angle-bracket placeholders literally. Humans glancing at the PR should see the scope at a glance and know the review is incremental, not a fresh full-PR pass. Skip line 2 on first reviews (no priors to compare against).
 
 If you are running on a `synchronize` event whose only commits are merge-from-base (no PR-author commits), the workflow already gates this out before invoking the skill — you should not normally see that case here. If you do (e.g. running interactively), the reviewable-changes diff in Step 3 will be empty and the skip path applies.
 
@@ -196,10 +201,10 @@ If `.proto` files changed, run `buf breaking --against .git#branch=main` against
 
 ## Step 3: Summarize the PR (and, in interactive mode, ask clarifying questions)
 
-**Always** write a plain-English summary of the PR covering:
-- What problem it solves / what feature it adds (based on the PR description and Jira ticket title)
-- Which modules changed (`-api`, `-impl`, client, utility) and what each change does at a high level
-- Any notable patterns, risks, or open questions you spotted just from reading the diff (proto changes, Guice wiring changes, store/persistence layer changes, factory registration order)
+**Always** write a tight summary of the PR. The shape depends on the mode:
+
+- **Interactive mode** — a longer plain-English summary is fine, since the reviewer is actively reading and you're about to ask clarifying questions on top of it. Cover what problem it solves, which modules changed, and notable risks.
+- **Non-interactive mode (CI / posted as a PR comment)** — keep it tight. See the "Non-interactive mode" section below for the exact shape.
 
 The next part of Step 3 depends on whether you're running interactively or non-interactively.
 
@@ -229,12 +234,34 @@ Ask all clarifying questions in a single numbered list before doing any review. 
 
 ### Non-interactive mode (CI)
 
-Skip clarifying questions entirely. There is no human in the loop to answer them. Instead:
+Skip clarifying questions entirely. There is no human in the loop to answer them.
 
-- If a finding's severity genuinely depends on product context you don't have, **fold the assumption into the finding itself**: e.g. "**Assumption:** this RPC is consumed only by the agent. If the UI also calls it, this becomes P1 instead of P3."
-- Add a single **"Assumptions"** section at the end of the PR summary listing any product-context gaps the human reviewer should sanity-check.
-- **Brand every PR comment** with `**Traceable Code Review Agent**` on its own line, followed by a blank line, then the finding. This lives in the skill (not the workflow) so the brand survives workflow rewrites.
-- Proceed straight to Step 4.
+**Summary shape — keep it tight.** Multiple readers have asked for a shorter top-level comment. Use exactly this structure (omit empty sections):
+
+```
+**Traceable Code Review Agent**
+
+<one or two sentences describing what this PR does — drawn from the PR
+ description, Jira title, and the diff. No "Modules touched" section,
+ no "Notable shape" bullet list, no restatement of individual findings.>
+
+**Findings:** <a> P0 · <b> P1 · <c> P2 · <d> P3 · <e> P4 → <total> inline comments
+
+**Assumptions** (please verify):
+1. <only if a finding's severity actually depends on product context the
+    agent doesn't have — otherwise omit this section entirely>
+2. ...
+```
+
+Rules:
+- The description sentence(s) explain *why this PR exists*, not *what files changed*. The diff and PR file list already show what changed; don't restate them.
+- Drop the **Assumptions** section entirely when there are no genuine product-context gaps. An empty "Assumptions" header is noise.
+- Drop the **Findings** line when there are zero inline comments.
+- For re-reviews, the Step 8 prefix (commit range + resolved/open/new counts) goes *above* this block.
+- **Brand every PR comment** with `**Traceable Code Review Agent**` on its own line, followed by a blank line, then the body. This lives in the skill (not the workflow) so the brand survives workflow rewrites.
+- If a finding's severity genuinely depends on product context, **fold the assumption into the finding itself** (e.g. "**Assumption:** this RPC is consumed only by the agent. If the UI also calls it, this becomes P1 instead of P3."). Don't both inline the assumption *and* repeat it in the summary's Assumptions list.
+
+Proceed straight to Step 4.
 
 ---
 
@@ -347,7 +374,10 @@ For each finding, cite the exact file and relevant code snippet, and **propose a
 - **Inline-on-line, not summary.** Tie every finding to a specific file and line.
 - **Question form for P3 design challenges** — "Why do we need this?", "Why not X?". Invites justification rather than asserting wrong.
 - **`nit:` prefix for P4 only.** Do not use `nit:` for P3 naming/idiom items.
-- **Short.** Most reviewer comments are 50–200 chars. One sentence + one suggestion is the standard shape.
+- **Short — one sentence is the default, two is the ceiling.** Most reviewer comments are 50–200 chars. The point + the fix; no preamble, no recap of what the code does, no restatement of the priority's meaning, no "this is important because…" justification when the priority already conveys severity.
+- **Don't explain well-known idioms.** "Use `@Value`" is enough — don't follow up with "(which already implies `private final` and `@Getter`)". The author knows what `@Value` does.
+- **One ask per comment.** If you catch yourself writing "Also:" or "Additionally:", split into two comments anchored to different lines. Bundled comments are easy to half-resolve and lose track of.
+- **Suggestion block replaces prose, doesn't supplement it.** When you're attaching a `suggestion` block, the prose above it should be ≤ 1 short sentence — the diff carries the rest.
 - **Concrete alternative included.** Every rename suggestion includes the proposed name. Every "use X instead" includes the snippet or method name.
 
 ### Inline `suggestion` blocks for mechanically fixable findings
