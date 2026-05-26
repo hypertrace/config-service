@@ -256,25 +256,34 @@ public class AiAppToRateLimitingConverter {
   }
 
   private Condition buildDatatypeLeafCondition(DatatypeCondition aiAppDatatypeCondition) {
-    boolean isResponse = aiAppDatatypeCondition.hasResponseBodyCustomLocationCondition();
-    DataLocation dataLocation =
-        isResponse ? DataLocation.DATA_LOCATION_RESPONSE : DataLocation.DATA_LOCATION_REQUEST;
+    final DataLocation dataLocation;
+    MatchOperatorCondition customLocationCondition = null;
+    KeyValueCondition.Type keyType = null;
+    if (aiAppDatatypeCondition.hasRequestBodyCustomLocationCondition()) {
+      dataLocation = DataLocation.DATA_LOCATION_REQUEST;
+      final MatchOperatorCondition condition =
+          aiAppDatatypeCondition.getRequestBodyCustomLocationCondition();
+      if (!condition.equals(MatchOperatorCondition.getDefaultInstance())) {
+        customLocationCondition = condition;
+        keyType = KeyValueCondition.Type.TYPE_REQUEST_BODY_PARAMETER;
+      }
+    } else if (aiAppDatatypeCondition.hasResponseBodyCustomLocationCondition()) {
+      dataLocation = DataLocation.DATA_LOCATION_RESPONSE;
+      final MatchOperatorCondition condition =
+          aiAppDatatypeCondition.getResponseBodyCustomLocationCondition();
+      if (!condition.equals(MatchOperatorCondition.getDefaultInstance())) {
+        customLocationCondition = condition;
+        keyType = KeyValueCondition.Type.TYPE_RESPONSE_BODY_PARAMETER;
+      }
+    } else {
+      dataLocation = DataLocation.DATA_LOCATION_UNSPECIFIED;
+    }
 
     ai.traceable.ratelimiting.config.service.v2.DatatypeCondition.Builder datatypeBuilder =
         ai.traceable.ratelimiting.config.service.v2.DatatypeCondition.newBuilder()
             .addAllDatasetIds(aiAppDatatypeCondition.getDatasetIdsList())
             .addAllDatatypeIds(aiAppDatatypeCondition.getDatatypeIdsList())
             .setDataLocation(dataLocation);
-
-    MatchOperatorCondition customLocationCondition = null;
-    KeyValueCondition.Type keyType = null;
-    if (aiAppDatatypeCondition.hasRequestBodyCustomLocationCondition()) {
-      customLocationCondition = aiAppDatatypeCondition.getRequestBodyCustomLocationCondition();
-      keyType = KeyValueCondition.Type.TYPE_REQUEST_BODY_PARAMETER;
-    } else if (aiAppDatatypeCondition.hasResponseBodyCustomLocationCondition()) {
-      customLocationCondition = aiAppDatatypeCondition.getResponseBodyCustomLocationCondition();
-      keyType = KeyValueCondition.Type.TYPE_RESPONSE_BODY_PARAMETER;
-    }
 
     if (customLocationCondition != null) {
       KeyValueCondition customMatchingLocation =
