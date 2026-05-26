@@ -32,6 +32,8 @@ import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
 import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
 import ai.traceable.protection.engine.config.aifirewall.v1.AiFirewallConfigContext;
 import ai.traceable.protection.engine.config.aifirewall.v1.AiFirewallScopedConfigContext;
+import ai.traceable.protection.engine.config.aifirewall.v1.ModelBasedEvaluationConfig;
+import ai.traceable.protection.engine.config.aifirewall.v1.ModelBasedRuleConfig;
 import ai.traceable.protection.engine.config.aifirewall.v1.SecRulesEvaluationConfig;
 import ai.traceable.protection.engine.config.customsignature.v1.CustomSignatureConfigContext;
 import ai.traceable.protection.engine.config.customsignature.v1.CustomSignatureRulesContext;
@@ -40,6 +42,7 @@ import ai.traceable.protection.processor.datatype.v1.DataType;
 import ai.traceable.protection.rules.aiapp.v1.AiAppRules;
 import ai.traceable.protection.rules.aiapp.v1.AiAppRulesProvider;
 import ai.traceable.protection.rules.aiapp.v1.AiAppThreatRule;
+import com.google.protobuf.Value;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,6 +60,8 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 @Slf4j
 @AllArgsConstructor(onConstructor_ = @Inject)
 public class AiAppConfigContextClientProvider implements AiAppConfigContextProvider {
+
+  private static final String MODEL_ID = "model_id";
   private static final GetAnomalyDetectionConfigsFilter ANOMALY_DETECTION_CONFIGS_FILTER =
       GetAnomalyDetectionConfigsFilter.newBuilder()
           .addAnomalyDetectionConfigTypes(
@@ -97,6 +102,7 @@ public class AiAppConfigContextClientProvider implements AiAppConfigContextProvi
 
     AiAppRules aiAppRules = aiAppRulesProvider.getAiAppRules();
     Set<String> secRuleEvaluatedRuleIds = getSecRuleEvaluatedRuleIds(aiAppRules);
+    Set<String> modelBasedRuleIds = getModelBasedRuleIds(aiAppRules);
 
     Map<AnomalyConfigScope, ScopedAnomalyDetectionConfig> scopedAnomalyDetectionConfigMap =
         configMapFuture.join();
@@ -132,12 +138,17 @@ public class AiAppConfigContextClientProvider implements AiAppConfigContextProvi
             secRuleEvaluatedRuleIds,
             disabledSecRuleIds);
 
+        ModelBasedEvaluationConfig modelBasedEvaluationConfig =
+            buildModelBasedEvaluationConfig(
+                modelBasedRuleIds, scopedAnomalyDetectionConfig, request.getRuleEvaluationPoint());
+
         AiFirewallScopedConfigContext scopedConfigContext =
             AiFirewallScopedConfigContext.newBuilder()
                 .setScopeContext(scopeContextMap.get(configScope))
                 .setSecRulesEvaluationConfig(
                     SecRulesEvaluationConfig.newBuilder()
                         .addAllDisabledSecRuleIds(disabledSecRuleIds))
+                .setModelBasedEvaluationConfig(modelBasedEvaluationConfig)
                 .build();
 
         scopedConfigContextList.add(scopedConfigContext);
@@ -314,6 +325,51 @@ public class AiAppConfigContextClientProvider implements AiAppConfigContextProvi
         .filter(rule -> rule.hasRuleEvaluation() && rule.getRuleEvaluation().hasSecRuleEvaluation())
         .map(AiAppThreatRule::getRuleId)
         .collect(Collectors.toUnmodifiableSet());
+  }
+
+  private Set<String> getModelBasedRuleIds(AiAppRules aiAppRules) {
+    return aiAppRules.getThreatRulesList().stream()
+        .filter(
+            rule ->
+                rule.hasRuleEvaluation() && rule.getRuleEvaluation().hasModelBasedRuleEvaluation())
+        .map(AiAppThreatRule::getRuleId)
+        .collect(Collectors.toUnmodifiableSet());
+  }
+
+  private ModelBasedEvaluationConfig buildModelBasedEvaluationConfig(
+      Set<String> allModelBasedRuleIds,
+      ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig,
+      RuleEvaluationPoint ruleEvaluationPoint) {
+    ModelBasedEvaluationConfig.Builder builder = ModelBasedEvaluationConfig.newBuilder();
+    for (AnomalyDetectionConfig detectionConfig :
+        scopedAnomalyDetectionConfig.getAnomalyDetectionConfigsList()) {
+      if (!detectionConfig.hasGenAiAnomalyDetectionConfig()) {
+        continue;
+      }
+      Map<String, AnomalySubRuleConfig> subRuleConfigMap =
+          detectionConfig
+              .getGenAiAnomalyDetectionConfig()
+              .getSubRuleConfigs()
+              .getSubRuleConfigsMap();
+      for (String ruleId : allModelBasedRuleIds) {
+        if (!subRuleConfigMap.containsKey(ruleId)) {
+          continue;
+        }
+        AnomalySubRuleConfig subRuleConfig = subRuleConfigMap.get(ruleId);
+        if (isDisabled(detectionConfig, subRuleConfig, ruleEvaluationPoint)) {
+          continue;
+        }
+        Value modelIdValue = subRuleConfig.getConfigParamsMap().get(MODEL_ID);
+        if (modelIdValue == null || modelIdValue.getStringValue().isBlank()) {
+          log.debug("Rule {} has no modelId in configParams, skipping", ruleId);
+          continue;
+        }
+        builder.putRuleIdToConfig(
+            ruleId,
+            ModelBasedRuleConfig.newBuilder().setModelId(modelIdValue.getStringValue()).build());
+      }
+    }
+    return builder.build();
   }
 
   private void populateEvaluationConfigs(

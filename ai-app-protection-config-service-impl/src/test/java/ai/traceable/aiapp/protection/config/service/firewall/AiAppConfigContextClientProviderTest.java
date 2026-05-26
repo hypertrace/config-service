@@ -40,12 +40,14 @@ import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
 import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
 import ai.traceable.protection.engine.config.aifirewall.v1.AiFirewallConfigContext;
 import ai.traceable.protection.engine.config.aifirewall.v1.AiFirewallScopedConfigContext;
+import ai.traceable.protection.engine.config.aifirewall.v1.ModelBasedEvaluationConfig;
 import ai.traceable.protection.engine.config.aifirewall.v1.SecRulesEvaluationConfig;
 import ai.traceable.protection.engine.config.customsignature.v1.CustomSignatureRulesContext;
 import ai.traceable.protection.rules.aiapp.v1.AiAppRules;
 import ai.traceable.protection.rules.aiapp.v1.AiAppRulesProvider;
 import ai.traceable.protection.rules.aiapp.v1.AiAppThreatRule;
 import ai.traceable.protection.rules.aiapp.v1.AiAppThreatRuleEvaluation;
+import ai.traceable.protection.rules.aiapp.v1.ModelBasedRuleEvaluation;
 import ai.traceable.protection.rules.aiapp.v1.SecRuleEvaluation;
 import com.google.protobuf.Value;
 import java.util.List;
@@ -68,6 +70,9 @@ class AiAppConfigContextClientProviderTest {
       AnomalyConfigScope.newBuilder()
           .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
           .build();
+
+  private static final String MODEL_ID = "test-model-id";
+  private static final String MODEL_BASED_RULE_ID = "promptInjection_directPromptInjection";
 
   private AiAppConfigContextClientProvider provider;
   private AnomalyDetectionConfigManager anomalyDetectionConfigManager;
@@ -796,6 +801,14 @@ class AiAppConfigContextClientProviderTest {
     return AnomalySubRuleConfig.newBuilder().setAnomalyRuleAction(action).build();
   }
 
+  private AnomalySubRuleConfig buildSubRuleConfigWithModelId(
+      AnomalyRuleAction action, String modelId) {
+    return AnomalySubRuleConfig.newBuilder()
+        .setAnomalyRuleAction(action)
+        .putConfigParams("model_id", Value.newBuilder().setStringValue(modelId).build())
+        .build();
+  }
+
   private AiAppRules buildAiAppRulesWithSecRules(List<String> secRuleIds) {
     AiAppRules.Builder builder = AiAppRules.newBuilder().setAiAppRulesBlob(SEC_RULES_BLOB);
     for (String ruleId : secRuleIds) {
@@ -805,6 +818,20 @@ class AiAppConfigContextClientProviderTest {
               .setRuleEvaluation(
                   AiAppThreatRuleEvaluation.newBuilder()
                       .setSecRuleEvaluation(SecRuleEvaluation.getDefaultInstance()))
+              .build());
+    }
+    return builder.build();
+  }
+
+  private AiAppRules buildAiAppRulesWithModelBasedRules(List<String> modelBasedRuleIds) {
+    AiAppRules.Builder builder = AiAppRules.newBuilder().setAiAppRulesBlob(SEC_RULES_BLOB);
+    for (String ruleId : modelBasedRuleIds) {
+      builder.addThreatRules(
+          AiAppThreatRule.newBuilder()
+              .setRuleId(ruleId)
+              .setRuleEvaluation(
+                  AiAppThreatRuleEvaluation.newBuilder()
+                      .setModelBasedRuleEvaluation(ModelBasedRuleEvaluation.getDefaultInstance()))
               .build());
     }
     return builder.build();
@@ -850,6 +877,98 @@ class AiAppConfigContextClientProviderTest {
                         .setDatatypeCondition(
                             DatatypeCondition.newBuilder().addDatatypeIds("datatype-1"))))
         .build();
+  }
+
+  @Test
+  void testModelBasedRules_WithModelId_PopulatesEvaluationConfig() {
+    when(anomalyDetectionConfigManager.getAllGlobalResolvedScopedAnomalyDetectionConfigs(
+            any(RequestContext.class), any()))
+        .thenReturn(
+            List.of(
+                buildScopedConfig(
+                    CUSTOMER_SCOPE,
+                    Map.of(
+                        MODEL_BASED_RULE_ID,
+                        buildSubRuleConfigWithModelId(
+                            AnomalyRuleAction.ANOMALY_RULE_ACTION_BLOCK, MODEL_ID)))));
+    when(aiAppRulesProvider.getAiAppRules())
+        .thenReturn(buildAiAppRulesWithModelBasedRules(List.of(MODEL_BASED_RULE_ID)));
+
+    GetAiAppEvaluationConfigContextRequest request =
+        GetAiAppEvaluationConfigContextRequest.newBuilder()
+            .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+            .build();
+
+    AiFirewallConfigContext result = provider.getAiFirewallConfigContext(requestContext, request);
+
+    assertEquals(1, result.getScopedConfigContextsCount());
+    ModelBasedEvaluationConfig modelConfig =
+        result.getScopedConfigContexts(0).getModelBasedEvaluationConfig();
+    assertTrue(modelConfig.getRuleIdToConfigMap().containsKey(MODEL_BASED_RULE_ID));
+    assertEquals(
+        MODEL_ID, modelConfig.getRuleIdToConfigMap().get(MODEL_BASED_RULE_ID).getModelId());
+  }
+
+  @Test
+  void testModelBasedRules_NoModelId_EmptyEvaluationConfig() {
+    when(anomalyDetectionConfigManager.getAllGlobalResolvedScopedAnomalyDetectionConfigs(
+            any(RequestContext.class), any()))
+        .thenReturn(
+            List.of(
+                buildScopedConfig(
+                    CUSTOMER_SCOPE,
+                    Map.of(
+                        MODEL_BASED_RULE_ID,
+                        buildSubRuleConfig(AnomalyRuleAction.ANOMALY_RULE_ACTION_BLOCK)))));
+    when(aiAppRulesProvider.getAiAppRules())
+        .thenReturn(buildAiAppRulesWithModelBasedRules(List.of(MODEL_BASED_RULE_ID)));
+
+    GetAiAppEvaluationConfigContextRequest request =
+        GetAiAppEvaluationConfigContextRequest.newBuilder()
+            .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+            .build();
+
+    AiFirewallConfigContext result = provider.getAiFirewallConfigContext(requestContext, request);
+
+    assertEquals(1, result.getScopedConfigContextsCount());
+    assertTrue(
+        result
+            .getScopedConfigContexts(0)
+            .getModelBasedEvaluationConfig()
+            .getRuleIdToConfigMap()
+            .isEmpty());
+  }
+
+  @Test
+  void testModelBasedRules_DefaultDisabledRuleExcluded() {
+    when(anomalyDetectionConfigManager.getAllGlobalResolvedScopedAnomalyDetectionConfigs(
+            any(RequestContext.class), any()))
+        .thenReturn(
+            List.of(
+                buildScopedConfig(
+                    CUSTOMER_SCOPE,
+                    Map.of(
+                        MODEL_BASED_RULE_ID,
+                        buildSubRuleConfigWithModelId(
+                            AnomalyRuleAction.ANOMALY_RULE_ACTION_DISABLE, MODEL_ID)))));
+    when(aiAppRulesProvider.getAiAppRules())
+        .thenReturn(buildAiAppRulesWithModelBasedRules(List.of(MODEL_BASED_RULE_ID)));
+
+    GetAiAppEvaluationConfigContextRequest request =
+        GetAiAppEvaluationConfigContextRequest.newBuilder()
+            .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+            .build();
+
+    AiFirewallConfigContext result = provider.getAiFirewallConfigContext(requestContext, request);
+
+    assertEquals(1, result.getScopedConfigContextsCount());
+    assertTrue(
+        result
+            .getScopedConfigContexts(0)
+            .getModelBasedEvaluationConfig()
+            .getRuleIdToConfigMap()
+            .isEmpty(),
+        "Default-disabled rule must not appear in ModelBasedEvaluationConfig");
   }
 
   @Test
