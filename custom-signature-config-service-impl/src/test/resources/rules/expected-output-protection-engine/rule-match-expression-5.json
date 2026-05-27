@@ -18,19 +18,19 @@
                 "child_expressions": [{
                   "leaf_match_condition_expression": {
                     "emit_matched_attribute": false,
-                    "unary_key_match_condition": {
-                      "key_condition": {
+                    "key_value_match_condition": {
+                      "lhs_key_operand": {
                         "key_metadata": {
                           "fully_qualified_key_prefix": "request.query_param"
-                        },
-                        "key_match_operation": {
-                          "string_match_operation": {
-                            "string_operator": {
-                              "string_operator": "STRING_MATCH_OPERATOR_LIKE",
-                              "ignore_case": true
-                            },
-                            "string_value": "para*"
-                          }
+                        }
+                      },
+                      "rhs_value_match_operation": {
+                        "string_match_operation": {
+                          "string_operator": {
+                            "string_operator": "STRING_MATCH_OPERATOR_LIKE",
+                            "ignore_case": true
+                          },
+                          "string_value": "para*"
                         }
                       }
                     }
@@ -38,19 +38,19 @@
                 }, {
                   "leaf_match_condition_expression": {
                     "emit_matched_attribute": false,
-                    "unary_key_match_condition": {
-                      "key_condition": {
+                    "key_value_match_condition": {
+                      "lhs_key_operand": {
                         "key_metadata": {
                           "fully_qualified_key_prefix": "request.body_param"
-                        },
-                        "key_match_operation": {
-                          "string_match_operation": {
-                            "string_operator": {
-                              "string_operator": "STRING_MATCH_OPERATOR_LIKE",
-                              "ignore_case": true
-                            },
-                            "string_value": "para*"
-                          }
+                        }
+                      },
+                      "rhs_value_match_operation": {
+                        "string_match_operation": {
+                          "string_operator": {
+                            "string_operator": "STRING_MATCH_OPERATOR_LIKE",
+                            "ignore_case": true
+                          },
+                          "string_value": "para*"
                         }
                       }
                     }

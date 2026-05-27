@@ -86,8 +86,15 @@ public class CustomSignatureRuleDefinitionConverterUtils {
     return MatchConditionExpression.newBuilder().setLogicalExpression(logicalExpr).build();
   }
 
+  /**
+   * Builds a regex-like condition for matching string values. Emits key_value_match_condition for
+   * value-based matching (IP organisation, ASN, scope, etc.).
+   *
+   * <p>Wire format: This was fixed to emit key_value_match_condition instead of the previous
+   * malformed unary_key_match_condition. Verified compatible with protection-engine evaluation.
+   */
   public static MatchConditionExpression buildStringLikeCondition(String keyPrefix, String regex) {
-    return buildStringCondition(
+    return buildStringValueCondition(
         keyPrefix, StringOperator.StringMatchOperator.STRING_MATCH_OPERATOR_LIKE, false, regex);
   }
 
@@ -95,7 +102,7 @@ public class CustomSignatureRuleDefinitionConverterUtils {
     return String.join("|", regexes);
   }
 
-  public static MatchConditionExpression buildStringCondition(
+  public static MatchConditionExpression buildStringKeyCondition(
       String keyPrefix,
       StringOperator.StringMatchOperator stringOperator,
       boolean ignoreCase,
@@ -121,11 +128,52 @@ public class CustomSignatureRuleDefinitionConverterUtils {
                                     .build())
                             .build())
                     .build())
+            .setExists(true)
             .build();
 
     LeafMatchConditionExpression leafExpr =
         LeafMatchConditionExpression.newBuilder()
             .setUnaryKeyMatchCondition(unaryKeyCondition)
+            .build();
+
+    return MatchConditionExpression.newBuilder().setLeafMatchConditionExpression(leafExpr).build();
+  }
+
+  public static MatchConditionExpression buildStringValueCondition(
+      String keyPrefix,
+      StringOperator.StringMatchOperator stringOperator,
+      boolean ignoreCase,
+      String stringValue) {
+    KeyMatchOperand keyOperand =
+        KeyMatchOperand.newBuilder()
+            .setKeyMetadata(
+                KeyMatchOperand.KeyMetadata.newBuilder()
+                    .setFullyQualifiedKeyPrefix(keyPrefix)
+                    .build())
+            .build();
+
+    ValueMatchOperation valueOperation =
+        ValueMatchOperation.newBuilder()
+            .setStringMatchOperation(
+                StringMatchOperation.newBuilder()
+                    .setStringOperator(
+                        StringOperator.newBuilder()
+                            .setStringOperator(stringOperator)
+                            .setIgnoreCase(ignoreCase)
+                            .build())
+                    .setStringValue(stringValue)
+                    .build())
+            .build();
+
+    KeyValueMatchCondition keyValueCondition =
+        KeyValueMatchCondition.newBuilder()
+            .setLhsKeyOperand(keyOperand)
+            .setRhsValueMatchOperation(valueOperation)
+            .build();
+
+    LeafMatchConditionExpression leafExpr =
+        LeafMatchConditionExpression.newBuilder()
+            .setKeyValueMatchCondition(keyValueCondition)
             .build();
 
     return MatchConditionExpression.newBuilder().setLeafMatchConditionExpression(leafExpr).build();
@@ -280,8 +328,23 @@ public class CustomSignatureRuleDefinitionConverterUtils {
         .build();
   }
 
+  /**
+   * Builds a condition matching string values from a list. Emits key_value_match_condition for
+   * value-based matching (IP address, ASN, region, scope, etc.).
+   *
+   * <p>Wire format: This was fixed to emit key_value_match_condition instead of the previous
+   * malformed unary_key_match_condition. Verified compatible with protection-engine evaluation.
+   */
   public static MatchConditionExpression buildStringListAnyEqualsCondition(
       String keyPrefix, List<String> stringValues) {
+    KeyMatchOperand keyOperand =
+        KeyMatchOperand.newBuilder()
+            .setKeyMetadata(
+                KeyMatchOperand.KeyMetadata.newBuilder()
+                    .setFullyQualifiedKeyPrefix(keyPrefix)
+                    .build())
+            .build();
+
     ValueMatchOperation valueOperation =
         ValueMatchOperation.newBuilder()
             .setStringListMatchOperation(
@@ -297,21 +360,15 @@ public class CustomSignatureRuleDefinitionConverterUtils {
                     .build())
             .build();
 
-    KeyMatchOperand keyOperand =
-        KeyMatchOperand.newBuilder()
-            .setKeyMetadata(
-                KeyMatchOperand.KeyMetadata.newBuilder()
-                    .setFullyQualifiedKeyPrefix(keyPrefix)
-                    .build())
-            .setKeyMatchOperation(valueOperation)
+    KeyValueMatchCondition keyValueCondition =
+        KeyValueMatchCondition.newBuilder()
+            .setLhsKeyOperand(keyOperand)
+            .setRhsValueMatchOperation(valueOperation)
             .build();
-
-    UnaryKeyMatchCondition unaryKeyMatchCondition =
-        UnaryKeyMatchCondition.newBuilder().setKeyCondition(keyOperand).build();
 
     LeafMatchConditionExpression leafExpr =
         LeafMatchConditionExpression.newBuilder()
-            .setUnaryKeyMatchCondition(unaryKeyMatchCondition)
+            .setKeyValueMatchCondition(keyValueCondition)
             .build();
 
     return MatchConditionExpression.newBuilder().setLeafMatchConditionExpression(leafExpr).build();

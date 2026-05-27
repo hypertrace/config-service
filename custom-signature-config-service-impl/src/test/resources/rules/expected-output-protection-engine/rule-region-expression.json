@@ -15,20 +15,20 @@
             "condition_expression": {
               "leaf_match_condition_expression": {
                 "emit_matched_attribute": false,
-                "unary_key_match_condition": {
-                  "key_condition": {
+                "key_value_match_condition": {
+                  "lhs_key_operand": {
                     "key_metadata": {
                       "fully_qualified_key_prefix": "ip.ip_region"
-                    },
-                    "key_match_operation": {
-                      "string_list_match_operation": {
-                        "string_operator": {
-                          "string_operator": "STRING_MATCH_OPERATOR_EQ",
-                          "ignore_case": false
-                        },
-                        "multi_match_operator": "MULTI_MATCH_OPERATOR_ANY",
-                        "string_values": ["us", "in"]
-                      }
+                    }
+                  },
+                  "rhs_value_match_operation": {
+                    "string_list_match_operation": {
+                      "string_operator": {
+                        "string_operator": "STRING_MATCH_OPERATOR_EQ",
+                        "ignore_case": false
+                      },
+                      "multi_match_operator": "MULTI_MATCH_OPERATOR_ANY",
+                      "string_values": ["us", "in"]
                     }
                   }
                 }

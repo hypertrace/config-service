@@ -13,10 +13,36 @@ import ai.traceable.protection.processing.common.v1.utils.ProtoEnumUtils;
 import ai.traceable.protection.processor.condition.expression.v1.MatchConditionExpression;
 import com.google.protobuf.ProtocolMessageEnum;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 public class MatchExpressionRuleDefinitionConverter
     implements CustomSignatureRuleDefinitionConverter {
+
+  // Match keys that check KEYS in Structs (not VALUES)
+  private static final Set<MatchKey> MATCH_KEY_TYPES_WITH_KEY_EXPRESSION =
+      Set.of(
+          MatchKey.MATCH_KEY_HEADER_NAME,
+          MatchKey.MATCH_KEY_QUERY_PARAMETER_NAME,
+          MatchKey.MATCH_KEY_BODY_PARAMETER_NAME,
+          MatchKey.MATCH_KEY_COOKIE_NAME);
+
+  private static boolean isKeyExpression(MatchKey matchKey) {
+    return MATCH_KEY_TYPES_WITH_KEY_EXPRESSION.contains(matchKey);
+  }
+
+  private static MatchConditionExpression buildStringCondition(
+      String keyPrefix, MatchKey matchKey, MatchOperator matchOperator, String stringValue) {
+    final StringOperator.StringMatchOperator stringMatchOperator =
+        CustomSignatureRuleDefinitionConverterUtils.matchOperatorToStringOperator(matchOperator)
+            .getStringOperator();
+
+    return isKeyExpression(matchKey)
+        ? CustomSignatureRuleDefinitionConverterUtils.buildStringKeyCondition(
+            keyPrefix, stringMatchOperator, true, stringValue)
+        : CustomSignatureRuleDefinitionConverterUtils.buildStringValueCondition(
+            keyPrefix, stringMatchOperator, true, stringValue);
+  }
 
   @Override
   public CustomSignatureRuleDefinition buildCustomSignatureRuleDefinition(Clause clause) {
@@ -43,7 +69,8 @@ public class MatchExpressionRuleDefinitionConverter
     MatchConditionExpression conditionExpression;
 
     if (isParameterKey(matchExpression.getMatchKey())) {
-      conditionExpression = buildParameterMatchCondition(stringValue, matchOperator);
+      conditionExpression =
+          buildParameterMatchCondition(matchExpression.getMatchKey(), stringValue, matchOperator);
     } else if (matchExpression.getMatchKey() == MatchKey.MATCH_KEY_USER_AGENT) {
       String keyPrefix =
           CustomSignatureRuleDefinitionConverterUtils.getKeyRequestPrefix(
@@ -75,14 +102,10 @@ public class MatchExpressionRuleDefinitionConverter
       String keyPrefix =
           CustomSignatureRuleDefinitionConverterUtils.getKeyRequestPrefix(
               getKeyEnum(matchExpression.getMatchKey()));
+
       conditionExpression =
-          CustomSignatureRuleDefinitionConverterUtils.buildStringCondition(
-              keyPrefix,
-              CustomSignatureRuleDefinitionConverterUtils.matchOperatorToStringOperator(
-                      matchOperator)
-                  .getStringOperator(),
-              true,
-              stringValue);
+          buildStringCondition(
+              keyPrefix, matchExpression.getMatchKey(), matchOperator, stringValue);
     }
 
     String evaluationIdentifier =
@@ -180,26 +203,30 @@ public class MatchExpressionRuleDefinitionConverter
   }
 
   private MatchConditionExpression buildParameterMatchCondition(
-      String stringValue, MatchOperator matchOperator) {
+      MatchKey matchKey, String stringValue, MatchOperator matchOperator) {
 
-    StringOperator stringOperator =
-        CustomSignatureRuleDefinitionConverterUtils.matchOperatorToStringOperator(matchOperator);
+    // PARAMETER_NAME checks KEYS, PARAMETER_VALUE checks VALUES
+    final MatchKey queryMatchKey =
+        matchKey == MatchKey.MATCH_KEY_PARAMETER_NAME
+            ? MatchKey.MATCH_KEY_QUERY_PARAMETER_NAME
+            : MatchKey.MATCH_KEY_QUERY_PARAMETER_VALUE;
+
+    final MatchKey bodyMatchKey =
+        matchKey == MatchKey.MATCH_KEY_PARAMETER_NAME
+            ? MatchKey.MATCH_KEY_BODY_PARAMETER_NAME
+            : MatchKey.MATCH_KEY_BODY_PARAMETER_VALUE;
 
     String queryKeyPrefix =
-        CustomSignatureRuleDefinitionConverterUtils.getKeyRequestPrefix(
-            getKeyEnum(MatchKey.MATCH_KEY_QUERY_PARAMETER_NAME));
+        CustomSignatureRuleDefinitionConverterUtils.getKeyRequestPrefix(getKeyEnum(queryMatchKey));
 
     MatchConditionExpression queryCondition =
-        CustomSignatureRuleDefinitionConverterUtils.buildStringCondition(
-            queryKeyPrefix, stringOperator.getStringOperator(), true, stringValue);
+        buildStringCondition(queryKeyPrefix, queryMatchKey, matchOperator, stringValue);
 
     String bodyKeyPrefix =
-        CustomSignatureRuleDefinitionConverterUtils.getKeyRequestPrefix(
-            getKeyEnum(MatchKey.MATCH_KEY_BODY_PARAMETER_NAME));
+        CustomSignatureRuleDefinitionConverterUtils.getKeyRequestPrefix(getKeyEnum(bodyMatchKey));
 
     MatchConditionExpression bodyCondition =
-        CustomSignatureRuleDefinitionConverterUtils.buildStringCondition(
-            bodyKeyPrefix, stringOperator.getStringOperator(), true, stringValue);
+        buildStringCondition(bodyKeyPrefix, bodyMatchKey, matchOperator, stringValue);
 
     List<MatchConditionExpression> conditions = List.of(queryCondition, bodyCondition);
     return CustomSignatureRuleDefinitionConverterUtils.buildOrLogicalExpression(conditions);

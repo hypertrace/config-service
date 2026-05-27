@@ -32,7 +32,8 @@
                             "string_value": "param"
                           }
                         }
-                      }
+                      },
+                      "exists": true
                     }
                   }
                 }, {
@@ -52,7 +53,8 @@
                             "string_value": "param"
                           }
                         }
-                      }
+                      },
+                      "exists": true
                     }
                   }
                 }]

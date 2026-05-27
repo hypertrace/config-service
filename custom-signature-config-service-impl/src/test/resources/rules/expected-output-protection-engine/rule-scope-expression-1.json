@@ -15,21 +15,21 @@
                   "condition_expression": {
                     "negate_expression": {
                       "leaf_match_condition_expression": {
-                        "unary_key_match_condition": {
-                          "key_condition": {
+                        "key_value_match_condition": {
+                          "lhs_key_operand": {
                             "key_metadata": {
                               "fully_qualified_key_prefix": "request.scope.service.id"
-                            },
-                            "key_match_operation": {
-                              "string_list_match_operation": {
-                                "string_operator": {
-                                  "string_operator": "STRING_MATCH_OPERATOR_EQ"
-                                },
-                                "multi_match_operator": "MULTI_MATCH_OPERATOR_ANY",
-                                "string_values": [
-                                  "service-id-1"
-                                ]
-                              }
+                            }
+                          },
+                          "rhs_value_match_operation": {
+                            "string_list_match_operation": {
+                              "string_operator": {
+                                "string_operator": "STRING_MATCH_OPERATOR_EQ"
+                              },
+                              "multi_match_operator": "MULTI_MATCH_OPERATOR_ANY",
+                              "string_values": [
+                                "service-id-1"
+                              ]
                             }
                           }
                         }

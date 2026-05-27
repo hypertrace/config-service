@@ -29,7 +29,8 @@
                         "string_value": "cookie1"
                       }
                     }
-                  }
+                  },
+                  "exists": true
                 }
               }
             }
