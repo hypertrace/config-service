@@ -14,7 +14,6 @@ import ai.traceable.edge.decision.config.service.v1.AggregateThresholdRule;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleDefinition;
 import ai.traceable.edge.decision.config.service.v1.SpanAttributeDecoration;
 import ai.traceable.edge.decision.config.service.v1.ValueAggregateThreshold;
-import ai.traceable.fraud.datamodel.event.kind.v1.AggregationFunctionType;
 import ai.traceable.fraud.policy.config.service.v1.AbusePolicyData;
 import ai.traceable.fraud.policy.config.service.v1.AbuseSimpleAggregationTemplateConfig;
 import ai.traceable.fraud.policy.config.service.v1.AbuseThresholdConfig;
@@ -70,9 +69,11 @@ public class SimpleAggregationTemplateConverter implements TemplateEdgeDecisionC
     EdgeDecisionRuleDefinition.Builder defBuilder =
         EdgeDecisionRuleDefinition.newBuilder().setEdgeInputKind(EDGE_INPUT_KIND_HTTP_REQUEST);
 
-    // Add all entities as rule_variables (named by display_name / column_name)
-    entityRulesMap.forEach(
-        (entityId, rules) -> {
+    // Only include entities required by this policy as rule_variables
+    Set<String> requiredEntityIds = getRequiredDerivedEntityIds(data);
+    requiredEntityIds.forEach(
+        entityId -> {
+          List<DerivationRule> rules = entityRulesMap.getOrDefault(entityId, List.of());
           if (!rules.isEmpty()) {
             String varName = entityVariableNames.getOrDefault(entityId, entityId);
             defBuilder.addRuleVariables(buildVariable(varName, rules));
@@ -175,29 +176,19 @@ public class SimpleAggregationTemplateConverter implements TemplateEdgeDecisionC
         !aggregationEntityId.isEmpty()
             && entityRulesMap.containsKey(aggregationEntityId)
             && !entityRulesMap.get(aggregationEntityId).isEmpty();
-    boolean isCountAggregation =
-        template.getAggregation().getAggregationFunction()
-            == AggregationFunctionType.AGGREGATION_FUNCTION_TYPE_COUNT;
 
     if (hasDimensionRules) {
-      // Dimension available: set it for all aggregation types.
-      // For COUNT, this enables EDS to skip spans where the entity resolves to null.
-      // For DISTINCT_COUNT/SUM/AVG/etc., this tells EDS which field to aggregate.
       String varName = entityVariableNames.getOrDefault(aggregationEntityId, aggregationEntityId);
       builder.setDimension(buildVariableRefAttribute(varName));
-    } else if (!isCountAggregation) {
-      // Non-COUNT aggregations (DISTINCT_COUNT, SUM, AVG, etc.) require a dimension —
-      // without it, EDS wouldn't know which field's values to aggregate.
+    } else if (!aggregationEntityId.isEmpty()) {
       throw new IllegalStateException(
           "Aggregation entity '"
               + aggregationEntityId
               + "' has no valid derivation rules. "
               + "Cannot generate a "
               + template.getAggregation().getAggregationFunction()
-              + " rule without the aggregation dimension.");
+              + " rule without the aggregation entity.");
     }
-    // COUNT without dimension rules: no dimension set. EDS will count all qualifying spans
-    // regardless of any entity value (legacy behavior).
 
     if (template.hasThreshold()) {
       AbuseThresholdConfig threshold = template.getThreshold();
