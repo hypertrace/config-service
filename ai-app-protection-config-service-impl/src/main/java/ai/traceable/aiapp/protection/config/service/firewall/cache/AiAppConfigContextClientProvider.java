@@ -70,6 +70,7 @@ public class AiAppConfigContextClientProvider implements AiAppConfigContextProvi
 
   private static final AnomalyConfigScopeUtils ANOMALY_CONFIG_SCOPE_UTILS =
       new AnomalyConfigScopeUtils();
+  public static final String MATCHED_CATEGORY = "matched_category";
 
   protected final AnomalyDetectionConfigManager anomalyDetectionConfigManager;
   protected final AiAppRulesProvider aiAppRulesProvider;
@@ -360,13 +361,18 @@ public class AiAppConfigContextClientProvider implements AiAppConfigContextProvi
           continue;
         }
         Value modelIdValue = subRuleConfig.getConfigParamsMap().get(MODEL_ID);
+        Value matchedCategoryValue = subRuleConfig.getConfigParamsMap().get(MATCHED_CATEGORY);
+
         if (modelIdValue == null || modelIdValue.getStringValue().isBlank()) {
           log.debug("Rule {} has no modelId in configParams, skipping", ruleId);
           continue;
         }
-        builder.putRuleIdToConfig(
-            ruleId,
-            ModelBasedRuleConfig.newBuilder().setModelId(modelIdValue.getStringValue()).build());
+        ModelBasedRuleConfig.Builder ruleConfigBuilder =
+            ModelBasedRuleConfig.newBuilder().setModelId(modelIdValue.getStringValue());
+        if (matchedCategoryValue != null && !matchedCategoryValue.getStringValue().isBlank()) {
+          ruleConfigBuilder.setMatchedCategory(matchedCategoryValue.getStringValue());
+        }
+        builder.putRuleIdToConfig(ruleId, ruleConfigBuilder.build());
       }
     }
     return builder.build();
