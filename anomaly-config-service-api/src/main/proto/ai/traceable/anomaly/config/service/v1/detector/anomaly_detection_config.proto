@@ -337,6 +337,7 @@ message GenAiAnomalyDetectionConfig {
     LlmModelGovernanceAnomalyDetectionConfig llm_model_governance = 7;
     CodeDetectedInPromptAnomalyDetectionConfig code_detected_in_prompt = 8;
     ToxicUnsafeContentAnomalyDetectionConfig toxic_unsafe_content = 10;
+    AiSensitiveDataProtectionAnomalyDetectionConfig ai_sensitive_data_protection = 11;
   }
   AnomalySubRuleConfigMap sub_rule_configs = 9;
 }
@@ -354,6 +355,8 @@ message LlmInputExplosionAnomalyDetectionConfig {}
 message LlmModelGovernanceAnomalyDetectionConfig {}
 
 message ToxicUnsafeContentAnomalyDetectionConfig {}
+
+message AiSensitiveDataProtectionAnomalyDetectionConfig {}
 
 message CodeDetectedInPromptAnomalyDetectionConfig {
   // list containing applicable crs-sub-rule-ids where threat_rule_id is the crs-rule-id

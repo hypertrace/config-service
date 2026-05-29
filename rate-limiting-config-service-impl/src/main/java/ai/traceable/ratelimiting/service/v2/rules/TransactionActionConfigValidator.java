@@ -9,7 +9,6 @@ import ai.traceable.config.utils.RegexValidator;
 import ai.traceable.ratelimiting.config.service.v2.Category;
 import ai.traceable.ratelimiting.config.service.v2.CompositeCondition;
 import ai.traceable.ratelimiting.config.service.v2.Condition;
-import ai.traceable.ratelimiting.config.service.v2.DataLocation;
 import ai.traceable.ratelimiting.config.service.v2.DatatypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.IpAddressCondition;
 import ai.traceable.ratelimiting.config.service.v2.IpAddressConditionType;
@@ -264,12 +263,6 @@ public class TransactionActionConfigValidator {
 
   private void validateDatatypeConditionForTransactionActionConfig(
       DatatypeCondition datatypeCondition) {
-    if (!datatypeCondition.getDataLocation().equals(DataLocation.DATA_LOCATION_REQUEST)) {
-      validatorUtils.throwInvalidArgumentException(
-          String.format(
-              "Data location should be request in datatype condition : %s for transaction action config",
-              datatypeCondition));
-    }
     if (!datatypeCondition
         .getMinDataSensitivityLevel()
         .equals(DATA_SENSITIVITY_LEVEL_UNSPECIFIED)) {

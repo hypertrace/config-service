@@ -409,52 +409,6 @@ public class RateLimitingRulesValidatorTest {
         CreateRateLimitingRuleRequest.newBuilder().setData(ruleData9).build();
     assertDoesNotThrow(() -> rulesValidator.validateOrThrow(requestContext, request9, List.of()));
 
-    RateLimitingRuleData ruleData10 =
-        ruleData.toBuilder()
-            .setCondition(
-                Condition.newBuilder()
-                    .setCompositeCondition(
-                        compositeCondition.toBuilder()
-                            .addChildren(
-                                Condition.newBuilder()
-                                    .setLeafCondition(
-                                        LeafCondition.newBuilder()
-                                            .setDatatypeCondition(
-                                                DatatypeCondition.newBuilder()
-                                                    .addAllDatatypeIds(List.of("datatype1"))
-                                                    .setDataLocation(
-                                                        DataLocation.DATA_LOCATION_RESPONSE)
-                                                    .setDatatypeMatching(
-                                                        DatatypeCondition.DatatypeMatching
-                                                            .newBuilder()
-                                                            .setRegexBasedMatching(
-                                                                DatatypeCondition.RegexBasedMatching
-                                                                    .newBuilder()
-                                                                    .setCustomMatchingLocation(
-                                                                        KeyValueCondition
-                                                                            .newBuilder()
-                                                                            .setType(
-                                                                                Type
-                                                                                    .TYPE_REQUEST_BODY_PARAMETER)
-                                                                            .setKeyCondition(
-                                                                                StringCondition
-                                                                                    .newBuilder()
-                                                                                    .setOperator(
-                                                                                        MatchOperator
-                                                                                            .MATCH_OPERATOR_MATCHES_REGEX)
-                                                                                    .setValue(
-                                                                                        "^a")))))))))
-                    .build())
-            .build();
-    CreateRateLimitingRuleRequest request10 =
-        CreateRateLimitingRuleRequest.newBuilder().setData(ruleData10).build();
-    throwable =
-        assertThrows(
-            StatusRuntimeException.class,
-            () -> rulesValidator.validateOrThrow(requestContext, request10, List.of()));
-    status = Status.fromThrowable(throwable);
-    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
-
     RateLimitingRuleData ruleData11 =
         ruleData.toBuilder()
             .setCondition(

@@ -69,6 +69,13 @@ class GenAiRulesRegistryTest {
             .setAnomalyRuleId("toxicUnsafeContent")
             .setToxicUnsafeContent(ToxicUnsafeContentAnomalyDetectionConfig.getDefaultInstance())
             .build());
+    expectedMap.put(
+        "aiSensitiveDataProtection",
+        GenAiAnomalyDetectionConfig.newBuilder()
+            .setAnomalyRuleId("aiSensitiveDataProtection")
+            .setAiSensitiveDataProtection(
+                AiSensitiveDataProtectionAnomalyDetectionConfig.getDefaultInstance())
+            .build());
 
     assertEquals(expectedMap, ruleIdToConfigMap);
   }
