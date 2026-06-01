@@ -13,6 +13,7 @@ service WafProviderService {
   rpc GetWafIntegrationsDetails(GetWafIntegrationsDetailsRequest) returns (GetWafIntegrationsDetailsResponse) {}
   rpc UpdateWafIntegration(UpdateWafIntegrationRequest) returns (UpdateWafIntegrationResponse) {}
   rpc DeleteWafIntegration(DeleteWafIntegrationRequest) returns (DeleteWafIntegrationResponse) {}
+  rpc UpdateWafIntegrationSyncSchedule(UpdateWafIntegrationSyncScheduleRequest) returns (UpdateWafIntegrationSyncScheduleResponse) {}
 }
 
 message CreateWafIntegrationRequest {
@@ -61,6 +62,21 @@ message DeleteWafIntegrationRequest {
 }
 
 message DeleteWafIntegrationResponse {}
+
+message UpdateWafIntegrationSyncScheduleRequest {
+  string integration_id = 1;
+  bool enabled = 2;
+  optional WafSyncCronMetadata cron_metadata = 3;
+}
+
+message UpdateWafIntegrationSyncScheduleResponse {
+  WafIntegration waf_integration = 1;
+}
+
+message WafSyncCronMetadata {
+  string cron_expression = 1;
+  string zone_offset = 2;
+}
 
 message GetWafIntegrationsFilter {
   repeated string ids = 1;

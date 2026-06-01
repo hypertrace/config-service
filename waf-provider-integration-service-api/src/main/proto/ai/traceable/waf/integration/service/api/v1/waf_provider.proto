@@ -35,6 +35,7 @@ message WafIntegrationDetails {
   WafIntegrationScope waf_integration_scope = 7;
   repeated WafIntegrationTarget integration_targets = 20; //leaving numbers for oneof
   optional bool enabled = 21;
+  optional bool is_waf_sync_enabled = 22;
 }
 
 message WafIntegrationTarget {
