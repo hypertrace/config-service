@@ -9,6 +9,7 @@ plugins {
 
 dependencies {
   api(projects.wafProviderIntegrationServiceApi)
+  implementation(commonLibs.traceable.jobs.api)
   implementation(localLibs.hypertrace.configservice.objectstore)
   implementation(localLibs.hypertrace.configservice.api)
   implementation(localLibs.hypertrace.configservice.changeeventgenerator)

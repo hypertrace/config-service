@@ -7,20 +7,23 @@ import com.google.inject.Guice;
 import com.typesafe.config.Config;
 import io.grpc.Channel;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
+import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 import org.junit.jupiter.api.Test;
 
 class WafIntegrationConfigServiceModuleTest {
   @Test
   void testResolveBindings() {
-    Channel mockChannel = mock(Channel.class);
-    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
-    Config mockConfig = mock(Config.class);
+    final Channel mockChannel = mock(Channel.class);
+    final ConfigChangeEventGenerator configChangeEventGenerator =
+        mock(ConfigChangeEventGenerator.class);
+    final Config mockConfig = mock(Config.class);
+    final GrpcChannelRegistry mockChannelRegistry = mock(GrpcChannelRegistry.class);
 
     assertDoesNotThrow(
         () ->
             Guice.createInjector(
                     new WafIntegrationConfigServiceModule(
-                        mockConfig, mockChannel, configChangeEventGenerator))
+                        mockConfig, mockChannel, configChangeEventGenerator, mockChannelRegistry))
                 .getAllBindings());
   }
 }

@@ -202,7 +202,8 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                 WafIntegrationConfigServiceFactory.build(
                     providers.getLocalChannel(),
                     providers.getConfig(),
-                    providers.getChangeEventGenerator())),
+                    providers.getChangeEventGenerator(),
+                    providers.getChannelRegistry())),
             wrap(
                 JiraIntegrationConfigServiceFactory.build(
                     providers.getLocalChannel(), providers.getChangeEventGenerator())),

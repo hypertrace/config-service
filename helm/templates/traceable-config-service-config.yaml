@@ -80,6 +80,11 @@ data:
       port = {{ .Values.traceableConfigServiceConfig.insightsServiceConfig.port }}
       request.timeout = {{ .Values.traceableConfigServiceConfig.insightsServiceConfig.request.timeout }}
     }
+    job.service.config = {
+      host = {{ .Values.traceableConfigServiceConfig.jobServiceConfig.host }}
+      port = {{ .Values.traceableConfigServiceConfig.jobServiceConfig.port }}
+      request.timeout.duration = {{ .Values.traceableConfigServiceConfig.jobServiceConfig.request.timeout.duration }}
+    }
     entity.service.config = {
       host = {{ .Values.traceableConfigServiceConfig.entityServiceConfig.host }}
       port = {{ .Values.traceableConfigServiceConfig.entityServiceConfig.port }}

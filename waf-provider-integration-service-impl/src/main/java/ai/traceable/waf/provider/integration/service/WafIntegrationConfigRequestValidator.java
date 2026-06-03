@@ -67,21 +67,26 @@ import ai.traceable.waf.integration.service.api.v1.ImpervaIntegrationUpdateParam
 import ai.traceable.waf.integration.service.api.v1.RegionSecurityPolicyScope;
 import ai.traceable.waf.integration.service.api.v1.RuleType;
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationRequest;
+import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationSyncScheduleRequest;
 import ai.traceable.waf.integration.service.api.v1.UpdatedCloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.UpdatedWafIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.WafIntegration;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationScope;
+import ai.traceable.waf.integration.service.api.v1.WafSyncCronMetadata;
 import ai.traceable.waf.integration.service.api.v1.WebIdentityAuthenticationCredentials;
 import io.grpc.Status;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.time.DateTimeException;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class WafIntegrationConfigRequestValidator {
+  private static final int MINIMUM_WAF_SYNC_INTERVAL_HOURS = 1;
 
   public void validateOrThrow(
       CreateWafIntegrationRequest request,
@@ -120,6 +125,95 @@ public class WafIntegrationConfigRequestValidator {
   public void validateOrThrow(DeleteWafIntegrationRequest request, RequestContext requestContext) {
     validateRequestContextOrThrow(requestContext);
     validateNonDefaultPresenceOrThrow(request, DeleteWafIntegrationRequest.ID_FIELD_NUMBER);
+  }
+
+  public void validateOrThrow(
+      UpdateWafIntegrationSyncScheduleRequest request, RequestContext requestContext) {
+    validateRequestContextOrThrow(requestContext);
+    validateNonDefaultPresenceOrThrow(
+        request, UpdateWafIntegrationSyncScheduleRequest.INTEGRATION_ID_FIELD_NUMBER);
+    if (request.getEnabled() && !request.hasCronMetadata()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("cron_metadata is required when enabling waf sync schedule")
+          .asRuntimeException();
+    }
+    if (request.hasCronMetadata()) {
+      validateWafSyncCronMetadataOrThrow(request.getCronMetadata());
+    }
+  }
+
+  private void validateWafSyncCronMetadataOrThrow(final WafSyncCronMetadata cronMetadata) {
+    if (cronMetadata.getCronExpression().isEmpty()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("cron_expression must be non-empty")
+          .asRuntimeException();
+    }
+    validateMinimumHourlyCronIntervalOrThrow(cronMetadata.getCronExpression());
+    if (cronMetadata.getZoneOffset().isEmpty()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("zone_offset must be non-empty")
+          .asRuntimeException();
+    }
+    validateZoneOffsetOrThrow(cronMetadata.getZoneOffset());
+  }
+
+  private void validateMinimumHourlyCronIntervalOrThrow(final String cronExpression) {
+    final String[] cronParts = cronExpression.trim().split("\\s+");
+    if (cronParts.length < 3) {
+      return;
+    }
+
+    final String secondsPart = cronParts[0];
+    final String minutesPart = cronParts[1];
+    final String hoursPart = cronParts[2];
+
+    if (isPotentiallySubHourly(secondsPart) || isPotentiallySubHourly(minutesPart)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              "cron_expression interval must be at least "
+                  + MINIMUM_WAF_SYNC_INTERVAL_HOURS
+                  + " hour")
+          .asRuntimeException();
+    }
+
+    final int slashIndex = hoursPart.lastIndexOf('/');
+    if (slashIndex == -1) {
+      return;
+    }
+
+    final String periodPart = hoursPart.substring(slashIndex + 1);
+    final int periodHours;
+    try {
+      periodHours = Integer.parseInt(periodPart);
+    } catch (NumberFormatException e) {
+      return;
+    }
+
+    if (periodHours < MINIMUM_WAF_SYNC_INTERVAL_HOURS) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              "cron_expression interval must be at least "
+                  + MINIMUM_WAF_SYNC_INTERVAL_HOURS
+                  + " hour")
+          .asRuntimeException();
+    }
+  }
+
+  private boolean isPotentiallySubHourly(final String cronPart) {
+    return cronPart.contains("*")
+        || cronPart.contains("/")
+        || cronPart.contains(",")
+        || cronPart.contains("-");
+  }
+
+  private void validateZoneOffsetOrThrow(final String zoneOffset) {
+    try {
+      ZoneOffset.of(zoneOffset);
+    } catch (DateTimeException e) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("zone_offset is not a valid offset")
+          .asRuntimeException();
+    }
   }
 
   private void validateWafIntegrationsFilter(GetWafIntegrationsFilter filter) {

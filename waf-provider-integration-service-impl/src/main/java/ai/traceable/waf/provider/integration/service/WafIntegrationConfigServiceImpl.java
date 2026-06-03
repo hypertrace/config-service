@@ -13,9 +13,12 @@ import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsRequest;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsResponse;
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationResponse;
+import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationSyncScheduleRequest;
+import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationSyncScheduleResponse;
 import ai.traceable.waf.integration.service.api.v1.WafIntegration;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.WafProviderServiceGrpc.WafProviderServiceImplBase;
+import ai.traceable.waf.provider.integration.service.sync.WafIntegrationSyncScheduleManager;
 import com.google.inject.Inject;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -28,16 +31,21 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 public class WafIntegrationConfigServiceImpl extends WafProviderServiceImplBase {
+  private static final String TENANT_ID_REQUIRED_ERROR_MESSAGE = "Tenant ID is required";
+
   private final IdentifiedObjectStoreWithFilter<WafIntegration, GetWafIntegrationsFilter>
       wafIntegrationStore;
   private final WafIntegrationConfigRequestValidator wafIntegrationConfigRequestValidator;
+  private final WafIntegrationSyncScheduleManager wafIntegrationSyncScheduleManager;
 
   @Inject
   public WafIntegrationConfigServiceImpl(
       WafIntegrationStore wafIntegrationStore,
-      WafIntegrationConfigRequestValidator wafIntegrationConfigRequestValidator) {
+      WafIntegrationConfigRequestValidator wafIntegrationConfigRequestValidator,
+      WafIntegrationSyncScheduleManager wafIntegrationSyncScheduleManager) {
     this.wafIntegrationStore = wafIntegrationStore;
     this.wafIntegrationConfigRequestValidator = wafIntegrationConfigRequestValidator;
+    this.wafIntegrationSyncScheduleManager = wafIntegrationSyncScheduleManager;
   }
 
   @Override
@@ -186,16 +194,98 @@ public class WafIntegrationConfigServiceImpl extends WafProviderServiceImplBase 
       DeleteWafIntegrationRequest request,
       StreamObserver<DeleteWafIntegrationResponse> responseStreamObserver) {
     try {
-      RequestContext requestContext = RequestContext.CURRENT.get();
+      final RequestContext requestContext = RequestContext.CURRENT.get();
       wafIntegrationConfigRequestValidator.validateOrThrow(request, requestContext);
       wafIntegrationStore
           .deleteObject(requestContext, request.getId())
           .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+      wafIntegrationSyncScheduleManager.deleteSchedulesForIntegration(
+          requestContext, request.getId());
       responseStreamObserver.onNext(DeleteWafIntegrationResponse.getDefaultInstance());
       responseStreamObserver.onCompleted();
     } catch (Exception e) {
       log.error(
           "Failed while deleting waf integration for request: {} with exception: ", request, e);
+      responseStreamObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void updateWafIntegrationSyncSchedule(
+      UpdateWafIntegrationSyncScheduleRequest request,
+      StreamObserver<UpdateWafIntegrationSyncScheduleResponse> responseStreamObserver) {
+    final String integrationId = request.getIntegrationId();
+    final boolean syncEnabled = request.getEnabled();
+    final boolean hasCronMetadata = request.hasCronMetadata();
+    try {
+      final RequestContext requestContext = RequestContext.CURRENT.get();
+      final String tenantId =
+          requestContext
+              .getTenantId()
+              .orElseThrow(
+                  () ->
+                      Status.INVALID_ARGUMENT
+                          .withDescription(TENANT_ID_REQUIRED_ERROR_MESSAGE)
+                          .asRuntimeException());
+
+      log.debug(
+          "Validating updateWafIntegrationSyncSchedule request for integrationId={} tenantId={}",
+          integrationId,
+          tenantId);
+      wafIntegrationConfigRequestValidator.validateOrThrow(request, requestContext);
+
+      final WafIntegration existingWafIntegration =
+          wafIntegrationStore
+              .getData(requestContext, integrationId)
+              .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+
+      final WafIntegrationDetails updatedDetails =
+          existingWafIntegration.getWafIntegrationDetails().toBuilder()
+              .setIsWafSyncEnabled(syncEnabled)
+              .build();
+
+      final WafIntegration upsertedWafIntegration =
+          wafIntegrationStore
+              .upsertObject(
+                  requestContext,
+                  existingWafIntegration.toBuilder()
+                      .setWafIntegrationDetails(updatedDetails)
+                      .build())
+              .getData();
+
+      if (syncEnabled) {
+        log.info(
+            "Enabling/updating WAF sync schedule for integrationId={} tenantId={} cronExpression={} zoneOffset={}",
+            integrationId,
+            tenantId,
+            request.getCronMetadata().getCronExpression(),
+            request.getCronMetadata().getZoneOffset());
+        wafIntegrationSyncScheduleManager.enableOrUpdateSchedule(
+            requestContext, integrationId, request.getCronMetadata());
+      } else {
+        log.info(
+            "Disabling WAF sync schedule and deleting schedules for integrationId={} tenantId={}",
+            integrationId,
+            tenantId);
+        wafIntegrationSyncScheduleManager.deleteSchedulesForIntegration(
+            requestContext, integrationId);
+      }
+
+      log.debug(
+          "Completed updateWafIntegrationSyncSchedule for integrationId={} tenantId={} enabled={} hasCronMetadata={}",
+          integrationId,
+          tenantId,
+          syncEnabled,
+          hasCronMetadata);
+
+      responseStreamObserver.onNext(
+          UpdateWafIntegrationSyncScheduleResponse.newBuilder()
+              .setWafIntegration(WafIntegrationBuilderUtils.stripSecrets(upsertedWafIntegration))
+              .build());
+      responseStreamObserver.onCompleted();
+    } catch (final Exception e) {
+      log.error(
+          "Failed while updating waf sync schedule for request: {} with exception: ", request, e);
       responseStreamObserver.onError(e);
     }
   }

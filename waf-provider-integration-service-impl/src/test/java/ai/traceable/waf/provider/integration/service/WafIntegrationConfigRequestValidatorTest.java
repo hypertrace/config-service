@@ -53,11 +53,13 @@ import ai.traceable.waf.integration.service.api.v1.ImpervaIntegrationUpdateParam
 import ai.traceable.waf.integration.service.api.v1.RegionSecurityPolicyScope;
 import ai.traceable.waf.integration.service.api.v1.StringList;
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationRequest;
+import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationSyncScheduleRequest;
 import ai.traceable.waf.integration.service.api.v1.UpdatedCloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.UpdatedWafIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.WafIntegration;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationScope;
+import ai.traceable.waf.integration.service.api.v1.WafSyncCronMetadata;
 import ai.traceable.waf.integration.service.api.v1.WebIdentityAuthenticationCredentials;
 import io.grpc.StatusRuntimeException;
 import java.util.List;
@@ -265,6 +267,120 @@ class WafIntegrationConfigRequestValidatorTest {
         () -> {
           wafIntegrationConfigRequestValidator.validateOrThrow(deleteRequest, REQUEST_CONTEXT);
         });
+  }
+
+  @Test
+  void updateWafIntegrationSyncScheduleValidationTest() {
+    UpdateWafIntegrationSyncScheduleRequest missingIntegrationId =
+        UpdateWafIntegrationSyncScheduleRequest.newBuilder().setEnabled(false).build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                missingIntegrationId, REQUEST_CONTEXT));
+
+    UpdateWafIntegrationSyncScheduleRequest enabledWithoutCron =
+        UpdateWafIntegrationSyncScheduleRequest.newBuilder()
+            .setIntegrationId("integration-id")
+            .setEnabled(true)
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                enabledWithoutCron, REQUEST_CONTEXT));
+
+    UpdateWafIntegrationSyncScheduleRequest emptyCronExpression =
+        UpdateWafIntegrationSyncScheduleRequest.newBuilder()
+            .setIntegrationId("integration-id")
+            .setEnabled(true)
+            .setCronMetadata(
+                WafSyncCronMetadata.newBuilder().setCronExpression("").setZoneOffset("+00:00"))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                emptyCronExpression, REQUEST_CONTEXT));
+
+    UpdateWafIntegrationSyncScheduleRequest emptyZoneOffset =
+        UpdateWafIntegrationSyncScheduleRequest.newBuilder()
+            .setIntegrationId("integration-id")
+            .setEnabled(true)
+            .setCronMetadata(
+                WafSyncCronMetadata.newBuilder().setCronExpression("0 0 0 ? * *").setZoneOffset(""))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(emptyZoneOffset, REQUEST_CONTEXT));
+
+    UpdateWafIntegrationSyncScheduleRequest malformedZoneOffset =
+        UpdateWafIntegrationSyncScheduleRequest.newBuilder()
+            .setIntegrationId("integration-id")
+            .setEnabled(true)
+            .setCronMetadata(
+                WafSyncCronMetadata.newBuilder()
+                    .setCronExpression("0 0 0 ? * *")
+                    .setZoneOffset("invalid-offset"))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                malformedZoneOffset, REQUEST_CONTEXT));
+
+    UpdateWafIntegrationSyncScheduleRequest everySecondCron =
+        UpdateWafIntegrationSyncScheduleRequest.newBuilder()
+            .setIntegrationId("integration-id")
+            .setEnabled(true)
+            .setCronMetadata(
+                WafSyncCronMetadata.newBuilder()
+                    .setCronExpression("*/1 * * ? * *")
+                    .setZoneOffset("+00:00"))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(everySecondCron, REQUEST_CONTEXT));
+
+    UpdateWafIntegrationSyncScheduleRequest everyTwoHoursCron =
+        UpdateWafIntegrationSyncScheduleRequest.newBuilder()
+            .setIntegrationId("integration-id")
+            .setEnabled(true)
+            .setCronMetadata(
+                WafSyncCronMetadata.newBuilder()
+                    .setCronExpression("0 0 0-22/2 ? * *")
+                    .setZoneOffset("+00:00"))
+            .build();
+    assertDoesNotThrow(
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                everyTwoHoursCron, REQUEST_CONTEXT));
+
+    UpdateWafIntegrationSyncScheduleRequest validEnableWithCron =
+        UpdateWafIntegrationSyncScheduleRequest.newBuilder()
+            .setIntegrationId("integration-id")
+            .setEnabled(true)
+            .setCronMetadata(
+                WafSyncCronMetadata.newBuilder()
+                    .setCronExpression("0 0 0-21/7 ? * *")
+                    .setZoneOffset("+00:00"))
+            .build();
+    assertDoesNotThrow(
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                validEnableWithCron, REQUEST_CONTEXT));
+
+    UpdateWafIntegrationSyncScheduleRequest validDisableWithoutCron =
+        UpdateWafIntegrationSyncScheduleRequest.newBuilder()
+            .setIntegrationId("integration-id")
+            .setEnabled(false)
+            .build();
+    assertDoesNotThrow(
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                validDisableWithoutCron, REQUEST_CONTEXT));
   }
 
   @Test

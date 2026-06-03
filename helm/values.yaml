@@ -324,6 +324,12 @@ traceableConfigServiceConfig:
     port: 50098
     request:
       timeout: 10s
+  jobServiceConfig:
+    host: job-service
+    port: 20200
+    request:
+      timeout:
+        duration: 30s
   entityServiceConfig:
     host: entity-service
     port: 50061

@@ -68,6 +68,7 @@ import ai.traceable.waf.integration.service.api.v1.RuleType;
 import ai.traceable.waf.integration.service.api.v1.StringList;
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationResponse;
+import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationSyncScheduleRequest;
 import ai.traceable.waf.integration.service.api.v1.UpdatedCloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.UpdatedWafIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.WafIntegration;
@@ -77,7 +78,9 @@ import ai.traceable.waf.integration.service.api.v1.WafIntegrationScope;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationTarget;
 import ai.traceable.waf.integration.service.api.v1.WafProviderServiceGrpc;
 import ai.traceable.waf.integration.service.api.v1.WafProviderServiceGrpc.WafProviderServiceBlockingStub;
+import ai.traceable.waf.integration.service.api.v1.WafSyncCronMetadata;
 import ai.traceable.waf.integration.service.api.v1.WebIdentityAuthenticationCredentials;
+import ai.traceable.waf.provider.integration.service.sync.WafIntegrationSyncScheduleManager;
 import com.typesafe.config.Config;
 import io.grpc.Status;
 import java.util.List;
@@ -92,6 +95,7 @@ import org.junit.jupiter.api.Test;
 class WafIntegrationConfigServiceImplTest {
   MockGenericConfigService mockGenericConfigService;
   Config mockConfig;
+  WafIntegrationSyncScheduleManager wafIntegrationSyncScheduleManager;
   WafProviderServiceBlockingStub wafProviderServiceBlockingStub;
   WafIntegrationScope wafConfigScope =
       WafIntegrationScope.newBuilder()
@@ -107,11 +111,13 @@ class WafIntegrationConfigServiceImplTest {
         ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     mockConfig = mock(Config.class);
+    wafIntegrationSyncScheduleManager = mock(WafIntegrationSyncScheduleManager.class);
     mockGenericConfigService
         .addService(
             new WafIntegrationConfigServiceImpl(
                 new WafIntegrationStore(genericStub, configChangeEventGenerator),
-                new WafIntegrationConfigRequestValidator()))
+                new WafIntegrationConfigRequestValidator(),
+                wafIntegrationSyncScheduleManager))
         .start();
     this.wafProviderServiceBlockingStub =
         WafProviderServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
@@ -1486,6 +1492,39 @@ class WafIntegrationConfigServiceImplTest {
         DeleteWafIntegrationRequest.newBuilder().setId(id).build();
     wafProviderServiceBlockingStub.deleteWafIntegration(deleteRequest);
 
+    org.mockito.Mockito.verify(wafIntegrationSyncScheduleManager)
+        .deleteSchedulesForIntegration(
+            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.eq(id));
+
+    GetWafIntegrationRequest getRequest = GetWafIntegrationRequest.newBuilder().setId(id).build();
+    Throwable exception =
+        assertThrows(
+            RuntimeException.class,
+            () -> wafProviderServiceBlockingStub.getWafIntegration(getRequest));
+    assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
+  }
+
+  @Test
+  void deleteWafIntegrationWithSyncEnabledDisablesScheduleOnSuccessTest() {
+    WafIntegrationDetails details =
+        createWafIntegrationDetails(
+                "name", "email", IntegrationParamsCase.CLOUDFLARE_INTEGRATION_PARAMS)
+            .toBuilder()
+            .setIsWafSyncEnabled(true)
+            .build();
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(
+            CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(details).build());
+    String id = createResponse.getWafIntegration().getId();
+
+    DeleteWafIntegrationRequest deleteRequest =
+        DeleteWafIntegrationRequest.newBuilder().setId(id).build();
+    wafProviderServiceBlockingStub.deleteWafIntegration(deleteRequest);
+
+    org.mockito.Mockito.verify(wafIntegrationSyncScheduleManager)
+        .deleteSchedulesForIntegration(
+            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.eq(id));
+
     GetWafIntegrationRequest getRequest = GetWafIntegrationRequest.newBuilder().setId(id).build();
     Throwable exception =
         assertThrows(
@@ -1621,6 +1660,38 @@ class WafIntegrationConfigServiceImplTest {
     DeleteWafIntegrationRequest deleteRequest =
         DeleteWafIntegrationRequest.newBuilder().setId(id).build();
     wafProviderServiceBlockingStub.deleteWafIntegration(deleteRequest);
+
+    GetWafIntegrationRequest getRequest = GetWafIntegrationRequest.newBuilder().setId(id).build();
+    Throwable exception =
+        assertThrows(
+            RuntimeException.class,
+            () -> wafProviderServiceBlockingStub.getWafIntegration(getRequest));
+    assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
+  }
+
+  @Test
+  void deleteWafIntegrationDeletesRowBeforeDisablingScheduleTest() {
+    WafIntegrationDetails details =
+        createWafIntegrationDetails(
+                "name", "email", IntegrationParamsCase.CLOUDFLARE_INTEGRATION_PARAMS)
+            .toBuilder()
+            .setIsWafSyncEnabled(true)
+            .build();
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(
+            CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(details).build());
+    String id = createResponse.getWafIntegration().getId();
+
+    org.mockito.Mockito.doThrow(new RuntimeException("schedule disable failed"))
+        .when(wafIntegrationSyncScheduleManager)
+        .deleteSchedulesForIntegration(
+            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.eq(id));
+
+    DeleteWafIntegrationRequest deleteRequest =
+        DeleteWafIntegrationRequest.newBuilder().setId(id).build();
+    assertThrows(
+        RuntimeException.class,
+        () -> wafProviderServiceBlockingStub.deleteWafIntegration(deleteRequest));
 
     GetWafIntegrationRequest getRequest = GetWafIntegrationRequest.newBuilder().setId(id).build();
     Throwable exception =
@@ -2088,6 +2159,222 @@ class WafIntegrationConfigServiceImplTest {
 
     // Verify it's enabled again
     assertTrue(reenableResponse.getWafIntegration().getWafIntegrationDetails().getEnabled());
+  }
+
+  @Test
+  void updateWafIntegrationSyncScheduleEnableWithCronTest() {
+    WafIntegrationDetails details =
+        createWafIntegrationDetails(
+                "sync-enable-test", "email", IntegrationParamsCase.CLOUDFLARE_INTEGRATION_PARAMS)
+            .toBuilder()
+            .setIsWafSyncEnabled(false)
+            .build();
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(
+            CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(details).build());
+    String integrationId = createResponse.getWafIntegration().getId();
+
+    WafSyncCronMetadata cronMetadata =
+        WafSyncCronMetadata.newBuilder()
+            .setCronExpression("0 0 0 ? * *")
+            .setZoneOffset("+00:00")
+            .build();
+
+    UpdateWafIntegrationSyncScheduleRequest request =
+        UpdateWafIntegrationSyncScheduleRequest.newBuilder()
+            .setIntegrationId(integrationId)
+            .setEnabled(true)
+            .setCronMetadata(cronMetadata)
+            .build();
+
+    ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationSyncScheduleResponse response =
+        wafProviderServiceBlockingStub.updateWafIntegrationSyncSchedule(request);
+
+    assertEquals(integrationId, response.getWafIntegration().getId());
+    assertTrue(response.getWafIntegration().getWafIntegrationDetails().getIsWafSyncEnabled());
+    assertEquals(
+        "sync-enable-test", response.getWafIntegration().getWafIntegrationDetails().getName());
+    org.mockito.Mockito.verify(wafIntegrationSyncScheduleManager)
+        .enableOrUpdateSchedule(
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.eq(integrationId),
+            org.mockito.ArgumentMatchers.eq(cronMetadata));
+    org.mockito.Mockito.verify(wafIntegrationSyncScheduleManager, org.mockito.Mockito.never())
+        .deleteSchedulesForIntegration(
+            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyString());
+  }
+
+  @Test
+  void updateWafIntegrationSyncScheduleDisableTest() {
+    WafIntegrationDetails details =
+        createWafIntegrationDetails(
+                "sync-disable-test", "email", IntegrationParamsCase.CLOUDFLARE_INTEGRATION_PARAMS)
+            .toBuilder()
+            .setIsWafSyncEnabled(true)
+            .build();
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(
+            CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(details).build());
+    String integrationId = createResponse.getWafIntegration().getId();
+
+    UpdateWafIntegrationSyncScheduleRequest request =
+        UpdateWafIntegrationSyncScheduleRequest.newBuilder()
+            .setIntegrationId(integrationId)
+            .setEnabled(false)
+            .build();
+
+    ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationSyncScheduleResponse response =
+        wafProviderServiceBlockingStub.updateWafIntegrationSyncSchedule(request);
+
+    assertEquals(integrationId, response.getWafIntegration().getId());
+    assertFalse(response.getWafIntegration().getWafIntegrationDetails().getIsWafSyncEnabled());
+    assertEquals(
+        "sync-disable-test", response.getWafIntegration().getWafIntegrationDetails().getName());
+    org.mockito.Mockito.verify(wafIntegrationSyncScheduleManager)
+        .deleteSchedulesForIntegration(
+            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.eq(integrationId));
+    org.mockito.Mockito.verify(wafIntegrationSyncScheduleManager, org.mockito.Mockito.never())
+        .enableOrUpdateSchedule(
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.anyString(),
+            org.mockito.ArgumentMatchers.any());
+  }
+
+  @Test
+  void updateWafIntegrationSyncScheduleIntegrationNotFoundTest() {
+    UpdateWafIntegrationSyncScheduleRequest request =
+        UpdateWafIntegrationSyncScheduleRequest.newBuilder()
+            .setIntegrationId("missing-integration-id")
+            .setEnabled(false)
+            .build();
+
+    Throwable exception =
+        assertThrows(
+            RuntimeException.class,
+            () -> wafProviderServiceBlockingStub.updateWafIntegrationSyncSchedule(request));
+
+    assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
+    org.mockito.Mockito.verifyNoInteractions(wafIntegrationSyncScheduleManager);
+  }
+
+  @Test
+  void updateWafIntegrationSyncScheduleValidationFailsWhenEnabledWithoutCronTest() {
+    UpdateWafIntegrationSyncScheduleRequest request =
+        UpdateWafIntegrationSyncScheduleRequest.newBuilder()
+            .setIntegrationId("any-id")
+            .setEnabled(true)
+            .build();
+
+    Throwable exception =
+        assertThrows(
+            RuntimeException.class,
+            () -> wafProviderServiceBlockingStub.updateWafIntegrationSyncSchedule(request));
+
+    Status status = Status.fromThrowable(exception);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(
+        status
+            .getDescription()
+            .contains("cron_metadata is required when enabling waf sync schedule"));
+    org.mockito.Mockito.verifyNoInteractions(wafIntegrationSyncScheduleManager);
+  }
+
+  @Test
+  void updateWafIntegrationSyncScheduleValidationFailsForEmptyCronExpressionTest() {
+    UpdateWafIntegrationSyncScheduleRequest request =
+        UpdateWafIntegrationSyncScheduleRequest.newBuilder()
+            .setIntegrationId("any-id")
+            .setEnabled(true)
+            .setCronMetadata(
+                WafSyncCronMetadata.newBuilder().setCronExpression("").setZoneOffset("+00:00"))
+            .build();
+
+    Throwable exception =
+        assertThrows(
+            RuntimeException.class,
+            () -> wafProviderServiceBlockingStub.updateWafIntegrationSyncSchedule(request));
+
+    Status status = Status.fromThrowable(exception);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(status.getDescription().contains("cron_expression must be non-empty"));
+    org.mockito.Mockito.verifyNoInteractions(wafIntegrationSyncScheduleManager);
+  }
+
+  @Test
+  void updateWafIntegrationSyncSchedulePersistsBeforeSchedulerMutationTest() {
+    WafIntegrationDetails details =
+        createWafIntegrationDetails(
+                "sync-order-test", "email", IntegrationParamsCase.CLOUDFLARE_INTEGRATION_PARAMS)
+            .toBuilder()
+            .setIsWafSyncEnabled(false)
+            .build();
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(
+            CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(details).build());
+    String integrationId = createResponse.getWafIntegration().getId();
+
+    org.mockito.Mockito.doThrow(new RuntimeException("schedule update failed"))
+        .when(wafIntegrationSyncScheduleManager)
+        .enableOrUpdateSchedule(
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.eq(integrationId),
+            org.mockito.ArgumentMatchers.any());
+
+    UpdateWafIntegrationSyncScheduleRequest scheduleRequest =
+        UpdateWafIntegrationSyncScheduleRequest.newBuilder()
+            .setIntegrationId(integrationId)
+            .setEnabled(true)
+            .setCronMetadata(
+                WafSyncCronMetadata.newBuilder()
+                    .setCronExpression("0 0 0 ? * *")
+                    .setZoneOffset("+00:00")
+                    .build())
+            .build();
+
+    assertThrows(
+        RuntimeException.class,
+        () -> wafProviderServiceBlockingStub.updateWafIntegrationSyncSchedule(scheduleRequest));
+
+    GetWafIntegrationResponse getResponse =
+        wafProviderServiceBlockingStub.getWafIntegration(
+            GetWafIntegrationRequest.newBuilder().setId(integrationId).build());
+    assertTrue(getResponse.getWafIntegration().getWafIntegrationDetails().getIsWafSyncEnabled());
+  }
+
+  @Test
+  void updateWafIntegrationSyncScheduleDisableFailureStillPersistsStateTest() {
+    WafIntegrationDetails details =
+        createWafIntegrationDetails(
+                "sync-disable-order-test",
+                "email",
+                IntegrationParamsCase.CLOUDFLARE_INTEGRATION_PARAMS)
+            .toBuilder()
+            .setIsWafSyncEnabled(true)
+            .build();
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(
+            CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(details).build());
+    String integrationId = createResponse.getWafIntegration().getId();
+
+    org.mockito.Mockito.doThrow(new RuntimeException("schedule disable failed"))
+        .when(wafIntegrationSyncScheduleManager)
+        .deleteSchedulesForIntegration(
+            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.eq(integrationId));
+
+    UpdateWafIntegrationSyncScheduleRequest scheduleRequest =
+        UpdateWafIntegrationSyncScheduleRequest.newBuilder()
+            .setIntegrationId(integrationId)
+            .setEnabled(false)
+            .build();
+
+    assertThrows(
+        RuntimeException.class,
+        () -> wafProviderServiceBlockingStub.updateWafIntegrationSyncSchedule(scheduleRequest));
+
+    GetWafIntegrationResponse getResponse =
+        wafProviderServiceBlockingStub.getWafIntegration(
+            GetWafIntegrationRequest.newBuilder().setId(integrationId).build());
+    assertFalse(getResponse.getWafIntegration().getWafIntegrationDetails().getIsWafSyncEnabled());
   }
 
   @Test
