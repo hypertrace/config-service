@@ -16,12 +16,14 @@ import ai.traceable.fraud.datamodel.entity.derivation.config.service.v1.EntityDe
 import ai.traceable.fraud.policy.config.service.v1.AbuseActionType;
 import ai.traceable.fraud.policy.config.service.v1.AbusePolicy;
 import ai.traceable.fraud.policy.config.service.v1.AbusePolicyData;
+import com.google.common.util.concurrent.RateLimiter;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -39,6 +41,13 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public class AbusePolicyEdgeDecisionConverter {
 
   public static final String ABUSE_POLICY_ID_PREFIX = "abuse-";
+
+  /** ~1 WARN per 5 minutes per tenant for conversion failures (see ModsecRulesRegistryImpl). */
+  private static final double CONVERSION_FAILURE_LOG_PERMITS_PER_SECOND = 1.0 / 300.0;
+
+  private final ConcurrentHashMap<String, RateLimiter> conversionFailureLogRateLimiterByTenant =
+      new ConcurrentHashMap<>();
+
   private final EntityJexlResolver entityJexlResolver;
   private final EntityScopeResolver entityScopeResolver;
   private final Map<AbusePolicyData.TemplateConfigCase, TemplateEdgeDecisionConverter>
@@ -136,9 +145,23 @@ public class AbusePolicyEdgeDecisionConverter {
 
       return Optional.of(ruleBuilder.build());
     } catch (Exception ex) {
-      log.warn("Unable to convert abuse policy to edge decision rule: {}", abusePolicy.getId(), ex);
+      if (tryAcquireConversionFailureLog(requestContext)) {
+        log.warn(
+            "Unable to convert abuse policy to edge decision rule for tenant {}: {}",
+            requestContext.getTenantId().orElse("unknown"),
+            abusePolicy.getId(),
+            ex);
+      }
       return Optional.empty();
     }
+  }
+
+  private boolean tryAcquireConversionFailureLog(RequestContext requestContext) {
+    String tenantId = requestContext.getTenantId().orElse("");
+    return conversionFailureLogRateLimiterByTenant
+        .computeIfAbsent(
+            tenantId, t -> RateLimiter.create(CONVERSION_FAILURE_LOG_PERMITS_PER_SECOND))
+        .tryAcquire();
   }
 
   private Optional<EdgeDecisionRuleScope> buildRuleScope(

@@ -15,3 +15,6 @@ bin/
 
 .cursor
 .windsurf
+
+# Local scratch / notes (not committed)
+tmp/
