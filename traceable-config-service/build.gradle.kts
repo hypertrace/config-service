@@ -35,6 +35,10 @@ tasks.register<DockerPullImage>("pullEntityServiceImage") {
   image.set("hypertrace/entity-service:0.8.65")
 }
 
+tasks.register<DockerPullImage>("pullAttributeServiceImage") {
+  image.set(docker.registryCredentials.url.get() + "/traceable/attribute-service:0.16.26")
+}
+
 tasks.register<DockerPullImage>("pullActorServiceImage") {
   image.set(docker.registryCredentials.url.get() + "/traceable/actor-service:${commonLibs.versions.traceable.actorservice.get()}")
 }
@@ -48,6 +52,12 @@ tasks.register<DockerStartContainer>("startEntityServiceContainer") {
   dependsOn("startMongoContainer")
   dependsOn("createEntityServiceContainer")
   targetContainerId(tasks.getByName<DockerCreateContainer>("createEntityServiceContainer").containerId)
+}
+
+tasks.register<DockerStartContainer>("startAttributeServiceContainer") {
+  dependsOn("startMongoContainer")
+  dependsOn("createAttributeServiceContainer")
+  targetContainerId(tasks.getByName<DockerCreateContainer>("createAttributeServiceContainer").containerId)
 }
 
 tasks.register<DockerStartContainer>("startActorServiceContainer") {
@@ -74,6 +84,18 @@ tasks.register<DockerCreateContainer>("createEntityServiceContainer") {
   envVars.put("mongo_host", tasks.getByName<DockerCreateContainer>("createMongoContainer").containerName)
   hostConfig.portBindings.set(listOf("60061:50061"))
   hostConfig.binds.put("$projectDir/src/integrationTest/resources/config-entity-service-test/application.conf", "/app/resources/configs/entity-service/application.conf")
+  hostConfig.network.set(tasks.getByName<DockerCreateNetwork>("createIntegrationTestNetwork").networkId)
+  hostConfig.autoRemove.set(true)
+}
+
+tasks.register<DockerCreateContainer>("createAttributeServiceContainer") {
+  dependsOn("createIntegrationTestNetwork")
+  dependsOn("pullAttributeServiceImage")
+  targetImageId(tasks.getByName<DockerPullImage>("pullAttributeServiceImage").image)
+  containerName.set("attribute-service-local")
+  envVars.put("mongo_host", tasks.getByName<DockerCreateContainer>("createMongoContainer").containerName)
+  hostConfig.portBindings.set(listOf("9012:9012"))
+  hostConfig.binds.put("$projectDir/src/integrationTest/resources/config-attribute-service-test/application.conf", "/app/resources/configs/attribute-service/application.conf")
   hostConfig.network.set(tasks.getByName<DockerCreateNetwork>("createIntegrationTestNetwork").networkId)
   hostConfig.autoRemove.set(true)
 }
@@ -124,9 +146,14 @@ tasks.register<DockerStopContainer>("stopMongoContainer") {
   finalizedBy("stopCorazaContainer")
 }
 
+tasks.register<DockerStopContainer>("stopAttributeServiceContainer") {
+  targetContainerId(tasks.getByName<DockerCreateContainer>("createAttributeServiceContainer").containerId)
+  finalizedBy("stopMongoContainer")
+}
+
 tasks.register<DockerStopContainer>("stopEntityServiceContainer") {
   targetContainerId(tasks.getByName<DockerCreateContainer>("createEntityServiceContainer").containerId)
-  finalizedBy("stopMongoContainer")
+  finalizedBy("stopAttributeServiceContainer")
 }
 
 tasks.register<DockerStopContainer>("stopAllContainers") {
@@ -137,6 +164,7 @@ tasks.register<DockerStopContainer>("stopAllContainers") {
 tasks.integrationTest {
   useJUnitPlatform()
   dependsOn("startActorServiceContainer")
+  dependsOn("startAttributeServiceContainer")
   dependsOn("startCorazaContainer")
   finalizedBy("stopAllContainers")
   maxHeapSize = "4096m"

@@ -17,22 +17,22 @@ custom-signature-config-service-impl/src @singhalprerana @avinashkolluru @aaron-
 malicious-sources-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99 @bhubam @Gg-harness
 iprange-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99 @bhubam @Gg-harness
 region-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99 @bhubam @Gg-harness
-fraud-datamodel-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @vinaysrini @abhishek-yadav-tracable @varsha-abhinandan
-fraud-datamodel-derivation-config-service-api/src @sunilgattupalle @avinashkolluru @vinaysrini @abhishek-yadav-tracable @varsha-abhinandan @PrajwalKrishna @saxenakshitiz
-fraud-policy-config-service-api/src @sunilgattupalle @avinashkolluru @abhishek-yadav-tracable @varsha-abhinandan @PrajwalKrishna @saxenakshitiz
-fraud-datamodel-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @vinaysrini @abhishek-yadav-tracable @varsha-abhinandan
-fraud-datamodel-derivation-config-service-impl/src @sunilgattupalle @avinashkolluru @vinaysrini @abhishek-yadav-tracable @varsha-abhinandan @PrajwalKrishna @saxenakshitiz
+fraud-datamodel-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @vinaysrini @varsha-abhinandan @saxenakshitiz @Adity-Deshmukh
+fraud-datamodel-derivation-config-service-api/src @sunilgattupalle @avinashkolluru @vinaysrini @varsha-abhinandan @PrajwalKrishna @saxenakshitiz
+fraud-policy-config-service-api/src @sunilgattupalle @avinashkolluru @varsha-abhinandan @PrajwalKrishna @saxenakshitiz
+fraud-datamodel-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @vinaysrini @varsha-abhinandan @saxenakshitiz @Adity-Deshmukh
+fraud-datamodel-derivation-config-service-impl/src @sunilgattupalle @avinashkolluru @vinaysrini @varsha-abhinandan @PrajwalKrishna @saxenakshitiz
 fraud-policy-config-service-impl/src @sunilgattupalle @avinashkolluru @vinaysrini @Adity-Deshmukh @varsha-abhinandan @PrajwalKrishna @saxenakshitiz
 traceable-policy-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini
 traceable-policy-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini
 traceable-datamodel-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini
 traceable-datamodel-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini
-traceable-edge-bot-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @abhishek-yadav-tracable @Gg-harness
-traceable-edge-bot-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @abhishek-yadav-tracable @Gg-harness
-traceable-edge-decision-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @PrajwalKrishna @saxenakshitiz @RishabhB99 @abhishek-yadav-tracable @Gg-harness
-traceable-edge-decision-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @PrajwalKrishna @saxenakshitiz @RishabhB99 @abhishek-yadav-tracable @Gg-harness
-traceable-edge-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @PrajwalKrishna @saxenakshitiz @RishabhB99 @abhishek-yadav-tracable @Gg-harness
-traceable-edge-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @PrajwalKrishna @saxenakshitiz @RishabhB99 @abhishek-yadav-tracable @Gg-harness
+traceable-edge-bot-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @Gg-harness
+traceable-edge-bot-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @Gg-harness
+traceable-edge-decision-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @PrajwalKrishna @saxenakshitiz @RishabhB99 @Gg-harness
+traceable-edge-decision-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @PrajwalKrishna @saxenakshitiz @RishabhB99 @Gg-harness
+traceable-edge-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @PrajwalKrishna @saxenakshitiz @RishabhB99 @Gg-harness
+traceable-edge-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @PrajwalKrishna @saxenakshitiz @RishabhB99 @Gg-harness
 traceable-config-service-rest/src @sunilgattupalle @surajpuvvada @avinashkolluru @aaron-steinfeld @vinaysrini
 threat-scoring-config-service-impl/src/main/resources @piyushroshan @soujanyanmbri @singhalprerana @avinashkolluru
 user-attribution-config-service-api/src @sanket-mundra @rutvij-menavlikar @saxenakshitiz @aaron-steinfeld
@@ -54,8 +54,8 @@ jira-integration-config-service-impl/src @murari54 @Kunal-8789 @sanketkar24 @Gg-
 genai-system-discovery-config-service-api/src @aaron-steinfeld @skjindal93 @sanket-mundra @Vaibhav090420
 genai-system-discovery-config-service-impl/src @aaron-steinfeld @skjindal93 @sanket-mundra @Vaibhav090420
 genai-system-discovery-client/src @aaron-steinfeld @skjindal93 @sanket-mundra @Vaibhav090420
-cloud-bot-deployment-config-service-api @singhalprerana @avinashkolluru @saxenakshitiz @bhubam @abhishek-yadav-tracable
-cloud-bot-deployment-config-service-impl @avinashkolluru @saxenakshitiz @bhubam @abhishek-yadav-tracable
+cloud-bot-deployment-config-service-api @singhalprerana @avinashkolluru @saxenakshitiz @bhubam
+cloud-bot-deployment-config-service-impl @avinashkolluru @saxenakshitiz @bhubam
 cloud-edge-deployment-config-service-api @singhalprerana @avinashkolluru @saxenakshitiz @bhubam @Gg-harness
 cloud-edge-deployment-config-service-impl @singhalprerana @avinashkolluru @saxenakshitiz @bhubam @Gg-harness
 certificate-management-config-service-api @singhalprerana @avinashkolluru @saxenakshitiz @bhubam @Gg-harness

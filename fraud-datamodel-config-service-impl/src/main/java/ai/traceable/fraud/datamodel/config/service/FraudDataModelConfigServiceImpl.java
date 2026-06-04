@@ -163,12 +163,12 @@ public class FraudDataModelConfigServiceImpl
           requestContext,
           Collections.singletonList(
               ObjectType.newBuilder().setEventType(finalTypeForUpsert.getEventType()).build()));
+      eventTypeToAttributeMetadataAdapter.onUpsertEventType(finalTypeForUpsert.getEventType());
       responseObserver.onNext(
           UpsertEventTypeResponse.newBuilder()
               .setEventType(finalTypeForUpsert.getEventType())
               .build());
       responseObserver.onCompleted();
-      eventTypeToAttributeMetadataAdapter.onUpsertEventType(finalTypeForUpsert.getEventType());
     } catch (Exception e) {
       log.error("Put Event type failed for request:{}", request, e);
       responseObserver.onError(e);
@@ -193,12 +193,12 @@ public class FraudDataModelConfigServiceImpl
           requestContext,
           Collections.singletonList(
               ObjectType.newBuilder().setMetricType(finalTypeForUpsert.getMetricType()).build()));
+      metricTypeToAttributeMetadataAdapter.onUpsertMetricType(finalTypeForUpsert.getMetricType());
       responseObserver.onNext(
           UpsertMetricTypeResponse.newBuilder()
               .setMetricType(finalTypeForUpsert.getMetricType())
               .build());
       responseObserver.onCompleted();
-      metricTypeToAttributeMetadataAdapter.onUpsertMetricType(finalTypeForUpsert.getMetricType());
     } catch (Exception e) {
       log.error("Put Metric type failed for request:{}", request, e);
       responseObserver.onError(e);
