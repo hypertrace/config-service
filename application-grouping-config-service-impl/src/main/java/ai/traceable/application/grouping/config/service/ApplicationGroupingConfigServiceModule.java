@@ -11,12 +11,17 @@ import com.typesafe.config.Config;
 import io.grpc.BindableService;
 import io.grpc.Channel;
 import java.time.Duration;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.client.DefaultTimeoutClientInterceptor;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 
 public class ApplicationGroupingConfigServiceModule extends AbstractModule {
+
+  private static final String HYPERTRACE_CONFIG_SERVICE_TIMEOUT_CONFIG_PATH =
+      "hypertrace.config.service.timeout";
+  private static final Duration DEFAULT_HYPERTRACE_CONFIG_SERVICE_TIMEOUT = Duration.ofSeconds(10);
 
   private final Channel channel;
   private final Config config;
@@ -46,6 +51,18 @@ public class ApplicationGroupingConfigServiceModule extends AbstractModule {
     return ConfigServiceGrpc.newBlockingStub(this.channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get())
-        .withInterceptors(new DefaultTimeoutClientInterceptor(Duration.ofSeconds(10)));
+        .withInterceptors(new DefaultTimeoutClientInterceptor(getHyperTraceConfigServiceTimeout()));
+  }
+
+  @Singleton
+  @Provides
+  ClientConfig providesClientConfig() {
+    return new ClientConfig(getHyperTraceConfigServiceTimeout());
+  }
+
+  private Duration getHyperTraceConfigServiceTimeout() {
+    return this.config.hasPath(HYPERTRACE_CONFIG_SERVICE_TIMEOUT_CONFIG_PATH)
+        ? this.config.getDuration(HYPERTRACE_CONFIG_SERVICE_TIMEOUT_CONFIG_PATH)
+        : DEFAULT_HYPERTRACE_CONFIG_SERVICE_TIMEOUT;
   }
 }

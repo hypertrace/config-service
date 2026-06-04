@@ -43,16 +43,19 @@ public class ApplicationGroupingRuleConfigManager implements ApplicationGrouping
 
   @Override
   public List<ApplicationGroupingRuleConfig> getAllApplicationGroupingRuleConfigs(
-      RequestContext requestContext, GetAllApplicationGroupingRuleConfigsRequest request) {
-    return applicationGroupingRuleConfigStore.getAllConfigData(requestContext);
+      final RequestContext requestContext,
+      final GetAllApplicationGroupingRuleConfigsRequest request) {
+    return applicationGroupingRuleConfigStore.getMatchingApplicationGroupingRuleConfigs(
+        requestContext, request.getFilter());
   }
 
   @Override
   public ApplicationGroupingRuleConfig createApplicationGroupingRuleConfig(
-      RequestContext requestContext, CreateApplicationGroupingRuleConfigRequest request) {
+      final RequestContext requestContext,
+      final CreateApplicationGroupingRuleConfigRequest request) {
     validateApplicationGroupingRuleLimit(requestContext);
-    String id = uuidGenerator.generateRandomId();
-    ApplicationGroupingRuleConfig applicationGroupingRuleConfig =
+    final String id = uuidGenerator.generateRandomId();
+    final ApplicationGroupingRuleConfig applicationGroupingRuleConfig =
         buildApplicationGroupingRuleConfig(id, request.getApplicationGroupingRuleConfigInfo());
     return applicationGroupingRuleConfigStore
         .upsertObject(requestContext, applicationGroupingRuleConfig)
@@ -61,8 +64,9 @@ public class ApplicationGroupingRuleConfigManager implements ApplicationGrouping
 
   @Override
   public ApplicationGroupingRuleConfig updateApplicationGroupingRuleConfig(
-      RequestContext requestContext, UpdateApplicationGroupingRuleConfigRequest request) {
-    ApplicationGroupingRuleConfig applicationGroupingRuleConfig =
+      final RequestContext requestContext,
+      final UpdateApplicationGroupingRuleConfigRequest request) {
+    final ApplicationGroupingRuleConfig applicationGroupingRuleConfig =
         buildApplicationGroupingRuleConfig(
             request.getId(), request.getApplicationGroupingRuleConfigInfo());
     return applicationGroupingRuleConfigStore
@@ -72,17 +76,19 @@ public class ApplicationGroupingRuleConfigManager implements ApplicationGrouping
 
   @Override
   public void deleteApplicationGroupingRuleConfigs(
-      RequestContext requestContext, DeleteApplicationGroupingRuleConfigsRequest request) {
+      final RequestContext requestContext,
+      final DeleteApplicationGroupingRuleConfigsRequest request) {
     applicationGroupingRuleConfigStore.deleteObjects(requestContext, request.getIdsList());
   }
 
   @Override
-  public boolean doesApplicationGroupingRuleConfigExist(RequestContext requestContext, String id) {
+  public boolean doesApplicationGroupingRuleConfigExist(
+      final RequestContext requestContext, final String id) {
     return applicationGroupingRuleConfigStore.getData(requestContext, id).isPresent();
   }
 
   private ApplicationGroupingRuleConfig buildApplicationGroupingRuleConfig(
-      String id, ApplicationGroupingRuleConfigInfo configInfo) {
+      final String id, final ApplicationGroupingRuleConfigInfo configInfo) {
     return ApplicationGroupingRuleConfig.newBuilder()
         .setId(id)
         .setApplicationGroupingRuleConfigInfo(configInfo)

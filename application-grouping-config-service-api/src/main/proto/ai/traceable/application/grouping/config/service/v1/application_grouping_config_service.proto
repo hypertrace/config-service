@@ -16,10 +16,16 @@ service ApplicationGroupingConfigService {
   rpc DeleteApplicationGroupingRuleConfigs(DeleteApplicationGroupingRuleConfigsRequest) returns (DeleteApplicationGroupingRuleConfigsResponse);
 }
 
-message GetAllApplicationGroupingRuleConfigsRequest {}
+message GetAllApplicationGroupingRuleConfigsRequest {
+  ApplicationGroupingRulesFilter filter = 1;
+}
 
 message GetAllApplicationGroupingRuleConfigsResponse {
   repeated ApplicationGroupingRuleConfig application_grouping_rule_configs = 1;
+}
+
+message ApplicationGroupingRulesFilter {
+  repeated string ids = 1;
 }
 
 message CreateApplicationGroupingRuleConfigRequest {
