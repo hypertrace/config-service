@@ -14,6 +14,7 @@ service WafProviderService {
   rpc UpdateWafIntegration(UpdateWafIntegrationRequest) returns (UpdateWafIntegrationResponse) {}
   rpc DeleteWafIntegration(DeleteWafIntegrationRequest) returns (DeleteWafIntegrationResponse) {}
   rpc UpdateWafIntegrationSyncSchedule(UpdateWafIntegrationSyncScheduleRequest) returns (UpdateWafIntegrationSyncScheduleResponse) {}
+  rpc GetWafIntegrationSyncSchedule(GetWafIntegrationSyncScheduleRequest) returns (GetWafIntegrationSyncScheduleResponse) {}
 }
 
 message CreateWafIntegrationRequest {
@@ -71,6 +72,26 @@ message UpdateWafIntegrationSyncScheduleRequest {
 
 message UpdateWafIntegrationSyncScheduleResponse {
   WafIntegration waf_integration = 1;
+}
+
+message GetWafIntegrationSyncScheduleRequest {
+  string integration_id = 1;
+}
+
+message GetWafIntegrationSyncScheduleResponse {
+  WafIntegrationSyncSchedule schedule = 1;
+}
+
+message WafIntegrationSyncSchedule {
+  string schedule_id = 1;
+  WafSyncScheduleStatus status = 2;
+  WafSyncCronMetadata cron_metadata = 3;
+}
+
+enum WafSyncScheduleStatus {
+  WAF_SYNC_SCHEDULE_STATUS_UNSPECIFIED = 0;
+  WAF_SYNC_SCHEDULE_STATUS_ENABLED = 1;
+  WAF_SYNC_SCHEDULE_STATUS_DISABLED = 2;
 }
 
 message WafSyncCronMetadata {
