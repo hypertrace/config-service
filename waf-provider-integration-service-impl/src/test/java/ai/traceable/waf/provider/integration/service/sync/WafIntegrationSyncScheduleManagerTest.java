@@ -1,6 +1,8 @@
 package ai.traceable.waf.provider.integration.service.sync;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
@@ -17,8 +19,11 @@ import ai.traceable.job.service.v1.DeleteScheduledJobRequest;
 import ai.traceable.job.service.v1.DeleteScheduledJobResponse;
 import ai.traceable.job.service.v1.JobServiceGrpc.JobServiceBlockingStub;
 import ai.traceable.job.service.v1.QueryScheduleResponse;
+import ai.traceable.job.service.v1.ScheduledJobStatus;
 import ai.traceable.job.service.v1.UpdateScheduledJobRequest;
 import ai.traceable.job.service.v1.UpdateScheduledJobResponse;
+import ai.traceable.waf.integration.service.api.v1.WafIntegrationSyncSchedule;
+import ai.traceable.waf.integration.service.api.v1.WafSyncScheduleStatus;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.Callable;
@@ -190,6 +195,74 @@ class WafIntegrationSyncScheduleManagerTest {
 
     verify(jobServiceBlockingStub, never()).createScheduledJob(any());
     verify(jobServiceBlockingStub, never()).updateScheduledJob(any());
+  }
+
+  @Test
+  void getScheduleForIntegrationReturnsEmptyWhenNoMatchingSchedule() {
+    when(jobServiceBlockingStub.querySchedule(any()))
+        .thenReturn(
+            QueryScheduleResponse.newBuilder()
+                .setResultSet(ResultSet.getDefaultInstance())
+                .build());
+
+    final Optional<WafIntegrationSyncSchedule> result =
+        manager.getScheduleForIntegration(requestContext, "integration-missing");
+
+    assertFalse(result.isPresent());
+  }
+
+  @Test
+  void getScheduleForIntegrationMapsRowToSchedule() {
+    final QueryScheduleResponse queryResponse =
+        QueryScheduleResponse.newBuilder()
+            .setResultSet(
+                ResultSet.newBuilder()
+                    .addRows(
+                        Row.newBuilder()
+                            .putFields(
+                                "id",
+                                ConstantValue.newBuilder().setStringValue("schedule-1").build())
+                            .putFields(
+                                "status",
+                                ConstantValue.newBuilder()
+                                    .setStringValue(
+                                        ScheduledJobStatus.SCHEDULED_JOB_STATUS_ENABLED.name())
+                                    .build())
+                            .putFields(
+                                "cron_expression",
+                                ConstantValue.newBuilder().setStringValue("0 0 1 ? * *").build())
+                            .putFields(
+                                "zone_offset",
+                                ConstantValue.newBuilder().setStringValue("+05:30").build())
+                            .build())
+                    .build())
+            .build();
+
+    when(jobServiceBlockingStub.querySchedule(any())).thenReturn(queryResponse);
+
+    final Optional<WafIntegrationSyncSchedule> result =
+        manager.getScheduleForIntegration(requestContext, "integration-1");
+
+    assertTrue(result.isPresent());
+    final WafIntegrationSyncSchedule schedule = result.get();
+    assertEquals("schedule-1", schedule.getScheduleId());
+    assertEquals(WafSyncScheduleStatus.WAF_SYNC_SCHEDULE_STATUS_ENABLED, schedule.getStatus());
+    assertEquals("0 0 1 ? * *", schedule.getCronMetadata().getCronExpression());
+    assertEquals("+05:30", schedule.getCronMetadata().getZoneOffset());
+
+    final ArgumentCaptor<ai.traceable.job.service.v1.QueryScheduleRequest> queryCaptor =
+        ArgumentCaptor.forClass(ai.traceable.job.service.v1.QueryScheduleRequest.class);
+    verify(jobServiceBlockingStub).querySchedule(queryCaptor.capture());
+    assertEquals(
+        "integration-1",
+        queryCaptor
+            .getValue()
+            .getQuery()
+            .getFilter()
+            .getRelationalFilter()
+            .getRightOperand()
+            .getConstantValue()
+            .getStringValue());
   }
 
   @Test

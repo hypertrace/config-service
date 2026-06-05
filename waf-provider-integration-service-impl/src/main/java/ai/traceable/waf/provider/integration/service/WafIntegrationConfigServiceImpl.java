@@ -6,6 +6,8 @@ import ai.traceable.waf.integration.service.api.v1.DeleteWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.DeleteWafIntegrationResponse;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationResponse;
+import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationSyncScheduleRequest;
+import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationSyncScheduleResponse;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsDetailsRequest;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsDetailsResponse;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsFilter;
@@ -17,12 +19,14 @@ import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationSyncSched
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationSyncScheduleResponse;
 import ai.traceable.waf.integration.service.api.v1.WafIntegration;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails;
+import ai.traceable.waf.integration.service.api.v1.WafIntegrationSyncSchedule;
 import ai.traceable.waf.integration.service.api.v1.WafProviderServiceGrpc.WafProviderServiceImplBase;
 import ai.traceable.waf.provider.integration.service.sync.WafIntegrationSyncScheduleManager;
 import com.google.inject.Inject;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -286,6 +290,35 @@ public class WafIntegrationConfigServiceImpl extends WafProviderServiceImplBase 
     } catch (final Exception e) {
       log.error(
           "Failed while updating waf sync schedule for request: {} with exception: ", request, e);
+      responseStreamObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getWafIntegrationSyncSchedule(
+      GetWafIntegrationSyncScheduleRequest request,
+      StreamObserver<GetWafIntegrationSyncScheduleResponse> responseStreamObserver) {
+    try {
+      final RequestContext requestContext = RequestContext.CURRENT.get();
+      wafIntegrationConfigRequestValidator.validateOrThrow(request, requestContext);
+
+      wafIntegrationStore
+          .getData(requestContext, request.getIntegrationId())
+          .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+
+      final Optional<WafIntegrationSyncSchedule> schedule =
+          wafIntegrationSyncScheduleManager.getScheduleForIntegration(
+              requestContext, request.getIntegrationId());
+
+      final GetWafIntegrationSyncScheduleResponse.Builder responseBuilder =
+          GetWafIntegrationSyncScheduleResponse.newBuilder();
+      schedule.ifPresent(responseBuilder::setSchedule);
+
+      responseStreamObserver.onNext(responseBuilder.build());
+      responseStreamObserver.onCompleted();
+    } catch (final Exception e) {
+      log.error(
+          "Failed while getting waf sync schedule for request: {} with exception: ", request, e);
       responseStreamObserver.onError(e);
     }
   }

@@ -44,6 +44,7 @@ import ai.traceable.waf.integration.service.api.v1.GcpIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.GcpIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.GcpIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationRequest;
+import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationSyncScheduleRequest;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsFilter;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsFilter.WafProviderType;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsRequest;
@@ -381,6 +382,24 @@ class WafIntegrationConfigRequestValidatorTest {
         () ->
             wafIntegrationConfigRequestValidator.validateOrThrow(
                 validDisableWithoutCron, REQUEST_CONTEXT));
+  }
+
+  @Test
+  void getWafIntegrationSyncScheduleValidationTest() {
+    GetWafIntegrationSyncScheduleRequest missingIntegrationId =
+        GetWafIntegrationSyncScheduleRequest.newBuilder().build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                missingIntegrationId, REQUEST_CONTEXT));
+
+    GetWafIntegrationSyncScheduleRequest validRequest =
+        GetWafIntegrationSyncScheduleRequest.newBuilder()
+            .setIntegrationId("integration-id")
+            .build();
+    assertDoesNotThrow(
+        () -> wafIntegrationConfigRequestValidator.validateOrThrow(validRequest, REQUEST_CONTEXT));
   }
 
   @Test

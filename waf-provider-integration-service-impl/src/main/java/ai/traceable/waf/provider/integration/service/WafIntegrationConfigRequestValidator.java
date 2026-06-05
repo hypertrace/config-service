@@ -58,6 +58,7 @@ import ai.traceable.waf.integration.service.api.v1.GcpIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.GcpIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.GcpIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationRequest;
+import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationSyncScheduleRequest;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsDetailsRequest;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsFilter;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsFilter.WafProviderType;
@@ -125,6 +126,13 @@ public class WafIntegrationConfigRequestValidator {
   public void validateOrThrow(DeleteWafIntegrationRequest request, RequestContext requestContext) {
     validateRequestContextOrThrow(requestContext);
     validateNonDefaultPresenceOrThrow(request, DeleteWafIntegrationRequest.ID_FIELD_NUMBER);
+  }
+
+  public void validateOrThrow(
+      GetWafIntegrationSyncScheduleRequest request, RequestContext requestContext) {
+    validateRequestContextOrThrow(requestContext);
+    validateNonDefaultPresenceOrThrow(
+        request, GetWafIntegrationSyncScheduleRequest.INTEGRATION_ID_FIELD_NUMBER);
   }
 
   public void validateOrThrow(

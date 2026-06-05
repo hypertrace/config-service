@@ -24,11 +24,15 @@ import ai.traceable.job.service.v1.UpdateScheduledJobField;
 import ai.traceable.job.service.v1.UpdateScheduledJobRequest;
 import ai.traceable.job.service.waf.integration.sync.v1.WafIntegrationSyncJobSpec;
 import ai.traceable.job.service.waf.integration.sync.v1.WafIntegrationSyncJobSpecField;
+import ai.traceable.waf.integration.service.api.v1.WafIntegrationSyncSchedule;
 import ai.traceable.waf.integration.service.api.v1.WafSyncCronMetadata;
+import ai.traceable.waf.integration.service.api.v1.WafSyncScheduleStatus;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.grpc.Status;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +43,9 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public class WafIntegrationSyncScheduleManager {
   private static final String WAF_INTEGRATION_SYNC_JOB_NAME = "waf-integration-sync";
   private static final String SCHEDULE_ID_ALIAS = "id";
+  private static final String SCHEDULE_STATUS_ALIAS = "status";
+  private static final String SCHEDULE_CRON_EXPRESSION_ALIAS = "cron_expression";
+  private static final String SCHEDULE_ZONE_OFFSET_ALIAS = "zone_offset";
   private static final String TENANT_ID_REQUIRED_ERROR_MESSAGE = "Tenant ID is required";
 
   private final JobServiceBlockingStub jobServiceBlockingStub;
@@ -122,6 +129,62 @@ public class WafIntegrationSyncScheduleManager {
         scheduleIdsToDelete.size());
   }
 
+  public Optional<WafIntegrationSyncSchedule> getScheduleForIntegration(
+      final RequestContext requestContext, final String integrationId) {
+    final String tenantId = getTenantIdOrThrow(requestContext);
+    log.debug(
+        "Querying schedule for integrationId={} tenantId={} jobType={}",
+        integrationId,
+        tenantId,
+        JobType.JOB_TYPE_WAF_INTEGRATION_SYNC);
+
+    final ScheduleFilter integrationIdFilter = buildIntegrationIdFilter(integrationId);
+
+    final ScheduleQuery query =
+        ScheduleQuery.newBuilder()
+            .addSelections(
+                buildScheduledJobSelection(
+                    SCHEDULE_ID_ALIAS, ScheduledJobField.SCHEDULED_JOB_FIELD_ID))
+            .addSelections(
+                buildScheduledJobSelection(
+                    SCHEDULE_STATUS_ALIAS, ScheduledJobField.SCHEDULED_JOB_FIELD_STATUS))
+            .addSelections(
+                buildScheduledJobSelection(
+                    SCHEDULE_CRON_EXPRESSION_ALIAS,
+                    ScheduledJobField.SCHEDULED_JOB_FIELD_CRON_EXPRESSION))
+            .addSelections(
+                buildScheduledJobSelection(
+                    SCHEDULE_ZONE_OFFSET_ALIAS, ScheduledJobField.SCHEDULED_JOB_FIELD_ZONE_OFFSET))
+            .setFilter(integrationIdFilter)
+            .build();
+
+    final QueryScheduleResponse response =
+        requestContext.call(
+            () ->
+                jobServiceBlockingStub
+                    .withDeadlineAfter(
+                        jobServiceClientConfig.getRequestTimeout().toMillis(),
+                        TimeUnit.MILLISECONDS)
+                    .querySchedule(
+                        QueryScheduleRequest.newBuilder()
+                            .setJobType(JobType.JOB_TYPE_WAF_INTEGRATION_SYNC)
+                            .setQuery(query)
+                            .build()));
+
+    final int resultRowCount = response.getResultSet().getRowsCount();
+    if (resultRowCount > 1) {
+      log.warn(
+          "Found {} waf sync schedule for integrationId={} tenantId={}; returning first schedule only",
+          resultRowCount,
+          integrationId,
+          tenantId);
+    }
+
+    return response.getResultSet().getRowsList().stream()
+        .findFirst()
+        .map(row -> toWafIntegrationSyncSchedule(row.getFieldsMap()));
+  }
+
   public void deleteSchedulesForIntegration(
       final RequestContext requestContext, final String integrationId) {
     final String tenantId = getTenantIdOrThrow(requestContext);
@@ -157,34 +220,13 @@ public class WafIntegrationSyncScheduleManager {
         tenantId,
         JobType.JOB_TYPE_WAF_INTEGRATION_SYNC);
 
-    final ScheduleFilter integrationIdFilter =
-        ScheduleFilter.newBuilder()
-            .setRelationalFilter(
-                ScheduleRelationalFilter.newBuilder()
-                    .setLeftOperand(
-                        ScheduleFilterExpression.newBuilder()
-                            .setField(
-                                ScheduleField.newBuilder()
-                                    .setJobSpecField(
-                                        JobSpecField.newBuilder()
-                                            .setWafIntegrationSyncSpecField(
-                                                WafIntegrationSyncJobSpecField
-                                                    .WAF_INTEGRATION_SYNC_JOB_SPEC_FIELD_INTEGRATION_ID))))
-                    .setOperator(RelationalOperator.RELATIONAL_OPERATOR_EQ)
-                    .setRightOperand(
-                        ScheduleFilterExpression.newBuilder()
-                            .setConstantValue(
-                                ConstantValue.newBuilder().setStringValue(integrationId))))
-            .build();
+    final ScheduleFilter integrationIdFilter = buildIntegrationIdFilter(integrationId);
 
     final ScheduleQuery query =
         ScheduleQuery.newBuilder()
             .addSelections(
-                ScheduleSelection.newBuilder()
-                    .setAlias(SCHEDULE_ID_ALIAS)
-                    .setField(
-                        ScheduleField.newBuilder()
-                            .setScheduledJobField(ScheduledJobField.SCHEDULED_JOB_FIELD_ID)))
+                buildScheduledJobSelection(
+                    SCHEDULE_ID_ALIAS, ScheduledJobField.SCHEDULED_JOB_FIELD_ID))
             .setFilter(integrationIdFilter)
             .build();
 
@@ -305,6 +347,88 @@ public class WafIntegrationSyncScheduleManager {
                     DeleteScheduledJobRequest.newBuilder().setId(scheduleId).build()));
 
     log.info("Deleted schedule successfully scheduleId={} tenantId={}", scheduleId, tenantId);
+  }
+
+  private static ScheduleFilter buildIntegrationIdFilter(final String integrationId) {
+    return ScheduleFilter.newBuilder()
+        .setRelationalFilter(
+            ScheduleRelationalFilter.newBuilder()
+                .setLeftOperand(
+                    ScheduleFilterExpression.newBuilder()
+                        .setField(
+                            ScheduleField.newBuilder()
+                                .setJobSpecField(
+                                    JobSpecField.newBuilder()
+                                        .setWafIntegrationSyncSpecField(
+                                            WafIntegrationSyncJobSpecField
+                                                .WAF_INTEGRATION_SYNC_JOB_SPEC_FIELD_INTEGRATION_ID))))
+                .setOperator(RelationalOperator.RELATIONAL_OPERATOR_EQ)
+                .setRightOperand(
+                    ScheduleFilterExpression.newBuilder()
+                        .setConstantValue(
+                            ConstantValue.newBuilder().setStringValue(integrationId))))
+        .build();
+  }
+
+  private static ScheduleSelection buildScheduledJobSelection(
+      final String alias, final ScheduledJobField field) {
+    return ScheduleSelection.newBuilder()
+        .setAlias(alias)
+        .setField(ScheduleField.newBuilder().setScheduledJobField(field))
+        .build();
+  }
+
+  private static WafIntegrationSyncSchedule toWafIntegrationSyncSchedule(
+      final Map<String, ConstantValue> fields) {
+    final String scheduleId =
+        fields.getOrDefault(SCHEDULE_ID_ALIAS, ConstantValue.getDefaultInstance()).getStringValue();
+    final String statusName =
+        fields
+            .getOrDefault(SCHEDULE_STATUS_ALIAS, ConstantValue.getDefaultInstance())
+            .getStringValue();
+    final String cronExpression =
+        fields
+            .getOrDefault(SCHEDULE_CRON_EXPRESSION_ALIAS, ConstantValue.getDefaultInstance())
+            .getStringValue();
+    final String zoneOffset =
+        fields
+            .getOrDefault(SCHEDULE_ZONE_OFFSET_ALIAS, ConstantValue.getDefaultInstance())
+            .getStringValue();
+
+    return WafIntegrationSyncSchedule.newBuilder()
+        .setScheduleId(scheduleId)
+        .setStatus(toWafSyncScheduleStatus(statusName))
+        .setCronMetadata(
+            WafSyncCronMetadata.newBuilder()
+                .setCronExpression(cronExpression)
+                .setZoneOffset(zoneOffset)
+                .build())
+        .build();
+  }
+
+  private static WafSyncScheduleStatus toWafSyncScheduleStatus(final String statusName) {
+    if (statusName.isEmpty()) {
+      return WafSyncScheduleStatus.WAF_SYNC_SCHEDULE_STATUS_UNSPECIFIED;
+    }
+    final ScheduledJobStatus scheduledJobStatus;
+    try {
+      scheduledJobStatus = ScheduledJobStatus.valueOf(statusName);
+    } catch (final IllegalArgumentException e) {
+      log.warn(
+          "Unknown scheduled job status name received from job-service statusName={}; defaulting to UNSPECIFIED",
+          statusName);
+      return WafSyncScheduleStatus.WAF_SYNC_SCHEDULE_STATUS_UNSPECIFIED;
+    }
+    switch (scheduledJobStatus) {
+      case SCHEDULED_JOB_STATUS_ENABLED:
+        return WafSyncScheduleStatus.WAF_SYNC_SCHEDULE_STATUS_ENABLED;
+      case SCHEDULED_JOB_STATUS_DISABLED:
+        return WafSyncScheduleStatus.WAF_SYNC_SCHEDULE_STATUS_DISABLED;
+      case SCHEDULED_JOB_STATUS_UNSPECIFIED:
+      case UNRECOGNIZED:
+      default:
+        return WafSyncScheduleStatus.WAF_SYNC_SCHEDULE_STATUS_UNSPECIFIED;
+    }
   }
 
   private String getTenantIdOrThrow(final RequestContext requestContext) {

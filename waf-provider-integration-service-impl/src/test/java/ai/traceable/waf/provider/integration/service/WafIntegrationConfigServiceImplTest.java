@@ -54,6 +54,8 @@ import ai.traceable.waf.integration.service.api.v1.GcpIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.GcpIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationResponse;
+import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationSyncScheduleRequest;
+import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationSyncScheduleResponse;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsDetailsRequest;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsDetailsResponse;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsFilter;
@@ -75,10 +77,12 @@ import ai.traceable.waf.integration.service.api.v1.WafIntegration;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails.IntegrationParamsCase;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationScope;
+import ai.traceable.waf.integration.service.api.v1.WafIntegrationSyncSchedule;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationTarget;
 import ai.traceable.waf.integration.service.api.v1.WafProviderServiceGrpc;
 import ai.traceable.waf.integration.service.api.v1.WafProviderServiceGrpc.WafProviderServiceBlockingStub;
 import ai.traceable.waf.integration.service.api.v1.WafSyncCronMetadata;
+import ai.traceable.waf.integration.service.api.v1.WafSyncScheduleStatus;
 import ai.traceable.waf.integration.service.api.v1.WebIdentityAuthenticationCredentials;
 import ai.traceable.waf.provider.integration.service.sync.WafIntegrationSyncScheduleManager;
 import com.typesafe.config.Config;
@@ -2798,5 +2802,94 @@ class WafIntegrationConfigServiceImplTest {
         wafProviderServiceBlockingStub.getWafIntegration(getRequest);
 
     assertFalse(getResponse.getWafIntegration().getWafIntegrationDetails().getEnabled());
+  }
+
+  @Test
+  void getWafIntegrationSyncScheduleReturnsScheduleWhenPresent() {
+    WafIntegrationDetails details =
+        createWafIntegrationDetails(
+            "sync-get-test", "email", IntegrationParamsCase.CLOUDFLARE_INTEGRATION_PARAMS);
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(
+            CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(details).build());
+    String integrationId = createResponse.getWafIntegration().getId();
+
+    WafIntegrationSyncSchedule expectedSchedule =
+        WafIntegrationSyncSchedule.newBuilder()
+            .setScheduleId("schedule-1")
+            .setStatus(WafSyncScheduleStatus.WAF_SYNC_SCHEDULE_STATUS_ENABLED)
+            .setCronMetadata(
+                WafSyncCronMetadata.newBuilder()
+                    .setCronExpression("0 0 1 ? * *")
+                    .setZoneOffset("+05:30")
+                    .build())
+            .build();
+    org.mockito.Mockito.when(
+            wafIntegrationSyncScheduleManager.getScheduleForIntegration(
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.eq(integrationId)))
+        .thenReturn(java.util.Optional.of(expectedSchedule));
+
+    GetWafIntegrationSyncScheduleResponse response =
+        wafProviderServiceBlockingStub.getWafIntegrationSyncSchedule(
+            GetWafIntegrationSyncScheduleRequest.newBuilder()
+                .setIntegrationId(integrationId)
+                .build());
+
+    assertTrue(response.hasSchedule());
+    assertEquals(expectedSchedule, response.getSchedule());
+  }
+
+  @Test
+  void getWafIntegrationSyncScheduleReturnsEmptyWhenNoSchedule() {
+    WafIntegrationDetails details =
+        createWafIntegrationDetails(
+            "sync-get-empty-test", "email", IntegrationParamsCase.CLOUDFLARE_INTEGRATION_PARAMS);
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(
+            CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(details).build());
+    String integrationId = createResponse.getWafIntegration().getId();
+
+    org.mockito.Mockito.when(
+            wafIntegrationSyncScheduleManager.getScheduleForIntegration(
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.eq(integrationId)))
+        .thenReturn(java.util.Optional.empty());
+
+    GetWafIntegrationSyncScheduleResponse response =
+        wafProviderServiceBlockingStub.getWafIntegrationSyncSchedule(
+            GetWafIntegrationSyncScheduleRequest.newBuilder()
+                .setIntegrationId(integrationId)
+                .build());
+
+    assertFalse(response.hasSchedule());
+  }
+
+  @Test
+  void getWafIntegrationSyncScheduleIntegrationNotFoundTest() {
+    GetWafIntegrationSyncScheduleRequest request =
+        GetWafIntegrationSyncScheduleRequest.newBuilder()
+            .setIntegrationId("missing-integration-id")
+            .build();
+
+    Throwable exception =
+        assertThrows(
+            RuntimeException.class,
+            () -> wafProviderServiceBlockingStub.getWafIntegrationSyncSchedule(request));
+
+    assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
+    org.mockito.Mockito.verifyNoInteractions(wafIntegrationSyncScheduleManager);
+  }
+
+  @Test
+  void getWafIntegrationSyncScheduleValidationFailsForEmptyIntegrationIdTest() {
+    GetWafIntegrationSyncScheduleRequest request =
+        GetWafIntegrationSyncScheduleRequest.newBuilder().build();
+
+    Throwable exception =
+        assertThrows(
+            RuntimeException.class,
+            () -> wafProviderServiceBlockingStub.getWafIntegrationSyncSchedule(request));
+
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), Status.fromThrowable(exception).getCode());
+    org.mockito.Mockito.verifyNoInteractions(wafIntegrationSyncScheduleManager);
   }
 }
