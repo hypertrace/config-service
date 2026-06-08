@@ -5,9 +5,15 @@ import ai.traceable.fraud.datamodel.config.service.v1.ObjectKind;
 import ai.traceable.fraud.datamodel.config.service.v1.ObjectTypeReference;
 import io.grpc.Status;
 import java.util.Map;
+import java.util.regex.Pattern;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class FraudDataModelConfigServiceRequestValidator {
+
+  // Must be a valid SQL identifier for downstream Trino view generation and a valid JEXL
+  // identifier for derivation expression evaluation. Spaces/special chars break both.
+  private static final Pattern VALID_FIELD_NAME_PATTERN =
+      Pattern.compile("^[a-zA-Z_][a-zA-Z0-9_]*$");
 
   private void validateOrThrow(ObjectTypeReference objectTypeReference, ObjectKind objectKind) {
     if (objectTypeReference.getObjectKind() != objectKind) {
@@ -30,9 +36,26 @@ public class FraudDataModelConfigServiceRequestValidator {
     }
   }
 
+  static boolean isValidFieldName(String fieldName) {
+    return fieldName != null && VALID_FIELD_NAME_PATTERN.matcher(fieldName).matches();
+  }
+
+  private void validateFieldName(String fieldName) {
+    if (!isValidFieldName(fieldName)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              "Invalid field name '"
+                  + fieldName
+                  + "'. Field names must start with a letter or underscore"
+                  + " and contain only letters, digits, and underscores.")
+          .asRuntimeException();
+    }
+  }
+
   private void validateOrThrow(Map<String, FieldMetadata> fieldsMeta) {
     for (var entry : fieldsMeta.entrySet()) {
       var fieldName = entry.getKey();
+      validateFieldName(fieldName);
       var fieldMeta = entry.getValue();
       if (fieldMeta.getFieldType() == FieldType.FIELD_TYPE_UNSPECIFIED
           || fieldMeta.getFieldType() == FieldType.UNRECOGNIZED) {
@@ -54,6 +77,7 @@ public class FraudDataModelConfigServiceRequestValidator {
   private void validateOrThrowEntityMeta(Map<String, EntityFieldMetadata> fieldsMeta) {
     for (var entry : fieldsMeta.entrySet()) {
       var fieldName = entry.getKey();
+      validateFieldName(fieldName);
       var fieldMeta = entry.getValue();
       if (fieldMeta.getFieldType() == FieldType.FIELD_TYPE_UNSPECIFIED
           || fieldMeta.getFieldType() == FieldType.UNRECOGNIZED) {

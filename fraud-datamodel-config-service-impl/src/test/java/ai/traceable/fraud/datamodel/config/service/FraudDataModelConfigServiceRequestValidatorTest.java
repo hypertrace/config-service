@@ -116,4 +116,71 @@ public class FraudDataModelConfigServiceRequestValidatorTest {
         RuntimeException.class,
         () -> target.validateRequestContext(RequestContext.forTenantId(null)));
   }
+
+  @Test
+  public void testIsValidFieldName() {
+    Assertions.assertTrue(FraudDataModelConfigServiceRequestValidator.isValidFieldName("userId"));
+    Assertions.assertTrue(
+        FraudDataModelConfigServiceRequestValidator.isValidFieldName("account_type"));
+    Assertions.assertTrue(
+        FraudDataModelConfigServiceRequestValidator.isValidFieldName("ip_address"));
+    Assertions.assertTrue(
+        FraudDataModelConfigServiceRequestValidator.isValidFieldName("start_time_millis_ts"));
+    Assertions.assertTrue(FraudDataModelConfigServiceRequestValidator.isValidFieldName("_private"));
+    Assertions.assertTrue(FraudDataModelConfigServiceRequestValidator.isValidFieldName("A"));
+
+    Assertions.assertFalse(
+        FraudDataModelConfigServiceRequestValidator.isValidFieldName("Account Owner"));
+    Assertions.assertFalse(
+        FraudDataModelConfigServiceRequestValidator.isValidFieldName("field-name"));
+    Assertions.assertFalse(
+        FraudDataModelConfigServiceRequestValidator.isValidFieldName("field.name"));
+    Assertions.assertFalse(
+        FraudDataModelConfigServiceRequestValidator.isValidFieldName("123starts_with_number"));
+    Assertions.assertFalse(FraudDataModelConfigServiceRequestValidator.isValidFieldName(""));
+    Assertions.assertFalse(FraudDataModelConfigServiceRequestValidator.isValidFieldName(null));
+    Assertions.assertFalse(
+        FraudDataModelConfigServiceRequestValidator.isValidFieldName("name with spaces"));
+    Assertions.assertFalse(
+        FraudDataModelConfigServiceRequestValidator.isValidFieldName("special!char"));
+  }
+
+  @Test
+  public void testUpsertEventTypeRejectsFieldNameWithSpaces() {
+    var eventType = FraudDataModelTestUtils.eventType("test_events");
+    Assertions.assertThrows(
+        RuntimeException.class,
+        () ->
+            target.validateOrThrow(
+                requestContext,
+                UpsertEventTypeRequest.newBuilder()
+                    .setId(eventType.getId())
+                    .setTimestampField(eventType.getTimestampField())
+                    .putAllFieldsMeta(eventType.getFieldsMetaMap())
+                    .putFieldsMeta(
+                        "Account Owner",
+                        FieldMetadata.newBuilder().setFieldType(FieldType.FIELD_TYPE_STR).build())
+                    .build()));
+  }
+
+  @Test
+  public void testUpsertEntityTypeRejectsFieldNameWithSpaces() {
+    var entityType = FraudDataModelTestUtils.entityType("test");
+    Assertions.assertThrows(
+        RuntimeException.class,
+        () ->
+            target.validateOrThrow(
+                requestContext,
+                UpsertEntityTypeRequest.newBuilder()
+                    .setId(entityType.getId())
+                    .setIdSet(entityType.getIdSet())
+                    .setLifecycle(entityType.getLifecycle())
+                    .putAllFieldsMeta(entityType.getFieldsMetaMap())
+                    .putFieldsMeta(
+                        "Bad Field",
+                        EntityFieldMetadata.newBuilder()
+                            .setFieldType(FieldType.FIELD_TYPE_STR)
+                            .build())
+                    .build()));
+  }
 }
