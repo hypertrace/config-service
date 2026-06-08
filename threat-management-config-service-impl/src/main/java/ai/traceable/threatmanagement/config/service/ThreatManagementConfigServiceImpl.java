@@ -464,6 +464,9 @@ class ThreatManagementConfigServiceImpl extends ThreatManagementConfigServiceImp
                       .setThreatScoreBound(
                           threatScoreManager.getThreatScoreBound(
                               requestContext, request.getScope()))
+                      .setThreatScoreDecay(
+                          threatScoreDecayManager.getThreatScoreDecay(
+                              requestContext, request.getScope()))
                       .build())
               .build());
       responseObserver.onCompleted();

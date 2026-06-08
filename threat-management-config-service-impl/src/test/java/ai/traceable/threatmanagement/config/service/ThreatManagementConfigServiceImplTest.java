@@ -18,6 +18,7 @@ import ai.traceable.threatmanagement.config.service.threatautoblocking.ThreatAut
 import ai.traceable.threatmanagement.config.service.threatscore.ThreatScoreDecayManager;
 import ai.traceable.threatmanagement.config.service.threatscore.ThreatScoreManager;
 import ai.traceable.threatmanagement.config.service.v1.AnomalyScoreContribution;
+import ai.traceable.threatmanagement.config.service.v1.DecayValue;
 import ai.traceable.threatmanagement.config.service.v1.GetAnomalyScoreContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.GetAnomalyScoreContributionResponse;
 import ai.traceable.threatmanagement.config.service.v1.GetIpReputationThreatScoreConfigRequest;
@@ -48,6 +49,7 @@ import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionC
 import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionType;
 import ai.traceable.threatmanagement.config.service.v1.ThreatScoreBound;
 import ai.traceable.threatmanagement.config.service.v1.ThreatScoreConfig;
+import ai.traceable.threatmanagement.config.service.v1.ThreatScoreDecay;
 import ai.traceable.threatmanagement.config.service.v1.UpdateAnomalyScoreContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateAnomalyScoreContributionResponse;
 import ai.traceable.threatmanagement.config.service.v1.UpdateIpReputationThreatScoreConfigRequest;
@@ -62,6 +64,7 @@ import ai.traceable.threatmanagement.config.service.v1.UpdateThreatAutoBlockingC
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatAutoBlockingConfigResponse;
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatScoreBoundRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatScoreBoundResponse;
+import com.google.protobuf.Duration;
 import io.grpc.Status;
 import io.grpc.Status.Code;
 import io.grpc.stub.StreamObserver;
@@ -99,6 +102,12 @@ class ThreatManagementConfigServiceImplTest {
       ThreatScoreBound.newBuilder()
           .setMediumScoreUpperBound(200)
           .setHighScoreUpperBound(300)
+          .build();
+
+  private static final ThreatScoreDecay THREAT_SCORE_DECAY_1 =
+      ThreatScoreDecay.newBuilder()
+          .setDecayAfterDuration(Duration.newBuilder().setSeconds(86400).build())
+          .setDecayValue(DecayValue.newBuilder().setPercentageDecayValue(14f).build())
           .build();
 
   private static final SecurityEventScoreContribution DEFAULT_SECURITY_EVENT_SCORE_CONTRIBUTION =
@@ -230,6 +239,8 @@ class ThreatManagementConfigServiceImplTest {
         .thenReturn(DEFAULT_IP_REPUTATION_THREAT_SCORE_CONFIG);
 
     this.statusCodeThreatScoreConfigsManager = mock(StatusCodeThreatScoreConfigsManager.class);
+
+    this.threatScoreDecayManager = mock(ThreatScoreDecayManager.class);
 
     this.mockConfig = mock(ThreatManagementConfigServiceConfig.class);
     this.threatManagementConfigService =
@@ -806,6 +817,9 @@ class ThreatManagementConfigServiceImplTest {
       when(statusCodeThreatScoreConfigsManager.getStatusCodeThreatScoreConfigs(
               any(RequestContext.class), any(ScopeConfig.class)))
           .thenReturn(STATUS_CODE_THREAT_SCORE_CONFIGS);
+      when(threatScoreDecayManager.getThreatScoreDecay(
+              any(RequestContext.class), any(ScopeConfig.class)))
+          .thenReturn(THREAT_SCORE_DECAY_1);
 
       StreamObserver<GetThreatScoreConfigResponse> responseObserver = mock(StreamObserver.class);
 
@@ -825,7 +839,8 @@ class ThreatManagementConfigServiceImplTest {
                           .setSecurityEventTypeContribution(SECURITY_EVENT_TYPE_CONTRIBUTION_1)
                           .setIpReputationThreatScoreConfig(IP_REPUTATION_THREAT_SCORE_CONFIG_1)
                           .setStatusCodeThreatScoreConfigs(STATUS_CODE_THREAT_SCORE_CONFIGS)
-                          .setThreatScoreBound(THREAT_SCORE_BOUND_1))
+                          .setThreatScoreBound(THREAT_SCORE_BOUND_1)
+                          .setThreatScoreDecay(THREAT_SCORE_DECAY_1))
                   .build());
       verify(responseObserver, times(1)).onCompleted();
     }
