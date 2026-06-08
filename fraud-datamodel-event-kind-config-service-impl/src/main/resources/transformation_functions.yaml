@@ -167,9 +167,9 @@ functions:
     display_name: "regexExtract"
     description: "Extract first regex capture group match from input string"
     input_kinds:
-      - event_kind_id: "system_event_kind_string"
+      - kind_id: "system_event_kind_string"
     output_kind:
-      event_kind_id: "system_event_kind_string"
+      kind_id: "system_event_kind_string"
     parameters:
       - name: "pattern"
         description: "Regex pattern with capture group"
@@ -356,7 +356,7 @@ functions:
       - kind_id: "system_event_kind_string"
     output_kind:
       kind_id: "system_event_kind_string"
-    jexl_template: "traceableTransformUtils:urlEncode(${input})"
+    jexl_template: "traceableTransformUtils:urlEncode(${input}, false)"
 
   - id: "system_defined_function_url_decode"
     display_name: "urlDecode"
@@ -365,4 +365,4 @@ functions:
       - kind_id: "system_event_kind_string"
     output_kind:
       kind_id: "system_event_kind_string"
-    jexl_template: "traceableTransformUtils:urlDecode(${input})"
+    jexl_template: "traceableTransformUtils:urlDecode(${input}, false)"

@@ -125,8 +125,8 @@ public class DefaultTransformationFunctionProvider implements TransformationFunc
    */
   private static List<TransformationFunction> buildTypeCastFunctions(
       EventKindProvider eventKindProvider) {
-    ComplexDataModelEventKind stringInput =
-        ComplexDataModelEventKind.newBuilder().setKindId("system_event_kind_string").build();
+    ComplexDataModelEventKind anyInput =
+        ComplexDataModelEventKind.newBuilder().setKindId("system_event_kind_value").build();
     List<TransformationFunction> result = new ArrayList<>();
     for (DataModelEventKind kind :
         eventKindProvider.getEventKinds(EventKindFilter.getDefaultInstance())) {
@@ -136,7 +136,7 @@ public class DefaultTransformationFunctionProvider implements TransformationFunc
               .setId("type_cast_to_" + kindId)
               .setDisplayName("Cast to " + kind.getDisplayName())
               .setDescription("Narrow to " + kind.getDisplayName() + " for type safety.")
-              .addInputKinds(stringInput)
+              .addInputKinds(anyInput)
               .setOutputKind(ComplexDataModelEventKind.newBuilder().setKindId(kindId).build())
               .setJexlTemplate(jexlCastFunction(kind.getDataType()) + "(${input})")
               .build());
