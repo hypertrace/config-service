@@ -423,7 +423,7 @@ class GenAiSystemDiscoveryRulesValidatorImplTest {
             .setReference(
                 EntityPathReference.newBuilder()
                     .setEntityType("API")
-                    .setPath("aiModelLocation")
+                    .setPath("aiModelLocations")
                     .build())
             .setValueMatch(
                 MatchCondition.newBuilder()
@@ -450,7 +450,7 @@ class GenAiSystemDiscoveryRulesValidatorImplTest {
             .setReference(
                 EntityPathReference.newBuilder()
                     .setEntityType("")
-                    .setPath("aiModelLocation")
+                    .setPath("aiModelLocations")
                     .build())
             .setValueMatch(
                 MatchCondition.newBuilder()
@@ -502,7 +502,7 @@ class GenAiSystemDiscoveryRulesValidatorImplTest {
             .setReference(
                 EntityPathReference.newBuilder()
                     .setEntityType("API")
-                    .setPath("aiModelLocation")
+                    .setPath("aiModelLocations")
                     .build())
             .setValueMatch(
                 MatchCondition.newBuilder()
@@ -530,7 +530,7 @@ class GenAiSystemDiscoveryRulesValidatorImplTest {
             .setReference(
                 EntityPathReference.newBuilder()
                     .setEntityType("API")
-                    .setPath("aiModelLocation")
+                    .setPath("aiModelLocations")
                     .build())
             .build();
     DynamicNameExtractionAction dynamicAction =
@@ -568,7 +568,7 @@ class GenAiSystemDiscoveryRulesValidatorImplTest {
             .setReference(
                 EntityPathReference.newBuilder()
                     .setEntityType("")
-                    .setPath("aiModelLocation")
+                    .setPath("aiModelLocations")
                     .build())
             .build();
     DynamicNameExtractionAction dynamicAction =
