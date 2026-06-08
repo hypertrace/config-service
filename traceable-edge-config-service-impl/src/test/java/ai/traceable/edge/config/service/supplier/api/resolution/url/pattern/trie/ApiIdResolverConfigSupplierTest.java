@@ -3,8 +3,10 @@ package ai.traceable.edge.config.service.supplier.api.resolution.url.pattern.tri
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.edge.config.service.config.TraceableEdgeConfig;
 import ai.traceable.edge.config.service.v1.AgentCapabilities;
@@ -35,6 +37,7 @@ public class ApiIdResolverConfigSupplierTest {
   @Mock private ConfigRequestElement requestElement;
   @Mock private StreamingApiMappingProvider apiMappingProvider;
   @Mock private TraceableEdgeConfig config;
+  @Mock private FeatureCachingClient featureCachingClient;
 
   private ApiIdResolverConfigSupplier supplier;
 
@@ -42,9 +45,33 @@ public class ApiIdResolverConfigSupplierTest {
   void setUp() {
     when(config.getAgentPollingFrequency("ApiIdResolverConfig"))
         .thenReturn(com.google.protobuf.Duration.newBuilder().setSeconds(600).build());
+    lenient()
+        .when(featureCachingClient.isProtectionEngineApiIdResolverConfigEnabledForTenant(any()))
+        .thenReturn(true);
     supplier =
         new ApiIdResolverConfigSupplier(
-            new ObjectMapper(), apiMappingProvider, config, new UuidGenerator());
+            new ObjectMapper(),
+            apiMappingProvider,
+            config,
+            new UuidGenerator(),
+            featureCachingClient);
+  }
+
+  @Test
+  void testGetConfigs_featureFlagDisabled_returnsEmptyPayload() {
+    when(featureCachingClient.isProtectionEngineApiIdResolverConfigEnabledForTenant(any()))
+        .thenReturn(false);
+    AgentCapabilities agentCapabilities =
+        AgentCapabilities.newBuilder()
+            .putAllAdditionalFields(
+                ImmutableMap.of("serviceName", "test-service", "apiType", "API_TYPE_HTTP"))
+            .build();
+
+    ConfigResponseElement response =
+        supplier.getConfigs(requestContext, TEST_ENV, requestElement, agentCapabilities);
+
+    assertEquals("ApiIdResolverConfig", response.getConfigType());
+    assertTrue(response.getConfigPayloads().getConfigBytesList().isEmpty());
   }
 
   @Test

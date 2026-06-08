@@ -49,11 +49,16 @@ public class FeatureCachingClient {
   private static final boolean DEFAULT_PROTECTION_ENGINE_API_PROTECTION_FLAG_VALUE = false;
   private static final boolean DEFAULT_PROTECTION_ENGINE_POST_DETECTION_FILTERING_FLAG_VALUE =
       false;
+  private static final boolean DEFAULT_PROTECTION_ENGINE_PRE_DETECTION_FILTERING_FLAG_VALUE = false;
   private static final boolean DEFAULT_PROTECTION_ENGINE_CUSTOM_SIGNATURE_FLAG_VALUE = false;
   private static final Set<String> DEFAULT_HIDDEN_DEFENSE_AI_FEATURES_VALUE =
       Collections.emptySet();
   private static final boolean DEFAULT_PROTECTION_BLOCKING_DUAL_EVALUATION_FLAG_VALUE = false;
   private static final boolean DEFAULT_PROTECTION_ENGINE_AI_APP_PROTECTION_FLAG_VALUE = false;
+  private static final boolean DEFAULT_PROTECTION_ENGINE_API_ENDPOINT_MODEL_CONFIG_FLAG_VALUE =
+      false;
+  private static final boolean DEFAULT_PROTECTION_ENGINE_SECURITY_SCHEME_CONFIG_FLAG_VALUE = false;
+  private static final boolean DEFAULT_PROTECTION_ENGINE_API_ID_RESOLVER_CONFIG_FLAG_VALUE = false;
   private static final boolean DEFAULT_GENAI_SERVER_SPAN_AI_CLASSIFICATION_ENABLED_VALUE = false;
 
   private static final String DATA_CLASSIFICATION_ENHANCED_OBFUSCATION_FLAG =
@@ -83,6 +88,8 @@ public class FeatureCachingClient {
       "protection-engine.api-protection";
   private static final String PROTECTION_ENGINE_POST_DETECTION_FILTERING_FLAG =
       "protection-engine.post-detection-filtering";
+  private static final String PROTECTION_ENGINE_PRE_DETECTION_FILTERING_FLAG =
+      "protection-engine.pre-detection-filtering";
   private static final String PROTECTION_ENGINE_CUSTOM_SIGNATURE_FLAG =
       "protection-engine.custom-signature-rules";
   private static final String HIDDEN_DEFENSE_AI_FEATURES =
@@ -95,6 +102,12 @@ public class FeatureCachingClient {
       "protection.blocking.dual-evaluation";
   private static final String PROTECTION_ENGINE_AI_APP_PROTECTION_FLAG =
       "protection-engine.ai-app-protection";
+  private static final String PROTECTION_ENGINE_API_ENDPOINT_MODEL_CONFIG_FLAG =
+      "protection-engine.api-endpoint-model";
+  private static final String PROTECTION_ENGINE_SECURITY_SCHEME_CONFIG_FLAG =
+      "protection-engine.security-scheme";
+  private static final String PROTECTION_ENGINE_API_ID_RESOLVER_CONFIG_FLAG =
+      "protection-engine.api-id-resolver";
   private static final String BLOCKING_AVAILABLE_DEFENSE_AI_FEATURES_FLAG =
       "graphql.security-settings.defense-ai.blocking-available";
   private static final String GENAI_SERVER_SPAN_AI_CLASSIFICATION_ENABLED =
@@ -123,10 +136,14 @@ public class FeatureCachingClient {
           PROTECTION_ENGINE_WEBAPP_PROTECTION_FLAG,
           PROTECTION_ENGINE_API_PROTECTION_FLAG,
           PROTECTION_ENGINE_POST_DETECTION_FILTERING_FLAG,
+          PROTECTION_ENGINE_PRE_DETECTION_FILTERING_FLAG,
           PROTECTION_ENGINE_CUSTOM_SIGNATURE_FLAG,
-          HIDDEN_DEFENSE_AI_FEATURES,
           PROTECTION_BLOCKING_DUAL_EVALUATION_FLAG,
           PROTECTION_ENGINE_AI_APP_PROTECTION_FLAG,
+          PROTECTION_ENGINE_API_ENDPOINT_MODEL_CONFIG_FLAG,
+          PROTECTION_ENGINE_SECURITY_SCHEME_CONFIG_FLAG,
+          PROTECTION_ENGINE_API_ID_RESOLVER_CONFIG_FLAG,
+          HIDDEN_DEFENSE_AI_FEATURES,
           BLOCKING_AVAILABLE_DEFENSE_AI_FEATURES_FLAG,
           GENAI_SERVER_SPAN_AI_CLASSIFICATION_ENABLED);
   private final FeatureFlagServiceBlockingStub featureFlagStub;
@@ -522,6 +539,22 @@ public class FeatureCachingClient {
     }
   }
 
+  public boolean isProtectionEnginePreDetectionFilteringEnabledForTenant(
+      RequestContext requestContext) {
+    try {
+      return requireNonNull(
+              this.featureFlagCache
+                  .get(requestContext.buildInternalContextualKey())
+                  .get(PROTECTION_ENGINE_PRE_DETECTION_FILTERING_FLAG))
+          .getBoolean();
+    } catch (Exception exception) {
+      log.warn(
+          "Failed to retrieve current feature flag value for Protection Engine Pre Detection Filtering",
+          exception);
+      return DEFAULT_PROTECTION_ENGINE_PRE_DETECTION_FILTERING_FLAG_VALUE;
+    }
+  }
+
   public boolean isProtectionEngineCustomSignatureEnabledForTenant(RequestContext requestContext) {
     try {
       return requireNonNull(
@@ -549,6 +582,54 @@ public class FeatureCachingClient {
           "Failed to retrieve current feature flag value for Protection Engine AI App Protection",
           exception);
       return DEFAULT_PROTECTION_ENGINE_AI_APP_PROTECTION_FLAG_VALUE;
+    }
+  }
+
+  public boolean isProtectionEngineApiEndpointModelConfigEnabledForTenant(
+      RequestContext requestContext) {
+    try {
+      return requireNonNull(
+              this.featureFlagCache
+                  .get(requestContext.buildInternalContextualKey())
+                  .get(PROTECTION_ENGINE_API_ENDPOINT_MODEL_CONFIG_FLAG))
+          .getBoolean();
+    } catch (Exception exception) {
+      log.warn(
+          "Failed to retrieve current feature flag value for Traceable Edge API endpoint model config",
+          exception);
+      return DEFAULT_PROTECTION_ENGINE_API_ENDPOINT_MODEL_CONFIG_FLAG_VALUE;
+    }
+  }
+
+  public boolean isProtectionEngineSecuritySchemeConfigEnabledForTenant(
+      RequestContext requestContext) {
+    try {
+      return requireNonNull(
+              this.featureFlagCache
+                  .get(requestContext.buildInternalContextualKey())
+                  .get(PROTECTION_ENGINE_SECURITY_SCHEME_CONFIG_FLAG))
+          .getBoolean();
+    } catch (Exception exception) {
+      log.warn(
+          "Failed to retrieve current feature flag value for Traceable Edge security scheme config",
+          exception);
+      return DEFAULT_PROTECTION_ENGINE_SECURITY_SCHEME_CONFIG_FLAG_VALUE;
+    }
+  }
+
+  public boolean isProtectionEngineApiIdResolverConfigEnabledForTenant(
+      RequestContext requestContext) {
+    try {
+      return requireNonNull(
+              this.featureFlagCache
+                  .get(requestContext.buildInternalContextualKey())
+                  .get(PROTECTION_ENGINE_API_ID_RESOLVER_CONFIG_FLAG))
+          .getBoolean();
+    } catch (Exception exception) {
+      log.warn(
+          "Failed to retrieve current feature flag value for Traceable Edge API ID resolver config",
+          exception);
+      return DEFAULT_PROTECTION_ENGINE_API_ID_RESOLVER_CONFIG_FLAG_VALUE;
     }
   }
 

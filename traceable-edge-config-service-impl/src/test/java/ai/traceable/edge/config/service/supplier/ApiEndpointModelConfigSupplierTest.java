@@ -5,9 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.edge.config.service.config.TraceableEdgeConfig;
 import ai.traceable.edge.config.service.v1.AgentCapabilities;
@@ -42,6 +44,7 @@ class ApiEndpointModelConfigSupplierTest {
   private TraceableEdgeConfig traceableEdgeConfig;
   private UuidGenerator uuidGenerator;
   private ApiEndpointModelFetchConfig fetchConfig;
+  private FeatureCachingClient featureCachingClient;
   private ApiEndpointModelConfigSupplier supplier;
 
   @BeforeEach
@@ -49,15 +52,39 @@ class ApiEndpointModelConfigSupplierTest {
     apiEndpointModelProvider = mock(StreamingApiEndpointModelProvider.class);
     traceableEdgeConfig = mock(TraceableEdgeConfig.class);
     uuidGenerator = mock(UuidGenerator.class);
+    featureCachingClient = mock(FeatureCachingClient.class);
     fetchConfig = new ApiEndpointModelFetchConfig(Collections.emptyList(), Collections.emptyList());
 
     when(traceableEdgeConfig.getAgentPollingFrequency("ApiEndpointModelConfig"))
         .thenReturn(Duration.newBuilder().setSeconds(60).build());
     when(uuidGenerator.generateId(ConfigPayloads.getDefaultInstance())).thenReturn("empty-hash");
+    lenient()
+        .when(featureCachingClient.isProtectionEngineApiEndpointModelConfigEnabledForTenant(any()))
+        .thenReturn(true);
 
     supplier =
         new ApiEndpointModelConfigSupplier(
-            apiEndpointModelProvider, traceableEdgeConfig, uuidGenerator, fetchConfig);
+            apiEndpointModelProvider,
+            traceableEdgeConfig,
+            uuidGenerator,
+            fetchConfig,
+            featureCachingClient);
+  }
+
+  @Test
+  void getConfigs_featureFlagDisabled_returnsEmptyPayload() {
+    when(featureCachingClient.isProtectionEngineApiEndpointModelConfigEnabledForTenant(any()))
+        .thenReturn(false);
+    AgentCapabilities capabilities =
+        AgentCapabilities.newBuilder().putAdditionalFields("serviceName", SERVICE_NAME).build();
+
+    ConfigResponseElement response =
+        supplier.getConfigs(
+            REQUEST_CONTEXT, ENVIRONMENT, ConfigRequestElement.getDefaultInstance(), capabilities);
+
+    assertEquals("ApiEndpointModelConfig", response.getConfigType());
+    assertEquals(ConfigPayloads.getDefaultInstance(), response.getConfigPayloads());
+    assertTrue(response.getEnabled());
   }
 
   @Test

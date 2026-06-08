@@ -2,6 +2,7 @@ package ai.traceable.edge.config.service.supplier.filtering.config.context;
 
 import static ai.traceable.protection.rules.filtering.v1.ProtectionFilteringRuleCategory.PROTECTION_FILTERING_RULE_CATEGORY_PRE_DETECTION;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.edge.config.service.TraceableEdgeConfigSupplier;
 import ai.traceable.edge.config.service.config.TraceableEdgeConfig;
@@ -20,8 +21,10 @@ import com.google.inject.Inject;
 import io.grpc.Status;
 import java.util.List;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
+@Slf4j
 @AllArgsConstructor(onConstructor_ = @Inject)
 public class PreDetectionFilteringConfigContextSupplier implements TraceableEdgeConfigSupplier {
   private static final String CONFIG_TYPE =
@@ -34,6 +37,7 @@ public class PreDetectionFilteringConfigContextSupplier implements TraceableEdge
   private final ProtectionFilteringRulesProvider rulesProvider;
   private final UuidGenerator uuidGenerator;
   private final TraceableEdgeConfig config;
+  private final FeatureCachingClient featureCachingClient;
 
   @Override
   public String getConfigType() {
@@ -46,12 +50,27 @@ public class PreDetectionFilteringConfigContextSupplier implements TraceableEdge
       String environment,
       ConfigRequestElement requestElement,
       AgentCapabilities agentCapabilities) {
-    List<ProtectionFilteringRulesFilter> filters = this.buildApplicableFilters(agentCapabilities);
-    List<ProtectionFilteringRule> rules = rulesProvider.getProtectionFilteringRules(filters);
-    PreDetectionFilteringConfigContext context = this.buildContext(rules);
+    log.debug(
+        "Received request for PreDetectionFilteringConfigContext for tenantId: {}",
+        requestContext.getTenantId());
+    PreDetectionFilteringConfigContext context;
+    if (!featureCachingClient.isProtectionEnginePreDetectionFilteringEnabledForTenant(
+        requestContext)) {
+      log.debug(
+          "Pre detection filtering config not enabled for tenant: {}",
+          requestContext.getTenantId());
+      context = PreDetectionFilteringConfigContext.getDefaultInstance();
+    } else {
+      List<ProtectionFilteringRulesFilter> filters = this.buildApplicableFilters(agentCapabilities);
+      List<ProtectionFilteringRule> rules = rulesProvider.getProtectionFilteringRules(filters);
+      context = this.buildContext(rules);
+    }
 
     ConfigPayloads payloads =
         ConfigPayloads.newBuilder().addConfigBytes(context.toByteString()).build();
+    log.debug(
+        "Returning PreDetectionFilteringConfigContext for tenantId: {}",
+        requestContext.getTenantId());
 
     return ConfigResponseElement.newBuilder()
         .setHash(uuidGenerator.generateId(payloads))

@@ -51,6 +51,21 @@ public class MockFeatureFlagService extends FeatureFlagServiceImplBase {
             .putValues(
                 "protection-engine.webapp-protection",
                 FeatureFlagValue.newBuilder().setBoolean(false).build())
+            .putValues(
+                "protection-engine.post-detection-filtering",
+                FeatureFlagValue.newBuilder().setBoolean(false).build())
+            .putValues(
+                "protection-engine.pre-detection-filtering",
+                FeatureFlagValue.newBuilder().setBoolean(false).build())
+            .putValues(
+                "protection-engine.api-endpoint-model",
+                FeatureFlagValue.newBuilder().setBoolean(false).build())
+            .putValues(
+                "protection-engine.security-scheme",
+                FeatureFlagValue.newBuilder().setBoolean(false).build())
+            .putValues(
+                "protection-engine.api-id-resolver",
+                FeatureFlagValue.newBuilder().setBoolean(false).build())
             .build());
     responseObserver.onCompleted();
   }

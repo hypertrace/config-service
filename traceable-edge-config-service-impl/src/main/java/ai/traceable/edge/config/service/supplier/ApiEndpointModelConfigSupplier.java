@@ -1,5 +1,6 @@
 package ai.traceable.edge.config.service.supplier;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.edge.config.service.TraceableEdgeConfigSupplier;
 import ai.traceable.edge.config.service.config.TraceableEdgeConfig;
@@ -35,6 +36,7 @@ public class ApiEndpointModelConfigSupplier implements TraceableEdgeConfigSuppli
   private final TraceableEdgeConfig traceableEdgeConfig;
   private final UuidGenerator uuidGenerator;
   private final ApiEndpointModelFetchConfig fetchConfig;
+  private final FeatureCachingClient featureCachingClient;
 
   @Override
   public String getConfigType() {
@@ -47,6 +49,21 @@ public class ApiEndpointModelConfigSupplier implements TraceableEdgeConfigSuppli
       String environment,
       ConfigRequestElement requestElement,
       AgentCapabilities agentCapabilities) {
+
+    if (!featureCachingClient.isProtectionEngineApiEndpointModelConfigEnabledForTenant(
+        requestContext)) {
+      log.debug(
+          "API endpoint model config not enabled for tenant: {}", requestContext.getTenantId());
+      ConfigPayloads emptyPayloads = ConfigPayloads.getDefaultInstance();
+      return ConfigResponseElement.newBuilder()
+          .setConfigType(getConfigType())
+          .setConfigPayloads(emptyPayloads)
+          .addSupportedAgentCapabilities(agentCapabilities)
+          .setRefreshAfterDuration(traceableEdgeConfig.getAgentPollingFrequency(getConfigType()))
+          .setHash(uuidGenerator.generateId(emptyPayloads))
+          .setEnabled(true)
+          .build();
+    }
 
     Map<String, String> additionalFields = agentCapabilities.getAdditionalFieldsMap();
 

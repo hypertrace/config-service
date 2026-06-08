@@ -1,5 +1,6 @@
 package ai.traceable.edge.config.service.supplier.api.resolution.url.pattern.trie;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.edge.config.service.TraceableEdgeConfigSupplier;
 import ai.traceable.edge.config.service.config.TraceableEdgeConfig;
@@ -52,6 +53,7 @@ public class ApiIdResolverConfigSupplier implements TraceableEdgeConfigSupplier 
   private final StreamingApiMappingProvider apiMappingProvider;
   private final TraceableEdgeConfig config;
   private final UuidGenerator uuidGenerator;
+  private final FeatureCachingClient featureCachingClient;
 
   @Override
   public String getConfigType() {
@@ -65,6 +67,20 @@ public class ApiIdResolverConfigSupplier implements TraceableEdgeConfigSupplier 
       String environment,
       ConfigRequestElement requestElement,
       AgentCapabilities agentCapabilities) {
+
+    if (!featureCachingClient.isProtectionEngineApiIdResolverConfigEnabledForTenant(
+        requestContext)) {
+      log.debug("API ID resolver config not enabled for tenant: {}", requestContext.getTenantId());
+      ConfigPayloads emptyPayloads = ConfigPayloads.getDefaultInstance();
+      return ConfigResponseElement.newBuilder()
+          .setConfigType(getConfigType())
+          .setConfigPayloads(emptyPayloads)
+          .addSupportedAgentCapabilities(agentCapabilities)
+          .setRefreshAfterDuration(config.getAgentPollingFrequency(getConfigType()))
+          .setHash(uuidGenerator.generateId(emptyPayloads))
+          .setEnabled(true)
+          .build();
+    }
 
     // NOTE:
     // GRAPHQL, GRPC APIs do not have resolvedUrlPatterns

@@ -3,8 +3,10 @@ package ai.traceable.edge.config.service.supplier;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.edge.config.service.config.TraceableEdgeConfig;
 import ai.traceable.edge.config.service.v1.AgentCapabilities;
@@ -35,13 +37,36 @@ class SecuritySchemeConfigSupplierTest {
   @Mock private ConfigRequestElement requestElement;
   @Mock private StreamingSecuritySchemeProvider securitySchemeProvider;
   @Mock private TraceableEdgeConfig config;
+  @Mock private FeatureCachingClient featureCachingClient;
 
   private SecuritySchemeConfigSupplier supplier;
 
   @BeforeEach
   void setUp() {
+    lenient()
+        .when(featureCachingClient.isProtectionEngineSecuritySchemeConfigEnabledForTenant(any()))
+        .thenReturn(true);
     supplier =
-        new SecuritySchemeConfigSupplier(securitySchemeProvider, config, new UuidGenerator());
+        new SecuritySchemeConfigSupplier(
+            securitySchemeProvider, config, new UuidGenerator(), featureCachingClient);
+  }
+
+  @Test
+  void testGetConfigs_featureFlagDisabled_returnsEmptyPayload() {
+    when(featureCachingClient.isProtectionEngineSecuritySchemeConfigEnabledForTenant(any()))
+        .thenReturn(false);
+    when(config.getAgentPollingFrequency("SecuritySchemeConfig"))
+        .thenReturn(Duration.newBuilder().setSeconds(600).build());
+    AgentCapabilities agentCapabilities =
+        AgentCapabilities.newBuilder()
+            .putAllAdditionalFields(ImmutableMap.of("serviceName", "test-service"))
+            .build();
+
+    ConfigResponseElement response =
+        supplier.getConfigs(requestContext, TEST_ENV, requestElement, agentCapabilities);
+
+    assertEquals("SecuritySchemeConfig", response.getConfigType());
+    assertTrue(response.getConfigPayloads().getConfigBytesList().isEmpty());
   }
 
   @Test
