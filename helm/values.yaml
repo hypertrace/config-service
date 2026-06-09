@@ -3422,7 +3422,7 @@ defaultModsecDetectionConfigs: |-
               paramValueType = PARAM_VALUE_TYPE_FREE_TEXT
               excludedModsecRuleIds = {
                 values = ["crs_932100","crs_932105","crs_932110","crs_932115",
-                          "crs_942100","crs_942140","crs_942500","crs_941160","crs_941370", "crs_9420190"]
+                          "crs_942100","crs_942140","crs_942270","crs_942500","crs_941160","crs_941370", "crs_9420190"]
               }
             },
             {
