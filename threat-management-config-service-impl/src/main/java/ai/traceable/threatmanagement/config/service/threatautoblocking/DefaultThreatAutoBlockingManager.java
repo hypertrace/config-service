@@ -33,6 +33,8 @@ class DefaultThreatAutoBlockingManager extends IdentifiedObjectStore<ThreatAutoB
       "config.threat.autoblocking.action.timer";
   private static final String TENANT_ID_TAG = "tenantId";
   private static final String OPERATION_TAG = "operation";
+  private static final String ENVIRONMENT_TAG = "environment";
+  private static final String ALL_ENVIRONMENTS = "ALL Environments";
   private static final String ENABLED_TAG_VALUE = "enabled";
   private static final String DISABLED_TAG_VALUE = "disabled";
   private static final String DEFAULT_UPDATED_TAG_VALUE = "updated";
@@ -89,7 +91,9 @@ class DefaultThreatAutoBlockingManager extends IdentifiedObjectStore<ThreatAutoB
       operation = DEFAULT_UPDATED_TAG_VALUE;
     }
 
-    return getTimer(tenantId, operation)
+    String environment = getEnvironmentId(request.getScope());
+
+    return getTimer(tenantId, operation, environment)
         .record(
             () -> {
               ThreatAutoBlockingActionConfig upsertedConfig =
@@ -97,10 +101,11 @@ class DefaultThreatAutoBlockingManager extends IdentifiedObjectStore<ThreatAutoB
                           requestContext, threatAutoBlockingActionConfigConverter.convert(request))
                       .getData();
               log.info(
-                  "Threat AUTO-BLOCKING has been {} by user-email:{} in tenant:{}",
+                  "Threat AUTO-BLOCKING has been {} by user-email:{} in tenant:{} for environment:{}",
                   operation,
                   requestContext.getEmail().orElse("UNKNOWN"),
-                  tenantId);
+                  tenantId,
+                  environment);
               return upsertedConfig;
             });
   }
@@ -133,8 +138,19 @@ class DefaultThreatAutoBlockingManager extends IdentifiedObjectStore<ThreatAutoB
         : getTenantId(RequestContext.CURRENT.get());
   }
 
-  private Timer getTimer(String tenantId, String operation) {
-    Tags metricTags = Tags.of(TENANT_ID_TAG, tenantId, OPERATION_TAG, operation);
+  private String getEnvironmentId(ScopeConfig scopeConfig) {
+    if (scopeConfig.hasEnvironmentScope()) {
+      String environmentId = scopeConfig.getEnvironmentScope().getEnvironmentId();
+      if (!environmentId.isBlank()) {
+        return environmentId;
+      }
+    }
+    return ALL_ENVIRONMENTS;
+  }
+
+  private Timer getTimer(String tenantId, String operation, String environment) {
+    Tags metricTags =
+        Tags.of(TENANT_ID_TAG, tenantId, OPERATION_TAG, operation, ENVIRONMENT_TAG, environment);
     return TIMER_MAP.computeIfAbsent(
         metricTags,
         id ->

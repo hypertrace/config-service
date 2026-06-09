@@ -228,6 +228,10 @@ class DefaultThreatAutoBlockingManagerTest {
     UpdateThreatAutoBlockingConfigRequest updateThreatAutoBlockingConfigRequest =
         UpdateThreatAutoBlockingConfigRequest.newBuilder()
             .setActionType(ThreatAutoBlockingActionType.THREAT_AUTO_BLOCKING_ACTION_TYPE_BLOCK)
+            .setScope(
+                ScopeConfig.newBuilder()
+                    .setEnvironmentScope(
+                        EnvironmentScope.newBuilder().setEnvironmentId("environment-id")))
             .setExpirationDetails(
                 UpdateThreatAutoBlockingConfigRequest.ExpirationDetails.newBuilder()
                     .setDuration("PT1H2M34S"))

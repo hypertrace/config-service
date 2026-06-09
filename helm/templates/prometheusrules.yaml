@@ -17,8 +17,8 @@ spec:
         - alert: ThreatAutoBlockingConfigurationChange
           annotations:
             summary: 'Threat Auto Blocking Configuration Change'
-            message: 'Threat Auto Blocking Configuration changed to {{`{{ $labels.operation}}`}} for customer:{{`{{ $labels.tenantId }}`}}'
-          expr: sum(config_threat_autoblocking_action_timer_seconds_max) by (tenantId, operation) > 0
+            message: 'Threat Auto Blocking Configuration changed to {{`{{ $labels.operation}}`}} for environment:{{`{{ $labels.environment }}`}} for customer:{{`{{ $labels.tenantId }}`}}'
+          expr: sum(config_threat_autoblocking_action_timer_seconds_max) by (tenantId, operation, environment) > 0
           for: 0m
           labels:
             severity: SEV3
