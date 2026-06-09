@@ -41,7 +41,6 @@ class DefaultTransformationFunctionProviderTest {
             .collect(Collectors.toList());
 
     assertTrue(functionIds.contains("system_defined_function_base64_decode"));
-    assertTrue(functionIds.contains("system_defined_function_to_string"));
     assertTrue(
         functionIds.contains("type_cast_to_system_event_kind_email"),
         "Generated type cast uses id type_cast_to_<event_kind_id>");
@@ -303,8 +302,8 @@ class DefaultTransformationFunctionProviderTest {
     void numericKind_alsoGetsInheritedValueFunctions() {
       List<String> functionIds = getFunctionIds(NUMERIC_KIND);
       assertTrue(
-          functionIds.contains("system_defined_function_to_string"),
-          "Numeric kind should inherit toString from value kind");
+          functionIds.contains("type_cast_to_system_event_kind_string"),
+          "Numeric kind should inherit cast-to-string from value kind");
     }
 
     @Test

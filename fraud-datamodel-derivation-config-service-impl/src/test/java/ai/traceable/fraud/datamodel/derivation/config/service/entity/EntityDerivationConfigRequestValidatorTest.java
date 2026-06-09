@@ -387,7 +387,8 @@ class EntityDerivationConfigRequestValidatorTest {
                                             .setFunctionId("type_cast_to_system_event_kind_email"))
                                     .addTransformationPipeline(
                                         TransformationFunctionInvocation.newBuilder()
-                                            .setFunctionId("system_defined_function_to_string")))))
+                                            .setFunctionId(
+                                                "type_cast_to_system_event_kind_string")))))
             .build();
 
     CreateEntityDerivationConfigRequest request =

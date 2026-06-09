@@ -2,16 +2,6 @@
 # Defines available transformation functions and their type compatibility
 
 functions:
-  # Generic functions - work on all types
-  - id: "system_defined_function_to_string"
-    display_name: "toString"
-    description: "Converts any value to its string representation"
-    input_kinds:
-      - kind_id: "system_event_kind_value"
-    output_kind:
-      kind_id: "system_event_kind_string"
-    jexl_template: "traceable:toStr(${input})"
-
   # String functions
   - id: "system_defined_function_split"
     display_name: "split"

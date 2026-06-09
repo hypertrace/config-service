@@ -228,14 +228,15 @@ class DefaultFraudDataModelEventKindRegistryTest {
               .setOutputKind(ComplexDataModelEventKind.newBuilder().setArrayOf(stringKind))
               .build();
 
-      // last: array<T> → T (generic)
+      ComplexDataModelEventKind typeParamT =
+          ComplexDataModelEventKind.newBuilder().setTypeParameterRef("T").build();
+
+      // last: array<T> → T
       TransformationFunction lastFn =
           TransformationFunction.newBuilder()
               .setId("system_defined_function_last")
-              .addInputKinds(
-                  ComplexDataModelEventKind.newBuilder()
-                      .setArrayOf(ComplexDataModelEventKind.newBuilder().setTypeParameterRef("T")))
-              .setOutputKind(ComplexDataModelEventKind.newBuilder().setTypeParameterRef("T"))
+              .addInputKinds(ComplexDataModelEventKind.newBuilder().setArrayOf(typeParamT))
+              .setOutputKind(typeParamT)
               .build();
 
       // trim: string → string
@@ -246,11 +247,19 @@ class DefaultFraudDataModelEventKindRegistryTest {
               .setOutputKind(stringKind)
               .build();
 
-      // type_cast_to_email: string → email
+      // type_cast_to_string: value → string
+      TransformationFunction castToStringFn =
+          TransformationFunction.newBuilder()
+              .setId("type_cast_to_system_event_kind_string")
+              .addInputKinds(valueKind)
+              .setOutputKind(stringKind)
+              .build();
+
+      // type_cast_to_email: value → email
       TransformationFunction castToEmailFn =
           TransformationFunction.newBuilder()
               .setId("type_cast_to_system_event_kind_email")
-              .addInputKinds(stringKind)
+              .addInputKinds(valueKind)
               .setOutputKind(emailKind)
               .build();
 
@@ -262,15 +271,12 @@ class DefaultFraudDataModelEventKindRegistryTest {
               .setOutputKind(ComplexDataModelEventKind.newBuilder().setStringMapOf(valueKind))
               .build();
 
-      // getEntry: map<string, T> → T (generic)
+      // getEntry: map<string, T> → T
       TransformationFunction getEntryFn =
           TransformationFunction.newBuilder()
               .setId("system_defined_function_get_entry")
-              .addInputKinds(
-                  ComplexDataModelEventKind.newBuilder()
-                      .setStringMapOf(
-                          ComplexDataModelEventKind.newBuilder().setTypeParameterRef("T")))
-              .setOutputKind(ComplexDataModelEventKind.newBuilder().setTypeParameterRef("T"))
+              .addInputKinds(ComplexDataModelEventKind.newBuilder().setStringMapOf(typeParamT))
+              .setOutputKind(typeParamT)
               .build();
 
       TransformationFunctionsByKind byKind =
@@ -278,6 +284,7 @@ class DefaultFraudDataModelEventKindRegistryTest {
               .addFunctions(splitFn)
               .addFunctions(lastFn)
               .addFunctions(trimFn)
+              .addFunctions(castToStringFn)
               .addFunctions(castToEmailFn)
               .addFunctions(parseJsonFn)
               .addFunctions(getEntryFn)
@@ -296,11 +303,9 @@ class DefaultFraudDataModelEventKindRegistryTest {
     }
 
     @Test
-    void testPipeline_SplitLastTrimCast_ResolvesTypeParameterCorrectly() {
-      // Pipeline: split → last → trim → type_cast_to_email
-      // This is the exact pipeline from the failing mutation.
-      // Without type_parameter_ref resolution, 'last' outputs raw T instead of string,
-      // causing 'trim' to reject the input.
+    void testPipeline_SplitLastTrimCast_WithTypeParameterResolution() {
+      // Pipeline: split → last → trim → castToEmail
+      // last resolves T=string from array<string>, so trim (string→string) works directly.
       TransformationPipeline pipeline =
           TransformationPipeline.newBuilder()
               .addTransformationPipeline(
@@ -327,9 +332,9 @@ class DefaultFraudDataModelEventKindRegistryTest {
     }
 
     @Test
-    void testPipeline_SplitLast_ResolvesTypeParameterToString() {
+    void testPipeline_SplitLast_ResolvesTypeParameter() {
       // Pipeline: split → last
-      // Should resolve T to string (from array<string>)
+      // split outputs array<string>, last has array<T>→T, so T resolves to string.
       TransformationPipeline pipeline =
           TransformationPipeline.newBuilder()
               .addTransformationPipeline(
@@ -350,10 +355,10 @@ class DefaultFraudDataModelEventKindRegistryTest {
     }
 
     @Test
-    void testPipeline_ParseJsonGetEntry_ResolvesMapTypeParameterCorrectly() {
+    void testPipeline_ParseJsonGetEntry_ResolvesToValueKind() {
       // Pipeline: parseJson → getEntry
-      // parseJson outputs map<string, value>, getEntry (map<string, T> → T) should resolve
-      // T to value. Without stringMapOf support, getEntry would output raw T.
+      // parseJson outputs map<string, value>, getEntry accepts map<string, value> and outputs
+      // value.
       TransformationPipeline pipeline =
           TransformationPipeline.newBuilder()
               .addTransformationPipeline(
