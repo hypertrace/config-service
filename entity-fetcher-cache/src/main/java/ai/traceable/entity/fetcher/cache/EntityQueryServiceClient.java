@@ -51,6 +51,8 @@ class EntityQueryServiceClient {
           AttributeType.ATTRIBUTE_TYPE_COOKIE,
           "query",
           AttributeType.ATTRIBUTE_TYPE_QUERY_PARAM,
+          "query_params",
+          AttributeType.ATTRIBUTE_TYPE_QUERY_PARAM,
           "body",
           AttributeType.ATTRIBUTE_TYPE_BODY_PARAM);
 
