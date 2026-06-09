@@ -7,6 +7,8 @@ import static org.mockito.Mockito.when;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider.ApiIdentifierEntity;
+import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
+import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider.ServiceIdentifierEntity;
 import ai.traceable.platform.actor.v1.RateLimitCategory;
 import ai.traceable.ratelimiting.config.service.v2.Category;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
@@ -79,8 +81,19 @@ class RateLimitingEdgeDecisionConverterTest {
         .thenReturn(apiIdentifierEntityMap2);
     when(provider.getApiIdentifierEntitiesHavingLabels(REQUEST_CONTEXT, Set.of("labelId1")))
         .thenReturn(apiIdentifierEntityLabelMap);
+
+    CachedServiceMappingProvider serviceProvider = mock(CachedServiceMappingProvider.class);
+    ServiceIdentifierEntity svc1 = new ServiceIdentifierEntity("my-service", Optional.of("env-1"));
+    when(serviceProvider.getServiceIdentifierEntities(REQUEST_CONTEXT, Set.of("svc-1")))
+        .thenReturn(Map.of("svc-1", Optional.of(svc1)));
+    ServiceIdentifierEntity svc2 =
+        new ServiceIdentifierEntity("payment-service", Optional.of("env-1"));
+    when(serviceProvider.getServiceIdentifierEntities(REQUEST_CONTEXT, Set.of("svc-1", "svc-2")))
+        .thenReturn(Map.of("svc-1", Optional.of(svc1), "svc-2", Optional.of(svc2)));
+
     Injector injector =
-        Guice.createInjector(new RateLimitingEdgeDecisionConverterTestModule(provider));
+        Guice.createInjector(
+            new RateLimitingEdgeDecisionConverterTestModule(provider, serviceProvider));
     Set<RateLimitingConditionConverter> conditionConverters =
         injector.getInstance(Key.get(new TypeLiteral<Set<RateLimitingConditionConverter>>() {}));
     converter = new RateLimitingEdgeDecisionConverter(conditionConverters);
@@ -147,14 +160,18 @@ class RateLimitingEdgeDecisionConverterTest {
   static class RateLimitingEdgeDecisionConverterTestModule extends AbstractModule {
 
     CachedApiMappingProvider provider;
+    CachedServiceMappingProvider serviceProvider;
 
-    public RateLimitingEdgeDecisionConverterTestModule(CachedApiMappingProvider provider) {
+    public RateLimitingEdgeDecisionConverterTestModule(
+        CachedApiMappingProvider provider, CachedServiceMappingProvider serviceProvider) {
       this.provider = provider;
+      this.serviceProvider = serviceProvider;
     }
 
     @Override
     protected void configure() {
       bind(CachedApiMappingProvider.class).toInstance(provider);
+      bind(CachedServiceMappingProvider.class).toInstance(serviceProvider);
       install(new RateLimitingConditionModule());
     }
   }

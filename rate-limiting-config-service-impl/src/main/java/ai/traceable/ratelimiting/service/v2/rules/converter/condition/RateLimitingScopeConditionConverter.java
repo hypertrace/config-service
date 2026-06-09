@@ -5,7 +5,9 @@ import static ai.traceable.datamodel.data.transformation.config.v1.MatchOperator
 import static ai.traceable.edge.decision.converter.utils.Constants.ATTRIBUTE_NAME_LHS;
 import static ai.traceable.ratelimiting.config.service.v2.LeafCondition.ConditionCase.SCOPE_CONDITION;
 import static ai.traceable.ratelimiting.config.service.v2.ScopeCondition.EntityType.ENTITY_TYPE_API;
+import static ai.traceable.ratelimiting.config.service.v2.ScopeCondition.EntityType.ENTITY_TYPE_SERVICE;
 import static ai.traceable.ratelimiting.config.service.v2.ScopeCondition.LabelType.LABEL_TYPE_API;
+import static ai.traceable.ratelimiting.config.service.v2.ScopeCondition.LabelType.LABEL_TYPE_SERVICE;
 
 import ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping;
 import ai.traceable.datamodel.data.transformation.config.v1.BinaryOperator;
@@ -16,8 +18,10 @@ import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
 import ai.traceable.datamodel.data.transformation.config.v1.StructuredMatchCondition;
 import ai.traceable.datamodel.data.transformation.config.v1.UnaryOperator;
 import ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMapping;
+import ai.traceable.edge.decision.converter.utils.ConverterUtils;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider.ApiIdentifierEntity;
+import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition.ConditionCase;
 import ai.traceable.ratelimiting.config.service.v2.ScopeCondition;
@@ -74,6 +78,7 @@ public class RateLimitingScopeConditionConverter implements RateLimitingConditio
       MatchCondition.newBuilder().setStructuredMatchCondition(CONDITION_WITH_ENDPOINT_ID).build();
 
   private final CachedApiMappingProvider cachedApiMappingProvider;
+  private final CachedServiceMappingProvider cachedServiceMappingProvider;
 
   private List<ApiIdentifierEntity> getApiIdentifierEntities(
       RequestContext requestContext, ScopeCondition scopeCondition) {
@@ -128,7 +133,27 @@ public class RateLimitingScopeConditionConverter implements RateLimitingConditio
             Collections.emptyList(),
             Collections.emptyList());
       case ENTITY_SCOPE:
+        ScopeCondition.EntityScope entityScope = scopeCondition.getEntityScope();
+        if (entityScope.getEntityType().equals(ENTITY_TYPE_SERVICE)) {
+          List<String> serviceNames = getServiceNames(requestContext, entityScope);
+          MatchCondition serviceMatchCondition =
+              ConverterUtils.buildInOperatorMatchCondition(
+                      ConverterUtils.SERVICE_ATTRIBUTE, serviceNames)
+                  .build();
+          return new MatchConditionDetails(
+              serviceMatchCondition, Collections.emptyList(), Collections.emptyList());
+        }
+        return new MatchConditionDetails(
+            MATCH_CONDITION_WITH_ENDPOINT_ID,
+            Collections.emptyList(),
+            getApiIdentifierEntities(requestContext, scopeCondition));
       case LABEL_SCOPE:
+        ScopeCondition.LabelScope labelScope = scopeCondition.getLabelScope();
+        if (labelScope.getLabelType().equals(LABEL_TYPE_SERVICE)) {
+          throw new IllegalArgumentException(
+              "LABEL_TYPE_SERVICE is not yet supported for edge rate-limiting rules. "
+                  + "Use ENTITY_TYPE_SERVICE instead.");
+        }
         return new MatchConditionDetails(
             MATCH_CONDITION_WITH_ENDPOINT_ID,
             Collections.emptyList(),
@@ -136,6 +161,20 @@ public class RateLimitingScopeConditionConverter implements RateLimitingConditio
       default:
         throw new IllegalArgumentException("Unknown scope case: " + scopeCondition.getScopeCase());
     }
+  }
+
+  private List<String> getServiceNames(
+      RequestContext requestContext, ScopeCondition.EntityScope entityScope) {
+    Map<String, Optional<CachedServiceMappingProvider.ServiceIdentifierEntity>>
+        serviceIdentifierEntities =
+            cachedServiceMappingProvider.getServiceIdentifierEntities(
+                requestContext, Set.copyOf(entityScope.getEntityIdsList()));
+    return serviceIdentifierEntities.values().stream()
+        .flatMap(Optional::stream)
+        .map(CachedServiceMappingProvider.ServiceIdentifierEntity::getServiceName)
+        .distinct()
+        .sorted()
+        .collect(Collectors.toUnmodifiableList());
   }
 
   @Override
