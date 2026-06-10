@@ -61,7 +61,13 @@ option java_multiple_files = true;
 //   - series7: create_trigger=false, close_trigger=false
 //   - series8: create_trigger=false, close_trigger=false
 // - IncidentConsumer (Describe different grouping modes)
-//   - Nothing to do.
+//   - Nothing to do (for per-entity modes: DEFAULT, SERIES, EVAL_WINDOW, NONE)
+//   - GROUPING_MODE_TARGET
+//     - agg_target_prod_login: create_trigger=true (user1 + user2 = 2/2). incident1: status = ACTIVE
+//     - agg_target_dev_login: create_trigger=true (user1 + user2 = 2/2). incident2: status = ACTIVE
+//   - GROUPING_MODE_POLICY
+//     - agg_policy_prod: create_trigger=true (user1/login + user2/login = 2/2). incident1: status = ACTIVE
+//     - agg_policy_dev: create_trigger=true (user1/login + user2/login = 2/2). incident2: status = ACTIVE
 // t1:
 //   - series1: anom=true
 //   - series2: anom=true
@@ -84,7 +90,7 @@ option java_multiple_files = true;
 //   - GROUPING_MODE_DEFAULT
 //     - incident1: series1, series2. status = ACTIVE
 //     - incident2: series3, series4. status = ACTIVE
-//   - GROUPING_MODE_ANOMALY_SERIES
+//   - GROUPING_MODE_SERIES
 //     - incident1: series1. status = ACTIVE
 //     - incident2: series2. status = ACTIVE
 //     - incident3: series3. status = ACTIVE
@@ -92,11 +98,17 @@ option java_multiple_files = true;
 //   - GROUPING_MODE_EVAL_WINDOW
 //     - incident1: series1, series2. status = CLOSED
 //     - incident2: series3, series4. status = CLOSED
-//   - GROUPING_MODE_EVAL_WINDOW_AND_ANOMALY_SERIES
+//   - GROUPING_MODE_NONE
 //     - incident1: series1. status = CLOSED
 //     - incident2: series2. status = CLOSED
 //     - incident3: series3. status = CLOSED
 //     - incident4: series4. status = CLOSED
+//   - GROUPING_MODE_TARGET
+//     - incident1: [prod, login]. status = ACTIVE (continuing, user1 + user2 anomalies)
+//     - incident2: [dev, login]. status = ACTIVE (continuing)
+//   - GROUPING_MODE_POLICY
+//     - incident1: [prod]. status = ACTIVE (continuing)
+//     - incident2: [dev]. status = ACTIVE (continuing)
 // t2:
 //   - series1: anom=false
 //   - series2: anom=false
@@ -119,7 +131,7 @@ option java_multiple_files = true;
 //   - GROUPING_MODE_DEFAULT
 //     - incident1: series1, series2. status = ACTIVE
 //     - incident2: series3, series4. status = ACTIVE
-//   - GROUPING_MODE_ANOMALY_SERIES
+//   - GROUPING_MODE_SERIES
 //     - incident1: series1. status = ACTIVE
 //     - incident2: series2. status = ACTIVE
 //     - incident3: series3. status = ACTIVE
@@ -127,11 +139,17 @@ option java_multiple_files = true;
 //   - GROUPING_MODE_EVAL_WINDOW
 //     - incident1: series1, series2. status = CLOSED
 //     - incident2: series3, series4. status = CLOSED
-//   - GROUPING_MODE_EVAL_WINDOW_AND_ANOMALY_SERIES
+//   - GROUPING_MODE_NONE
 //     - incident1: series1. status = CLOSED
 //     - incident2: series2. status = CLOSED
 //     - incident3: series3. status = CLOSED
 //     - incident4: series4. status = CLOSED
+//   - GROUPING_MODE_TARGET
+//     - incident1: [prod, login]. status = ACTIVE (close_trigger: 1/2 normal, not yet fired)
+//     - incident2: [dev, login]. status = ACTIVE (close_trigger: 1/2 normal, not yet fired)
+//   - GROUPING_MODE_POLICY
+//     - incident1: [prod]. status = ACTIVE (close_trigger: 1/2 normal, not yet fired)
+//     - incident2: [dev]. status = ACTIVE (close_trigger: 1/2 normal, not yet fired)
 // t3:
 //   - series1: anom=false
 //   - series2: anom=false
@@ -154,7 +172,7 @@ option java_multiple_files = true;
 //   - GROUPING_MODE_DEFAULT
 //     - incident1: series1, series2. status = ACTIVE
 //     - incident2: series3, series4. status = ACTIVE
-//   - GROUPING_MODE_ANOMALY_SERIES
+//   - GROUPING_MODE_SERIES
 //     - incident1: series1. status = CLOSED
 //     - incident2: series2. status = ACTIVE
 //     - incident3: series3. status = CLOSED
@@ -162,11 +180,17 @@ option java_multiple_files = true;
 //   - GROUPING_MODE_EVAL_WINDOW
 //     - incident1: series1, series2. status = CLOSED
 //     - incident2: series3, series4. status = CLOSED
-//   - GROUPING_MODE_EVAL_WINDOW_AND_ANOMALY_SERIES
+//   - GROUPING_MODE_NONE
 //     - incident1: series1. status = CLOSED
 //     - incident2: series2. status = CLOSED
 //     - incident3: series3. status = CLOSED
 //     - incident4: series4. status = CLOSED
+//   - GROUPING_MODE_TARGET
+//     - incident1: [prod, login]. status = CLOSED (close_trigger: 2/2 normal, fired)
+//     - incident2: [dev, login]. status = CLOSED (close_trigger: 2/2 normal, fired)
+//   - GROUPING_MODE_POLICY
+//     - incident1: [prod]. status = CLOSED (close_trigger: 2/2 normal, fired)
+//     - incident2: [dev]. status = CLOSED (close_trigger: 2/2 normal, fired)
 // t4:
 //   - series1: anom=false
 //   - series2: anom=false
@@ -189,13 +213,100 @@ option java_multiple_files = true;
 //   - GROUPING_MODE_DEFAULT
 //     - incident1: series1, series2. status = CLOSED
 //     - incident2: series3, series4. status = CLOSED
-//   - GROUPING_MODE_ANOMALY_SERIES
+//   - GROUPING_MODE_SERIES
 //     - incident2: series2. status = CLOSED
 //     - incident4: series4. status = CLOSED
 //   - GROUPING_MODE_EVAL_WINDOW
 //     - Nothing to do. Only STARTED events will be considered
-//   - GROUPING_MODE_EVAL_WINDOW_AND_ANOMALY_SERIES
+//   - GROUPING_MODE_NONE
 //     - Nothing to do. Only STARTED events will be considered
+//   - GROUPING_MODE_TARGET
+//     - Nothing to do. Already CLOSED at t3.
+//   - GROUPING_MODE_POLICY
+//     - Nothing to do. Already CLOSED at t3.
+//
+// TARGET/POLICY Aggregate Modes — Dedicated Example:
+// This example demonstrates why aggregate modes are needed.
+// configuration:
+// policy:
+//   - name = "distributed-attack-policy", env = "prod", target = "/login", target_type = "api"
+//   - primary_entities = ["user1", "user2", "user3", "user4"]
+// triggers:
+//   - create_trigger: anom_count = 3 out of 3 evaluations
+//   - close_trigger: normal_count = 3 out of 3 evaluations
+//
+// Scenario: Each user produces only 1 anomaly event — no single user meets the 3/5 threshold.
+//
+// Per-entity series (DEFAULT/SERIES modes):
+// - series1 = [policy, prod, /login, api, user1]
+// - series2 = [policy, prod, /login, api, user2]
+// - series3 = [policy, prod, /login, api, user3]
+// - series4 = [policy, prod, /login, api, user4]
+//
+// Aggregate series (TARGET mode):
+// - agg_target = [policy, prod, /login, api] (all users pooled)
+//
+// Aggregate series (POLICY mode):
+// - agg_policy = [policy, prod] (all users and targets pooled)
+//
+// t0: user1 -> anom=true, user2 -> anom=false, user3 -> anom=false, user4 -> anom=false
+// - Per-entity TriggerProcessor:
+//   - series1: window=[anom] = 1/3, create_trigger=false
+//   - series2: window=[norm] = 0/3, create_trigger=false
+//   - series3: not evaluated (no event)
+//   - series4: not evaluated (no event)
+// - Aggregate TriggerProcessor (TARGET/POLICY):
+//   - agg_target: window=[anom] = 1/3, create_trigger=false
+// - IncidentConsumer:
+//   - GROUPING_MODE_DEFAULT: Nothing to do.
+//   - GROUPING_MODE_SERIES: Nothing to do.
+//   - GROUPING_MODE_TARGET: Nothing to do.
+//   - GROUPING_MODE_POLICY: Nothing to do.
+//
+// t1: user1 -> anom=false, user2 -> anom=true, user3 -> anom=false, user4 -> anom=false
+// - Per-entity TriggerProcessor:
+//   - series1: window=[anom, norm] = 1/3, create_trigger=false
+//   - series2: window=[norm, anom] = 1/3, create_trigger=false
+// - Aggregate TriggerProcessor (TARGET/POLICY):
+//   - agg_target: window=[anom, anom] = 2/3, create_trigger=false
+// - IncidentConsumer:
+//   - GROUPING_MODE_DEFAULT: Nothing to do.
+//   - GROUPING_MODE_SERIES: Nothing to do.
+//   - GROUPING_MODE_TARGET: Nothing to do.
+//   - GROUPING_MODE_POLICY: Nothing to do.
+//
+// t2: user1 -> anom=false, user2 -> anom=false, user3 -> anom=true, user4 -> anom=false
+// - Per-entity TriggerProcessor:
+//   - series1: window=[anom, norm, norm] = 1/3, create_trigger=false
+//   - series2: window=[norm, anom, norm] = 1/3, create_trigger=false
+//   - series3: window=[anom] = 1/3, create_trigger=false
+// - Aggregate TriggerProcessor (TARGET/POLICY):
+//   - agg_target: window=[anom, anom, anom] = 3/3, create_trigger=TRUE
+// - IncidentConsumer:
+//   - GROUPING_MODE_DEFAULT: Nothing to do. No per-entity trigger fired.
+//   - GROUPING_MODE_SERIES: Nothing to do. No per-entity trigger fired.
+//   - GROUPING_MODE_TARGET: incident1 [prod, /login]. status = ACTIVE
+//   - GROUPING_MODE_POLICY: incident1 [prod]. status = ACTIVE
+//
+// t3: user1 -> anom=false, user2 -> anom=false, user3 -> anom=false, user4 -> anom=true
+// - Per-entity TriggerProcessor:
+//   - series1: window=[anom, norm, norm, norm] = 1/3, create_trigger=false
+//   - series2: window=[norm, anom, norm, norm] = 1/3, create_trigger=false
+//   - series3: window=[anom, norm] = 1/3, create_trigger=false
+//   - series4: window=[anom] = 1/3, create_trigger=false
+// - Aggregate TriggerProcessor (TARGET/POLICY):
+//   - agg_target: incident ongoing, user4 anom. incident_event_type = CONTINUING
+// - IncidentConsumer:
+//   - GROUPING_MODE_DEFAULT: Nothing to do. No per-entity trigger fired.
+//   - GROUPING_MODE_SERIES: Nothing to do. No per-entity trigger fired.
+//   - GROUPING_MODE_TARGET: incident1 [prod, /login]. status = ACTIVE (CONTINUING)
+//   - GROUPING_MODE_POLICY: incident1 [prod]. status = ACTIVE (CONTINUING)
+//
+// Summary: 4 users each produced 1 anomaly across 4 evaluations.
+//   - DEFAULT/SERIES: No incident created. Each user's individual window never reached 3/3.
+//   - TARGET/POLICY: Incident created at t2. The aggregate window saw 3 anomalies from 3 different users.
+//   This demonstrates detection of distributed attacks where no single actor is suspicious enough alone.
+//
 // Runtime:
 // each policy evaluation produces one or more anomaly events (series - because the same tuple can have multiple events over time)
 // each anomaly event/series corresponds to [policy,env,target,target_type,primary_entity] tuple
@@ -239,6 +350,26 @@ enum IncidentGroupingMode {
   // Should be used ONLY if eval window is large and eval frequency is low
   // no grouping is done, each anomaly event is treated as a separate incident
   INCIDENT_GROUPING_MODE_NONE = 4;
+
+  // Trigger evaluation is aggregated across all entities for a given [policy,env,target,target_type].
+  // All anomaly events for the same target contribute to a single shared trigger window regardless of primary_entity.
+  // An incident is OPENED when the aggregate create trigger fires across all entities on the same target.
+  // It continues to be OPEN as long as the aggregate close trigger has not fired.
+  // An incident is CLOSED when the aggregate close trigger fires.
+  // This is useful for detecting distributed attacks on a target where many actors each contribute few anomalies.
+  // For ex: if create_trigger = 3/5, and 3 different users each produce 1 anomaly on /login, the trigger fires.
+  // Max active incidents = 1 per [policy,env,target,target_type]
+  INCIDENT_GROUPING_MODE_TARGET = 5;
+
+  // Trigger evaluation is aggregated across all entities AND all targets for a given [policy,env].
+  // All anomaly events for the same policy contribute to a single shared trigger window regardless of target or primary_entity.
+  // An incident is OPENED when the aggregate create trigger fires across all entities and targets.
+  // It continues to be OPEN as long as the aggregate close trigger has not fired.
+  // An incident is CLOSED when the aggregate close trigger fires.
+  // This is useful for detecting coordinated attacks that span multiple API endpoints.
+  // For ex: if create_trigger = 3/5, and 3 anomalies come from different users on different targets, the trigger fires.
+  // Max active incidents = 1 per [policy,env]
+  INCIDENT_GROUPING_MODE_POLICY = 6;
 }
 
 message IncidentConfig {
