@@ -14,6 +14,7 @@ service CloudEdgeDeploymentConfigService {
   rpc GetCloudEdgeDeploymentConfigs(GetCloudEdgeDeploymentConfigsRequest) returns (GetCloudEdgeDeploymentConfigsResponse) {} // api to fetch config, used for both UI and helm generation
   rpc GetSharedConfigMetadata(GetSharedConfigMetadataRequest) returns (GetSharedConfigMetadataResponse) {} // api to fetch generic key-value map info coming from yaml
   rpc CloudEdgeDeploymentConfigAction(CloudEdgeDeploymentConfigActionRequest) returns (CloudEdgeDeploymentConfigActionResponse) {} // api to request cloud edge deployment config actions
+  rpc GenerateHelmValues(GenerateHelmValuesRequest) returns (GenerateHelmValuesResponse) {} // renders helm-values fragments for a tenant (read-only)
 }
 
 message CreateCloudEdgeDeploymentConfigRequest {
@@ -70,3 +71,17 @@ message CloudEdgeDeploymentConfigActionRequest {
 }
 
 message CloudEdgeDeploymentConfigActionResponse {}
+
+message GenerateHelmValuesRequest {
+  string id = 1; // triggering config id; tenant resolved from context, all its configs merged by gateway cname
+}
+
+message GenerateHelmValuesResponse {
+  repeated HelmValuesFile files = 1;
+}
+
+message HelmValuesFile {
+  string chart_name = 1; // "traceable-istio" | "cloud-edge"
+  string file_path = 2; // tells where the file should be put in helm-values
+  string content = 3; // rendered YAML
+}
