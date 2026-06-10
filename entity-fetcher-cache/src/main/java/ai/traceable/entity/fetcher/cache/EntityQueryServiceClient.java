@@ -6,7 +6,9 @@ import ai.traceable.entity.fetcher.cache.StreamingAiEndpointMetadataProvider.Api
 import ai.traceable.entity.fetcher.cache.StreamingApiMappingProvider.HttpApiDetails;
 import ai.traceable.entity.fetcher.cache.config.EntityQueryServiceConfig;
 import ai.traceable.protection.data.context.v1.AiEndpointMetadata;
+import ai.traceable.protection.data.context.v1.AttributeKey;
 import ai.traceable.protection.data.context.v1.PromptAttributeKey;
+import ai.traceable.protection.data.context.v1.ResponseAttributeKey;
 import ai.traceable.protection.processing.common.v1.AttributeType;
 import com.google.common.collect.Streams;
 import com.google.inject.Inject;
@@ -111,20 +113,52 @@ class EntityQueryServiceClient {
                       .addAllAssociatedAiModels(row.getColumn(1).getStringArrayList())
                       .addAllAssociatedAiVendors(row.getColumn(2).getStringArrayList())
                       .addAllPromptAttributeKeys(
-                          parsePromptAttributeKeys(row.getColumn(3).getStringArrayList()));
+                          parsePromptAttributeKeys(row.getColumn(3).getStringArrayList()))
+                      .addAllModelLocationAttributeKeys(
+                          parseModelLocationAttributeKeys(row.getColumn(4).getStringArrayList()))
+                      .addAllResponseAttributeKeys(
+                          parseResponseAttributeKeys(row.getColumn(5).getStringArrayList()));
               return new ApiAiEndpointMetadataDetails(apiId, builder.build());
             });
   }
 
   private List<PromptAttributeKey> parsePromptAttributeKeys(List<String> promptAttributeKeysRaw) {
-    return promptAttributeKeysRaw.stream()
+    return parseAttributeKeys(promptAttributeKeysRaw).stream()
+        .map(
+            attributeKey ->
+                PromptAttributeKey.newBuilder()
+                    .setAttributeType(attributeKey.getAttributeType())
+                    .setAttributeKey(attributeKey.getAttributeKey())
+                    .build())
+        .collect(Collectors.toList());
+  }
+
+  private List<AttributeKey> parseModelLocationAttributeKeys(
+      List<String> modelLocationAttributeKeysRaw) {
+    return parseAttributeKeys(modelLocationAttributeKeysRaw);
+  }
+
+  private List<ResponseAttributeKey> parseResponseAttributeKeys(
+      List<String> responseLocationAttributeKeysRaw) {
+    return parseAttributeKeys(responseLocationAttributeKeysRaw).stream()
+        .map(
+            attributeKey ->
+                ResponseAttributeKey.newBuilder()
+                    .setAttributeType(attributeKey.getAttributeType())
+                    .setAttributeKey(attributeKey.getAttributeKey())
+                    .build())
+        .collect(Collectors.toList());
+  }
+
+  private List<AttributeKey> parseAttributeKeys(List<String> attributeKeysRaw) {
+    return attributeKeysRaw.stream()
         .filter(raw -> raw != null && !raw.isEmpty())
         .map(raw -> raw.endsWith(",") ? raw.substring(0, raw.length() - 1) : raw)
         .map(
             raw -> {
               // Format: http.request.{attributeType}[.$.{jsonPath}]
               String[] parts = raw.split("\\.", 4);
-              PromptAttributeKey.Builder builder = PromptAttributeKey.newBuilder();
+              AttributeKey.Builder builder = AttributeKey.newBuilder();
               if (parts.length >= 3) {
                 AttributeType attributeType = ATTRIBUTE_TYPE_MAPPING.get(parts[2]);
                 if (attributeType != null) {
@@ -171,6 +205,12 @@ class EntityQueryServiceClient {
         .addSelection(
             buildSelectionExpression(
                 entityQueryServiceConfig.getApiPromptAttributeKeysColumnName()))
+        .addSelection(
+            buildSelectionExpression(
+                entityQueryServiceConfig.getApiModelLocationAttributeKeysColumnName()))
+        .addSelection(
+            buildSelectionExpression(
+                entityQueryServiceConfig.getApiResponseLocationAttributeKeysColumnName()))
         .build();
   }
 

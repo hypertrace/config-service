@@ -486,6 +486,10 @@ public class AiAppToRateLimitingConverter {
       ai.traceable.ratelimiting.config.service.v2.Action.MarkForTesting.Builder testingBuilder =
           ai.traceable.ratelimiting.config.service.v2.Action.MarkForTesting.newBuilder();
       actionBuilder.setMarkForTesting(testingBuilder.build());
+    } else if (action.hasBlock()) {
+      ai.traceable.ratelimiting.config.service.v2.Action.Block.Builder blockBuilder =
+          ai.traceable.ratelimiting.config.service.v2.Action.Block.newBuilder();
+      actionBuilder.setBlock(blockBuilder.build());
     }
 
     return actionBuilder.build();

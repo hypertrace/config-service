@@ -2,13 +2,13 @@ package ai.traceable.aiapp.protection.config.service.firewall.cache;
 
 import ai.traceable.aiapp.protection.config.service.firewall.AiAppConfigServiceConfig;
 import ai.traceable.aiapp.protection.config.service.firewall.converter.DatatypeRuleToCustomSignatureConfigConverter;
+import ai.traceable.aiapp.protection.config.service.firewall.converter.GenAiRuleToCustomSignatureConfigConverter;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppConfigServiceGrpc;
 import ai.traceable.aiapp.protection.config.service.v1.GetAiAppEvaluationConfigContextRequest;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigManager;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatusChange;
 import ai.traceable.data.classification.cache.client.DataClassificationClient;
-import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
 import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
 import ai.traceable.protection.engine.config.aifirewall.v1.AiFirewallConfigContext;
@@ -46,22 +46,19 @@ public class AiAppConfigContextCacheProvider extends AiAppConfigContextClientPro
       AiAppRulesProvider aiAppRulesProvider,
       CachedServiceMappingProvider cachedServiceMappingProvider,
       CachedApiMappingProvider cachedApiMappingProvider,
-      DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub
-          dataClassificationConfigServiceStub,
-      ProtectionEngineDataTypeTranslator protectionEngineDataTypeTranslator,
       DataClassificationClient dataClassificationClient,
       AiAppConfigServiceGrpc.AiAppConfigServiceBlockingStub aiAppConfigService,
-      DatatypeRuleToCustomSignatureConfigConverter datatypeRuleToCustomSignatureConfigConverter) {
+      DatatypeRuleToCustomSignatureConfigConverter datatypeRuleToCustomSignatureConfigConverter,
+      GenAiRuleToCustomSignatureConfigConverter genAiRuleToCustomSignatureConfigConverter) {
     super(
         anomalyDetectionConfigManager,
         aiAppRulesProvider,
         cachedServiceMappingProvider,
         cachedApiMappingProvider,
-        dataClassificationConfigServiceStub,
-        protectionEngineDataTypeTranslator,
         dataClassificationClient,
         aiAppConfigService,
-        datatypeRuleToCustomSignatureConfigConverter);
+        datatypeRuleToCustomSignatureConfigConverter,
+        genAiRuleToCustomSignatureConfigConverter);
     this.cache = buildCache(config);
     try {
       kafkaLiveEventListener.registerCallback(this::handleConfigChangeEvent);

@@ -4,11 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.aiapp.protection.config.service.firewall.cache.AiAppConfigContextClientProvider;
-import ai.traceable.aiapp.protection.config.service.firewall.cache.ProtectionEngineDataTypeTranslator;
 import ai.traceable.aiapp.protection.config.service.firewall.converter.DatatypeRuleToCustomSignatureConfigConverter;
+import ai.traceable.aiapp.protection.config.service.firewall.converter.GenAiRuleToCustomSignatureConfigConverter;
 import ai.traceable.aiapp.protection.config.service.v1.Action;
 import ai.traceable.aiapp.protection.config.service.v1.Action.Block;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppConfigServiceGrpc;
@@ -16,6 +18,7 @@ import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRule;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRuleData;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppRule;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppSubRule;
+import ai.traceable.aiapp.protection.config.service.v1.AiInputExplosionRuleData;
 import ai.traceable.aiapp.protection.config.service.v1.AiSensitiveDataProtectionRuleData;
 import ai.traceable.aiapp.protection.config.service.v1.DatatypeCondition;
 import ai.traceable.aiapp.protection.config.service.v1.EnvironmentScope;
@@ -23,6 +26,7 @@ import ai.traceable.aiapp.protection.config.service.v1.GetAiAppEvaluationConfigC
 import ai.traceable.aiapp.protection.config.service.v1.GetAiAppRulesResponse;
 import ai.traceable.aiapp.protection.config.service.v1.MatchOperator;
 import ai.traceable.aiapp.protection.config.service.v1.MatchOperatorCondition;
+import ai.traceable.aiapp.protection.config.service.v1.ModelGovernanceRuleData;
 import ai.traceable.aiapp.protection.config.service.v1.PiiDetectedInPromptRuleData;
 import ai.traceable.aiapp.protection.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.aiapp.protection.config.service.v1.RuleScope;
@@ -35,13 +39,13 @@ import ai.traceable.anomaly.config.service.v1.AnomalyRuleAction;
 import ai.traceable.anomaly.config.service.v1.detector.*;
 import ai.traceable.data.classification.cache.client.DataClassificationClient;
 import ai.traceable.data.classification.cache.info.DataClassificationInfo;
-import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
 import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
 import ai.traceable.protection.engine.config.aifirewall.v1.AiFirewallConfigContext;
 import ai.traceable.protection.engine.config.aifirewall.v1.AiFirewallScopedConfigContext;
 import ai.traceable.protection.engine.config.aifirewall.v1.ModelBasedEvaluationConfig;
 import ai.traceable.protection.engine.config.aifirewall.v1.SecRulesEvaluationConfig;
+import ai.traceable.protection.engine.config.customsignature.v1.CustomSignatureRuleConfig;
 import ai.traceable.protection.engine.config.customsignature.v1.CustomSignatureRulesContext;
 import ai.traceable.protection.rules.aiapp.v1.AiAppRules;
 import ai.traceable.protection.rules.aiapp.v1.AiAppRulesProvider;
@@ -91,25 +95,16 @@ class AiAppConfigContextClientProviderTest {
     dataClassificationClient = mock(DataClassificationClient.class);
     aiAppConfigService = mock(AiAppConfigServiceGrpc.AiAppConfigServiceBlockingStub.class);
 
-    DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub
-        dataClassificationConfigServiceStub =
-            mock(
-                DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub
-                    .class);
-    ProtectionEngineDataTypeTranslator protectionEngineDataTypeTranslator =
-        new ProtectionEngineDataTypeTranslator();
-
     provider =
         new AiAppConfigContextClientProvider(
             anomalyDetectionConfigManager,
             aiAppRulesProvider,
             cachedServiceMappingProvider,
             cachedApiMappingProvider,
-            dataClassificationConfigServiceStub,
-            protectionEngineDataTypeTranslator,
             dataClassificationClient,
             aiAppConfigService,
-            new DatatypeRuleToCustomSignatureConfigConverter());
+            new DatatypeRuleToCustomSignatureConfigConverter(),
+            new GenAiRuleToCustomSignatureConfigConverter());
 
     requestContext = RequestContext.forTenantId(TENANT_ID);
 
@@ -404,7 +399,7 @@ class AiAppConfigContextClientProviderTest {
     assertEquals(
         0,
         result.getCustomSignatureConfigContext().getRuleContextsList().stream()
-            .mapToInt(ctx -> ctx.getRuleConfigsCount())
+            .mapToInt(CustomSignatureRulesContext::getRuleConfigsCount)
             .sum());
   }
 
@@ -461,7 +456,7 @@ class AiAppConfigContextClientProviderTest {
     assertEquals(
         0,
         result.getCustomSignatureConfigContext().getRuleContextsList().stream()
-            .mapToInt(ctx -> ctx.getRuleConfigsCount())
+            .mapToInt(CustomSignatureRulesContext::getRuleConfigsCount)
             .sum());
   }
 
@@ -591,7 +586,7 @@ class AiAppConfigContextClientProviderTest {
     List<String> ruleIds =
         result.getCustomSignatureConfigContext().getRuleContextsList().stream()
             .flatMap(ctx -> ctx.getRuleConfigsList().stream())
-            .map(rc -> rc.getId())
+            .map(CustomSignatureRuleConfig::getId)
             .collect(java.util.stream.Collectors.toList());
 
     assertTrue(ruleIds.contains("pii-tenant"), "Tenant-scoped rule should be included");
@@ -638,7 +633,7 @@ class AiAppConfigContextClientProviderTest {
     List<String> ruleIds =
         result.getCustomSignatureConfigContext().getRuleContextsList().stream()
             .flatMap(ctx -> ctx.getRuleConfigsList().stream())
-            .map(rc -> rc.getId())
+            .map(CustomSignatureRuleConfig::getId)
             .collect(java.util.stream.Collectors.toList());
 
     assertTrue(ruleIds.contains("pii-tenant"));
@@ -681,6 +676,139 @@ class AiAppConfigContextClientProviderTest {
     AiFirewallConfigContext result = provider.getAiFirewallConfigContext(requestContext, request);
 
     assertEquals(0, result.getCustomSignatureConfigContext().getRuleContextsCount());
+  }
+
+  @Test
+  void testInputExplosionBlockingRule_IncludedInCustomSignatureConfigContext() {
+    setupEmptyAnomalyConfig();
+
+    AiAppCustomRule inputExplosionRule =
+        AiAppCustomRule.newBuilder()
+            .setRuleId("input-explosion-1")
+            .setRuleData(
+                AiAppCustomRuleData.newBuilder()
+                    .setRuleName("Input Explosion Rule")
+                    .setEnabled(true)
+                    .setAction(Action.newBuilder().setBlock(Block.getDefaultInstance()))
+                    .setAiInputExplosionRuleData(
+                        AiInputExplosionRuleData.newBuilder().setInputCharacterLimit(500).build()))
+            .build();
+
+    when(aiAppConfigService.getAiAppRules(any()))
+        .thenReturn(
+            GetAiAppRulesResponse.newBuilder()
+                .addAiAppRules(
+                    AiAppRule.newBuilder()
+                        .setRuleId("rule-group-1")
+                        .addAiAppSubRules(
+                            AiAppSubRule.newBuilder().setCustomRule(inputExplosionRule)))
+                .build());
+
+    GetAiAppEvaluationConfigContextRequest request =
+        GetAiAppEvaluationConfigContextRequest.newBuilder()
+            .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+            .build();
+
+    AiFirewallConfigContext result = provider.getAiFirewallConfigContext(requestContext, request);
+
+    assertTrue(result.hasCustomSignatureConfigContext());
+    assertTrue(
+        result.getCustomSignatureConfigContext().getRuleContextsList().stream()
+            .flatMap(ctx -> ctx.getRuleConfigsList().stream())
+            .anyMatch(
+                rc ->
+                    "input-explosion-1".equals(rc.getId()) && rc.getAction().hasBlockingAction()));
+  }
+
+  @Test
+  void testModelGovernanceBlockingRule_IncludedInCustomSignatureConfigContext() {
+    setupEmptyAnomalyConfig();
+
+    AiAppCustomRule modelGovernanceRule =
+        AiAppCustomRule.newBuilder()
+            .setRuleId("model-governance-1")
+            .setRuleData(
+                AiAppCustomRuleData.newBuilder()
+                    .setRuleName("Model Governance Rule")
+                    .setEnabled(true)
+                    .setAction(Action.newBuilder().setBlock(Block.getDefaultInstance()))
+                    .setModelGovernanceRuleData(
+                        ModelGovernanceRuleData.newBuilder()
+                            .setAiVendorsCondition(
+                                MatchOperatorCondition.newBuilder()
+                                    .setOperator(MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX)
+                                    .setValue(
+                                        Value.newBuilder()
+                                            .setStringValue("OpenAI|Anthropic")
+                                            .build())
+                                    .build())
+                            .build()))
+            .build();
+
+    when(aiAppConfigService.getAiAppRules(any()))
+        .thenReturn(
+            GetAiAppRulesResponse.newBuilder()
+                .addAiAppRules(
+                    AiAppRule.newBuilder()
+                        .setRuleId("rule-group-1")
+                        .addAiAppSubRules(
+                            AiAppSubRule.newBuilder().setCustomRule(modelGovernanceRule)))
+                .build());
+
+    GetAiAppEvaluationConfigContextRequest request =
+        GetAiAppEvaluationConfigContextRequest.newBuilder()
+            .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+            .build();
+
+    AiFirewallConfigContext result = provider.getAiFirewallConfigContext(requestContext, request);
+
+    assertTrue(result.hasCustomSignatureConfigContext());
+    assertTrue(
+        result.getCustomSignatureConfigContext().getRuleContextsList().stream()
+            .flatMap(ctx -> ctx.getRuleConfigsList().stream())
+            .anyMatch(
+                rc ->
+                    "model-governance-1".equals(rc.getId()) && rc.getAction().hasBlockingAction()));
+  }
+
+  @Test
+  void testGenAiBlockingRules_NotSetForPlatformEvaluationPoint() {
+    setupEmptyAnomalyConfig();
+
+    AiAppCustomRule inputExplosionRule =
+        AiAppCustomRule.newBuilder()
+            .setRuleId("input-explosion-1")
+            .setRuleData(
+                AiAppCustomRuleData.newBuilder()
+                    .setRuleName("Input Explosion Rule")
+                    .setEnabled(true)
+                    .setAction(Action.newBuilder().setBlock(Block.getDefaultInstance()))
+                    .setAiInputExplosionRuleData(
+                        AiInputExplosionRuleData.newBuilder().setInputCharacterLimit(500).build()))
+            .build();
+
+    when(aiAppConfigService.getAiAppRules(any()))
+        .thenReturn(
+            GetAiAppRulesResponse.newBuilder()
+                .addAiAppRules(
+                    AiAppRule.newBuilder()
+                        .setRuleId("rule-group-1")
+                        .addAiAppSubRules(
+                            AiAppSubRule.newBuilder().setCustomRule(inputExplosionRule)))
+                .build());
+
+    GetAiAppEvaluationConfigContextRequest request =
+        GetAiAppEvaluationConfigContextRequest.newBuilder()
+            .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+            .build();
+
+    AiFirewallConfigContext result = provider.getAiFirewallConfigContext(requestContext, request);
+
+    assertEquals(
+        0,
+        result.getCustomSignatureConfigContext().getRuleContextsList().stream()
+            .mapToInt(CustomSignatureRulesContext::getRuleConfigsCount)
+            .sum());
   }
 
   @Test
@@ -781,6 +909,238 @@ class AiAppConfigContextClientProviderTest {
             .mapToInt(CustomSignatureRulesContext::getRuleConfigsCount)
             .sum(),
         "PII rule configs must be skipped when detection config is disabled");
+  }
+
+  @Test
+  void testDisabledInputExplosionDetectionConfig_SkipsInputExplosionRules() {
+    ScopedAnomalyDetectionConfig disabledConfig =
+        ScopedAnomalyDetectionConfig.newBuilder()
+            .setConfigScope(CUSTOMER_SCOPE)
+            .addAnomalyDetectionConfigs(
+                AnomalyDetectionConfig.newBuilder()
+                    .setConfigStatus(
+                        AnomalyConfigStatusChange.newBuilder().setDisabled(true).build())
+                    .setGenAiAnomalyDetectionConfig(
+                        GenAiAnomalyDetectionConfig.newBuilder()
+                            .setLlmInputExplosion(
+                                LlmInputExplosionAnomalyDetectionConfig.getDefaultInstance())))
+            .build();
+
+    when(anomalyDetectionConfigManager.getAllGlobalResolvedScopedAnomalyDetectionConfigs(
+            any(RequestContext.class), any()))
+        .thenReturn(List.of(disabledConfig));
+    when(aiAppRulesProvider.getAiAppRules())
+        .thenReturn(AiAppRules.newBuilder().setAiAppRulesBlob(SEC_RULES_BLOB).build());
+
+    AiAppCustomRule inputExplosionRule =
+        AiAppCustomRule.newBuilder()
+            .setRuleId("input-explosion-1")
+            .setRuleData(
+                AiAppCustomRuleData.newBuilder()
+                    .setRuleName("Input Explosion Rule")
+                    .setEnabled(true)
+                    .setAction(Action.newBuilder().setBlock(Block.getDefaultInstance()))
+                    .setAiInputExplosionRuleData(
+                        AiInputExplosionRuleData.newBuilder().setInputCharacterLimit(500).build()))
+            .build();
+
+    when(aiAppConfigService.getAiAppRules(any()))
+        .thenReturn(
+            GetAiAppRulesResponse.newBuilder()
+                .addAiAppRules(
+                    AiAppRule.newBuilder()
+                        .setRuleId("rule-group-1")
+                        .addAiAppSubRules(
+                            AiAppSubRule.newBuilder().setCustomRule(inputExplosionRule)))
+                .build());
+
+    GetAiAppEvaluationConfigContextRequest request =
+        GetAiAppEvaluationConfigContextRequest.newBuilder()
+            .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+            .build();
+
+    AiFirewallConfigContext result = provider.getAiFirewallConfigContext(requestContext, request);
+
+    assertEquals(
+        0,
+        result.getCustomSignatureConfigContext().getRuleContextsList().stream()
+            .mapToInt(CustomSignatureRulesContext::getRuleConfigsCount)
+            .sum(),
+        "Input explosion rule configs must be skipped when detection config is disabled");
+  }
+
+  @Test
+  void testDisabledModelGovernanceDetectionConfig_SkipsModelGovernanceRules() {
+    ScopedAnomalyDetectionConfig disabledConfig =
+        ScopedAnomalyDetectionConfig.newBuilder()
+            .setConfigScope(CUSTOMER_SCOPE)
+            .addAnomalyDetectionConfigs(
+                AnomalyDetectionConfig.newBuilder()
+                    .setConfigStatus(
+                        AnomalyConfigStatusChange.newBuilder().setDisabled(true).build())
+                    .setGenAiAnomalyDetectionConfig(
+                        GenAiAnomalyDetectionConfig.newBuilder()
+                            .setLlmModelGovernance(
+                                LlmModelGovernanceAnomalyDetectionConfig.getDefaultInstance())))
+            .build();
+
+    when(anomalyDetectionConfigManager.getAllGlobalResolvedScopedAnomalyDetectionConfigs(
+            any(RequestContext.class), any()))
+        .thenReturn(List.of(disabledConfig));
+    when(aiAppRulesProvider.getAiAppRules())
+        .thenReturn(AiAppRules.newBuilder().setAiAppRulesBlob(SEC_RULES_BLOB).build());
+
+    AiAppCustomRule modelGovernanceRule =
+        AiAppCustomRule.newBuilder()
+            .setRuleId("model-governance-1")
+            .setRuleData(
+                AiAppCustomRuleData.newBuilder()
+                    .setRuleName("Model Governance Rule")
+                    .setEnabled(true)
+                    .setAction(Action.newBuilder().setBlock(Block.getDefaultInstance()))
+                    .setModelGovernanceRuleData(
+                        ModelGovernanceRuleData.newBuilder()
+                            .setAiVendorsCondition(
+                                MatchOperatorCondition.newBuilder()
+                                    .setOperator(MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX)
+                                    .setValue(
+                                        Value.newBuilder()
+                                            .setStringValue("OpenAI|Anthropic")
+                                            .build())
+                                    .build())
+                            .build()))
+            .build();
+
+    when(aiAppConfigService.getAiAppRules(any()))
+        .thenReturn(
+            GetAiAppRulesResponse.newBuilder()
+                .addAiAppRules(
+                    AiAppRule.newBuilder()
+                        .setRuleId("rule-group-1")
+                        .addAiAppSubRules(
+                            AiAppSubRule.newBuilder().setCustomRule(modelGovernanceRule)))
+                .build());
+
+    GetAiAppEvaluationConfigContextRequest request =
+        GetAiAppEvaluationConfigContextRequest.newBuilder()
+            .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+            .build();
+
+    AiFirewallConfigContext result = provider.getAiFirewallConfigContext(requestContext, request);
+
+    assertEquals(
+        0,
+        result.getCustomSignatureConfigContext().getRuleContextsList().stream()
+            .mapToInt(CustomSignatureRulesContext::getRuleConfigsCount)
+            .sum(),
+        "Model governance rule configs must be skipped when detection config is disabled");
+  }
+
+  @Test
+  void testCustomSignatureRulesFetchedOnceForPiiAndGenAiBlockingRules() {
+    setupEmptyAnomalyConfig();
+
+    when(aiAppConfigService.getAiAppRules(any()))
+        .thenReturn(
+            GetAiAppRulesResponse.newBuilder()
+                .addAiAppRules(
+                    AiAppRule.newBuilder()
+                        .setRuleId("rule-group-1")
+                        .addAiAppSubRules(
+                            AiAppSubRule.newBuilder()
+                                .setCustomRule(buildPiiCustomRule("pii-rule-1", "PII Rule"))
+                                .build())
+                        .addAiAppSubRules(
+                            AiAppSubRule.newBuilder()
+                                .setCustomRule(
+                                    AiAppCustomRule.newBuilder()
+                                        .setRuleId("input-explosion-1")
+                                        .setRuleData(
+                                            AiAppCustomRuleData.newBuilder()
+                                                .setRuleName("Input Explosion")
+                                                .setEnabled(true)
+                                                .setAction(
+                                                    Action.newBuilder()
+                                                        .setBlock(Block.getDefaultInstance()))
+                                                .setAiInputExplosionRuleData(
+                                                    AiInputExplosionRuleData.newBuilder()
+                                                        .setInputCharacterLimit(500)
+                                                        .build()))
+                                        .build())
+                                .build())
+                        .build())
+                .build());
+
+    GetAiAppEvaluationConfigContextRequest request =
+        GetAiAppEvaluationConfigContextRequest.newBuilder()
+            .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+            .build();
+
+    provider.getAiFirewallConfigContext(requestContext, request);
+
+    verify(aiAppConfigService, times(1)).getAiAppRules(any());
+  }
+
+  @Test
+  void testDisabledAiSensitiveDataProtectionDetectionConfig_SkipsSensitiveDataRules() {
+    ScopedAnomalyDetectionConfig disabledConfig =
+        ScopedAnomalyDetectionConfig.newBuilder()
+            .setConfigScope(CUSTOMER_SCOPE)
+            .addAnomalyDetectionConfigs(
+                AnomalyDetectionConfig.newBuilder()
+                    .setConfigStatus(
+                        AnomalyConfigStatusChange.newBuilder().setDisabled(true).build())
+                    .setGenAiAnomalyDetectionConfig(
+                        GenAiAnomalyDetectionConfig.newBuilder()
+                            .setAiSensitiveDataProtection(
+                                AiSensitiveDataProtectionAnomalyDetectionConfig
+                                    .getDefaultInstance())))
+            .build();
+
+    when(anomalyDetectionConfigManager.getAllGlobalResolvedScopedAnomalyDetectionConfigs(
+            any(RequestContext.class), any()))
+        .thenReturn(List.of(disabledConfig));
+    when(aiAppRulesProvider.getAiAppRules())
+        .thenReturn(AiAppRules.newBuilder().setAiAppRulesBlob(SEC_RULES_BLOB).build());
+
+    AiAppCustomRule sensitiveDataRule =
+        AiAppCustomRule.newBuilder()
+            .setRuleId("sensitive-rule-1")
+            .setRuleData(
+                AiAppCustomRuleData.newBuilder()
+                    .setRuleName("Sensitive Data Rule")
+                    .setEnabled(true)
+                    .setAction(Action.newBuilder().setBlock(Block.getDefaultInstance()))
+                    .setAiSensitiveDataProtectionRuleData(
+                        AiSensitiveDataProtectionRuleData.newBuilder()
+                            .addDatatypeConditions(
+                                DatatypeCondition.newBuilder().addDatatypeIds("datatype-1"))
+                            .build()))
+            .build();
+
+    when(aiAppConfigService.getAiAppRules(any()))
+        .thenReturn(
+            GetAiAppRulesResponse.newBuilder()
+                .addAiAppRules(
+                    AiAppRule.newBuilder()
+                        .setRuleId("rule-group-1")
+                        .addAiAppSubRules(
+                            AiAppSubRule.newBuilder().setCustomRule(sensitiveDataRule)))
+                .build());
+
+    GetAiAppEvaluationConfigContextRequest request =
+        GetAiAppEvaluationConfigContextRequest.newBuilder()
+            .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+            .build();
+
+    AiFirewallConfigContext result = provider.getAiFirewallConfigContext(requestContext, request);
+
+    assertEquals(
+        0,
+        result.getCustomSignatureConfigContext().getRuleContextsList().stream()
+            .mapToInt(CustomSignatureRulesContext::getRuleConfigsCount)
+            .sum(),
+        "Sensitive data rule configs must be skipped when detection config is disabled");
   }
 
   private ScopedAnomalyDetectionConfig buildScopedConfig(

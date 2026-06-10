@@ -315,6 +315,9 @@ public class AiAppToCustomSignatureConverter {
     if (action.hasMarkForTesting()) {
       builder.setEventType(EventType.EVENT_TYPE_TESTING_DETECTION);
     }
+    if (action.hasBlock()) {
+      builder.setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING);
+    }
 
     return builder.build();
   }

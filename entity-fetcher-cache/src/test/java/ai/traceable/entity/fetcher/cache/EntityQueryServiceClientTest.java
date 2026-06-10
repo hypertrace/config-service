@@ -2,13 +2,19 @@ package ai.traceable.entity.fetcher.cache;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider.ApiIdentifierEntity;
 import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider.ServiceIdentifierEntity;
+import ai.traceable.entity.fetcher.cache.StreamingAiEndpointMetadataProvider.ApiAiEndpointMetadataDetails;
 import ai.traceable.entity.fetcher.cache.config.EntityQueryServiceConfig;
+import ai.traceable.protection.data.context.v1.AttributeKey;
+import ai.traceable.protection.data.context.v1.PromptAttributeKey;
+import ai.traceable.protection.data.context.v1.ResponseAttributeKey;
+import ai.traceable.protection.processing.common.v1.AttributeType;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
@@ -590,5 +596,83 @@ class EntityQueryServiceClientTest {
                     Value.newBuilder().setString("/learnt/api3").setValueType(ValueType.STRING)));
 
     return resultSetChunkBuilder.build();
+  }
+
+  @Test
+  void testClient_getAllAiEndpointMetadata_parsesPromptAndModelLocationKeys() {
+    EntityQueryServiceConfig aiMetadataConfig = mock(EntityQueryServiceConfig.class);
+    when(aiMetadataConfig.getApiIdColumnName()).thenReturn("apiId");
+    when(aiMetadataConfig.getApiTypeColumnName()).thenReturn("apiType");
+    when(aiMetadataConfig.getApiEnvironmentColumnName()).thenReturn("apiEnvironment");
+    when(aiMetadataConfig.getApiServiceNameColumnName()).thenReturn("apiServiceName");
+    when(aiMetadataConfig.getIsGenAiEndpointColumnName()).thenReturn("isGenAi");
+    when(aiMetadataConfig.getApiAssociatedAiModelsColumnName()).thenReturn("associatedAiModels");
+    when(aiMetadataConfig.getApiAssociatedAiVendorsColumnName()).thenReturn("associatedAiVendors");
+    when(aiMetadataConfig.getApiPromptAttributeKeysColumnName()).thenReturn("promptAttributeKeys");
+    when(aiMetadataConfig.getApiModelLocationAttributeKeysColumnName())
+        .thenReturn("modelLocationAttributeKeys");
+    when(aiMetadataConfig.getApiResponseLocationAttributeKeysColumnName())
+        .thenReturn("responseLocationAttributeKeys");
+    when(aiMetadataConfig.getTimeout()).thenReturn(Duration.of(10, ChronoUnit.SECONDS));
+
+    EntityQueryServiceBlockingStub aiMetadataStub =
+        mock(EntityQueryServiceBlockingStub.class, RETURNS_DEEP_STUBS);
+    EntityQueryServiceClient aiMetadataClient =
+        new EntityQueryServiceClient(aiMetadataConfig, aiMetadataStub);
+
+    when(aiMetadataStub.withDeadlineAfter(10000L, TimeUnit.MILLISECONDS).execute(any()))
+        .thenReturn(List.of(getAiEndpointMetadataResultSetChunk()).iterator());
+
+    List<ApiAiEndpointMetadataDetails> results =
+        aiMetadataClient
+            .getAllAiEndpointMetadata(REQUEST_CONTEXT, "testService", "testEnv")
+            .collect(Collectors.toList());
+
+    assertEquals(1, results.size());
+    ApiAiEndpointMetadataDetails details = results.get(0);
+    assertEquals("api-1", details.getApiId());
+    assertEquals(List.of("gpt-4"), details.getAiEndpointMetadata().getAssociatedAiModelsList());
+    assertEquals(List.of("openai"), details.getAiEndpointMetadata().getAssociatedAiVendorsList());
+
+    PromptAttributeKey promptKey = details.getAiEndpointMetadata().getPromptAttributeKeys(0);
+    assertEquals(AttributeType.ATTRIBUTE_TYPE_BODY_PARAM, promptKey.getAttributeType());
+    assertEquals("messages.content", promptKey.getAttributeKey());
+
+    AttributeKey modelLocationKey =
+        details.getAiEndpointMetadata().getModelLocationAttributeKeys(0);
+    assertEquals(AttributeType.ATTRIBUTE_TYPE_BODY_PARAM, modelLocationKey.getAttributeType());
+    assertEquals("model", modelLocationKey.getAttributeKey());
+
+    ResponseAttributeKey responseKey = details.getAiEndpointMetadata().getResponseAttributeKeys(0);
+    assertEquals(AttributeType.ATTRIBUTE_TYPE_BODY_PARAM, responseKey.getAttributeType());
+    assertEquals("choices.content", responseKey.getAttributeKey());
+  }
+
+  private ResultSetChunk getAiEndpointMetadataResultSetChunk() {
+    return ResultSetChunk.newBuilder()
+        .addRow(
+            Row.newBuilder()
+                .addColumn(Value.newBuilder().setString("api-1").setValueType(ValueType.STRING))
+                .addColumn(
+                    Value.newBuilder()
+                        .addAllStringArray(List.of("gpt-4"))
+                        .setValueType(ValueType.STRING_ARRAY))
+                .addColumn(
+                    Value.newBuilder()
+                        .addAllStringArray(List.of("openai"))
+                        .setValueType(ValueType.STRING_ARRAY))
+                .addColumn(
+                    Value.newBuilder()
+                        .addAllStringArray(List.of("http.request.body.$.messages.content"))
+                        .setValueType(ValueType.STRING_ARRAY))
+                .addColumn(
+                    Value.newBuilder()
+                        .addAllStringArray(List.of("http.request.body.$.model"))
+                        .setValueType(ValueType.STRING_ARRAY))
+                .addColumn(
+                    Value.newBuilder()
+                        .addAllStringArray(List.of("http.response.body.$.choices.content"))
+                        .setValueType(ValueType.STRING_ARRAY)))
+        .build();
   }
 }

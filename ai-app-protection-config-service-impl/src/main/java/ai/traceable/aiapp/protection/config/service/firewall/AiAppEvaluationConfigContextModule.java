@@ -3,7 +3,6 @@ package ai.traceable.aiapp.protection.config.service.firewall;
 import ai.traceable.aiapp.protection.config.service.firewall.cache.AiAppConfigContextCacheProvider;
 import ai.traceable.aiapp.protection.config.service.firewall.cache.AiAppConfigContextClientProvider;
 import ai.traceable.aiapp.protection.config.service.firewall.cache.AiAppConfigContextProvider;
-import ai.traceable.aiapp.protection.config.service.firewall.cache.ProtectionEngineDataTypeTranslator;
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +22,5 @@ public class AiAppEvaluationConfigContextModule extends AbstractModule {
     bind(AiAppConfigContextProvider.class)
         .annotatedWith(Names.named(AI_APP_CONFIG_CONTEXT_CLIENT_PROVIDER))
         .to(AiAppConfigContextClientProvider.class);
-    bind(ProtectionEngineDataTypeTranslator.class)
-        .toInstance(new ProtectionEngineDataTypeTranslator());
   }
 }

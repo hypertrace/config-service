@@ -3,6 +3,7 @@ package ai.traceable.aiapp.protection.config.service.firewall.cache;
 import static ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils.ANOMALY_CONFIG_SCOPE_COMPARATOR;
 
 import ai.traceable.aiapp.protection.config.service.firewall.converter.DatatypeRuleToCustomSignatureConfigConverter;
+import ai.traceable.aiapp.protection.config.service.firewall.converter.GenAiRuleToCustomSignatureConfigConverter;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppConfigServiceGrpc;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRule;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppSubRule;
@@ -20,14 +21,11 @@ import ai.traceable.anomaly.config.service.v1.AnomalyRuleAction;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfigType;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
+import ai.traceable.anomaly.config.service.v1.detector.GenAiAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.GetAnomalyDetectionConfigsFilter;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
 import ai.traceable.data.classification.cache.client.DataClassificationClient;
 import ai.traceable.data.classification.cache.info.DataClassificationInfo;
-import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc;
-import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
-import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest.DataTypeFilter;
-import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest.DataTypeOrdering;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
 import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
 import ai.traceable.protection.engine.config.aifirewall.v1.AiFirewallConfigContext;
@@ -36,9 +34,7 @@ import ai.traceable.protection.engine.config.aifirewall.v1.ModelBasedEvaluationC
 import ai.traceable.protection.engine.config.aifirewall.v1.ModelBasedRuleConfig;
 import ai.traceable.protection.engine.config.aifirewall.v1.SecRulesEvaluationConfig;
 import ai.traceable.protection.engine.config.customsignature.v1.CustomSignatureConfigContext;
-import ai.traceable.protection.engine.config.customsignature.v1.CustomSignatureRulesContext;
 import ai.traceable.protection.processing.common.v1.ScopeContext;
-import ai.traceable.protection.processor.datatype.v1.DataType;
 import ai.traceable.protection.rules.aiapp.v1.AiAppRules;
 import ai.traceable.protection.rules.aiapp.v1.AiAppRulesProvider;
 import ai.traceable.protection.rules.aiapp.v1.AiAppThreatRule;
@@ -52,6 +48,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -76,13 +73,12 @@ public class AiAppConfigContextClientProvider implements AiAppConfigContextProvi
   protected final AiAppRulesProvider aiAppRulesProvider;
   protected final CachedServiceMappingProvider cachedServiceMappingProvider;
   protected final CachedApiMappingProvider cachedApiMappingProvider;
-  protected final DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub
-      dataClassificationConfigServiceStub;
-  protected final ProtectionEngineDataTypeTranslator protectionEngineDataTypeTranslator;
   protected final DataClassificationClient dataClassificationClient;
   protected final AiAppConfigServiceGrpc.AiAppConfigServiceBlockingStub aiAppConfigService;
   protected final DatatypeRuleToCustomSignatureConfigConverter
       datatypeRuleToCustomSignatureConfigConverter;
+  protected final GenAiRuleToCustomSignatureConfigConverter
+      genAiRuleToCustomSignatureConfigConverter;
 
   @Override
   public AiFirewallConfigContext getAiFirewallConfigContext(
@@ -180,15 +176,12 @@ public class AiAppConfigContextClientProvider implements AiAppConfigContextProvi
         CustomSignatureConfigContext.newBuilder();
 
     if (request.getRuleEvaluationPoint() != RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM) {
-      List<DataType> dataTypes = fetchDataTypes(requestContext, request);
-      if (!isPiiDetectionInPromptDisabled(scopedAnomalyDetectionConfigMap, anomalyConfigScope)) {
-        addDatatypeRulesContext(
-            requestContext, request.getRuleScope(), customSigBuilder, dataTypes);
-      } else {
-        log.debug(
-            "GenAI detection config is disabled for scope {}; skipping datatype-based rules",
-            anomalyConfigScope);
-      }
+      addGenAiCustomSignatureBlockingRulesContext(
+          requestContext,
+          request.getRuleScope(),
+          customSigBuilder,
+          scopedAnomalyDetectionConfigMap,
+          anomalyConfigScope);
     }
 
     CustomSignatureConfigContext customSigContext = customSigBuilder.build();
@@ -200,6 +193,35 @@ public class AiAppConfigContextClientProvider implements AiAppConfigContextProvi
   private boolean isPiiDetectionInPromptDisabled(
       Map<AnomalyConfigScope, ScopedAnomalyDetectionConfig> filteredConfigMap,
       AnomalyConfigScope requestScope) {
+    return isGenAiAnomalyDetectionDisabled(
+        filteredConfigMap, requestScope, GenAiAnomalyDetectionConfig::hasPiiDetectedInPrompt);
+  }
+
+  private boolean isAiSensitiveDataProtectionDisabled(
+      Map<AnomalyConfigScope, ScopedAnomalyDetectionConfig> filteredConfigMap,
+      AnomalyConfigScope requestScope) {
+    return isGenAiAnomalyDetectionDisabled(
+        filteredConfigMap, requestScope, GenAiAnomalyDetectionConfig::hasAiSensitiveDataProtection);
+  }
+
+  private boolean isInputExplosionDetectionDisabled(
+      Map<AnomalyConfigScope, ScopedAnomalyDetectionConfig> filteredConfigMap,
+      AnomalyConfigScope requestScope) {
+    return isGenAiAnomalyDetectionDisabled(
+        filteredConfigMap, requestScope, GenAiAnomalyDetectionConfig::hasLlmInputExplosion);
+  }
+
+  private boolean isModelGovernanceDetectionDisabled(
+      Map<AnomalyConfigScope, ScopedAnomalyDetectionConfig> filteredConfigMap,
+      AnomalyConfigScope requestScope) {
+    return isGenAiAnomalyDetectionDisabled(
+        filteredConfigMap, requestScope, GenAiAnomalyDetectionConfig::hasLlmModelGovernance);
+  }
+
+  private boolean isGenAiAnomalyDetectionDisabled(
+      Map<AnomalyConfigScope, ScopedAnomalyDetectionConfig> filteredConfigMap,
+      AnomalyConfigScope requestScope,
+      Predicate<GenAiAnomalyDetectionConfig> configMatcher) {
     return AnomalyConfigScopeUtils.getConfigScopesWithDecreasingPriority(requestScope).stream()
         .filter(filteredConfigMap::containsKey)
         .findFirst()
@@ -207,76 +229,107 @@ public class AiAppConfigContextClientProvider implements AiAppConfigContextProvi
         .map(
             scopedConfig ->
                 scopedConfig.getAnomalyDetectionConfigsList().stream()
+                    .filter(AnomalyDetectionConfig::hasGenAiAnomalyDetectionConfig)
                     .filter(
                         detectionConfig ->
-                            detectionConfig
-                                .getGenAiAnomalyDetectionConfig()
-                                .hasPiiDetectedInPrompt())
+                            configMatcher.test(detectionConfig.getGenAiAnomalyDetectionConfig()))
                     .anyMatch(c -> c.getConfigStatus().getDisabled()))
         .orElse(false);
   }
 
-  private List<DataType> fetchDataTypes(
-      RequestContext requestContext, GetAiAppEvaluationConfigContextRequest request) {
-    try {
-      Optional<String> environmentName =
-          request.getRuleScope().hasEnvironmentScope()
-                  && !request.getRuleScope().getEnvironmentScope().getEnvironmentIdsList().isEmpty()
-              ? Optional.of(
-                  request.getRuleScope().getEnvironmentScope().getEnvironmentIdsList().get(0))
-              : Optional.empty();
-
-      List<ai.traceable.data.classification.config.service.v1.DataType> resolvedDataTypes =
-          requestContext
-              .call(
-                  () ->
-                      dataClassificationConfigServiceStub.getDataTypes(
-                          GetDataTypesRequest.newBuilder()
-                              .setResolveInheritedDetails(true)
-                              .setOrdering(DataTypeOrdering.DATA_TYPE_ORDERING_EVALUATION_PRIORITY)
-                              .setFilter(
-                                  DataTypeFilter.newBuilder()
-                                      .setEnabled(true)
-                                      .setLegacyTypes(false))
-                              .build()))
-              .getDataTypesList();
-      return protectionEngineDataTypeTranslator.translateDataTypes(
-          resolvedDataTypes, environmentName);
-    } catch (Exception e) {
-      log.error("Failed to fetch data types for tenant: {}", requestContext.getTenantId(), e);
-      return List.of();
-    }
-  }
-
-  private void addDatatypeRulesContext(
+  private void addGenAiCustomSignatureBlockingRulesContext(
       RequestContext requestContext,
       RuleScope requestScope,
       CustomSignatureConfigContext.Builder customSigBuilder,
-      List<DataType> dataTypes) {
+      Map<AnomalyConfigScope, ScopedAnomalyDetectionConfig> scopedAnomalyDetectionConfigMap,
+      AnomalyConfigScope anomalyConfigScope) {
     try {
-      List<AiAppCustomRule> datatypeRules =
-          fetchDatatypeBasedCustomRules(requestContext, requestScope);
-      if (datatypeRules.isEmpty()) {
+      List<AiAppCustomRule> customRules = fetchCustomRules(requestContext, requestScope);
+      if (customRules.isEmpty()) {
         return;
       }
 
-      DataClassificationInfo dataClassificationInfo =
-          dataClassificationClient.getDataClassificationInfo(requestContext);
+      List<AiAppCustomRule> piiRules = List.of();
+      if (!isPiiDetectionInPromptDisabled(scopedAnomalyDetectionConfigMap, anomalyConfigScope)) {
+        piiRules =
+            customRules.stream()
+                .filter(rule -> rule.getRuleData().hasPiiDetectedInPromptRuleData())
+                .collect(Collectors.toUnmodifiableList());
+      } else {
+        log.debug(
+            "PII detection config is disabled for scope {}; skipping PII-based rules",
+            anomalyConfigScope);
+      }
 
-      CustomSignatureConfigContext datatypeContext =
-          datatypeRuleToCustomSignatureConfigConverter.convert(
-              datatypeRules, dataClassificationInfo);
+      List<AiAppCustomRule> sensitiveDataRules = List.of();
+      if (!isAiSensitiveDataProtectionDisabled(
+          scopedAnomalyDetectionConfigMap, anomalyConfigScope)) {
+        sensitiveDataRules =
+            customRules.stream()
+                .filter(rule -> rule.getRuleData().hasAiSensitiveDataProtectionRuleData())
+                .collect(Collectors.toUnmodifiableList());
+      } else {
+        log.debug(
+            "AI sensitive data protection config is disabled for scope {}; skipping sensitive data rules",
+            anomalyConfigScope);
+      }
 
-      for (CustomSignatureRulesContext ruleContext : datatypeContext.getRuleContextsList()) {
-        customSigBuilder.addRuleContexts(
-            ruleContext.toBuilder().addAllDataTypes(dataTypes).build());
+      List<AiAppCustomRule> datatypeBasedRules =
+          new ArrayList<>(piiRules.size() + sensitiveDataRules.size());
+      datatypeBasedRules.addAll(piiRules);
+      datatypeBasedRules.addAll(sensitiveDataRules);
+      if (!datatypeBasedRules.isEmpty()) {
+        DataClassificationInfo dataClassificationInfo =
+            dataClassificationClient.getDataClassificationInfo(requestContext);
+        CustomSignatureConfigContext datatypeContext =
+            datatypeRuleToCustomSignatureConfigConverter.convert(
+                datatypeBasedRules, dataClassificationInfo);
+        customSigBuilder.addAllRuleContexts(datatypeContext.getRuleContextsList());
+      }
+
+      List<AiAppCustomRule> inputExplosionRules = List.of();
+      if (!isInputExplosionDetectionDisabled(scopedAnomalyDetectionConfigMap, anomalyConfigScope)) {
+        inputExplosionRules =
+            customRules.stream()
+                .filter(rule -> rule.getRuleData().hasAiInputExplosionRuleData())
+                .collect(Collectors.toUnmodifiableList());
+      } else {
+        log.debug(
+            "Input explosion detection config is disabled for scope {}; skipping input explosion rules",
+            anomalyConfigScope);
+      }
+
+      List<AiAppCustomRule> modelGovernanceRules = List.of();
+      if (!isModelGovernanceDetectionDisabled(
+          scopedAnomalyDetectionConfigMap, anomalyConfigScope)) {
+        modelGovernanceRules =
+            customRules.stream()
+                .filter(rule -> rule.getRuleData().hasModelGovernanceRuleData())
+                .collect(Collectors.toUnmodifiableList());
+      } else {
+        log.debug(
+            "Model governance detection config is disabled for scope {}; skipping model governance rules",
+            anomalyConfigScope);
+      }
+
+      List<AiAppCustomRule> genAiAttributeRules =
+          new ArrayList<>(inputExplosionRules.size() + modelGovernanceRules.size());
+      genAiAttributeRules.addAll(inputExplosionRules);
+      genAiAttributeRules.addAll(modelGovernanceRules);
+      if (!genAiAttributeRules.isEmpty()) {
+        CustomSignatureConfigContext genAiContext =
+            genAiRuleToCustomSignatureConfigConverter.convert(genAiAttributeRules);
+        customSigBuilder.addAllRuleContexts(genAiContext.getRuleContextsList());
       }
     } catch (Exception e) {
-      log.error("Error building custom signature config context from datatype-based rules", e);
+      log.error(
+          "Error building custom signature config context from GenAI blocking rules for tenant {}",
+          requestContext.getTenantId(),
+          e);
     }
   }
 
-  private List<AiAppCustomRule> fetchDatatypeBasedCustomRules(
+  private List<AiAppCustomRule> fetchCustomRules(
       RequestContext requestContext, RuleScope requestScope) {
     GetAiAppRulesRequest rulesRequest =
         GetAiAppRulesRequest.newBuilder().setRuleScope(requestScope).build();
@@ -290,15 +343,11 @@ public class AiAppConfigContextClientProvider implements AiAppConfigContextProvi
         .filter(
             customRule ->
                 customRule.hasRuleData()
-                    && (customRule.getRuleData().hasPiiDetectedInPromptRuleData()
-                        || customRule.getRuleData().hasAiSensitiveDataProtectionRuleData())
-                    && customRule.getRuleData().getEnabled())
-        .filter(
-            customRule ->
-                customRule.getRuleData().hasAction()
+                    && customRule.getRuleData().getEnabled()
+                    && customRule.getRuleData().hasAction()
                     && customRule.getRuleData().getAction().hasBlock())
         .filter(customRule -> matchesRequestScope(customRule, requestScope))
-        .collect(Collectors.toList());
+        .collect(Collectors.toUnmodifiableList());
   }
 
   private boolean matchesRequestScope(AiAppCustomRule rule, RuleScope requestScope) {

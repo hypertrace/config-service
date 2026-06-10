@@ -96,4 +96,12 @@ public class EntityQueryServiceConfig {
   public String getApiPromptAttributeKeysColumnName() {
     return this.attributesMapConfig.getString("api.promptAttributeKeys");
   }
+
+  public String getApiModelLocationAttributeKeysColumnName() {
+    return this.attributesMapConfig.getString("api.modelLocationAttributeKeys");
+  }
+
+  public String getApiResponseLocationAttributeKeysColumnName() {
+    return this.attributesMapConfig.getString("api.responseLocationAttributeKeys");
+  }
 }
