@@ -620,4 +620,31 @@ class AiAppToRateLimitingConverterTest {
         rlScopeCondition.getEntityScope().getEntityType());
     assertEquals("api-1", rlScopeCondition.getEntityScope().getEntityIds(0));
   }
+
+  @Test
+  void convertsRedactActionForSensitiveDataProtectionRule() {
+    AiAppCustomRuleData ruleData =
+        AiAppCustomRuleData.newBuilder()
+            .setRuleName("redact-test")
+            .setEnabled(true)
+            .setAction(
+                ai.traceable.aiapp.protection.config.service.v1.Action.newBuilder()
+                    .setRedact(
+                        ai.traceable.aiapp.protection.config.service.v1.Action.Redact
+                            .getDefaultInstance())
+                    .build())
+            .setAiSensitiveDataProtectionRuleData(
+                AiSensitiveDataProtectionRuleData.newBuilder()
+                    .addDatatypeConditions(
+                        DatatypeCondition.newBuilder().addDatatypeIds("EMAIL").build())
+                    .build())
+            .build();
+
+    CreateRateLimitingRuleRequest request =
+        aiAppToRateLimitingConverter.convertToCreateRateLimitingRuleRequest(ruleData);
+
+    ai.traceable.ratelimiting.config.service.v2.Action rlAction =
+        request.getData().getTransactionActionConfig().getAction();
+    assertTrue(rlAction.hasRedact(), "Expected rate-limiting action to be Redact");
+  }
 }

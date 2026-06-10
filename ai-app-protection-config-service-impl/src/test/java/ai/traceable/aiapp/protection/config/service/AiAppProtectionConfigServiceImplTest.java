@@ -12,6 +12,7 @@ import ai.traceable.aiapp.protection.config.service.converter.customsignature.Cu
 import ai.traceable.aiapp.protection.config.service.converter.ratelimit.AiAppToRateLimitingConverter;
 import ai.traceable.aiapp.protection.config.service.converter.ratelimit.RateLimitingToAiAppConverter;
 import ai.traceable.aiapp.protection.config.service.firewall.AiAppEvaluationConfigContextManager;
+import ai.traceable.aiapp.protection.config.service.v1.Action;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRule;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRuleData;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRuleToDelete;
@@ -539,6 +540,55 @@ class AiAppProtectionConfigServiceImplTest {
     }
 
     @Test
+    @DisplayName("Should create AI sensitive data protection rule with Redact action successfully")
+    void shouldCreateAiSensitiveDataProtectionRuleWithRedactAction() {
+      CreateAiAppCustomRuleRequest request =
+          createValidCreateRequestForAiSensitiveDataProtectionWithRedact();
+      when(validator.validateCreateAiAppCustomRuleRequest(request)).thenReturn(Status.OK);
+
+      when(aiAppToRateLimitingConverter.convertToCreateRateLimitingRuleRequest(any()))
+          .thenReturn(
+              CreateRateLimitingRuleRequest.newBuilder()
+                  .setData(RateLimitingRuleData.newBuilder().build())
+                  .build());
+
+      when(rateLimitingConfigStub.createRateLimitingRule(any()))
+          .thenReturn(
+              CreateRateLimitingRuleResponse.newBuilder()
+                  .setRule(
+                      RateLimitingRule.newBuilder()
+                          .setId("sdp-redact-rule-1")
+                          .setData(RateLimitingRuleData.newBuilder().build())
+                          .build())
+                  .build());
+
+      when(rateLimitingToAiAppConverter.convertFromRateLimitingRule(any()))
+          .thenReturn(
+              AiAppCustomRule.newBuilder()
+                  .setRuleId("sdp-redact-rule-1")
+                  .setRuleData(
+                      AiAppCustomRuleData.newBuilder()
+                          .setAction(
+                              Action.newBuilder()
+                                  .setRedact(Action.Redact.getDefaultInstance())
+                                  .build())
+                          .setAiSensitiveDataProtectionRuleData(
+                              AiSensitiveDataProtectionRuleData.getDefaultInstance())
+                          .build())
+                  .build());
+
+      requestContext.run(() -> service.createAiAppCustomRule(request, createResponseObserver));
+
+      verify(aiAppToRateLimitingConverter).convertToCreateRateLimitingRuleRequest(any());
+      verify(rateLimitingConfigStub).createRateLimitingRule(any());
+      verify(rateLimitingToAiAppConverter).convertFromRateLimitingRule(any());
+      verify(aiAppToCustomSignatureConverter, never())
+          .convertToCreateCustomSignatureRuleRequest(any());
+      verify(createResponseObserver).onNext(any(CreateAiAppCustomRuleResponse.class));
+      verify(createResponseObserver).onCompleted();
+    }
+
+    @Test
     @DisplayName("Should create custom signature rule successfully")
     void shouldCreateCustomSignatureRuleSuccessfully() {
       // Given
@@ -761,6 +811,20 @@ class AiAppProtectionConfigServiceImplTest {
         .setAiAppCustomRuleData(
             AiAppCustomRuleData.newBuilder()
                 .setRuleName("Test AI Sensitive Data Protection Rule")
+                .setAiSensitiveDataProtectionRuleData(
+                    AiSensitiveDataProtectionRuleData.newBuilder().build())
+                .build())
+        .build();
+  }
+
+  private CreateAiAppCustomRuleRequest
+      createValidCreateRequestForAiSensitiveDataProtectionWithRedact() {
+    return CreateAiAppCustomRuleRequest.newBuilder()
+        .setAiAppCustomRuleData(
+            AiAppCustomRuleData.newBuilder()
+                .setRuleName("Test SDP Rule with Redact")
+                .setAction(
+                    Action.newBuilder().setRedact(Action.Redact.getDefaultInstance()).build())
                 .setAiSensitiveDataProtectionRuleData(
                     AiSensitiveDataProtectionRuleData.newBuilder().build())
                 .build())

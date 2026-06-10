@@ -141,6 +141,13 @@ public class AiAppProtectionConfigServiceValidator {
           "Rule data must contain one of: PII detection, rate limiting, model governance, input explosion, or sensitive data protection configuration");
     }
 
+    if (ruleData.hasAction()
+        && ruleData.getAction().hasRedact()
+        && !ruleData.hasAiSensitiveDataProtectionRuleData()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Redact action is only supported for AI Sensitive Data Protection rules");
+    }
+
     return Status.OK;
   }
 

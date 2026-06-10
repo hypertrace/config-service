@@ -456,6 +456,8 @@ public class RateLimitingToAiAppConverter {
       // Convert mark for testing action to AI app mark for testing action
       Action.MarkForTesting markForTesting = Action.MarkForTesting.newBuilder().build();
       builder.setMarkForTesting(markForTesting);
+    } else if (rateLimitingAction.hasRedact()) {
+      builder.setRedact(Action.Redact.getDefaultInstance());
     }
 
     return builder.build();

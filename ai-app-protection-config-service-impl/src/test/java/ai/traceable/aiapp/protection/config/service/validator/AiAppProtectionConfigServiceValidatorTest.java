@@ -4,16 +4,22 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import ai.traceable.aiapp.protection.config.service.v1.Action;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRule;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRuleData;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRuleToDelete;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRuleType;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppOotbSubRuleUpdate;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppRuleUpdate;
+import ai.traceable.aiapp.protection.config.service.v1.AiInputExplosionRuleData;
+import ai.traceable.aiapp.protection.config.service.v1.AiRateLimitingRuleData;
+import ai.traceable.aiapp.protection.config.service.v1.AiSensitiveDataProtectionRuleData;
 import ai.traceable.aiapp.protection.config.service.v1.CreateAiAppCustomRuleRequest;
 import ai.traceable.aiapp.protection.config.service.v1.DeleteAiAppRulesRequest;
 import ai.traceable.aiapp.protection.config.service.v1.EnvironmentScope;
 import ai.traceable.aiapp.protection.config.service.v1.GetAiAppRulesRequest;
+import ai.traceable.aiapp.protection.config.service.v1.ModelGovernanceRuleData;
+import ai.traceable.aiapp.protection.config.service.v1.PiiDetectedInPromptRuleData;
 import ai.traceable.aiapp.protection.config.service.v1.ResetToDefault;
 import ai.traceable.aiapp.protection.config.service.v1.RuleAction;
 import ai.traceable.aiapp.protection.config.service.v1.RuleScope;
@@ -155,6 +161,105 @@ class AiAppProtectionConfigServiceValidatorTest {
       assertEquals(Status.Code.INVALID_ARGUMENT, result.getCode());
       assertEquals(
           "Rule data must contain one of: PII detection, rate limiting, model governance, input explosion, or sensitive data protection configuration",
+          result.getDescription());
+    }
+
+    @Test
+    @DisplayName("Should pass validation when Redact action is set on SDP rule")
+    void shouldPassValidationWhenRedactActionIsSetOnSdpRule() {
+      AiAppCustomRuleData ruleData =
+          AiAppCustomRuleData.newBuilder()
+              .setRuleName("SDP Redact Rule")
+              .setAction(Action.newBuilder().setRedact(Action.Redact.getDefaultInstance()))
+              .setAiSensitiveDataProtectionRuleData(
+                  AiSensitiveDataProtectionRuleData.getDefaultInstance())
+              .build();
+
+      Status result =
+          validator.validateCreateAiAppCustomRuleRequest(
+              CreateAiAppCustomRuleRequest.newBuilder().setAiAppCustomRuleData(ruleData).build());
+
+      assertTrue(result.isOk());
+    }
+
+    @Test
+    @DisplayName("Should fail validation when Redact action is set on rate-limiting rule")
+    void shouldFailValidationWhenRedactSetOnRateLimitingRule() {
+      AiAppCustomRuleData ruleData =
+          AiAppCustomRuleData.newBuilder()
+              .setRuleName("RL Redact Rule")
+              .setAction(Action.newBuilder().setRedact(Action.Redact.getDefaultInstance()))
+              .setAiRateLimitingRuleData(AiRateLimitingRuleData.getDefaultInstance())
+              .build();
+
+      Status result =
+          validator.validateCreateAiAppCustomRuleRequest(
+              CreateAiAppCustomRuleRequest.newBuilder().setAiAppCustomRuleData(ruleData).build());
+
+      assertFalse(result.isOk());
+      assertEquals(Status.Code.INVALID_ARGUMENT, result.getCode());
+      assertEquals(
+          "Redact action is only supported for AI Sensitive Data Protection rules",
+          result.getDescription());
+    }
+
+    @Test
+    @DisplayName("Should fail validation when Redact action is set on model governance rule")
+    void shouldFailValidationWhenRedactSetOnModelGovernanceRule() {
+      AiAppCustomRuleData ruleData =
+          AiAppCustomRuleData.newBuilder()
+              .setRuleName("MG Redact Rule")
+              .setAction(Action.newBuilder().setRedact(Action.Redact.getDefaultInstance()))
+              .setModelGovernanceRuleData(ModelGovernanceRuleData.getDefaultInstance())
+              .build();
+
+      Status result =
+          validator.validateCreateAiAppCustomRuleRequest(
+              CreateAiAppCustomRuleRequest.newBuilder().setAiAppCustomRuleData(ruleData).build());
+
+      assertFalse(result.isOk());
+      assertEquals(
+          "Redact action is only supported for AI Sensitive Data Protection rules",
+          result.getDescription());
+    }
+
+    @Test
+    @DisplayName("Should fail validation when Redact action is set on input explosion rule")
+    void shouldFailValidationWhenRedactSetOnInputExplosionRule() {
+      AiAppCustomRuleData ruleData =
+          AiAppCustomRuleData.newBuilder()
+              .setRuleName("IE Redact Rule")
+              .setAction(Action.newBuilder().setRedact(Action.Redact.getDefaultInstance()))
+              .setAiInputExplosionRuleData(AiInputExplosionRuleData.getDefaultInstance())
+              .build();
+
+      Status result =
+          validator.validateCreateAiAppCustomRuleRequest(
+              CreateAiAppCustomRuleRequest.newBuilder().setAiAppCustomRuleData(ruleData).build());
+
+      assertFalse(result.isOk());
+      assertEquals(
+          "Redact action is only supported for AI Sensitive Data Protection rules",
+          result.getDescription());
+    }
+
+    @Test
+    @DisplayName("Should fail validation when Redact action is set on deprecated PII rule")
+    void shouldFailValidationWhenRedactSetOnDeprecatedPiiRule() {
+      AiAppCustomRuleData ruleData =
+          AiAppCustomRuleData.newBuilder()
+              .setRuleName("PII Redact Rule")
+              .setAction(Action.newBuilder().setRedact(Action.Redact.getDefaultInstance()))
+              .setPiiDetectedInPromptRuleData(PiiDetectedInPromptRuleData.getDefaultInstance())
+              .build();
+
+      Status result =
+          validator.validateCreateAiAppCustomRuleRequest(
+              CreateAiAppCustomRuleRequest.newBuilder().setAiAppCustomRuleData(ruleData).build());
+
+      assertFalse(result.isOk());
+      assertEquals(
+          "Redact action is only supported for AI Sensitive Data Protection rules",
           result.getDescription());
     }
   }

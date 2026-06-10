@@ -10,12 +10,15 @@ import ai.traceable.aiapp.protection.config.service.v1.PiiDetectedInPromptRuleDa
 import ai.traceable.aiapp.protection.config.service.v1.ScopeCondition;
 import ai.traceable.data.classification.cache.info.DataClassificationInfo;
 import ai.traceable.data.classification.config.service.v1.DataType;
+import ai.traceable.protection.engine.config.customsignature.v1.BlockingAction;
 import ai.traceable.protection.engine.config.customsignature.v1.CustomSignatureConditionExpression;
 import ai.traceable.protection.engine.config.customsignature.v1.CustomSignatureConfigContext;
 import ai.traceable.protection.engine.config.customsignature.v1.CustomSignatureRuleConfig;
 import ai.traceable.protection.engine.config.customsignature.v1.CustomSignatureRuleDefinition;
 import ai.traceable.protection.engine.config.customsignature.v1.CustomSignatureRuleDefinitionGroup;
 import ai.traceable.protection.engine.config.customsignature.v1.CustomSignatureRulesContext;
+import ai.traceable.protection.engine.config.customsignature.v1.RedactionAction;
+import ai.traceable.protection.engine.config.customsignature.v1.RuleAction;
 import ai.traceable.protection.processing.common.v1.AttributeType;
 import ai.traceable.protection.processing.common.v1.CustomerScope;
 import ai.traceable.protection.processing.common.v1.Entity;
@@ -183,13 +186,26 @@ public class DatatypeRuleToCustomSignatureConfigConverter {
             .addAllRuleDefinitions(ruleDefinitions)
             .build();
 
-    // Build CustomSignatureRuleConfig
     return CustomSignatureRuleConfig.newBuilder()
         .setId(rule.getRuleId())
         .setName(ruleData.getRuleName())
         .setDescription(ruleData.getDescription())
         .setRuleDefinitionGroup(ruleDefinitionGroup)
+        .setAction(buildEngineRuleAction(ruleData))
         .build();
+  }
+
+  private RuleAction buildEngineRuleAction(AiAppCustomRuleData ruleData) {
+    final boolean isSdpRedact =
+        ruleData.hasAiSensitiveDataProtectionRuleData()
+            && ruleData.hasAction()
+            && ruleData.getAction().hasRedact();
+    if (isSdpRedact) {
+      return RuleAction.newBuilder()
+          .setRedactionAction(RedactionAction.getDefaultInstance())
+          .build();
+    }
+    return RuleAction.newBuilder().setBlockingAction(BlockingAction.getDefaultInstance()).build();
   }
 
   private CustomSignatureRuleDefinition buildDatatypeMatchDefinition(

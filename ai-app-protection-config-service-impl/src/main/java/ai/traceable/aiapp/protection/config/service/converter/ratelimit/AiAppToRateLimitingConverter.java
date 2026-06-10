@@ -61,7 +61,7 @@ public class AiAppToRateLimitingConverter {
             .setEnabled(aiAppRuleData.getEnabled())
             .setRuleStatus(convertRuleStatus(aiAppRuleData, isCreateRequest))
             .putAllLabels(aiAppRuleData.getEventLabelsMap())
-            .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM);
+            .addAllRuleEvaluationPoints(resolveRuleEvaluationPoints(aiAppRuleData.getAction()));
 
     String threatTypeId = getThreatTypeIdLabel(aiAppRuleData);
     rateLimitingRuleDataBuilder.putLabels(THREAT_TYPE_ID_LABEL_KEY, threatTypeId);
@@ -472,6 +472,13 @@ public class AiAppToRateLimitingConverter {
     }
   }
 
+  private List<RuleEvaluationPoint> resolveRuleEvaluationPoints(Action action) {
+    if (action.hasBlock() || action.hasRedact()) {
+      return List.of(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE);
+    }
+    return List.of(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM);
+  }
+
   /** Converts AI app action to rate limiting action - reusable utility method */
   private ai.traceable.ratelimiting.config.service.v2.Action convertAction(Action action) {
     ai.traceable.ratelimiting.config.service.v2.Action.Builder actionBuilder =
@@ -486,6 +493,9 @@ public class AiAppToRateLimitingConverter {
       ai.traceable.ratelimiting.config.service.v2.Action.MarkForTesting.Builder testingBuilder =
           ai.traceable.ratelimiting.config.service.v2.Action.MarkForTesting.newBuilder();
       actionBuilder.setMarkForTesting(testingBuilder.build());
+    } else if (action.hasRedact()) {
+      actionBuilder.setRedact(
+          ai.traceable.ratelimiting.config.service.v2.Action.Redact.getDefaultInstance());
     } else if (action.hasBlock()) {
       ai.traceable.ratelimiting.config.service.v2.Action.Block.Builder blockBuilder =
           ai.traceable.ratelimiting.config.service.v2.Action.Block.newBuilder();

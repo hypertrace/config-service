@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import ai.traceable.aiapp.protection.config.service.v1.Action;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRule;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRuleData;
 import ai.traceable.aiapp.protection.config.service.v1.DatatypeCondition;
@@ -873,5 +874,85 @@ class DatatypeRuleToCustomSignatureConfigConverterTest {
     assertEquals(
         expectedResponsePrefix,
         kvCondition1.getLhsKeyOperand().getKeyMetadata().getFullyQualifiedKeyPrefix());
+  }
+
+  @Test
+  void convert_aiSdpWithRedactAction_setsRedactionAction() {
+    AiAppCustomRule rule =
+        AiAppCustomRule.newBuilder()
+            .setRuleId("rule-redact")
+            .setRuleData(
+                AiAppCustomRuleData.newBuilder()
+                    .setRuleName("Redact Rule")
+                    .setAction(Action.newBuilder().setRedact(Action.Redact.getDefaultInstance()))
+                    .setAiSensitiveDataProtectionRuleData(
+                        ai.traceable.aiapp.protection.config.service.v1
+                            .AiSensitiveDataProtectionRuleData.newBuilder()
+                            .addDatatypeConditions(
+                                DatatypeCondition.newBuilder()
+                                    .addAllDatatypeIds(List.of("datatype-1"))
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
+    CustomSignatureConfigContext result = converter.convert(List.of(rule), dataClassificationInfo);
+
+    CustomSignatureRuleConfig ruleConfig = result.getRuleContexts(0).getRuleConfigs(0);
+    assertTrue(ruleConfig.hasAction());
+    assertTrue(ruleConfig.getAction().hasRedactionAction());
+  }
+
+  @Test
+  void convert_aiSdpWithBlockAction_setsBlockingAction() {
+    AiAppCustomRule rule =
+        AiAppCustomRule.newBuilder()
+            .setRuleId("rule-block")
+            .setRuleData(
+                AiAppCustomRuleData.newBuilder()
+                    .setRuleName("Block Rule")
+                    .setAction(Action.newBuilder().setBlock(Action.Block.getDefaultInstance()))
+                    .setAiSensitiveDataProtectionRuleData(
+                        ai.traceable.aiapp.protection.config.service.v1
+                            .AiSensitiveDataProtectionRuleData.newBuilder()
+                            .addDatatypeConditions(
+                                DatatypeCondition.newBuilder()
+                                    .addAllDatatypeIds(List.of("datatype-1"))
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
+    CustomSignatureConfigContext result = converter.convert(List.of(rule), dataClassificationInfo);
+
+    CustomSignatureRuleConfig ruleConfig = result.getRuleContexts(0).getRuleConfigs(0);
+    assertTrue(ruleConfig.hasAction());
+    assertTrue(ruleConfig.getAction().hasBlockingAction());
+  }
+
+  @Test
+  void convert_deprecatedPiiRule_setsBlockingActionRegardlessOfAction() {
+    AiAppCustomRule rule =
+        AiAppCustomRule.newBuilder()
+            .setRuleId("rule-pii")
+            .setRuleData(
+                AiAppCustomRuleData.newBuilder()
+                    .setRuleName("Deprecated PII Rule")
+                    .setAction(Action.newBuilder().setRedact(Action.Redact.getDefaultInstance()))
+                    .setPiiDetectedInPromptRuleData(
+                        PiiDetectedInPromptRuleData.newBuilder()
+                            .setDatatypeCondition(
+                                DatatypeCondition.newBuilder()
+                                    .addAllDatatypeIds(List.of("datatype-1"))
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
+    CustomSignatureConfigContext result = converter.convert(List.of(rule), dataClassificationInfo);
+
+    CustomSignatureRuleConfig ruleConfig = result.getRuleContexts(0).getRuleConfigs(0);
+    assertTrue(ruleConfig.hasAction());
+    assertTrue(ruleConfig.getAction().hasBlockingAction());
   }
 }

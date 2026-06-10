@@ -396,6 +396,7 @@ message Action {
     Alert alert = 2;
     Allow allow = 3;
     MarkForTesting mark_for_testing = 4;
+    Redact redact = 5;
   }
 
   message Block {
@@ -468,6 +469,8 @@ message Action {
     EVENT_SEVERITY_HIGH = 3;
     EVENT_SEVERITY_CRITICAL = 4;
   }
+
+  message Redact {}
 }
 
 message TransactionActionConfig {

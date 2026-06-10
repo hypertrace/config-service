@@ -7,6 +7,7 @@ import static ai.traceable.aiapp.protection.config.service.converter.AiAppConver
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.MODEL_GOVERNANCE_THREAT_TYPE_ID;
 import static ai.traceable.aiapp.protection.config.service.converter.AiAppConverterConstants.THREAT_TYPE_ID_LABEL_KEY;
 
+import ai.traceable.aiapp.protection.config.service.v1.Action;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRule;
 import ai.traceable.aiapp.protection.config.service.v1.AiAppCustomRuleData;
 import ai.traceable.aiapp.protection.config.service.v1.MatchOperatorCondition;
@@ -28,6 +29,7 @@ import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.customsignature.config.service.v1.RuleSource;
 import ai.traceable.customsignature.config.service.v1.ScopeExpression;
 import ai.traceable.customsignature.config.service.v1.StringCondition;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -305,8 +307,7 @@ public class AiAppToCustomSignatureConverter {
   private RuleEffect convertActionToRuleEffect(
       ai.traceable.aiapp.protection.config.service.v1.Action action) {
     RuleEffect.Builder builder =
-        RuleEffect.newBuilder()
-            .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM);
+        RuleEffect.newBuilder().addAllRuleEvaluationPoints(resolveRuleEvaluationPoints(action));
 
     if (action.hasAlert()) {
       builder.setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION);
@@ -320,6 +321,13 @@ public class AiAppToCustomSignatureConverter {
     }
 
     return builder.build();
+  }
+
+  private List<RuleEvaluationPoint> resolveRuleEvaluationPoints(Action action) {
+    if (action.hasBlock() || action.hasRedact()) {
+      return List.of(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE);
+    }
+    return List.of(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM);
   }
 
   /** Converts AI app severity level to custom signature event severity. */

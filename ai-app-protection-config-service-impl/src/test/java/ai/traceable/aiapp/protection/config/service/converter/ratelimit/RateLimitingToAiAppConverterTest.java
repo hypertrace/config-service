@@ -624,6 +624,48 @@ class RateLimitingToAiAppConverterTest {
   }
 
   @Test
+  void convertsRedactRateLimitingActionToAiAppRedact() {
+    LeafCondition datatypeLeaf =
+        LeafCondition.newBuilder()
+            .setDatatypeCondition(
+                ai.traceable.ratelimiting.config.service.v2.DatatypeCondition.newBuilder()
+                    .addDatasetIds("dataset-req")
+                    .addDatatypeIds("datatype-req")
+                    .setDataLocation(
+                        ai.traceable.ratelimiting.config.service.v2.DataLocation
+                            .DATA_LOCATION_REQUEST))
+            .build();
+
+    RateLimitingRule rateLimitingRule =
+        RateLimitingRule.newBuilder()
+            .setId("sdp-rule-redact")
+            .setData(
+                RateLimitingRuleData.newBuilder()
+                    .setName("Test SDP Redact Rule")
+                    .setEnabled(true)
+                    .setCategory(Category.CATEGORY_AI_APP_PROTECTION)
+                    .putLabels(
+                        THREAT_TYPE_ID_LABEL_KEY, AI_SENSITIVE_DATA_PROTECTION_THREAT_TYPE_ID)
+                    .setCondition(Condition.newBuilder().setLeafCondition(datatypeLeaf))
+                    .setTransactionActionConfig(
+                        TransactionActionConfig.newBuilder()
+                            .setAction(
+                                ai.traceable.ratelimiting.config.service.v2.Action.newBuilder()
+                                    .setRedact(
+                                        ai.traceable.ratelimiting.config.service.v2.Action.Redact
+                                            .getDefaultInstance()))))
+            .build();
+
+    AiAppCustomRule aiAppRule =
+        rateLimitingToAiAppConverter.convertFromRateLimitingRule(rateLimitingRule);
+
+    AiAppCustomRuleData aiAppRuleData = aiAppRule.getRuleData();
+    assertTrue(aiAppRuleData.hasAiSensitiveDataProtectionRuleData());
+    assertTrue(aiAppRuleData.hasAction());
+    assertTrue(aiAppRuleData.getAction().hasRedact());
+  }
+
+  @Test
   void testConvertAiSensitiveDataProtectionRuleSingleResponseConditionFromRateLimiting() {
     // Single datatype condition, response-body location, no scope -> single leaf condition.
     LeafCondition datatypeLeaf =

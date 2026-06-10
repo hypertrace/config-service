@@ -345,7 +345,8 @@ public class AiAppConfigContextClientProvider implements AiAppConfigContextProvi
                 customRule.hasRuleData()
                     && customRule.getRuleData().getEnabled()
                     && customRule.getRuleData().hasAction()
-                    && customRule.getRuleData().getAction().hasBlock())
+                    && (customRule.getRuleData().getAction().hasBlock()
+                        || customRule.getRuleData().getAction().hasRedact()))
         .filter(customRule -> matchesRequestScope(customRule, requestScope))
         .collect(Collectors.toUnmodifiableList());
   }
