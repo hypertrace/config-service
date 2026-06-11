@@ -1,9 +1,12 @@
 package ai.traceable.edge.config.service.supplier;
 
 import ai.traceable.aiapp.protection.config.service.v1.AiAppConfigServiceGrpc;
+import ai.traceable.aiapp.protection.config.service.v1.EnvironmentScope;
 import ai.traceable.aiapp.protection.config.service.v1.GetAiAppEvaluationConfigContextRequest;
 import ai.traceable.aiapp.protection.config.service.v1.GetAiAppEvaluationConfigContextResponse;
 import ai.traceable.aiapp.protection.config.service.v1.RuleEvaluationPoint;
+import ai.traceable.aiapp.protection.config.service.v1.RuleScope;
+import ai.traceable.aiapp.protection.config.service.v1.TenantScope;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.edge.config.service.AbstractTraceableEdgeConfigSupplier;
@@ -14,6 +17,7 @@ import ai.traceable.edge.config.service.v1.ConfigRequestElement;
 import ai.traceable.edge.config.service.v1.ConfigResponseElement;
 import ai.traceable.protection.engine.config.aifirewall.v1.AiFirewallConfigContext;
 import com.google.inject.Inject;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -55,7 +59,7 @@ public class AiAppEvaluationConfigContextSupplier extends AbstractTraceableEdgeC
       return buildConfigResponseElement(emptyPayloads, agentCapabilities);
     }
     GetAiAppEvaluationConfigContextResponse response =
-        getAiAppEvaluationConfigContext(requestContext);
+        getAiAppEvaluationConfigContext(requestContext, environment);
     ConfigPayloads configPayloads =
         ConfigPayloads.newBuilder()
             .addConfigBytes(response.getAiAppEvaluationConfigContext())
@@ -67,15 +71,23 @@ public class AiAppEvaluationConfigContextSupplier extends AbstractTraceableEdgeC
   }
 
   private GetAiAppEvaluationConfigContextResponse getAiAppEvaluationConfigContext(
-      RequestContext requestContext) {
-    GetAiAppEvaluationConfigContextRequest request =
+      RequestContext requestContext, String environment) {
+    GetAiAppEvaluationConfigContextRequest.Builder requestBuilder =
         GetAiAppEvaluationConfigContextRequest.newBuilder()
-            .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
-            .build();
+            .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE);
+    RuleScope.Builder ruleScopeBuilder = RuleScope.newBuilder();
+    Optional.ofNullable(environment)
+        .filter(env -> !env.isBlank())
+        .ifPresentOrElse(
+            environmentName ->
+                ruleScopeBuilder.setEnvironmentScope(
+                    EnvironmentScope.newBuilder().addEnvironmentIds(environmentName).build()),
+            () -> ruleScopeBuilder.setTenantScope(TenantScope.getDefaultInstance()));
+    requestBuilder.setRuleScope(ruleScopeBuilder.build());
     return requestContext.call(
         () ->
             stub.withDeadlineAfter(
                     config.getClientConfig().getTimeout().toMillis(), TimeUnit.MILLISECONDS)
-                .getAiAppEvaluationConfigContext(request));
+                .getAiAppEvaluationConfigContext(requestBuilder.build()));
   }
 }
