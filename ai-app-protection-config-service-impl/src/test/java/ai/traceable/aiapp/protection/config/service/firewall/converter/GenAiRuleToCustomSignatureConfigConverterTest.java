@@ -1,6 +1,5 @@
 package ai.traceable.aiapp.protection.config.service.firewall.converter;
 
-import static ai.traceable.protection.processing.common.v1.GenAiAttributeType.GEN_AI_ATTRIBUTE_TYPE_MODELS;
 import static ai.traceable.protection.processing.common.v1.GenAiAttributeType.GEN_AI_ATTRIBUTE_TYPE_PROMPT_SIZE;
 import static ai.traceable.protection.processing.common.v1.utils.ProtoEnumUtils.getStringExtension;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -21,7 +20,6 @@ import ai.traceable.protection.engine.config.customsignature.v1.CustomSignatureR
 import ai.traceable.protection.processing.common.v1.LogicalOperator;
 import ai.traceable.protection.processing.common.v1.NumberMatchOperator;
 import ai.traceable.protection.processor.condition.expression.v1.KeyValueMatchCondition;
-import ai.traceable.protection.processor.condition.expression.v1.UnaryKeyMatchCondition;
 import com.google.protobuf.Value;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -164,10 +162,10 @@ class GenAiRuleToCustomSignatureConfigConverterTest {
   }
 
   @Test
-  void usesExistsCheckWhenModelTypesConditionHasNoValue() {
+  void skipsModelTypesConditionWhenNoMeaningfulValue() {
     AiAppCustomRule rule =
         AiAppCustomRule.newBuilder()
-            .setRuleId("model-governance-models-exists")
+            .setRuleId("model-governance-models-empty")
             .setRuleData(
                 AiAppCustomRuleData.newBuilder()
                     .setRuleName("Model governance")
@@ -184,25 +182,54 @@ class GenAiRuleToCustomSignatureConfigConverterTest {
             .build();
 
     CustomSignatureConfigContext result = converter.convert(List.of(rule));
+
+    assertEquals(0, result.getRuleContextsCount());
+  }
+
+  @Test
+  void skipsPoisonedModelTypesConditionWithUnspecifiedOperatorAndEmptyValue() {
+    AiAppCustomRule rule =
+        AiAppCustomRule.newBuilder()
+            .setRuleId("model-governance-poisoned-models")
+            .setRuleData(
+                AiAppCustomRuleData.newBuilder()
+                    .setRuleName("Model governance")
+                    .setEnabled(true)
+                    .setAction(Action.newBuilder().setBlock(Action.Block.newBuilder().build()))
+                    .setModelGovernanceRuleData(
+                        ModelGovernanceRuleData.newBuilder()
+                            .setAiModelTypesCondition(
+                                MatchOperatorCondition.newBuilder()
+                                    .setOperator(MatchOperator.MATCH_OPERATOR_UNSPECIFIED)
+                                    .setValue(Value.newBuilder().setStringValue("").build())
+                                    .build())
+                            .setAiVendorsCondition(
+                                MatchOperatorCondition.newBuilder()
+                                    .setOperator(MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX)
+                                    .setValue(
+                                        Value.newBuilder()
+                                            .setStringValue("OpenAI|Anthropic")
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
+    CustomSignatureConfigContext result = converter.convert(List.of(rule));
     CustomSignatureRuleDefinitionGroup definitionGroup =
         result.getRuleContexts(0).getRuleConfigs(0).getRuleDefinitionGroup();
 
     assertEquals(1, definitionGroup.getRuleDefinitionsCount());
-    UnaryKeyMatchCondition modelsCondition =
+    KeyValueMatchCondition providersCondition =
         definitionGroup
             .getRuleDefinitions(0)
             .getCustomSignatureConditionExpression()
             .getConditionExpression()
             .getLeafMatchConditionExpression()
-            .getUnaryKeyMatchCondition();
-    assertTrue(modelsCondition.getExists());
+            .getKeyValueMatchCondition();
     assertEquals(
-        getStringExtension(GEN_AI_ATTRIBUTE_TYPE_MODELS),
-        modelsCondition
-            .getKeyCondition()
-            .getKeyMatchOperation()
-            .getStringMatchOperation()
-            .getStringValue());
+        "OpenAI|Anthropic",
+        providersCondition.getRhsValueMatchOperation().getStringMatchOperation().getStringValue());
   }
 
   @Test

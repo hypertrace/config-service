@@ -120,6 +120,9 @@ public class CustomSignatureToAiAppConverter {
                 .setSeverityLevel(convertEventSeverityToSeverityLevel(effect.getEventSeverity()));
         builder.setAlert(alertBuilder.build());
         break;
+      case EVENT_TYPE_DETECTION_AND_BLOCKING:
+        builder.setBlock(Action.Block.newBuilder().build());
+        break;
       default:
         break;
     }

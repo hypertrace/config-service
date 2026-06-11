@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import ai.traceable.customsignature.config.service.v1.Category;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.ExpiryDetails;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
@@ -94,5 +95,22 @@ class CustomSignatureRulesEdgeDecisionFilterTest {
     assertTrue(result.stream().anyMatch(r -> r.getId().equals("future-edge")));
     assertFalse(result.stream().anyMatch(r -> r.getId().equals("expired-edge")));
     assertFalse(result.stream().anyMatch(r -> r.getId().equals("platform")));
+  }
+
+  @Test
+  void testGetConvertibleAndActiveRules_ExcludesAiAppProtectionRules() {
+    CustomSignatureRule aiAppEdgeRule =
+        CustomSignatureRule.newBuilder()
+            .setId("ai-app-edge")
+            .setCategory(Category.CATEGORY_AI_APP_PROTECTION)
+            .setEffect(
+                RuleEffect.newBuilder()
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE))
+            .build();
+
+    List<CustomSignatureRule> result =
+        CustomSignatureRulesEdgeDecisionFilter.getConvertibleAndActiveRules(List.of(aiAppEdgeRule));
+
+    assertTrue(result.isEmpty());
   }
 }

@@ -136,14 +136,14 @@ public class GenAiRuleToCustomSignatureConfigConverter {
       scopeConditions = inputExplosionData.getScopeConditionsList();
     } else if (ruleData.hasModelGovernanceRuleData()) {
       ModelGovernanceRuleData modelGovernanceData = ruleData.getModelGovernanceRuleData();
-      if (modelGovernanceData.hasAiModelTypesCondition()) {
+      if (hasMeaningfulCondition(modelGovernanceData.getAiModelTypesCondition())) {
         ruleDefinitions.add(
             buildGenAiAttributeDefinition(
                 rule.getRuleId() + "-models",
                 GENAI_MODELS_KEY,
                 modelGovernanceData.getAiModelTypesCondition()));
       }
-      if (modelGovernanceData.hasAiVendorsCondition()) {
+      if (hasMeaningfulCondition(modelGovernanceData.getAiVendorsCondition())) {
         ruleDefinitions.add(
             buildGenAiAttributeDefinition(
                 rule.getRuleId() + "-providers",
@@ -195,10 +195,6 @@ public class GenAiRuleToCustomSignatureConfigConverter {
 
   private CustomSignatureRuleDefinition buildGenAiAttributeDefinition(
       String ruleId, String attributeKey, MatchOperatorCondition matchCondition) {
-    if (!matchCondition.hasValue()) {
-      return buildRuleDefinition(
-          "genai-attribute-" + ruleId, buildCustomAttributeExistsCondition(attributeKey));
-    }
     String matchValue = matchCondition.getValue().getStringValue();
     MatchConditionExpression matchExpression =
         buildCustomAttributeStringCondition(attributeKey, matchCondition.getOperator(), matchValue);
@@ -259,41 +255,6 @@ public class GenAiRuleToCustomSignatureConfigConverter {
             CustomSignatureConditionExpression.newBuilder()
                 .setConditionExpressionEvaluationIdentifier(evaluationIdentifier)
                 .setConditionExpression(conditionExpression)
-                .build())
-        .build();
-  }
-
-  private MatchConditionExpression buildCustomAttributeExistsCondition(String attributeKey) {
-    UnaryKeyMatchCondition unaryKeyCondition =
-        UnaryKeyMatchCondition.newBuilder()
-            .setKeyCondition(
-                KeyMatchOperand.newBuilder()
-                    .setKeyMetadata(
-                        KeyMatchOperand.KeyMetadata.newBuilder()
-                            .setFullyQualifiedKeyPrefix(CUSTOM_ATTRIBUTES_PREFIX)
-                            .build())
-                    .setKeyMatchOperation(
-                        ValueMatchOperation.newBuilder()
-                            .setStringMatchOperation(
-                                StringMatchOperation.newBuilder()
-                                    .setStringOperator(
-                                        StringOperator.newBuilder()
-                                            .setStringOperator(
-                                                StringOperator.StringMatchOperator
-                                                    .STRING_MATCH_OPERATOR_EQ)
-                                            .setIgnoreCase(false)
-                                            .build())
-                                    .setStringValue(attributeKey)
-                                    .build())
-                            .build())
-                    .build())
-            .setExists(true)
-            .build();
-
-    return MatchConditionExpression.newBuilder()
-        .setLeafMatchConditionExpression(
-            LeafMatchConditionExpression.newBuilder()
-                .setUnaryKeyMatchCondition(unaryKeyCondition)
                 .build())
         .build();
   }
@@ -463,5 +424,22 @@ public class GenAiRuleToCustomSignatureConfigConverter {
         .setStringOperator(stringMatchOperator)
         .setIgnoreCase(false)
         .build();
+  }
+
+  private boolean hasMeaningfulCondition(MatchOperatorCondition condition) {
+    if (condition.equals(MatchOperatorCondition.getDefaultInstance())) {
+      return false;
+    }
+    if (!condition.hasValue()) {
+      return false;
+    }
+    if (condition.getValue().getStringValue().isBlank()) {
+      return false;
+    }
+    return condition.getOperator()
+            != ai.traceable.aiapp.protection.config.service.v1.MatchOperator
+                .MATCH_OPERATOR_UNSPECIFIED
+        && condition.getOperator()
+            != ai.traceable.aiapp.protection.config.service.v1.MatchOperator.UNRECOGNIZED;
   }
 }

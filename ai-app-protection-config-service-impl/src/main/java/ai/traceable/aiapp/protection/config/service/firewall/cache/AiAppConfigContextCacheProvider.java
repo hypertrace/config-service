@@ -8,11 +8,13 @@ import ai.traceable.aiapp.protection.config.service.v1.GetAiAppEvaluationConfigC
 import ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigManager;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatusChange;
+import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.data.classification.cache.client.DataClassificationClient;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
 import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
 import ai.traceable.protection.engine.config.aifirewall.v1.AiFirewallConfigContext;
 import ai.traceable.protection.rules.aiapp.v1.AiAppRulesProvider;
+import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -141,7 +143,9 @@ public class AiAppConfigContextCacheProvider extends AiAppConfigContextClientPro
 
   private void handleConfigChangeEvent(ConfigChangeEventKey key, ConfigChangeEventValue value) {
     if (!key.getConfigType().equals(ScopedAnomalyDetectionConfig.class.getName())
-        && !key.getConfigType().equals(ScopedAnomalyConfigStatusChange.class.getName())) {
+        && !key.getConfigType().equals(ScopedAnomalyConfigStatusChange.class.getName())
+        && !key.getConfigType().equals(RateLimitingRule.class.getName())
+        && !key.getConfigType().equals(CustomSignatureRule.class.getName())) {
       return;
     }
     switch (value.getEventCase()) {

@@ -1,5 +1,6 @@
 package ai.traceable.customsignature.config.service.rules;
 
+import ai.traceable.customsignature.config.service.v1.Category;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
@@ -10,35 +11,27 @@ import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import ai.traceable.customsignature.config.service.v1.RuleEvaluationPoint;
 import java.util.List;
 import java.util.stream.Collectors;
+import lombok.experimental.UtilityClass;
 
+@UtilityClass
 public class CustomSignatureRulesEdgeDecisionFilter {
-
-  private CustomSignatureRulesEdgeDecisionFilter() {
-    // utility classes shouldn't have a public constructor
-  }
-
-  // Rules that can be converted to edge decision rules
-  public static List<CustomSignatureRule> getConvertibleRules(List<CustomSignatureRule> rules) {
-    return rules.stream()
-        .filter(
-            rule ->
-                rule.getEffect()
-                    .getRuleEvaluationPointsList()
-                    .contains(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE))
-        .collect(Collectors.toUnmodifiableList());
-  }
 
   // Rules that can be converted to edge decision rules AND are not expired
   public static List<CustomSignatureRule> getConvertibleAndActiveRules(
       List<CustomSignatureRule> rules) {
     return rules.stream()
-        .filter(
-            rule ->
-                rule.getEffect()
-                    .getRuleEvaluationPointsList()
-                    .contains(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE))
+        .filter(CustomSignatureRulesEdgeDecisionFilter::isEligibleForEdgeDecisionSupplier)
         .filter(rule -> !isExpiredRule(rule))
         .collect(Collectors.toUnmodifiableList());
+  }
+
+  private static boolean isEligibleForEdgeDecisionSupplier(CustomSignatureRule rule) {
+    if (rule.getCategory() == Category.CATEGORY_AI_APP_PROTECTION) {
+      return false;
+    }
+    return rule.getEffect()
+        .getRuleEvaluationPointsList()
+        .contains(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE);
   }
 
   static boolean isExpiredRule(CustomSignatureRule rule) {

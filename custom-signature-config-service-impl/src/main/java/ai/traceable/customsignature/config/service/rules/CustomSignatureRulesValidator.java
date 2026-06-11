@@ -14,6 +14,7 @@ import ai.traceable.customsignature.config.service.v1.AgentRuleEffect;
 import ai.traceable.customsignature.config.service.v1.BodyModification;
 import ai.traceable.customsignature.config.service.v1.BulkDeleteCustomSignatureRulesRequest;
 import ai.traceable.customsignature.config.service.v1.BulkUpdateCustomSignatureRulesRequest;
+import ai.traceable.customsignature.config.service.v1.Category;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.ClauseOperator;
@@ -110,7 +111,10 @@ public class CustomSignatureRulesValidator implements RulesValidator {
     ClauseGroup clauseGroup = request.getDefinition().getClauseGroup();
 
     validateRuleEffect(
-        request.getEffect(), hasResponseOrAttribute(clauseGroup.getClausesList()), clauseGroup);
+        request.getEffect(),
+        hasResponseOrAttribute(clauseGroup.getClausesList()),
+        clauseGroup,
+        request.getCategory());
     validateRuleDefinition(request.getDefinition(), request.getEffect().getEventType());
     validateExpiry(request.getEffect(), request.getBlockingExpiryDetails());
     validateRuleScope(request.getRuleScope());
@@ -162,7 +166,7 @@ public class CustomSignatureRulesValidator implements RulesValidator {
     List<Clause> clauses = clauseGroup.getClausesList();
     boolean hasResponseOrAttribute = hasResponseOrAttribute(clauses);
 
-    validateRuleEffect(rule.getEffect(), hasResponseOrAttribute, clauseGroup);
+    validateRuleEffect(rule.getEffect(), hasResponseOrAttribute, clauseGroup, rule.getCategory());
     validateRuleDefinition(rule.getDefinition(), rule.getEffect().getEventType());
     validateExpiry(rule.getEffect(), rule.getBlockingExpiryDetails());
     validateRuleScope(rule.getRuleScope());
@@ -253,7 +257,8 @@ public class CustomSignatureRulesValidator implements RulesValidator {
   private void validateRuleEffect(
       RuleEffect ruleEffect,
       boolean hasMatchCategoryResponseOrAttributeKeyValueExpression,
-      ClauseGroup clauseGroup) {
+      ClauseGroup clauseGroup,
+      Category category) {
     EventType eventType = ruleEffect.getEventType();
     if (eventType == EventType.EVENT_TYPE_UNSPECIFIED) {
       throw ContextualStatusExceptionBuilder.from(Status.INVALID_ARGUMENT)
@@ -280,7 +285,9 @@ public class CustomSignatureRulesValidator implements RulesValidator {
     }
 
     if (hasMatchCategoryResponseOrAttributeKeyValueExpression
-        && INVALID_RESPONSE_AND_ATTRIBUTE_EVENT_TYPES.contains(ruleEffect.getEventType())) {
+        && INVALID_RESPONSE_AND_ATTRIBUTE_EVENT_TYPES.contains(ruleEffect.getEventType())
+        && !AiAppProtectionClauseUtils.isExemptFromAttributeAndBlockingEventTypeCheck(
+            category, clauseGroup)) {
       throw ContextualStatusExceptionBuilder.from(Status.INVALID_ARGUMENT)
           .withExternalMessage(
               String.format(
@@ -289,11 +296,12 @@ public class CustomSignatureRulesValidator implements RulesValidator {
           .buildRuntimeException();
     }
 
-    validateForRuleEvaluationPoints(ruleEffect, clauseGroup);
+    validateForRuleEvaluationPoints(ruleEffect, clauseGroup, category);
     ruleEffect.getEffectsList().forEach(this::validateRuleEffectWithModification);
   }
 
-  private void validateForRuleEvaluationPoints(RuleEffect ruleEffect, ClauseGroup clauseGroup) {
+  private void validateForRuleEvaluationPoints(
+      RuleEffect ruleEffect, ClauseGroup clauseGroup, Category category) {
     List<RuleEvaluationPoint> ruleEvaluationPoints = ruleEffect.getRuleEvaluationPointsList();
 
     if (ruleEvaluationPoints.isEmpty()) {
@@ -302,7 +310,8 @@ public class CustomSignatureRulesValidator implements RulesValidator {
           .buildRuntimeException();
     }
 
-    if (ruleEvaluationPoints.contains(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)) {
+    if (ruleEvaluationPoints.contains(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+        && !AiAppProtectionClauseUtils.isAiAppProtectionCategory(category)) {
       if (!CustomSignatureRulesEdgeDecisionFilter.isConvertibleRule(ruleEffect, clauseGroup)) {
         throw ContextualStatusExceptionBuilder.from(Status.INVALID_ARGUMENT)
             .withExternalMessage("Rule is not EDGE-compatible.")
