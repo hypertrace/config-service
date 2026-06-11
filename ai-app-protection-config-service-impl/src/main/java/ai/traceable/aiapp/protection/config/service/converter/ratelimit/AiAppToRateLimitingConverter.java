@@ -498,7 +498,8 @@ public class AiAppToRateLimitingConverter {
           ai.traceable.ratelimiting.config.service.v2.Action.Redact.getDefaultInstance());
     } else if (action.hasBlock()) {
       ai.traceable.ratelimiting.config.service.v2.Action.Block.Builder blockBuilder =
-          ai.traceable.ratelimiting.config.service.v2.Action.Block.newBuilder();
+          ai.traceable.ratelimiting.config.service.v2.Action.Block.newBuilder()
+              .setEventSeverity(convertSeverityLevel(action.getBlock().getSeverityLevel()));
       actionBuilder.setBlock(blockBuilder.build());
     }
 

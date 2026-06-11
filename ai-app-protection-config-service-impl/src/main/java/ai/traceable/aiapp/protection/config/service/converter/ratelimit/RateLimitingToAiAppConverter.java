@@ -429,38 +429,44 @@ public class RateLimitingToAiAppConverter {
     Action.Builder builder = Action.newBuilder();
 
     if (rateLimitingAction.hasAlert()) {
-      // Convert rate limiting alert event severity to AI app alert severity
-      SeverityLevel severityLevel;
-      switch (rateLimitingAction.getAlert().getEventSeverity()) {
-        case EVENT_SEVERITY_LOW:
-          severityLevel = SeverityLevel.SEVERITY_LEVEL_LOW;
-          break;
-        case EVENT_SEVERITY_MEDIUM:
-          severityLevel = SeverityLevel.SEVERITY_LEVEL_MEDIUM;
-          break;
-        case EVENT_SEVERITY_HIGH:
-          severityLevel = SeverityLevel.SEVERITY_LEVEL_HIGH;
-          break;
-        case EVENT_SEVERITY_CRITICAL:
-          severityLevel = SeverityLevel.SEVERITY_LEVEL_CRITICAL;
-          break;
-        default:
-          severityLevel = SeverityLevel.SEVERITY_LEVEL_UNSPECIFIED;
-          break;
-      }
-
-      Action.Alert alert = Action.Alert.newBuilder().setSeverityLevel(severityLevel).build();
+      Action.Alert alert =
+          Action.Alert.newBuilder()
+              .setSeverityLevel(
+                  convertEventSeverityToSeverityLevel(
+                      rateLimitingAction.getAlert().getEventSeverity()))
+              .build();
       builder.setAlert(alert);
-
     } else if (rateLimitingAction.hasMarkForTesting()) {
-      // Convert mark for testing action to AI app mark for testing action
-      Action.MarkForTesting markForTesting = Action.MarkForTesting.newBuilder().build();
-      builder.setMarkForTesting(markForTesting);
+      builder.setMarkForTesting(Action.MarkForTesting.newBuilder().build());
     } else if (rateLimitingAction.hasRedact()) {
       builder.setRedact(Action.Redact.getDefaultInstance());
+    } else if (rateLimitingAction.hasBlock()) {
+      Action.Block block =
+          Action.Block.newBuilder()
+              .setSeverityLevel(
+                  convertEventSeverityToSeverityLevel(
+                      rateLimitingAction.getBlock().getEventSeverity()))
+              .build();
+      builder.setBlock(block);
     }
 
     return builder.build();
+  }
+
+  private SeverityLevel convertEventSeverityToSeverityLevel(
+      ai.traceable.ratelimiting.config.service.v2.Action.EventSeverity eventSeverity) {
+    switch (eventSeverity) {
+      case EVENT_SEVERITY_LOW:
+        return SeverityLevel.SEVERITY_LEVEL_LOW;
+      case EVENT_SEVERITY_MEDIUM:
+        return SeverityLevel.SEVERITY_LEVEL_MEDIUM;
+      case EVENT_SEVERITY_HIGH:
+        return SeverityLevel.SEVERITY_LEVEL_HIGH;
+      case EVENT_SEVERITY_CRITICAL:
+        return SeverityLevel.SEVERITY_LEVEL_CRITICAL;
+      default:
+        return SeverityLevel.SEVERITY_LEVEL_UNSPECIFIED;
+    }
   }
 
   /** Converts rate limiting rule data to threshold config for AI rate limiting rules. */

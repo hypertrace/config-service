@@ -133,7 +133,9 @@ message Action {
 
   message MarkForTesting {}
 
-  message Block {}
+  message Block {
+    SeverityLevel severity_level = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Severity level for the block action"];
+  }
 
   message Redact {}
 }

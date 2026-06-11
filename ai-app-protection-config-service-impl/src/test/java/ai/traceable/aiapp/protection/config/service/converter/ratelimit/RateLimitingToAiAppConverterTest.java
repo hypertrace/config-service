@@ -624,6 +624,55 @@ class RateLimitingToAiAppConverterTest {
   }
 
   @Test
+  void convertsBlockRateLimitingActionToAiAppBlock() {
+    LeafCondition datatypeLeaf =
+        LeafCondition.newBuilder()
+            .setDatatypeCondition(
+                ai.traceable.ratelimiting.config.service.v2.DatatypeCondition.newBuilder()
+                    .addDatasetIds("dataset-req")
+                    .addDatatypeIds("datatype-req")
+                    .setDataLocation(
+                        ai.traceable.ratelimiting.config.service.v2.DataLocation
+                            .DATA_LOCATION_REQUEST))
+            .build();
+
+    RateLimitingRule rateLimitingRule =
+        RateLimitingRule.newBuilder()
+            .setId("sdp-rule-block")
+            .setData(
+                RateLimitingRuleData.newBuilder()
+                    .setName("Test SDP Block Rule")
+                    .setEnabled(true)
+                    .setCategory(Category.CATEGORY_AI_APP_PROTECTION)
+                    .putLabels(
+                        THREAT_TYPE_ID_LABEL_KEY, AI_SENSITIVE_DATA_PROTECTION_THREAT_TYPE_ID)
+                    .setCondition(Condition.newBuilder().setLeafCondition(datatypeLeaf))
+                    .setTransactionActionConfig(
+                        TransactionActionConfig.newBuilder()
+                            .setAction(
+                                ai.traceable.ratelimiting.config.service.v2.Action.newBuilder()
+                                    .setBlock(
+                                        ai.traceable.ratelimiting.config.service.v2.Action.Block
+                                            .newBuilder()
+                                            .setEventSeverity(
+                                                ai.traceable.ratelimiting.config.service.v2.Action
+                                                    .EventSeverity.EVENT_SEVERITY_CRITICAL)
+                                            .build()))))
+            .build();
+
+    AiAppCustomRule aiAppRule =
+        rateLimitingToAiAppConverter.convertFromRateLimitingRule(rateLimitingRule);
+
+    AiAppCustomRuleData aiAppRuleData = aiAppRule.getRuleData();
+    assertTrue(aiAppRuleData.hasAiSensitiveDataProtectionRuleData());
+    assertTrue(aiAppRuleData.hasAction());
+    assertTrue(aiAppRuleData.getAction().hasBlock());
+    assertEquals(
+        SeverityLevel.SEVERITY_LEVEL_CRITICAL,
+        aiAppRuleData.getAction().getBlock().getSeverityLevel());
+  }
+
+  @Test
   void convertsRedactRateLimitingActionToAiAppRedact() {
     LeafCondition datatypeLeaf =
         LeafCondition.newBuilder()

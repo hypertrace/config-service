@@ -318,6 +318,7 @@ public class AiAppToCustomSignatureConverter {
     }
     if (action.hasBlock()) {
       builder.setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING);
+      builder.setEventSeverity(convertSeverityLevel(action.getBlock().getSeverityLevel()));
     }
 
     return builder.build();
