@@ -131,6 +131,14 @@ public class CustomSignatureRulesStore
   }
 
   @Override
+  protected Optional<Value> getDefaultPreviousValue(
+      RequestContext requestContext, CustomSignatureRule data) {
+    return Optional.ofNullable(defaultCustomSignatureRuleObjectsMap.get(data.getId()))
+        .map(ContextualConfigObject::getData)
+        .map(this::buildValueFromData);
+  }
+
+  @Override
   protected Optional<CustomSignatureRule> buildDataFromValue(Value value) {
     try {
       return Optional.of(customSignatureRuleConverter.convert(value));

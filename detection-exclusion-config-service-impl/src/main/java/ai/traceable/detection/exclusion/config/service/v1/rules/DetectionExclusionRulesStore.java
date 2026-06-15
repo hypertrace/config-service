@@ -167,6 +167,14 @@ public class DetectionExclusionRulesStore
   }
 
   @Override
+  protected Optional<Value> getDefaultPreviousValue(
+      RequestContext requestContext, DetectionExclusionRule data) {
+    return Optional.ofNullable(getDefaultRuleObjects(requestContext).get(data.getId()))
+        .map(ContextualConfigObject::getData)
+        .map(this::buildValueFromData);
+  }
+
+  @Override
   protected Optional<DetectionExclusionRule> buildDataFromValue(Value value) {
     try {
       DetectionExclusionRule.Builder builder = DetectionExclusionRule.newBuilder();

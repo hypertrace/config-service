@@ -85,6 +85,14 @@ public class RateLimitingRulesStore
   }
 
   @Override
+  protected Optional<Value> getDefaultPreviousValue(
+      RequestContext requestContext, RateLimitingRule data) {
+    return Optional.ofNullable(defaultRateLimitingRuleObjectsMap.get(data.getId()))
+        .map(ContextualConfigObject::getData)
+        .map(this::buildValueFromData);
+  }
+
+  @Override
   protected Optional<RateLimitingRule> buildDataFromValue(Value value) {
     try {
       RateLimitingRule.Builder builder = RateLimitingRule.newBuilder();
