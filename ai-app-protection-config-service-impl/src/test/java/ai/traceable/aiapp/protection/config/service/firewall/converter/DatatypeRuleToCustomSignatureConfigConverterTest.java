@@ -26,10 +26,14 @@ import ai.traceable.protection.engine.config.customsignature.v1.CustomSignatureR
 import ai.traceable.protection.engine.config.customsignature.v1.CustomSignatureRuleDefinitionGroup;
 import ai.traceable.protection.engine.config.customsignature.v1.CustomSignatureRulesContext;
 import ai.traceable.protection.processing.common.v1.AttributeType;
+import ai.traceable.protection.processing.common.v1.CustomerScope;
 import ai.traceable.protection.processing.common.v1.EntityType;
 import ai.traceable.protection.processing.common.v1.LogicalOperator;
 import ai.traceable.protection.processing.common.v1.MessageType;
+import ai.traceable.protection.processing.common.v1.MultiMatchOperator;
+import ai.traceable.protection.processing.common.v1.ScopeAttributeType;
 import ai.traceable.protection.processing.common.v1.ScopeContext;
+import ai.traceable.protection.processing.common.v1.ScopeType;
 import ai.traceable.protection.processing.common.v1.StringOperator;
 import ai.traceable.protection.processing.common.v1.utils.PrefixBuilder;
 import ai.traceable.protection.processor.condition.expression.v1.KeyValueMatchCondition;
@@ -457,13 +461,14 @@ class DatatypeRuleToCustomSignatureConfigConverterTest {
     assertEquals(1, result.getRuleContextsCount());
 
     ScopeContext scopeContext = result.getRuleContexts(0).getScopeContext();
-    assertEquals(1, scopeContext.getScopesCount());
+    assertEquals(2, scopeContext.getScopesCount());
     assertEquals(
         EntityType.ENTITY_TYPE_ENVIRONMENT,
         scopeContext.getScopes(0).getEntityScope().getEntityType());
     assertEquals(2, scopeContext.getScopes(0).getEntityScope().getEntitiesCount());
     assertEquals("env-1", scopeContext.getScopes(0).getEntityScope().getEntities(0).getId());
     assertEquals("env-2", scopeContext.getScopes(0).getEntityScope().getEntities(1).getId());
+    assertEquals(CustomerScope.getDefaultInstance(), scopeContext.getScopes(1).getCustomerScope());
   }
 
   @Test
@@ -517,6 +522,38 @@ class DatatypeRuleToCustomSignatureConfigConverterTest {
             .getCustomSignatureConditionExpression()
             .getConditionExpressionEvaluationIdentifier()
             .startsWith("scope-entity-"));
+
+    KeyValueMatchCondition apiIdCondition =
+        scopeDef
+            .getCustomSignatureConditionExpression()
+            .getConditionExpression()
+            .getLeafMatchConditionExpression()
+            .getKeyValueMatchCondition();
+    assertEquals(
+        PrefixBuilder.buildAppendablePrefix(
+            MessageType.MESSAGE_TYPE_REQUEST,
+            ScopeType.SCOPE_TYPE_API,
+            ScopeAttributeType.SCOPE_ATTRIBUTE_TYPE_ID),
+        apiIdCondition.getLhsKeyOperand().getKeyMetadata().getFullyQualifiedKeyPrefix());
+    assertEquals(
+        StringOperator.StringMatchOperator.STRING_MATCH_OPERATOR_EQ,
+        apiIdCondition
+            .getRhsValueMatchOperation()
+            .getStringListMatchOperation()
+            .getStringOperator()
+            .getStringOperator());
+    assertEquals(
+        MultiMatchOperator.MULTI_MATCH_OPERATOR_ANY,
+        apiIdCondition
+            .getRhsValueMatchOperation()
+            .getStringListMatchOperation()
+            .getMultiMatchOperator());
+    assertEquals(
+        List.of("api-1", "api-2"),
+        apiIdCondition
+            .getRhsValueMatchOperation()
+            .getStringListMatchOperation()
+            .getStringValuesList());
   }
 
   @Test
@@ -564,6 +601,27 @@ class DatatypeRuleToCustomSignatureConfigConverterTest {
             .getCustomSignatureConditionExpression()
             .getConditionExpressionEvaluationIdentifier()
             .startsWith("scope-url-"));
+
+    KeyValueMatchCondition urlCondition =
+        scopeDef
+            .getCustomSignatureConditionExpression()
+            .getConditionExpression()
+            .getLeafMatchConditionExpression()
+            .getKeyValueMatchCondition();
+    assertEquals(
+        PrefixBuilder.buildAppendablePrefix(
+            MessageType.MESSAGE_TYPE_REQUEST, AttributeType.ATTRIBUTE_TYPE_URL),
+        urlCondition.getLhsKeyOperand().getKeyMetadata().getFullyQualifiedKeyPrefix());
+    assertEquals(
+        StringOperator.StringMatchOperator.STRING_MATCH_OPERATOR_LIKE,
+        urlCondition
+            .getRhsValueMatchOperation()
+            .getStringMatchOperation()
+            .getStringOperator()
+            .getStringOperator());
+    assertEquals(
+        "/api/v1/.*|/api/v2/.*",
+        urlCondition.getRhsValueMatchOperation().getStringMatchOperation().getStringValue());
   }
 
   @Test
