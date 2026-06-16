@@ -60,7 +60,7 @@ entities:
       display_name: "Parent Span ID"
       description: "Identifier of the parent span in the trace"
       disabled: false
-      internal: true
+      internal: false
       category: ENTITY_CATEGORY_SYSTEM
       event_kind:
         kind_id: "system_event_kind_string"
