@@ -14,6 +14,7 @@ import com.typesafe.config.ConfigFactory;
 import io.grpc.Status;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.core.grpcutils.context.ContextualStatusExceptionBuilder;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
@@ -107,12 +108,13 @@ public class ApplicationGroupingRuleConfigManager implements ApplicationGrouping
           "Tenant {} has reached the maximum limit of {} application grouping rules",
           requestContext.getTenantId().orElseThrow(),
           maxRulesPerTenant);
-      throw Status.RESOURCE_EXHAUSTED
-          .withDescription(
-              String.format(
-                  "Maximum limit of %d application grouping rules per tenant has been reached",
-                  maxRulesPerTenant))
-          .asRuntimeException();
+      throw ContextualStatusExceptionBuilder.from(
+              Status.RESOURCE_EXHAUSTED.withDescription(
+                  String.format(
+                      "You've reached the maximum limit of %d application rules. Delete an existing rule to create a new one.",
+                      maxRulesPerTenant)))
+          .useStatusDescriptionAsExternalMessage()
+          .buildRuntimeException();
     }
   }
 }

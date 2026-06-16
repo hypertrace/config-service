@@ -33,6 +33,7 @@ public class ApplicationGroupingConfigServiceRequestValidatorImpl
   private static final String APPLICATION_GROUPING_CONFIG_SERVICE_PATH =
       "application.grouping.config.service";
   private static final String DYNAMIC_API_REGEX_DENY_LIST_PATH = "dynamicApiRegexDenyList";
+  private static final String RULE_NAME_FIELD = "Rule name";
 
   private final ApplicationGroupingRuleConfigService applicationGroupingRuleConfigService;
   private final ApplicationGroupingRuleConfigStore applicationGroupingRuleConfigStore;
@@ -86,8 +87,7 @@ public class ApplicationGroupingConfigServiceRequestValidatorImpl
                           requestContext, request))
                   .asRuntimeException(requestContext.buildTrailers()))
           .withExternalMessage(
-              String.format(
-                  "Unable to find application grouping rule config with id %s", request.getId()))
+              "The application grouping rule could not be found. It may have been deleted or is no longer available.")
           .buildRuntimeException();
     }
   }
@@ -130,7 +130,8 @@ public class ApplicationGroupingConfigServiceRequestValidatorImpl
       RequestContext context, ApplicationGroupingRuleConfigInfo configInfo) {
     validateNonDefaultPresenceOrThrow(
         configInfo, ApplicationGroupingRuleConfigInfo.RULE_NAME_FIELD_NUMBER);
-    validateStringField(context, configInfo.getRuleName(), "Rule name", MAX_RULE_NAME_LENGTH);
+    validateStringFieldWithExternalMessage(
+        context, configInfo.getRuleName(), RULE_NAME_FIELD, MAX_RULE_NAME_LENGTH);
     validateRuleNameStartsAndEndsWithAlphanumeric(context, configInfo.getRuleName());
 
     if (!configInfo.getGroupName().hasDynamic()) {
@@ -176,38 +177,65 @@ public class ApplicationGroupingConfigServiceRequestValidatorImpl
 
   private void validateStringField(
       RequestContext requestContext, String stringField, String fieldName, int maxLength) {
+    validateStringField(requestContext, stringField, fieldName, maxLength, false);
+  }
+
+  private void validateStringFieldWithExternalMessage(
+      RequestContext requestContext, String stringField, String fieldName, int maxLength) {
+    validateStringField(requestContext, stringField, fieldName, maxLength, true);
+  }
+
+  private void validateStringField(
+      RequestContext requestContext,
+      String stringField,
+      String fieldName,
+      int maxLength,
+      boolean exposeAsExternalMessage) {
     if (stringField == null || stringField.isBlank()) {
-      throw ContextualStatusExceptionBuilder.from(
-              Status.INVALID_ARGUMENT
-                  .withDescription(String.format("%s must not be blank", fieldName))
-                  .asRuntimeException(requestContext.buildTrailers()))
-          .useStatusDescriptionAsExternalMessage()
-          .buildRuntimeException();
+      throw buildValidationException(
+          requestContext,
+          String.format("%s must not be blank.", fieldName),
+          exposeAsExternalMessage);
     }
 
     if (stringField.length() > maxLength) {
-      throw ContextualStatusExceptionBuilder.from(
-              Status.INVALID_ARGUMENT
-                  .withDescription(
-                      String.format(
-                          "%s must not exceed %d characters (provided: %d)",
-                          fieldName, maxLength, stringField.length()))
-                  .asRuntimeException(requestContext.buildTrailers()))
-          .useStatusDescriptionAsExternalMessage()
-          .buildRuntimeException();
+      throw buildValidationException(
+          requestContext,
+          String.format(
+              "%s must not exceed %d characters (provided: %d)",
+              fieldName, maxLength, stringField.length()),
+          String.format("%s cannot exceed %d characters.", fieldName, maxLength),
+          exposeAsExternalMessage);
     }
 
     if (!VALID_STRING_PATTERN.matcher(stringField).matches()) {
-      throw ContextualStatusExceptionBuilder.from(
-              Status.INVALID_ARGUMENT
-                  .withDescription(
-                      String.format(
-                          "%s contains invalid characters. Only alphanumeric characters, spaces, hyphens, and underscores are allowed",
-                          fieldName))
-                  .asRuntimeException(requestContext.buildTrailers()))
-          .useStatusDescriptionAsExternalMessage()
-          .buildRuntimeException();
+      throw buildValidationException(
+          requestContext,
+          String.format(
+              "%s contains invalid characters. Use only letters, numbers, spaces, hyphens (-), and underscores (_).",
+              fieldName),
+          exposeAsExternalMessage);
     }
+  }
+
+  private RuntimeException buildValidationException(
+      RequestContext requestContext, String message, boolean exposeAsExternalMessage) {
+    return buildValidationException(requestContext, message, message, exposeAsExternalMessage);
+  }
+
+  private RuntimeException buildValidationException(
+      RequestContext requestContext,
+      String internalMessage,
+      String externalMessage,
+      boolean exposeAsExternalMessage) {
+    final ContextualStatusExceptionBuilder exceptionBuilder =
+        ContextualStatusExceptionBuilder.from(
+            Status.INVALID_ARGUMENT
+                .withDescription(internalMessage)
+                .asRuntimeException(requestContext.buildTrailers()));
+    return exposeAsExternalMessage
+        ? exceptionBuilder.withExternalMessage(externalMessage).buildRuntimeException()
+        : exceptionBuilder.buildRuntimeException();
   }
 
   private void validateRuleNameStartsAndEndsWithAlphanumeric(
@@ -216,7 +244,7 @@ public class ApplicationGroupingConfigServiceRequestValidatorImpl
         || !isLetterOrDigit(ruleName.charAt(ruleName.length() - 1))) {
       throw ContextualStatusExceptionBuilder.from(
               Status.INVALID_ARGUMENT
-                  .withDescription("Rule name must start and end with an alphanumeric character")
+                  .withDescription("Rule name must start and end with a letter or number.")
                   .asRuntimeException(requestContext.buildTrailers()))
           .useStatusDescriptionAsExternalMessage()
           .buildRuntimeException();
@@ -238,7 +266,7 @@ public class ApplicationGroupingConfigServiceRequestValidatorImpl
                         Status.ALREADY_EXISTS
                             .withDescription(
                                 String.format(
-                                    "Application grouping rule with name '%s' already exists",
+                                    "An application rule with the name \"%s\" already exists. Please choose a different name.",
                                     ruleName))
                             .asRuntimeException(requestContext.buildTrailers()))
                     .useStatusDescriptionAsExternalMessage()
@@ -256,7 +284,10 @@ public class ApplicationGroupingConfigServiceRequestValidatorImpl
     if (denyList.contains(apiRegex)) {
       throw ContextualStatusExceptionBuilder.from(
               Status.INVALID_ARGUMENT
-                  .withDescription(String.format("API regex %s is not allowed", apiRegex))
+                  .withDescription(
+                      String.format(
+                          "The API pattern \"%s\" is not supported. Please use a different pattern.",
+                          apiRegex))
                   .asRuntimeException(requestContext.buildTrailers()))
           .useStatusDescriptionAsExternalMessage()
           .buildRuntimeException();

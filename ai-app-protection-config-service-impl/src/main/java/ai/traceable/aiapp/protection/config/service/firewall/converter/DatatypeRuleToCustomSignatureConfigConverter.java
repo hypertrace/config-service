@@ -40,7 +40,6 @@ import ai.traceable.protection.processor.condition.expression.v1.LeafMatchCondit
 import ai.traceable.protection.processor.condition.expression.v1.MatchConditionExpression;
 import ai.traceable.protection.processor.condition.expression.v1.StringListMatchOperation;
 import ai.traceable.protection.processor.condition.expression.v1.StringMatchOperation;
-import ai.traceable.protection.processor.condition.expression.v1.UnaryKeyMatchCondition;
 import ai.traceable.protection.processor.condition.expression.v1.ValueMatchOperation;
 import com.google.inject.Singleton;
 import java.util.*;
@@ -109,7 +108,10 @@ public class DatatypeRuleToCustomSignatureConfigConverter {
             Entity.newBuilder().setId(environmentId).setName(environmentId).build());
       }
 
-      builder.addScopes(Scope.newBuilder().setEntityScope(entityScopeBuilder.build()).build());
+      builder
+          .addScopes(Scope.newBuilder().setEntityScope(entityScopeBuilder.build()).build())
+          .addScopes(
+              Scope.newBuilder().setCustomerScope(CustomerScope.getDefaultInstance()).build());
     } else {
       builder.addScopes(
           Scope.newBuilder().setCustomerScope(CustomerScope.getDefaultInstance()).build());
@@ -348,70 +350,68 @@ public class DatatypeRuleToCustomSignatureConfigConverter {
 
   private MatchConditionExpression buildStringListAnyEqualsCondition(
       String keyPrefix, List<String> stringValues) {
-    ValueMatchOperation valueOperation =
-        ValueMatchOperation.newBuilder()
-            .setStringListMatchOperation(
-                StringListMatchOperation.newBuilder()
-                    .setStringOperator(
-                        StringOperator.newBuilder()
-                            .setStringOperator(
-                                StringOperator.StringMatchOperator.STRING_MATCH_OPERATOR_EQ)
-                            .setIgnoreCase(false)
+    KeyValueMatchCondition keyValueCondition =
+        KeyValueMatchCondition.newBuilder()
+            .setLhsKeyOperand(
+                KeyMatchOperand.newBuilder()
+                    .setKeyMetadata(
+                        KeyMatchOperand.KeyMetadata.newBuilder()
+                            .setFullyQualifiedKeyPrefix(keyPrefix)
                             .build())
-                    .setMultiMatchOperator(MultiMatchOperator.MULTI_MATCH_OPERATOR_ANY)
-                    .addAllStringValues(stringValues)
+                    .build())
+            .setRhsValueMatchOperation(
+                ValueMatchOperation.newBuilder()
+                    .setStringListMatchOperation(
+                        StringListMatchOperation.newBuilder()
+                            .setStringOperator(
+                                StringOperator.newBuilder()
+                                    .setStringOperator(
+                                        StringOperator.StringMatchOperator.STRING_MATCH_OPERATOR_EQ)
+                                    .setIgnoreCase(false)
+                                    .build())
+                            .setMultiMatchOperator(MultiMatchOperator.MULTI_MATCH_OPERATOR_ANY)
+                            .addAllStringValues(stringValues)
+                            .build())
                     .build())
             .build();
-
-    KeyMatchOperand keyOperand =
-        KeyMatchOperand.newBuilder()
-            .setKeyMetadata(
-                KeyMatchOperand.KeyMetadata.newBuilder()
-                    .setFullyQualifiedKeyPrefix(keyPrefix)
-                    .build())
-            .setKeyMatchOperation(valueOperation)
-            .build();
-
-    UnaryKeyMatchCondition unaryKeyMatchCondition =
-        UnaryKeyMatchCondition.newBuilder().setKeyCondition(keyOperand).build();
 
     LeafMatchConditionExpression leafExpr =
         LeafMatchConditionExpression.newBuilder()
-            .setUnaryKeyMatchCondition(unaryKeyMatchCondition)
+            .setKeyValueMatchCondition(keyValueCondition)
             .build();
 
     return MatchConditionExpression.newBuilder().setLeafMatchConditionExpression(leafExpr).build();
   }
 
   private MatchConditionExpression buildStringLikeCondition(String keyPrefix, String regex) {
-    UnaryKeyMatchCondition unaryKeyCondition =
-        UnaryKeyMatchCondition.newBuilder()
-            .setKeyCondition(
+    KeyValueMatchCondition keyValueCondition =
+        KeyValueMatchCondition.newBuilder()
+            .setLhsKeyOperand(
                 KeyMatchOperand.newBuilder()
                     .setKeyMetadata(
                         KeyMatchOperand.KeyMetadata.newBuilder()
                             .setFullyQualifiedKeyPrefix(keyPrefix)
                             .build())
-                    .setKeyMatchOperation(
-                        ValueMatchOperation.newBuilder()
-                            .setStringMatchOperation(
-                                StringMatchOperation.newBuilder()
+                    .build())
+            .setRhsValueMatchOperation(
+                ValueMatchOperation.newBuilder()
+                    .setStringMatchOperation(
+                        StringMatchOperation.newBuilder()
+                            .setStringOperator(
+                                StringOperator.newBuilder()
                                     .setStringOperator(
-                                        StringOperator.newBuilder()
-                                            .setStringOperator(
-                                                StringOperator.StringMatchOperator
-                                                    .STRING_MATCH_OPERATOR_LIKE)
-                                            .setIgnoreCase(false)
-                                            .build())
-                                    .setStringValue(regex)
+                                        StringOperator.StringMatchOperator
+                                            .STRING_MATCH_OPERATOR_LIKE)
+                                    .setIgnoreCase(false)
                                     .build())
+                            .setStringValue(regex)
                             .build())
                     .build())
             .build();
 
     LeafMatchConditionExpression leafExpr =
         LeafMatchConditionExpression.newBuilder()
-            .setUnaryKeyMatchCondition(unaryKeyCondition)
+            .setKeyValueMatchCondition(keyValueCondition)
             .build();
 
     return MatchConditionExpression.newBuilder().setLeafMatchConditionExpression(leafExpr).build();
