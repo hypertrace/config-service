@@ -86,6 +86,10 @@ public abstract class IdentifiedObjectStore<T> {
     return data.getClass().getName();
   }
 
+  protected Optional<Value> getDefaultPreviousValue(RequestContext requestContext, T data) {
+    return Optional.empty();
+  }
+
   protected List<ContextualConfigObject<T>> orderFetchedObjects(
       List<ContextualConfigObject<T>> objects) {
     return objects;
@@ -279,7 +283,7 @@ public abstract class IdentifiedObjectStore<T> {
           if (response.hasPrevConfig()) {
             tryReportUpdate(requestContext, result, response.getPrevConfig());
           } else {
-            tryReportCreation(requestContext, result);
+            reportCreationOrDefaultUpdate(requestContext, result);
           }
         });
     return optionalResult;
@@ -295,10 +299,21 @@ public abstract class IdentifiedObjectStore<T> {
           if (upsertedConfig.hasPrevConfig()) {
             tryReportUpdate(requestContext, result, upsertedConfig.getPrevConfig());
           } else {
-            tryReportCreation(requestContext, result);
+            reportCreationOrDefaultUpdate(requestContext, result);
           }
         });
     return optionalResult;
+  }
+
+  private void reportCreationOrDefaultUpdate(
+      RequestContext requestContext, ContextualConfigObject<T> result) {
+    Optional<Value> defaultPreviousValue =
+        getDefaultPreviousValue(requestContext, result.getData());
+    if (defaultPreviousValue.isPresent()) {
+      tryReportUpdate(requestContext, result, defaultPreviousValue.get());
+    } else {
+      tryReportCreation(requestContext, result);
+    }
   }
 
   private DeletedContextualConfigObject<T> processDeleteResult(
