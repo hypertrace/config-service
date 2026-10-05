@@ -28,6 +28,7 @@ message HttpEventCollectorChannelConfig {
   oneof channel_type {
     SplunkIntegrationChannelConfig splunk_integration_channel_config = 1;
     CrowdStrikeIntegrationChannelConfig crowd_strike_integration_channel_config = 2;
+    CortexIntegrationChannelConfig cortex_integration_channel_config = 3;
   }
 }
 
@@ -76,4 +77,8 @@ message SyslogIntegrationChannelConfig {
 
 message CrowdStrikeIntegrationChannelConfig {
   string crowd_strike_integration_id = 1;
+}
+
+message CortexIntegrationChannelConfig {
+  string cortex_integration_id = 1;
 }
