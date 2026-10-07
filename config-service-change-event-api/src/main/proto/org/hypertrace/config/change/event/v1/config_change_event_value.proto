@@ -16,6 +16,7 @@ message ConfigChangeEventValue {
   optional string user_name = 5;
   string user_email = 7;
   int64 event_time_millis = 6;
+  string default_config_json = 8;
 }
 
 message ConfigCreateEvent {
