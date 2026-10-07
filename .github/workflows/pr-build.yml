@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       # Set fetch-depth: 0 to fetch commit history and tags for use in version calculation
       - name: Check out code
@@ -37,7 +37,7 @@ jobs:
           output-mode: github
 
   validate-protos:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
       # Set fetch-depth: 0 to fetch commit history and tags for use in version calculation
     steps:
       - name: Check out code
