@@ -12,6 +12,7 @@ import javax.annotation.Nullable;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.notification.config.service.v1.AwsS3BucketChannelConfig;
 import org.hypertrace.notification.config.service.v1.AwsS3BucketChannelConfig.WebIdentityAuthenticationCredential;
+import org.hypertrace.notification.config.service.v1.CortexIntegrationChannelConfig;
 import org.hypertrace.notification.config.service.v1.CreateNotificationChannelRequest;
 import org.hypertrace.notification.config.service.v1.CrowdStrikeIntegrationChannelConfig;
 import org.hypertrace.notification.config.service.v1.DeleteNotificationChannelRequest;
@@ -220,6 +221,11 @@ public class NotificationChannelConfigServiceRequestValidator {
         validateNonDefaultPresenceOrThrow(
             httpEventCollectorChannelConfig.getSplunkIntegrationChannelConfig(),
             SplunkIntegrationChannelConfig.SPLUNK_INTEGRATION_ID_FIELD_NUMBER);
+        break;
+      case CORTEX_INTEGRATION_CHANNEL_CONFIG:
+        validateNonDefaultPresenceOrThrow(
+            httpEventCollectorChannelConfig.getCortexIntegrationChannelConfig(),
+            CortexIntegrationChannelConfig.CORTEX_INTEGRATION_ID_FIELD_NUMBER);
         break;
       default:
         throw Status.INVALID_ARGUMENT

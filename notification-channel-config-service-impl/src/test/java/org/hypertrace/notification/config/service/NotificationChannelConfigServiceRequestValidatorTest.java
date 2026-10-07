@@ -2,21 +2,127 @@ package org.hypertrace.notification.config.service;
 
 import static org.hypertrace.notification.config.service.NotificationChannelConfigServiceImpl.NOTIFICATION_CHANNEL_CONFIG_SERVICE_CONFIG;
 import static org.hypertrace.notification.config.service.NotificationChannelConfigServiceRequestValidator.WEBHOOK_HTTP_SUPPORT_ENABLED;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValueFactory;
 import java.io.File;
 import java.util.List;
+import java.util.stream.Stream;
 import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.hypertrace.notification.config.service.v1.CortexIntegrationChannelConfig;
+import org.hypertrace.notification.config.service.v1.CrowdStrikeIntegrationChannelConfig;
+import org.hypertrace.notification.config.service.v1.HttpEventCollectorChannelConfig;
 import org.hypertrace.notification.config.service.v1.NotificationChannelMutableData;
+import org.hypertrace.notification.config.service.v1.SplunkIntegrationChannelConfig;
 import org.hypertrace.notification.config.service.v1.UpdateNotificationChannelRequest;
 import org.hypertrace.notification.config.service.v1.WebhookChannelConfig;
 import org.hypertrace.notification.config.service.v1.WebhookFormat;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class NotificationChannelConfigServiceRequestValidatorTest {
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("validHttpEventCollectorChannelConfigs")
+  void acceptsValidHttpEventCollectorChannelConfig(
+      String caseName, HttpEventCollectorChannelConfig httpEventCollectorChannelConfig) {
+    NotificationChannelConfigServiceRequestValidator validator =
+        new NotificationChannelConfigServiceRequestValidator();
+    assertDoesNotThrow(
+        () ->
+            validator.validateUpdateNotificationChannelRequest(
+                RequestContext.forTenantId("tenant1"),
+                updateRequestWithHttpEventCollector(httpEventCollectorChannelConfig),
+                null,
+                List.of()));
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("invalidHttpEventCollectorChannelConfigs")
+  void rejectsInvalidHttpEventCollectorChannelConfig(
+      String caseName, HttpEventCollectorChannelConfig httpEventCollectorChannelConfig) {
+    NotificationChannelConfigServiceRequestValidator validator =
+        new NotificationChannelConfigServiceRequestValidator();
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            validator.validateUpdateNotificationChannelRequest(
+                RequestContext.forTenantId("tenant1"),
+                updateRequestWithHttpEventCollector(httpEventCollectorChannelConfig),
+                null,
+                List.of()));
+  }
+
+  private static Stream<Arguments> validHttpEventCollectorChannelConfigs() {
+    return Stream.of(
+        Arguments.of(
+            "splunk integration id present",
+            HttpEventCollectorChannelConfig.newBuilder()
+                .setSplunkIntegrationChannelConfig(
+                    SplunkIntegrationChannelConfig.newBuilder()
+                        .setSplunkIntegrationId("splunk-id")
+                        .build())
+                .build()),
+        Arguments.of(
+            "crowd strike integration id present",
+            HttpEventCollectorChannelConfig.newBuilder()
+                .setCrowdStrikeIntegrationChannelConfig(
+                    CrowdStrikeIntegrationChannelConfig.newBuilder()
+                        .setCrowdStrikeIntegrationId("crowdstrike-id")
+                        .build())
+                .build()),
+        Arguments.of(
+            "cortex integration id present",
+            HttpEventCollectorChannelConfig.newBuilder()
+                .setCortexIntegrationChannelConfig(
+                    CortexIntegrationChannelConfig.newBuilder()
+                        .setCortexIntegrationId("cortex-id")
+                        .build())
+                .build()));
+  }
+
+  private static Stream<Arguments> invalidHttpEventCollectorChannelConfigs() {
+    return Stream.of(
+        Arguments.of(
+            "splunk integration id missing",
+            HttpEventCollectorChannelConfig.newBuilder()
+                .setSplunkIntegrationChannelConfig(
+                    SplunkIntegrationChannelConfig.getDefaultInstance())
+                .build()),
+        Arguments.of(
+            "crowd strike integration id missing",
+            HttpEventCollectorChannelConfig.newBuilder()
+                .setCrowdStrikeIntegrationChannelConfig(
+                    CrowdStrikeIntegrationChannelConfig.getDefaultInstance())
+                .build()),
+        Arguments.of(
+            "cortex integration id missing",
+            HttpEventCollectorChannelConfig.newBuilder()
+                .setCortexIntegrationChannelConfig(
+                    CortexIntegrationChannelConfig.getDefaultInstance())
+                .build()),
+        Arguments.of(
+            "unknown http event collector channel type",
+            HttpEventCollectorChannelConfig.getDefaultInstance()));
+  }
+
+  private static UpdateNotificationChannelRequest updateRequestWithHttpEventCollector(
+      HttpEventCollectorChannelConfig httpEventCollectorChannelConfig) {
+    return UpdateNotificationChannelRequest.newBuilder()
+        .setId("channel-id")
+        .setNotificationChannelMutableData(
+            NotificationChannelMutableData.newBuilder()
+                .setChannelName("hec-channel")
+                .addHttpEventCollectorChannelConfig(httpEventCollectorChannelConfig)
+                .build())
+        .build();
+  }
+
   @Test
   public void testValidateWebhookExclusions() {
     NotificationChannelConfigServiceRequestValidator
