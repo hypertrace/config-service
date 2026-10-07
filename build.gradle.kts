@@ -3,6 +3,7 @@ plugins {
   alias(commonLibs.plugins.hypertrace.codestyle) apply false
   alias(commonLibs.plugins.hypertrace.publish) apply false
   alias(commonLibs.plugins.owasp.dependencycheck)
+  id("org.hypertrace.java-convention") version "0.4.0"
 }
 
 subprojects {
@@ -13,12 +14,6 @@ subprojects {
     }
   }
 
-  pluginManager.withPlugin("java") {
-    configure<JavaPluginExtension> {
-      sourceCompatibility = JavaVersion.VERSION_11
-      targetCompatibility = JavaVersion.VERSION_11
-    }
-  }
   apply(plugin = rootProject.commonLibs.plugins.hypertrace.codestyle.get().pluginId)
 
   configurations.all {
