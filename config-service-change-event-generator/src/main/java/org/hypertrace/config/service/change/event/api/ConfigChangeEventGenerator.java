@@ -1,6 +1,7 @@
 package org.hypertrace.config.service.change.event.api;
 
 import com.google.protobuf.Value;
+import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 /** The interface config change event generator. */
@@ -72,4 +73,23 @@ public interface ConfigChangeEventGenerator {
       String context,
       Value prevConfig,
       Value latestConfig);
+
+  default void sendCreateNotification(
+      RequestContext requestContext,
+      String configType,
+      String context,
+      Value config,
+      Optional<Value> defaultConfig) {
+    sendCreateNotification(requestContext, configType, context, config);
+  }
+
+  default void sendUpdateNotification(
+      RequestContext requestContext,
+      String configType,
+      String context,
+      Value prevConfig,
+      Value latestConfig,
+      Optional<Value> defaultConfig) {
+    sendUpdateNotification(requestContext, configType, context, prevConfig, latestConfig);
+  }
 }
