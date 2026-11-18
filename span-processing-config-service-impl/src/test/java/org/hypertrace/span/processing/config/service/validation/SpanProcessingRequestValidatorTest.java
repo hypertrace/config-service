@@ -19,6 +19,7 @@ import org.hypertrace.span.processing.config.service.v1.DeleteExcludeSpanRuleReq
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRuleInfo;
 import org.hypertrace.span.processing.config.service.v1.Field;
 import org.hypertrace.span.processing.config.service.v1.GetAllExcludeSpanRulesRequest;
+import org.hypertrace.span.processing.config.service.v1.ListValue;
 import org.hypertrace.span.processing.config.service.v1.LogicalOperator;
 import org.hypertrace.span.processing.config.service.v1.LogicalSpanFilterExpression;
 import org.hypertrace.span.processing.config.service.v1.RelationalOperator;
@@ -182,6 +183,33 @@ class SpanProcessingRequestValidatorTest {
                             .setType(RULE_TYPE_USER)
                             .build())
                     .build()));
+
+    assertInvalidArgStatusContaining(
+        "Operator RELATIONAL_OPERATOR_IN requires a LIST_VALUE right operand",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateExcludeSpanRuleRequest.newBuilder()
+                    .setRuleInfo(
+                        ExcludeSpanRuleInfo.newBuilder()
+                            .setName("name")
+                            .setFilter(buildInOperatorFilterWithStringOperand())
+                            .setType(RULE_TYPE_USER)
+                            .build())
+                    .build()));
+
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateExcludeSpanRuleRequest.newBuilder()
+                    .setRuleInfo(
+                        ExcludeSpanRuleInfo.newBuilder()
+                            .setName("name")
+                            .setFilter(buildInOperatorFilterWithListOperand("example.com/test"))
+                            .setType(RULE_TYPE_USER)
+                            .build())
+                    .build()));
   }
 
   @Test
@@ -329,6 +357,32 @@ class SpanProcessingRequestValidatorTest {
             LogicalSpanFilterExpression.newBuilder()
                 .setOperator(LogicalOperator.LOGICAL_OPERATOR_OR)
                 .addAllOperands(List.of()))
+        .build();
+  }
+
+  private SpanFilter buildInOperatorFilterWithStringOperand() {
+    return SpanFilter.newBuilder()
+        .setRelationalSpanFilter(
+            RelationalSpanFilterExpression.newBuilder()
+                .setSpanAttributeKey("http.url")
+                .setOperator(RelationalOperator.RELATIONAL_OPERATOR_IN)
+                .setRightOperand(
+                    SpanFilterValue.newBuilder().setStringValue("example.com/test")))
+        .build();
+  }
+
+  private SpanFilter buildInOperatorFilterWithListOperand(String value) {
+    return SpanFilter.newBuilder()
+        .setRelationalSpanFilter(
+            RelationalSpanFilterExpression.newBuilder()
+                .setSpanAttributeKey("http.url")
+                .setOperator(RelationalOperator.RELATIONAL_OPERATOR_IN)
+                .setRightOperand(
+                    SpanFilterValue.newBuilder()
+                        .setListValue(
+                            ListValue.newBuilder()
+                                .addValues(
+                                    SpanFilterValue.newBuilder().setStringValue(value)))))
         .build();
   }
 }

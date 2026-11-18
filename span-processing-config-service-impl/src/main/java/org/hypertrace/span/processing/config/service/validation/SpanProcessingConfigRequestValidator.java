@@ -3,6 +3,7 @@ package org.hypertrace.span.processing.config.service.validation;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
+import static org.hypertrace.span.processing.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_IN;
 import static org.hypertrace.span.processing.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_REGEX_MATCH;
 import static org.hypertrace.span.processing.config.service.v1.RuleType.RULE_TYPE_SYSTEM;
 
@@ -15,6 +16,7 @@ import org.hypertrace.span.processing.config.service.v1.DeleteExcludeSpanRuleReq
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRuleInfo;
 import org.hypertrace.span.processing.config.service.v1.GetAllExcludeSpanRulesRequest;
 import org.hypertrace.span.processing.config.service.v1.LogicalSpanFilterExpression;
+import org.hypertrace.span.processing.config.service.v1.RelationalOperator;
 import org.hypertrace.span.processing.config.service.v1.RelationalSpanFilterExpression;
 import org.hypertrace.span.processing.config.service.v1.SpanFilter;
 import org.hypertrace.span.processing.config.service.v1.SpanFilterValue;
@@ -91,11 +93,25 @@ public class SpanProcessingConfigRequestValidator {
   }
 
   private void validateRelationalSpanFilter(SpanFilter filter) {
+    final RelationalSpanFilterExpression relationalSpanFilter = filter.getRelationalSpanFilter();
     validateNonDefaultPresenceOrThrow(
-        filter.getRelationalSpanFilter(), RelationalSpanFilterExpression.OPERATOR_FIELD_NUMBER);
+        relationalSpanFilter, RelationalSpanFilterExpression.OPERATOR_FIELD_NUMBER);
 
-    final SpanFilterValue rhs = filter.getRelationalSpanFilter().getRightOperand();
-    if (filter.getRelationalSpanFilter().getOperator().equals(RELATIONAL_OPERATOR_REGEX_MATCH)) {
+    final RelationalOperator operator = relationalSpanFilter.getOperator();
+    final SpanFilterValue rhs = relationalSpanFilter.getRightOperand();
+    if (operator.equals(RELATIONAL_OPERATOR_IN)) {
+      if (!rhs.getValueCase().equals(SpanFilterValue.ValueCase.LIST_VALUE)
+          || rhs.getListValue().getValuesCount() == 0) {
+        throw Status.INVALID_ARGUMENT
+            .withDescription(
+                String.format(
+                    "Operator %s requires a %s right operand: %s",
+                    operator, SpanFilterValue.ValueCase.LIST_VALUE, printMessage(filter)))
+            .asRuntimeException();
+      }
+    }
+
+    if (operator.equals(RELATIONAL_OPERATOR_REGEX_MATCH)) {
       validateNonDefaultPresenceOrThrow(rhs, SpanFilterValue.STRING_VALUE_FIELD_NUMBER);
       validateRegex(rhs.getStringValue());
     }
