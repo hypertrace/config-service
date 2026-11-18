@@ -366,8 +366,7 @@ class SpanProcessingRequestValidatorTest {
             RelationalSpanFilterExpression.newBuilder()
                 .setSpanAttributeKey("http.url")
                 .setOperator(RelationalOperator.RELATIONAL_OPERATOR_IN)
-                .setRightOperand(
-                    SpanFilterValue.newBuilder().setStringValue("example.com/test")))
+                .setRightOperand(SpanFilterValue.newBuilder().setStringValue("example.com/test")))
         .build();
   }
 
@@ -381,8 +380,7 @@ class SpanProcessingRequestValidatorTest {
                     SpanFilterValue.newBuilder()
                         .setListValue(
                             ListValue.newBuilder()
-                                .addValues(
-                                    SpanFilterValue.newBuilder().setStringValue(value)))))
+                                .addValues(SpanFilterValue.newBuilder().setStringValue(value)))))
         .build();
   }
 }
